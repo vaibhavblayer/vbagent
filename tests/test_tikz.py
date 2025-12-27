@@ -274,3 +274,237 @@ def test_prompts_have_required_constants():
     
     assert len(tikz.SYSTEM_PROMPT.strip()) > 0, "SYSTEM_PROMPT must not be empty"
     assert len(tikz.USER_TEMPLATE.strip()) > 0, "USER_TEMPLATE must not be empty"
+
+
+
+# =============================================================================
+# Tests for TikZ Checker with apply_patch support
+# =============================================================================
+
+def test_tikz_checker_patch_result_dataclass():
+    """Test that PatchResult dataclass is properly defined."""
+    from vbagent.agents.tikz_checker import PatchResult
+    
+    # Create a PatchResult instance
+    result = PatchResult(
+        passed=True,
+        summary="No errors found",
+        corrected_content="",
+        patches_applied=0,
+        patch_errors=[],
+    )
+    
+    assert result.passed is True
+    assert result.summary == "No errors found"
+    assert result.corrected_content == ""
+    assert result.patches_applied == 0
+    assert result.patch_errors == []
+
+
+def test_tikz_checker_patch_result_with_errors():
+    """Test PatchResult with patch errors."""
+    from vbagent.agents.tikz_checker import PatchResult
+    
+    result = PatchResult(
+        passed=False,
+        summary="Applied 2 patches",
+        corrected_content="\\begin{tikzpicture}\\end{tikzpicture}",
+        patches_applied=2,
+        patch_errors=["Failed to apply patch 3"],
+    )
+    
+    assert result.passed is False
+    assert result.patches_applied == 2
+    assert len(result.patch_errors) == 1
+
+
+def test_tikz_checker_prompts_have_patch_constants():
+    """Verify that tikz_checker.py has patch-related prompts."""
+    from vbagent.prompts import tikz_checker
+    
+    assert hasattr(tikz_checker, "PATCH_SYSTEM_PROMPT"), (
+        "tikz_checker.py must have PATCH_SYSTEM_PROMPT"
+    )
+    assert hasattr(tikz_checker, "PATCH_USER_TEMPLATE"), (
+        "tikz_checker.py must have PATCH_USER_TEMPLATE"
+    )
+    
+    assert isinstance(tikz_checker.PATCH_SYSTEM_PROMPT, str)
+    assert isinstance(tikz_checker.PATCH_USER_TEMPLATE, str)
+    
+    # Check that patch prompts mention apply_patch
+    assert "apply_patch" in tikz_checker.PATCH_SYSTEM_PROMPT, (
+        "PATCH_SYSTEM_PROMPT should mention apply_patch"
+    )
+    assert "V4A" in tikz_checker.PATCH_SYSTEM_PROMPT, (
+        "PATCH_SYSTEM_PROMPT should mention V4A diff format"
+    )
+
+
+def test_tikz_checker_has_patch_function():
+    """Verify that check_tikz_with_patch function exists."""
+    from vbagent.agents.tikz_checker import check_tikz_with_patch
+    
+    assert callable(check_tikz_with_patch), (
+        "check_tikz_with_patch must be callable"
+    )
+
+
+def test_tikz_checker_has_reference_context_function():
+    """Verify that _get_tikz_reference_context function exists."""
+    from vbagent.agents.tikz_checker import _get_tikz_reference_context
+    
+    assert callable(_get_tikz_reference_context), (
+        "_get_tikz_reference_context must be callable"
+    )
+    
+    # Should return empty string when no references
+    context = _get_tikz_reference_context()
+    assert isinstance(context, str), "Should return a string"
+
+
+def test_tikz_checker_create_patch_agent():
+    """Verify that create_tikz_patch_agent creates an agent with apply_patch tool."""
+    from vbagent.agents.tikz_checker import create_tikz_patch_agent
+    
+    agent = create_tikz_patch_agent(use_context=False)
+    
+    assert agent is not None, "Agent must be created"
+    assert agent.name == "TikZPatchChecker", "Agent name must be TikZPatchChecker"
+    assert agent.tools is not None, "Agent must have tools"
+    assert len(agent.tools) > 0, "Agent must have at least one tool"
+    
+    # Check that ApplyPatchTool is in the tools
+    tool_types = [type(t).__name__ for t in agent.tools]
+    assert "ApplyPatchTool" in tool_types, (
+        "Agent must have ApplyPatchTool"
+    )
+
+
+def test_tikz_checker_legacy_function_still_works():
+    """Verify that legacy check_tikz function still exists and is callable."""
+    from vbagent.agents.tikz_checker import check_tikz
+    
+    assert callable(check_tikz), "check_tikz must be callable"
+
+
+# =============================================================================
+# Tests for auto-discovery of images
+# =============================================================================
+
+def test_has_diagram_placeholder_detects_input_diagram():
+    """Test that has_diagram_placeholder detects \\input{diagram} pattern."""
+    from vbagent.cli.common import has_diagram_placeholder
+    
+    # Should detect simple pattern
+    content_with_placeholder = r"""
+\begin{center}
+\input{diagram}
+\end{center}
+"""
+    assert has_diagram_placeholder(content_with_placeholder) is True
+    
+    # Should detect without center environment
+    content_simple = r"\input{diagram}"
+    assert has_diagram_placeholder(content_simple) is True
+    
+    # Should not detect other inputs
+    content_other = r"\input{preamble}"
+    assert has_diagram_placeholder(content_other) is False
+    
+    # Should not detect in regular content
+    content_no_placeholder = r"""
+\begin{tikzpicture}
+\draw (0,0) -- (1,1);
+\end{tikzpicture}
+"""
+    assert has_diagram_placeholder(content_no_placeholder) is False
+
+
+def test_find_image_for_problem_with_explicit_dir(tmp_path):
+    """Test find_image_for_problem with explicit images_dir."""
+    from vbagent.cli.common import find_image_for_problem
+    
+    # Create test structure
+    tex_dir = tmp_path / "tex"
+    tex_dir.mkdir()
+    images_dir = tmp_path / "images"
+    images_dir.mkdir()
+    
+    tex_file = tex_dir / "Problem_1.tex"
+    tex_file.write_text(r"\input{diagram}")
+    
+    image_file = images_dir / "Problem_1.png"
+    image_file.write_bytes(b"fake png")
+    
+    # Should find image with explicit dir
+    result = find_image_for_problem(tex_file, images_dir)
+    assert result is not None
+    assert result.name == "Problem_1.png"
+
+
+def test_find_image_for_problem_auto_discover(tmp_path):
+    """Test find_image_for_problem auto-discovery mode."""
+    from vbagent.cli.common import find_image_for_problem
+    
+    # Create test structure: tex/Problem_1.tex, images/Problem_1.png
+    tex_dir = tmp_path / "scans"
+    tex_dir.mkdir()
+    images_dir = tmp_path / "images"
+    images_dir.mkdir()
+    
+    tex_file = tex_dir / "Problem_12.tex"
+    tex_file.write_text(r"\input{diagram}")
+    
+    image_file = images_dir / "Problem_12.png"
+    image_file.write_bytes(b"fake png")
+    
+    # Should auto-discover image in sibling images/ directory
+    result = find_image_for_problem(tex_file, auto_discover=True)
+    assert result is not None
+    assert result.name == "Problem_12.png"
+
+
+def test_find_image_for_problem_no_auto_discover(tmp_path):
+    """Test find_image_for_problem with auto_discover=False."""
+    from vbagent.cli.common import find_image_for_problem
+    
+    # Create test structure
+    tex_dir = tmp_path / "scans"
+    tex_dir.mkdir()
+    images_dir = tmp_path / "images"
+    images_dir.mkdir()
+    
+    tex_file = tex_dir / "Problem_12.tex"
+    tex_file.write_text(r"\input{diagram}")
+    
+    image_file = images_dir / "Problem_12.png"
+    image_file.write_bytes(b"fake png")
+    
+    # Should NOT find image when auto_discover=False and no images_dir
+    result = find_image_for_problem(tex_file, auto_discover=False)
+    assert result is None
+
+
+def test_find_image_for_problem_src_pattern(tmp_path):
+    """Test find_image_for_problem with src_tex -> src_images pattern."""
+    from vbagent.cli.common import find_image_for_problem
+    
+    # Create test structure: src/src_tex/Problem_1.tex, src/src_images/Problem_1.jpg
+    src_dir = tmp_path / "src"
+    src_dir.mkdir()
+    tex_dir = src_dir / "src_tex"
+    tex_dir.mkdir()
+    images_dir = src_dir / "src_images"
+    images_dir.mkdir()
+    
+    tex_file = tex_dir / "Problem_5.tex"
+    tex_file.write_text(r"\input{diagram}")
+    
+    image_file = images_dir / "Problem_5.jpg"
+    image_file.write_bytes(b"fake jpg")
+    
+    # Should auto-discover image in src_images directory
+    result = find_image_for_problem(tex_file, auto_discover=True)
+    assert result is not None
+    assert result.name == "Problem_5.jpg"

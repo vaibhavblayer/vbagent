@@ -34,6 +34,7 @@ from vbagent.cli.common import (
     natural_sort_key,
     extract_problem_solution,
     find_image_for_problem,
+    has_diagram_placeholder,
     _get_console,
     _get_panel,
     _get_table,
@@ -501,7 +502,7 @@ def check():
         solution  - Check solution correctness
         grammar   - Check grammar and spelling
         clarity   - Check clarity and conciseness
-        tikz      - Check TikZ diagram code
+        tikz      - Check/generate TikZ diagrams
         apply     - Apply a stored suggestion
         history   - View suggestion history
         resume    - Resume interrupted session
@@ -518,7 +519,8 @@ def check():
         vbagent check solution -d ./src_tex/
         vbagent check grammar -d ./src_tex/
         vbagent check clarity -d ./src_tex/
-        vbagent check tikz -d ./src_tex/
+        vbagent check tikz -d ./scans/           # Check/generate TikZ
+        vbagent check tikz --patch --ref-type circuit
     """
     pass
 
@@ -2550,6 +2552,22 @@ def check_clarity_cmd(
     is_flag=True,
     help="Reset progress and re-check all files"
 )
+@click.option(
+    "--patch",
+    is_flag=True,
+    help="Use apply_patch mode for structured diffs (experimental)"
+)
+@click.option(
+    "--use-context/--no-context",
+    default=True,
+    help="Include TikZ reference examples in prompt (default: enabled)"
+)
+@click.option(
+    "--ref-type",
+    type=str,
+    default=None,
+    help="Filter reference examples by diagram type (e.g., circuit, free_body, graph)"
+)
 def check_tikz_cmd(
     output_dir: str,
     count: int,
@@ -2558,39 +2576,632 @@ def check_tikz_cmd(
     prompt: Optional[str],
     only_tikz: bool,
     reset: bool,
+    patch: bool,
+    use_context: bool,
+    ref_type: Optional[str],
 ):
-    """Check TikZ diagram code for errors and best practices.
+    """Check and generate TikZ diagram code.
     
-    Reviews TikZ/PGF code for syntax errors, missing libraries,
-    and physics diagram conventions. Prompts for approval to apply fixes.
+    This command has two modes:
     
-    Images are matched by filename (e.g., problem_1.tex -> problem_1.png).
-    Use --prompt to add specific instructions for the checker.
+    1. CHECK MODE: Reviews existing TikZ/PGF code for syntax errors,
+       missing libraries, and physics diagram conventions.
+    
+    2. GENERATE MODE: If a file has \\input{diagram} placeholder but no
+       TikZ code, automatically generates TikZ from the corresponding
+       image (auto-discovered in images/ directory).
+    
+    Images are auto-discovered by filename (e.g., Problem_1.tex -> images/Problem_1.png)
+    or can be specified with --images-dir.
+    
+    Reference examples are matched by diagram type from classification metadata,
+    or can be filtered manually with --ref-type.
+    
+    Use --patch to enable apply_patch mode for more precise edits.
     
     \b
     Examples:
-        vbagent check tikz
-        vbagent check tikz -d ./src/src_tex/
-        vbagent check tikz -d ./src/src_tex/ -i ./src/src_images/
-        vbagent check tikz -c 10
-        vbagent check tikz -p Problem_1
-        vbagent check tikz --prompt "Use circuit library for electrical diagrams"
-        vbagent check tikz --only-tikz
-        vbagent check tikz --reset
+        vbagent check tikz                          # Check/generate in agentic/
+        vbagent check tikz -d ./scans/              # Check specific directory
+        vbagent check tikz -d ./scans/Problem_1.tex # Check single file
+        vbagent check tikz -c 10                    # Process 10 files
+        vbagent check tikz -p Problem_1             # Check specific problem
+        vbagent check tikz -i ./images/             # Explicit images directory
+        vbagent check tikz --only-tikz              # Skip files without TikZ
+        vbagent check tikz --reset                  # Re-check all files
+        vbagent check tikz --patch                  # Use apply_patch mode
+        vbagent check tikz --ref-type circuit       # Use only circuit references
+        vbagent check tikz --prompt "Use circuitikz" # Add instructions
     """
-    _run_checker_session(
-        output_dir=output_dir,
-        count=count,
-        problem_id=problem_id,
-        checker_name="tikz",
-        check_func_module="vbagent.agents.tikz_checker",
-        check_func_name="check_tikz",
-        require_solution=False,
-        require_tikz=only_tikz,
-        reset=reset,
-        images_dir=images_dir,
-        extra_prompt=prompt,
+    if patch:
+        # Use new patch-based checker
+        _run_tikz_patch_session(
+            output_dir=output_dir,
+            count=count,
+            problem_id=problem_id,
+            images_dir=images_dir,
+            extra_prompt=prompt,
+            only_tikz=only_tikz,
+            reset=reset,
+            use_context=use_context,
+            ref_diagram_type=ref_type,
+        )
+    else:
+        # Use legacy checker
+        _run_checker_session(
+            output_dir=output_dir,
+            count=count,
+            problem_id=problem_id,
+            checker_name="tikz",
+            check_func_module="vbagent.agents.tikz_checker",
+            check_func_name="check_tikz",
+            require_solution=False,
+            require_tikz=only_tikz,
+            reset=reset,
+            images_dir=images_dir,
+            extra_prompt=prompt,
+        )
+
+
+def _load_diagram_type_from_classification(tex_file: Path, output_path: Path) -> Optional[str]:
+    """Load diagram_type from classification JSON for a problem.
+    
+    Looks for classification JSON in common locations:
+    - Same directory as tex file: Problem_X.json
+    - classifications/ subdirectory: classifications/Problem_X.json
+    - Parent's classifications/: ../classifications/Problem_X.json
+    
+    Args:
+        tex_file: Path to the .tex file
+        output_path: Base output directory
+        
+    Returns:
+        diagram_type string if found, None otherwise
+    """
+    import json
+    
+    problem_name = tex_file.stem
+    
+    # Try common classification file locations
+    possible_paths = [
+        tex_file.with_suffix('.json'),  # Same dir, same name
+        tex_file.parent / "classifications" / f"{problem_name}.json",
+        output_path / "classifications" / f"{problem_name}.json",
+        tex_file.parent.parent / "classifications" / f"{problem_name}.json",
+    ]
+    
+    for class_path in possible_paths:
+        if class_path.exists():
+            try:
+                data = json.loads(class_path.read_text())
+                diagram_type = data.get("diagram_type")
+                if diagram_type and diagram_type != "none":
+                    return diagram_type
+            except (json.JSONDecodeError, KeyError):
+                continue
+    
+    return None
+
+
+def _generate_tikz_for_placeholder(
+    content: str,
+    image_path: Optional[Path],
+    diagram_type: Optional[str] = None,
+    extra_prompt: Optional[str] = None,
+    console = None,
+) -> Optional[str]:
+    """Generate TikZ code and replace \\input{diagram} placeholder.
+    
+    Uses the TikZ generator agent to create TikZ code from the problem
+    description and optional image, then replaces the placeholder.
+    
+    Args:
+        content: Full LaTeX content with \\input{diagram} placeholder
+        image_path: Optional path to reference image
+        diagram_type: Optional diagram type for reference matching
+        extra_prompt: Optional additional instructions
+        console: Rich console for output (optional)
+        
+    Returns:
+        Content with placeholder replaced by generated TikZ, or None on failure
+    """
+    import re
+    from vbagent.agents.tikz import generate_tikz, validate_tikz_output
+    
+    # Extract problem description for the generator
+    # Try to get the problem statement (before solution)
+    problem_match = re.search(r'\\item\s*(.*?)(?=\\begin\{solution\}|$)', content, re.DOTALL)
+    if problem_match:
+        description = problem_match.group(1).strip()
+        # Clean up LaTeX commands for description
+        description = re.sub(r'\\begin\{center\}.*?\\end\{center\}', '', description, flags=re.DOTALL)
+        description = description.strip()
+    else:
+        description = "Generate a physics diagram based on the problem context."
+    
+    # Add extra prompt if provided
+    if extra_prompt:
+        description = f"{description}\n\nAdditional instructions: {extra_prompt}"
+    
+    if console:
+        console.print(f"[dim]Generating TikZ... (Ctrl+C to quit)[/dim]")
+    
+    # Generate TikZ code
+    tikz_code = generate_tikz(
+        description=description,
+        image_path=str(image_path) if image_path else None,
+        use_context=True,
     )
+    
+    if not tikz_code or not validate_tikz_output(tikz_code):
+        return None
+    
+    # Wrap in center environment if not already wrapped
+    if not tikz_code.strip().startswith(r'\begin{center}'):
+        tikz_code = f"\\begin{{center}}\n{tikz_code}\n\\end{{center}}"
+    
+    # Replace the placeholder patterns
+    # Pattern 1: \begin{center}\input{diagram}\end{center}
+    placeholder_pattern = r'\\begin\{center\}\s*%?\s*\\input\{diagram\}\s*\\end\{center\}'
+    result = re.sub(placeholder_pattern, tikz_code, content, flags=re.DOTALL)
+    
+    # Pattern 2: Simple \input{diagram} (with optional comment)
+    if result == content:
+        simple_pattern = r'%?\s*\\input\{diagram\}'
+        result = re.sub(simple_pattern, tikz_code, result)
+    
+    return result if result != content else None
+
+
+def _prompt_tikz_action(console) -> str:
+    """Prompt user for action on TikZ generation/check result.
+    
+    Args:
+        console: Rich console for output
+        
+    Returns:
+        Action string: 'approve', 'edit', 'reject', 'skip', or 'quit'
+    """
+    console.print("\n[bold]Actions:[/bold]")
+    console.print("  [green]a[/green]pprove - Apply this change")
+    console.print("  [red]r[/red]eject  - Store for later, don't apply")
+    console.print("  [blue]e[/blue]dit    - Edit in editor before applying")
+    console.print("  [yellow]s[/yellow]kip    - Skip without storing")
+    console.print("  [dim]q[/dim]uit    - Exit session")
+    
+    Prompt = _get_prompt()
+    try:
+        choice = Prompt.ask(
+            "\nAction",
+            choices=["a", "r", "e", "s", "q", "approve", "reject", "edit", "skip", "quit"],
+            default="a"
+        ).lower()
+    except KeyboardInterrupt:
+        return "quit"
+    
+    if choice in ["a", "approve"]:
+        return "approve"
+    elif choice in ["r", "reject"]:
+        return "reject"
+    elif choice in ["e", "edit"]:
+        return "edit"
+    elif choice in ["s", "skip"]:
+        return "skip"
+    else:
+        return "quit"
+
+
+def _run_tikz_patch_session(
+    output_dir: str,
+    count: int,
+    problem_id: Optional[str],
+    images_dir: Optional[str] = None,
+    extra_prompt: Optional[str] = None,
+    only_tikz: bool = False,
+    reset: bool = False,
+    use_context: bool = True,
+    ref_diagram_type: Optional[str] = None,
+) -> None:
+    """Run TikZ checker session using apply_patch mode.
+    
+    Uses OpenAI's apply_patch tool for structured diffs instead of
+    returning full corrected content.
+    
+    Args:
+        output_dir: Directory containing .tex files
+        count: Number of files to process
+        problem_id: Optional specific problem ID to check
+        images_dir: Optional directory containing images for problems
+        extra_prompt: Optional additional instructions for the checker
+        only_tikz: Whether to only check files with TikZ code
+        reset: Whether to reset progress and re-check all files
+        use_context: Whether to include TikZ reference examples
+        ref_diagram_type: Filter reference examples by diagram type (e.g., circuit)
+    """
+    import re
+    from vbagent.models.version_store import VersionStore, SuggestionStatus
+    from vbagent.models.review import Suggestion, ReviewIssueType as IssueType
+    from vbagent.agents.tikz_checker import (
+        check_tikz_with_patch,
+        has_tikz_environment,
+        PatchResult,
+    )
+    
+    console = _get_console()
+    
+    console.print("[cyan]Using apply_patch mode (experimental)[/cyan]")
+    if ref_diagram_type:
+        console.print(f"[cyan]Using only '{ref_diagram_type}' references[/cyan]")
+    
+    output_path = Path(output_dir)
+    tex_files = _discover_tex_files(output_path)
+    
+    if not tex_files:
+        console.print(f"[red]Error:[/red] No .tex files found in {output_dir}")
+        raise SystemExit(1)
+    
+    def natural_sort_key(p):
+        return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', str(p))]
+    
+    tex_files = sorted(tex_files, key=natural_sort_key)
+    
+    if problem_id:
+        tex_files = [f for f in tex_files if problem_id in f.stem]
+        if not tex_files:
+            console.print(f"[red]Error:[/red] No files found matching '{problem_id}'")
+            raise SystemExit(1)
+    
+    # Filter for TikZ files if required
+    if only_tikz:
+        tikz_files = []
+        for f in tex_files:
+            content = f.read_text()
+            if has_tikz_environment(content):
+                tikz_files.append(f)
+        tex_files = tikz_files
+        if not tex_files:
+            console.print(f"[yellow]No files with TikZ code found in {output_dir}[/yellow]")
+            return
+    
+    # Initialize version store for tracking
+    store = VersionStore(base_dir=".")
+    output_dir_normalized = str(output_path.resolve())
+    
+    # Reset progress if requested
+    if reset:
+        reset_count = store.reset_checker_progress("tikz_patch", output_dir_normalized)
+        if reset_count > 0:
+            console.print(f"[yellow]Reset progress for {reset_count} file(s)[/yellow]")
+    
+    # Filter out already-checked files
+    checked_files = store.get_checked_files("tikz_patch", output_dir_normalized)
+    unchecked_files = [f for f in tex_files if str(f.resolve()) not in checked_files]
+    
+    if not unchecked_files:
+        console.print(f"[green]✓ All {len(tex_files)} file(s) have been checked[/green]")
+        stats = store.get_checker_stats("tikz_patch", output_dir_normalized)
+        console.print(f"[dim]Total: {stats['total']}, Passed: {stats['passed']}, Had issues: {stats['failed']}[/dim]")
+        console.print(f"[dim]Use --reset to re-check files[/dim]")
+        store.close()
+        return
+    
+    if len(checked_files) > 0:
+        console.print(f"[dim]Skipping {len(checked_files)} already-checked file(s)[/dim]")
+    
+    to_process = unchecked_files[:count]
+    console.print(f"[cyan]Checking {len(to_process)} file(s) with apply_patch mode[/cyan]")
+    session_id = store.create_session()
+    
+    stats = {
+        "processed": 0,
+        "passed": 0,
+        "approved": 0,
+        "rejected": 0,
+        "skipped": 0,
+        "patch_errors": 0,
+        "session_id": session_id,
+    }
+    
+    shutdown_requested = False
+    
+    def signal_handler(signum, frame):
+        nonlocal shutdown_requested
+        shutdown_requested = True
+        console.print("\n[yellow]Shutdown requested. Saving progress...[/yellow]")
+    
+    original_sigint = signal.signal(signal.SIGINT, signal_handler)
+    original_sigterm = None
+    if sys.platform != "win32":
+        original_sigterm = signal.signal(signal.SIGTERM, signal_handler)
+    
+    try:
+        for idx, tex_file in enumerate(to_process):
+            if shutdown_requested:
+                break
+            
+            rel_path = tex_file.relative_to(output_path) if output_path.is_dir() else tex_file.name
+            problem_name = tex_file.stem
+            console.print(f"\n[bold cyan]═══ [{idx+1}/{len(to_process)}] {rel_path} ═══[/bold cyan]")
+            
+            content = tex_file.read_text()
+            
+            # Find corresponding image
+            # 1. Use explicit images_dir if provided
+            # 2. Otherwise, auto-discover if file has \input{diagram} placeholder
+            image_path = None
+            if images_dir:
+                image_path = find_image_for_problem(tex_file, images_dir)
+                if image_path:
+                    console.print(f"[dim]Image: {image_path.name}[/dim]")
+            else:
+                # Auto-discover image if file has diagram placeholder
+                if has_diagram_placeholder(content):
+                    image_path = find_image_for_problem(tex_file, auto_discover=True)
+                    if image_path:
+                        console.print(f"[dim]Auto-found image: {image_path.name}[/dim]")
+            
+            # Check if this file needs TikZ GENERATION (has placeholder but no TikZ)
+            needs_generation = has_diagram_placeholder(content) and not has_tikz_environment(content)
+            
+            if needs_generation:
+                # Generate TikZ instead of checking
+                console.print(f"[cyan]Generating TikZ (found \\input{{diagram}} placeholder)[/cyan]")
+                
+                if not image_path:
+                    console.print("[yellow]Warning: No image found for generation. Results may be limited.[/yellow]")
+                
+                # Auto-detect diagram type from classification
+                auto_diagram_type = ref_diagram_type
+                if not auto_diagram_type and use_context:
+                    auto_diagram_type = _load_diagram_type_from_classification(tex_file, output_path)
+                    if auto_diagram_type:
+                        console.print(f"[dim]Auto-detected diagram type: {auto_diagram_type}[/dim]")
+                
+                try:
+                    generated_content = _generate_tikz_for_placeholder(
+                        content=content,
+                        image_path=image_path,
+                        diagram_type=auto_diagram_type,
+                        extra_prompt=extra_prompt,
+                        console=console,
+                    )
+                    stats["processed"] += 1
+                    
+                    if not generated_content:
+                        console.print("[yellow]Failed to generate TikZ[/yellow]")
+                        stats["skipped"] += 1
+                        continue
+                    
+                    # Show the generated content
+                    diff_text = _generate_diff(content, generated_content, str(rel_path))
+                    
+                    if diff_text:
+                        console.print(f"\n[bold]Generated TikZ:[/bold]")
+                        display_diff(diff_text, console)
+                    
+                    # Create suggestion for tracking
+                    suggestion = Suggestion(
+                        file_path=str(tex_file),
+                        issue_type=IssueType.FORMATTING,
+                        description="TikZ generation: replaced \\input{diagram} placeholder",
+                        original_content=content,
+                        suggested_content=generated_content,
+                        diff=diff_text,
+                        reasoning="Generated TikZ code from image to replace placeholder.",
+                        confidence=0.8,
+                    )
+                    
+                    # Prompt for action
+                    action = _prompt_tikz_action(console)
+                    
+                    if action == "quit":
+                        shutdown_requested = True
+                        break
+                    elif action == "skip":
+                        console.print("[dim]Skipped[/dim]")
+                        stats["skipped"] += 1
+                        continue
+                    elif action == "reject":
+                        store.save_suggestion(suggestion, problem_name, SuggestionStatus.REJECTED, session_id)
+                        store.mark_file_checked(str(tex_file.resolve()), "tikz_patch", output_dir_normalized, passed=False)
+                        console.print("[yellow]Suggestion stored for later[/yellow]")
+                        stats["rejected"] += 1
+                        continue
+                    
+                    final_content = generated_content
+                    if action == "edit":
+                        success, edited = open_suggested_in_editor(str(tex_file), generated_content, console)
+                        if success and edited:
+                            final_content = edited
+                            console.print("[cyan]Content edited[/cyan]")
+                    
+                    # Write the generated content
+                    try:
+                        tex_file.write_text(final_content)
+                        console.print(f"[green]✓ TikZ generated and applied to {rel_path}[/green]")
+                        store.save_suggestion(suggestion, problem_name, SuggestionStatus.APPROVED, session_id)
+                        store.mark_file_checked(str(tex_file.resolve()), "tikz_patch", output_dir_normalized, passed=False)
+                        stats["approved"] += 1
+                    except (IOError, OSError) as e:
+                        console.print(f"[red]✗ Failed to write: {e}[/red]")
+                        stats["rejected"] += 1
+                    
+                    continue
+                    
+                except KeyboardInterrupt:
+                    console.print("\n[yellow]Interrupted[/yellow]")
+                    shutdown_requested = True
+                    break
+                except Exception as e:
+                    console.print(f"[red]Error generating TikZ:[/red] {e}")
+                    stats["skipped"] += 1
+                    continue
+            
+            # Normal checking flow (file has existing TikZ or no placeholder)
+            # Auto-detect diagram type from classification if not manually specified
+            auto_diagram_type = ref_diagram_type
+            if not auto_diagram_type and use_context:
+                auto_diagram_type = _load_diagram_type_from_classification(tex_file, output_path)
+                if auto_diagram_type:
+                    console.print(f"[dim]Auto-detected diagram type: {auto_diagram_type}[/dim]")
+            
+            # Prepare content with extra prompt if provided
+            check_content = content
+            if extra_prompt:
+                console.print(f"[dim]Extra instructions: {extra_prompt}[/dim]")
+                check_content = f"% ADDITIONAL INSTRUCTIONS: {extra_prompt}\n\n{content}"
+            
+            try:
+                console.print(f"[dim]Checking with apply_patch... (Ctrl+C to quit)[/dim]")
+                result: PatchResult = check_tikz_with_patch(
+                    file_path=str(tex_file),
+                    full_content=check_content,
+                    image_path=str(image_path) if image_path else None,
+                    use_context=use_context,
+                    ref_diagram_type=auto_diagram_type,
+                )
+                stats["processed"] += 1
+            except KeyboardInterrupt:
+                console.print("\n[yellow]Interrupted[/yellow]")
+                shutdown_requested = True
+                break
+            except Exception as e:
+                console.print(f"[red]Error checking:[/red] {e}")
+                stats["skipped"] += 1
+                continue
+            
+            if result.passed:
+                console.print(f"[green]✓ {result.summary}[/green]")
+                stats["passed"] += 1
+                store.mark_file_checked(str(tex_file.resolve()), "tikz_patch", output_dir_normalized, passed=True)
+                continue
+            
+            # Show patch results
+            console.print(f"[yellow]{result.summary}[/yellow]")
+            
+            if result.patch_errors:
+                for err in result.patch_errors:
+                    console.print(f"[red]  Patch error: {err}[/red]")
+                stats["patch_errors"] += len(result.patch_errors)
+            
+            if not result.corrected_content:
+                console.print("[yellow]No corrected content available[/yellow]")
+                stats["skipped"] += 1
+                continue
+            
+            # Generate diff for display
+            diff_text = _generate_diff(content, result.corrected_content, str(rel_path))
+            
+            # Create suggestion object for database storage
+            suggestion = Suggestion(
+                file_path=str(tex_file),
+                issue_type=IssueType.FORMATTING,
+                description=f"TikZ patch check: {result.summary}",
+                original_content=content,
+                suggested_content=result.corrected_content,
+                diff=diff_text,
+                reasoning=f"Applied {result.patches_applied} patch(es) via apply_patch tool.",
+                confidence=0.8,
+            )
+            
+            if diff_text:
+                console.print(f"\n[bold]Proposed Changes ({result.patches_applied} patch(es)):[/bold]")
+                display_diff(diff_text, console)
+            
+            # Prompt for action
+            console.print("\n[bold]Actions:[/bold]")
+            console.print("  [green]a[/green]pprove - Apply this change")
+            console.print("  [red]r[/red]eject  - Store for later, don't apply")
+            console.print("  [blue]e[/blue]dit    - Edit in editor before applying")
+            console.print("  [yellow]s[/yellow]kip    - Skip without storing")
+            console.print("  [dim]q[/dim]uit    - Exit session")
+            
+            Prompt = _get_prompt()
+            try:
+                choice = Prompt.ask(
+                    "\nAction",
+                    choices=["a", "r", "e", "s", "q", "approve", "reject", "edit", "skip", "quit"],
+                    default="a"
+                ).lower()
+            except KeyboardInterrupt:
+                console.print("\n[yellow]Interrupted[/yellow]")
+                shutdown_requested = True
+                break
+            
+            if choice in ["q", "quit"]:
+                shutdown_requested = True
+                break
+            
+            if choice in ["s", "skip"]:
+                console.print("[dim]Skipped[/dim]")
+                stats["skipped"] += 1
+                continue
+            
+            if choice in ["r", "reject"]:
+                store.save_suggestion(suggestion, problem_name, SuggestionStatus.REJECTED, session_id)
+                store.mark_file_checked(str(tex_file.resolve()), "tikz_patch", output_dir_normalized, passed=False)
+                console.print("[yellow]Suggestion stored for later[/yellow]")
+                stats["rejected"] += 1
+                continue
+            
+            final_content = result.corrected_content
+            
+            if choice in ["e", "edit"]:
+                success, edited = open_suggested_in_editor(str(tex_file), result.corrected_content, console)
+                if success and edited:
+                    final_content = edited
+                    console.print("[cyan]Content edited[/cyan]")
+                else:
+                    console.print("[yellow]Edit cancelled, using original correction[/yellow]")
+            
+            # Write the corrected content
+            try:
+                tex_file.write_text(final_content)
+                console.print(f"[green]✓ Corrections applied to {rel_path}[/green]")
+                store.save_suggestion(suggestion, problem_name, SuggestionStatus.APPROVED, session_id)
+                store.mark_file_checked(str(tex_file.resolve()), "tikz_patch", output_dir_normalized, passed=False)
+                stats["approved"] += 1
+            except (IOError, OSError) as e:
+                console.print(f"[red]✗ Failed to write: {e}[/red]")
+                store.save_suggestion(suggestion, problem_name, SuggestionStatus.REJECTED, session_id)
+                store.mark_file_checked(str(tex_file.resolve()), "tikz_patch", output_dir_normalized, passed=False)
+                stats["rejected"] += 1
+        
+        # Update session with final stats
+        store.update_session(
+            session_id,
+            problems_reviewed=stats["processed"],
+            suggestions_made=stats["approved"] + stats["rejected"],
+            approved_count=stats["approved"],
+            rejected_count=stats["rejected"],
+            skipped_count=stats["skipped"],
+            completed=not shutdown_requested,
+        )
+    
+    finally:
+        signal.signal(signal.SIGINT, original_sigint)
+        if original_sigterm is not None:
+            signal.signal(signal.SIGTERM, original_sigterm)
+        store.close()
+    
+    # Summary
+    console.print("\n[bold]═══ Session Summary (apply_patch mode) ═══[/bold]")
+    table = _get_table(show_header=False, box=None)
+    table.add_column("Metric", style="dim")
+    table.add_column("Value", justify="right")
+    
+    table.add_row("Files checked", str(stats["processed"]))
+    table.add_row("Passed", f"[green]{stats['passed']}[/green]")
+    table.add_row("Approved", f"[green]{stats['approved']}[/green]")
+    table.add_row("Rejected", f"[red]{stats['rejected']}[/red]")
+    table.add_row("Skipped", f"[yellow]{stats['skipped']}[/yellow]")
+    if stats["patch_errors"] > 0:
+        table.add_row("Patch errors", f"[red]{stats['patch_errors']}[/red]")
+    
+    console.print(table)
+    
+    if shutdown_requested:
+        console.print(f"\n[dim]Session {session_id[:8]} saved. View with: vbagent check history[/dim]")
 
 
 def _run_checker_session(
@@ -2739,12 +3350,113 @@ def _run_checker_session(
             problem_name = tex_file.stem
             console.print(f"\n[bold cyan]═══ [{idx+1}/{len(to_process)}] {rel_path} ═══[/bold cyan]")
             
-            # Find corresponding image if images_dir is provided
-            image_path = find_image_for_problem(tex_file, images_dir) if images_dir else None
-            if image_path:
-                console.print(f"[dim]Image: {image_path.name}[/dim]")
-            
             content = tex_file.read_text()
+            
+            # Find corresponding image
+            # 1. Use explicit images_dir if provided
+            # 2. For tikz checker, auto-discover if file has \input{diagram} placeholder
+            image_path = None
+            if images_dir:
+                image_path = find_image_for_problem(tex_file, images_dir)
+                if image_path:
+                    console.print(f"[dim]Image: {image_path.name}[/dim]")
+            elif checker_name == "tikz":
+                # Auto-discover image if file has diagram placeholder
+                if has_diagram_placeholder(content):
+                    image_path = find_image_for_problem(tex_file, auto_discover=True)
+                    if image_path:
+                        console.print(f"[dim]Auto-found image: {image_path.name}[/dim]")
+            
+            # For tikz checker: check if generation is needed (has placeholder but no TikZ)
+            if checker_name == "tikz" and has_tikz_environment:
+                needs_generation = has_diagram_placeholder(content) and not has_tikz_environment(content)
+                
+                if needs_generation:
+                    # Generate TikZ instead of checking
+                    console.print(f"[cyan]Generating TikZ (found \\input{{diagram}} placeholder)[/cyan]")
+                    
+                    if not image_path:
+                        console.print("[yellow]Warning: No image found for generation. Results may be limited.[/yellow]")
+                    
+                    try:
+                        generated_content = _generate_tikz_for_placeholder(
+                            content=content,
+                            image_path=image_path,
+                            diagram_type=None,
+                            extra_prompt=extra_prompt,
+                            console=console,
+                        )
+                        stats["processed"] += 1
+                        
+                        if not generated_content:
+                            console.print("[yellow]Failed to generate TikZ[/yellow]")
+                            stats["skipped"] += 1
+                            continue
+                        
+                        # Show the generated content
+                        diff_text = _generate_diff(content, generated_content, str(rel_path))
+                        
+                        if diff_text:
+                            console.print(f"\n[bold]Generated TikZ:[/bold]")
+                            display_diff(diff_text, console)
+                        
+                        # Create suggestion for tracking
+                        suggestion = Suggestion(
+                            file_path=str(tex_file),
+                            issue_type=issue_type,
+                            description="TikZ generation: replaced \\input{diagram} placeholder",
+                            original_content=content,
+                            suggested_content=generated_content,
+                            diff=diff_text,
+                            reasoning="Generated TikZ code from image to replace placeholder.",
+                            confidence=0.8,
+                        )
+                        
+                        # Prompt for action
+                        action = _prompt_tikz_action(console)
+                        
+                        if action == "quit":
+                            shutdown_requested = True
+                            break
+                        elif action == "skip":
+                            console.print("[dim]Skipped[/dim]")
+                            stats["skipped"] += 1
+                            continue
+                        elif action == "reject":
+                            store.save_suggestion(suggestion, problem_name, SuggestionStatus.REJECTED, session_id)
+                            store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=False)
+                            console.print("[yellow]Suggestion stored for later[/yellow]")
+                            stats["rejected"] += 1
+                            continue
+                        
+                        final_content = generated_content
+                        if action == "edit":
+                            success, edited = open_suggested_in_editor(str(tex_file), generated_content, console)
+                            if success and edited:
+                                final_content = edited
+                                console.print("[cyan]Content edited[/cyan]")
+                        
+                        # Write the generated content
+                        try:
+                            tex_file.write_text(final_content)
+                            console.print(f"[green]✓ TikZ generated and applied to {rel_path}[/green]")
+                            store.save_suggestion(suggestion, problem_name, SuggestionStatus.APPROVED, session_id)
+                            store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=False)
+                            stats["approved"] += 1
+                        except (IOError, OSError) as e:
+                            console.print(f"[red]✗ Failed to write: {e}[/red]")
+                            stats["rejected"] += 1
+                        
+                        continue
+                        
+                    except KeyboardInterrupt:
+                        console.print("\n[yellow]Interrupted[/yellow]")
+                        shutdown_requested = True
+                        break
+                    except Exception as e:
+                        console.print(f"[red]Error generating TikZ:[/red] {e}")
+                        stats["skipped"] += 1
+                        continue
             
             if require_solution and r'\begin{solution}' not in content:
                 console.print("[yellow]No solution environment found, skipping[/yellow]")

@@ -684,16 +684,19 @@ def find_image_for_problem(
     tex_file: Path,
     images_dir: Optional[str | Path] = None,
     extensions: tuple[str, ...] = (".png", ".jpg", ".jpeg", ".webp", ".gif"),
+    auto_discover: bool = True,
 ) -> Optional[Path]:
     """Find the corresponding image file for a tex file.
     
-    Searches for an image with the same base name as the tex file
-    in the specified images directory.
+    Searches for an image with the same base name as the tex file.
+    If images_dir is not provided and auto_discover is True, searches
+    common image locations automatically.
     
     Args:
         tex_file: Path to the .tex file
         images_dir: Directory to search for images (optional)
         extensions: Image file extensions to search for
+        auto_discover: Whether to auto-search common locations if images_dir not provided
         
     Returns:
         Path to the image file if found, None otherwise
@@ -702,37 +705,94 @@ def find_image_for_problem(
         tex_file = Path("src/src_tex/problem_1.tex")
         images_dir = "src/src_images"
         # Will look for: src/src_images/problem_1.png, problem_1.jpg, etc.
+        
+        # Auto-discovery (when images_dir is None):
+        tex_file = Path("agentic/scans/Problem_12.tex")
+        # Will search: images/, ../images/, agentic/images/, etc.
     """
-    if images_dir is None:
-        return None
-    
-    images_path = Path(images_dir)
-    if not images_path.exists():
-        return None
-    
-    # Get the base name without extension
     base_name = tex_file.stem
     
-    # Search for image with matching name
-    for ext in extensions:
-        image_path = images_path / f"{base_name}{ext}"
-        if image_path.exists():
-            return image_path
+    def _search_in_dir(search_dir: Path) -> Optional[Path]:
+        """Search for image in a specific directory."""
+        if not search_dir.exists():
+            return None
         
-        # Also try case-insensitive match
-        image_path_upper = images_path / f"{base_name}{ext.upper()}"
-        if image_path_upper.exists():
-            return image_path_upper
+        for ext in extensions:
+            image_path = search_dir / f"{base_name}{ext}"
+            if image_path.exists():
+                return image_path
+            
+            # Also try case-insensitive match
+            image_path_upper = search_dir / f"{base_name}{ext.upper()}"
+            if image_path_upper.exists():
+                return image_path_upper
+        
+        # Try glob pattern for case-insensitive search
+        for ext in extensions:
+            pattern = f"{base_name}.*"
+            matches = list(search_dir.glob(pattern))
+            for match in matches:
+                if match.suffix.lower() in extensions:
+                    return match
+        
+        return None
     
-    # Try glob pattern for case-insensitive search
-    for ext in extensions:
-        pattern = f"{base_name}.*"
-        matches = list(images_path.glob(pattern))
-        for match in matches:
-            if match.suffix.lower() in extensions:
-                return match
+    # If images_dir is explicitly provided, search only there
+    if images_dir is not None:
+        images_path = Path(images_dir)
+        return _search_in_dir(images_path)
+    
+    # Auto-discovery mode
+    if not auto_discover:
+        return None
+    
+    tex_dir = tex_file.parent
+    
+    # Common image directory locations to search (in priority order)
+    search_locations = [
+        # Same directory as tex file
+        tex_dir,
+        # images/ sibling directory
+        tex_dir.parent / "images",
+        # images/ subdirectory
+        tex_dir / "images",
+        # Parent's parent images/ (for nested structures like agentic/scans/)
+        tex_dir.parent.parent / "images",
+        # src_images pattern (common in some projects)
+        tex_dir.parent / "src_images",
+    ]
+    
+    # Also check for pattern-based sibling directories
+    # e.g., src_tex -> src_images, scans -> images
+    dir_name = tex_dir.name
+    if dir_name.endswith("_tex"):
+        search_locations.append(tex_dir.parent / dir_name.replace("_tex", "_images"))
+    if dir_name == "scans":
+        search_locations.append(tex_dir.parent / "images")
+    
+    for search_dir in search_locations:
+        result = _search_in_dir(search_dir)
+        if result:
+            return result
     
     return None
+
+
+def has_diagram_placeholder(content: str) -> bool:
+    """Check if content contains a diagram placeholder that needs an image.
+    
+    Detects patterns like:
+    - \\input{diagram}
+    - \\begin{center}\\input{diagram}\\end{center}
+    
+    Args:
+        content: LaTeX content to check
+        
+    Returns:
+        True if a diagram placeholder is found
+    """
+    import re
+    return bool(re.search(r'\\input\{diagram\}', content))
 
 
 def discover_images_dir(tex_dir: Path) -> Optional[Path]:

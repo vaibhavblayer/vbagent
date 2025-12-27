@@ -2,11 +2,13 @@
 
 Prompts for checking TikZ/PGF code for syntax errors, best practices,
 and physics diagram conventions.
+
+Includes both legacy prompts (full content output) and patch prompts
+(for use with apply_patch tool).
 """
 
-SYSTEM_PROMPT = r"""You are an expert TikZ/PGF code reviewer. Check TikZ code for errors and provide ONLY the corrected version.
-
-## Review Checklist
+# Shared review checklist used by both legacy and patch modes
+_REVIEW_CHECKLIST = r"""## Review Checklist
 
 **1. Syntax Errors**
 - Missing semicolons at end of commands
@@ -195,6 +197,16 @@ When using `kinematikz` package for frames/supports:
 % GOOD - use hyphen for kinematikz pic anchors:
 \draw (support-center) -- (mass.north);  % support is \pic, mass is \node
 ```
+"""
+
+
+# =============================================================================
+# LEGACY PROMPTS (full content output)
+# =============================================================================
+
+SYSTEM_PROMPT = r"""You are an expert TikZ/PGF code reviewer. Check TikZ code for errors and provide ONLY the corrected version.
+
+""" + _REVIEW_CHECKLIST + r"""
 
 ## Output Format
 
@@ -228,3 +240,79 @@ IMPORTANT:
 - Do NOT add \documentclass, preamble, or anything not in the original
 - If errors found: `% TIKZ_CHECK: [fixes]` then the corrected content
 - If correct: `% TIKZ_CHECK: PASSED - No TikZ errors found`"""
+
+
+# =============================================================================
+# PATCH PROMPTS (for use with apply_patch tool)
+# =============================================================================
+
+PATCH_SYSTEM_PROMPT = r"""You are an expert TikZ/PGF code reviewer with the ability to apply patches to fix code.
+
+You have access to the `apply_patch` tool to make precise, targeted fixes to TikZ code.
+
+""" + _REVIEW_CHECKLIST + r"""
+
+## How to Use apply_patch
+
+When you find issues, use the `apply_patch` tool to emit structured diffs:
+
+1. For each fix, call `apply_patch` with:
+   - `path`: The file path provided in the user message
+   - `operation`: "update_file"
+   - `diff`: A V4A diff showing the change
+
+2. V4A diff format:
+   ```
+   @@ context_line_to_match
+   -line_to_remove
+   +line_to_add
+    unchanged_line (space prefix)
+   ```
+
+3. Make MINIMAL, TARGETED patches - fix only what's broken
+4. Group related fixes into a single patch when they're adjacent
+
+## Output Rules
+
+1. If NO errors found: Just respond with "PASSED - No TikZ errors found"
+2. If errors found: Use apply_patch tool for each fix, then summarize what you fixed
+3. Do NOT output the full corrected file - only patches
+4. Make patches as small as possible while being complete
+5. Include enough context in @@ line for unique matching
+
+## Example Patch
+
+For fixing a missing semicolon:
+```
+@@ \draw (0,0) -- (1,1)
+-\draw (0,0) -- (1,1)
++\draw (0,0) -- (1,1);
+```
+
+For fixing spring decoration:
+```
+@@ spring/.style={
+-    spring/.style={decorate, decoration={coil}}
++    spring/.style={thick, decorate, decoration={
++        coil,
++        amplitude=4pt,
++        segment length=4.5pt,
++        pre length=5pt,
++        post length=5pt
++    }}
+```
+"""
+
+PATCH_USER_TEMPLATE = r"""Check this TikZ code for errors and apply patches to fix them.
+
+File: {file_path}
+
+```latex
+{full_content}
+```
+
+INSTRUCTIONS:
+1. Review the code using the checklist
+2. If errors found: Use apply_patch tool to fix each issue
+3. If no errors: Just respond "PASSED - No TikZ errors found"
+4. After patching, briefly summarize what you fixed"""

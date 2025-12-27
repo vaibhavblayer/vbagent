@@ -302,6 +302,9 @@ vbagent check apply <version_id> [-e]
 
 # Resume session
 vbagent check resume <session_id>
+
+# Check/generate TikZ diagrams
+vbagent check tikz [-d <dir>] [-c <count>] [--patch] [--ref-type <type>]
 ```
 
 | Subcommand | Description |
@@ -316,11 +319,25 @@ vbagent check resume <session_id>
 | `solution` | Check solution correctness |
 | `grammar` | Check grammar and spelling |
 | `clarity` | Check clarity and conciseness |
-| `tikz` | Check TikZ diagram code |
+| `tikz` | Check existing TikZ or generate from `\input{diagram}` placeholder |
 | `apply` | Apply a stored suggestion |
 | `history` | View suggestion history |
 | `resume` | Resume interrupted session |
 | `stats` | View review statistics |
+
+#### check tikz options
+
+| Option | Description |
+|--------|-------------|
+| `-d, --dir` | Directory or file to check (default: agentic) |
+| `-c, --count` | Number of files to process (default: 5) |
+| `-p, --problem-id` | Check specific problem by ID |
+| `-i, --images-dir` | Directory containing images (auto-discovered if not set) |
+| `--only-tikz` | Only check files with existing TikZ code |
+| `--reset` | Re-check all files |
+| `--patch` | Use apply_patch mode for precise edits |
+| `--ref-type` | Filter references by diagram type (circuit, free_body, etc.) |
+| `--prompt` | Additional instructions for the checker |
 
 ### ref
 
@@ -702,7 +719,40 @@ vbagent check resume abc123
 | `solution` | Check solution correctness |
 | `grammar` | Check grammar and spelling |
 | `clarity` | Check clarity and conciseness |
-| `tikz` | Check TikZ diagram code |
+| `tikz` | Check/generate TikZ diagram code |
+
+#### check tikz - TikZ Check and Generation
+
+The `check tikz` command has two modes:
+
+1. **Check Mode**: Reviews existing TikZ code for errors and best practices
+2. **Generate Mode**: If a file has `\input{diagram}` placeholder but no TikZ, generates TikZ from the corresponding image
+
+```bash
+# Check/generate TikZ in default directory
+vbagent check tikz
+
+# Check specific directory or file
+vbagent check tikz -d ./scans/
+vbagent check tikz -d ./scans/Problem_1.tex
+
+# Process multiple files
+vbagent check tikz -c 10
+
+# Use apply_patch mode (recommended)
+vbagent check tikz --patch
+
+# Filter by diagram type
+vbagent check tikz --ref-type circuit
+
+# Re-check all files
+vbagent check tikz --reset
+```
+
+**Auto-discovery features:**
+- Images are auto-found in `images/` sibling directory (e.g., `scans/Problem_1.tex` → `images/Problem_1.png`)
+- Diagram type is auto-detected from classification metadata
+- Reference examples are matched by diagram type
 
 ### TikZ Command
 
