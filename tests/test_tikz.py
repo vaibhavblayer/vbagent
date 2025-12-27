@@ -408,6 +408,14 @@ def test_has_diagram_placeholder_detects_input_diagram():
     content_simple = r"\input{diagram}"
     assert has_diagram_placeholder(content_simple) is True
     
+    # Should detect commented placeholder (common in scanned files)
+    content_commented = r"""
+\begin{center}
+% \input{diagram}
+\end{center}
+"""
+    assert has_diagram_placeholder(content_commented) is True
+    
     # Should not detect other inputs
     content_other = r"\input{preamble}"
     assert has_diagram_placeholder(content_other) is False

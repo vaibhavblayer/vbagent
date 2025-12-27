@@ -2740,15 +2740,19 @@ def _generate_tikz_for_placeholder(
     if not tikz_code.strip().startswith(r'\begin{center}'):
         tikz_code = f"\\begin{{center}}\n{tikz_code}\n\\end{{center}}"
     
+    # Escape backslashes in tikz_code for use as replacement string
+    # re.sub interprets \1, \2, etc. as backreferences, so we need to escape
+    tikz_code_escaped = tikz_code.replace('\\', '\\\\')
+    
     # Replace the placeholder patterns
     # Pattern 1: \begin{center}\input{diagram}\end{center}
     placeholder_pattern = r'\\begin\{center\}\s*%?\s*\\input\{diagram\}\s*\\end\{center\}'
-    result = re.sub(placeholder_pattern, tikz_code, content, flags=re.DOTALL)
+    result = re.sub(placeholder_pattern, tikz_code_escaped, content, flags=re.DOTALL)
     
     # Pattern 2: Simple \input{diagram} (with optional comment)
     if result == content:
         simple_pattern = r'%?\s*\\input\{diagram\}'
-        result = re.sub(simple_pattern, tikz_code, result)
+        result = re.sub(simple_pattern, tikz_code_escaped, result)
     
     return result if result != content else None
 
@@ -3244,9 +3248,9 @@ def _run_checker_session(
     module = importlib.import_module(check_func_module)
     check_func = getattr(module, check_func_name)
     
-    # Import has_tikz_environment if needed
+    # Import has_tikz_environment for tikz checker (needed for generation detection)
     has_tikz_environment = None
-    if require_tikz:
+    if checker_name == "tikz" or require_tikz:
         from vbagent.agents.tikz_checker import has_tikz_environment
     
     console = _get_console()

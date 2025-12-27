@@ -783,16 +783,18 @@ def has_diagram_placeholder(content: str) -> bool:
     
     Detects patterns like:
     - \\input{diagram}
+    - % \\input{diagram} (commented placeholder)
     - \\begin{center}\\input{diagram}\\end{center}
     
     Args:
         content: LaTeX content to check
         
     Returns:
-        True if a diagram placeholder is found
+        True if a diagram placeholder is found (including commented ones)
     """
     import re
-    return bool(re.search(r'\\input\{diagram\}', content))
+    # Match both active and commented placeholders
+    return bool(re.search(r'%?\s*\\input\{diagram\}', content))
 
 
 def discover_images_dir(tex_dir: Path) -> Optional[Path]:
