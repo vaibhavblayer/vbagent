@@ -93,3 +93,4 @@ poetry.lock
 
 # Kiro
 .kiro/
+.gitignore
