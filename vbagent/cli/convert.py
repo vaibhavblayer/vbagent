@@ -86,7 +86,7 @@ def _format_latex(content: str) -> str:
     return '\n'.join(formatted_lines)
 
 
-VALID_FORMAT_CHOICES = ["mcq_sc", "mcq_mc", "subjective", "integer"]
+VALID_FORMAT_CHOICES = ["mcq_sc", "mcq_mc", "subjective", "integer", "match", "passage"]
 
 
 def parse_tex_content(tex_path: str) -> str:

@@ -48,9 +48,9 @@ from vbagent.prompts.converter import (
 
 
 # Valid format types
-FormatType = Literal["mcq_sc", "mcq_mc", "subjective", "integer"]
+FormatType = Literal["mcq_sc", "mcq_mc", "subjective", "integer", "match", "passage"]
 
-VALID_FORMATS = {"mcq_sc", "mcq_mc", "subjective", "integer"}
+VALID_FORMATS = {"mcq_sc", "mcq_mc", "subjective", "integer", "match", "passage"}
 
 
 # Create the format converter agent

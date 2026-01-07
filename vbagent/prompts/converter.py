@@ -4,7 +4,8 @@ Prompts for converting physics questions between different formats:
 - MCQ (single correct) ↔ MCQ (multiple correct)
 - MCQ ↔ Subjective
 - MCQ ↔ Integer type
-- Subjective ↔ Integer type
+- Match the following
+- Passage/Comprehension type
 """
 
 SYSTEM_PROMPT = r"""You are an expert physics educator specializing in question format conversion. Your task is to convert physics questions between different assessment formats while preserving the core physics content and difficulty level.
@@ -14,6 +15,8 @@ SUPPORTED FORMATS:
 2. mcq_mc - Multiple Choice Question (Multiple Correct): Has 4 options with one or more correct answers
 3. subjective - Subjective/Descriptive: Open-ended question requiring detailed solution
 4. integer - Integer Type: Question where the answer is a single integer (0-9 or multi-digit)
+5. match - Match the Following: Two columns to be matched with combination options
+6. passage - Passage/Comprehension: A passage followed by multiple questions based on it
 
 ---
 
@@ -102,6 +105,93 @@ Example: `...the current will be \hrulefill A. \ansint{3}`
 ```
 - NO tasks environment
 - Question should ask for work to be shown
+
+### Match the Following (match):
+```latex
+\item Match the items in Column I with the appropriate items in Column II.
+
+\begin{center}
+    \renewcommand{\arraystretch}{2}
+    \begin{tabular}{p{0.25cm}p{8cm}|p{0.25cm}p{5cm}}
+    \hline
+    & Column I & & Column II \\
+    \hline
+    (a) & Item A description & (p) & Match P description \\
+    (b) & Item B description & (q) & Match Q description \\
+    (c) & Item C description & (r) & Match R description \\
+    (d) & Item D description & (s) & Match S description \\
+    \hline
+    \end{tabular}
+\end{center}
+
+\begin{tasks}(2)
+    \task $a \rightarrow p$, $b \rightarrow q$, $c \rightarrow r$, $d \rightarrow s$
+    \task $a \rightarrow q$, $b \rightarrow p$, $c \rightarrow s$, $d \rightarrow r$ \ans
+    \task $a \rightarrow r$, $b \rightarrow s$, $c \rightarrow p$, $d \rightarrow q$
+    \task $a \rightarrow s$, $b \rightarrow r$, $c \rightarrow q$, $d \rightarrow p$
+\end{tasks}
+\begin{solution}
+\begin{align*}
+\intertext{Analyzing each match:}
+\intertext{(a) matches with (q) because...}
+\intertext{(b) matches with (p) because...}
+\intertext{(c) matches with (s) because...}
+\intertext{(d) matches with (r) because...}
+\end{align*}
+Therefore, the correct option is (b).
+\end{solution}
+```
+- Column I uses (a), (b), (c), (d) labels
+- Column II uses (p), (q), (r), (s) labels
+- Options show matching combinations using `$a \rightarrow p$` notation
+- Use `\renewcommand{\arraystretch}{2}` for table spacing
+
+### Passage/Comprehension Type (passage):
+```latex
+\item[]
+\begin{center}
+    \textsc{Passage Title (if any)}
+\end{center}
+
+[Passage text describing the physics scenario, setup, or context. This can be multiple paragraphs with equations, diagrams, etc.]
+
+\begin{center}
+    % TikZ diagram if present
+\end{center}
+
+\item Based on the passage, what is the velocity of the particle?
+\begin{tasks}(2)
+    \task $10\,\mathrm{m/s}$
+    \task $20\,\mathrm{m/s}$ \ans
+    \task $30\,\mathrm{m/s}$
+    \task $40\,\mathrm{m/s}$
+\end{tasks}
+\begin{solution}
+\begin{align*}
+[Solution for question 1]
+\end{align*}
+Therefore, the correct option is (b).
+\end{solution}
+
+\item What is the acceleration?
+\begin{tasks}(2)
+    \task $5\,\mathrm{m/s^2}$ \ans
+    \task $10\,\mathrm{m/s^2}$
+    \task $15\,\mathrm{m/s^2}$
+    \task $20\,\mathrm{m/s^2}$
+\end{tasks}
+\begin{solution}
+\begin{align*}
+[Solution for question 2]
+\end{align*}
+Therefore, the correct option is (a).
+\end{solution}
+```
+- Starts with `\item[]` for the passage header (empty item)
+- Optional centered title using `\textsc{}`
+- Passage text follows (can include math, diagrams)
+- Each question is a separate `\item` with its own tasks and solution
+- Solution appears IMMEDIATELY after each question's tasks
 
 ---
 
@@ -209,6 +299,60 @@ FORMAT B - Answer in terms of a variable (COMMON):
 - The integer answer goes inside \ansint{}
 - Solution should derive the expression and identify the variable's value
 - If answer needs rounding, mention "nearest integer" in question text""",
+    
+    "match": r"""Target Format Instructions (Match the Following):
+- Create a matching table with Column I (a, b, c, d) and Column II (p, q, r, s)
+- Use tabular environment with \renewcommand{\arraystretch}{2} for spacing
+- Create 4 options showing different matching combinations
+- Use $a \rightarrow p$ notation for matches in options
+- Mark the correct combination with \ans
+- Solution should explain WHY each item matches
+
+Structure:
+\item [Question asking to match columns]
+\begin{center}
+    \renewcommand{\arraystretch}{2}
+    \begin{tabular}{p{0.25cm}p{8cm}|p{0.25cm}p{5cm}}
+    ...table content...
+    \end{tabular}
+\end{center}
+\begin{tasks}(2)
+    \task [combination 1]
+    \task [combination 2] \ans
+    ...
+\end{tasks}
+\begin{solution}...\end{solution}""",
+    
+    "passage": r"""Target Format Instructions (Passage/Comprehension Type):
+- Create a passage describing a physics scenario or context
+- Follow with 2-4 questions based on the passage
+- Each question has its own \item, tasks, and solution
+
+Structure:
+\item[]
+\begin{center}
+    \textsc{Passage Title}
+\end{center}
+
+[Passage text - can be multiple paragraphs with equations]
+
+\item [Question 1 based on passage]
+\begin{tasks}(2)
+    \task ... \ans
+    \task ...
+\end{tasks}
+\begin{solution}...\end{solution}
+
+\item [Question 2 based on passage]
+\begin{tasks}(2)
+    \task ...
+    \task ... \ans
+\end{tasks}
+\begin{solution}...\end{solution}
+
+- Start with \item[] for passage header
+- Each sub-question gets its own solution IMMEDIATELY after its tasks
+- Questions should test different aspects of the passage content""",
 }
 
 

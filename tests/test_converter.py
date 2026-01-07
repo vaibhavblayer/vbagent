@@ -98,17 +98,22 @@ def test_property_mcq_instructions_mention_tasks(target_format: str):
     **Feature: physics-question-pipeline, Property 11: Format Conversion Structure**
     **Validates: Requirements 8.1, 8.2**
     
-    Property: For MCQ target formats, instructions SHALL mention tasks environment.
-    For non-MCQ formats, instructions SHALL mention NOT using tasks environment.
+    Property: For MCQ-like target formats (mcq_sc, mcq_mc, match, passage), 
+    instructions SHALL mention tasks environment.
+    For non-MCQ formats (subjective, integer), instructions SHALL mention 
+    NOT using tasks environment.
     """
     instructions = get_format_instructions(target_format)
     
-    if target_format in ("mcq_sc", "mcq_mc"):
+    # MCQ-like formats that use tasks environment
+    mcq_like_formats = ("mcq_sc", "mcq_mc", "match", "passage")
+    
+    if target_format in mcq_like_formats:
         assert "tasks" in instructions.lower(), (
-            f"MCQ format '{target_format}' instructions should mention tasks environment"
+            f"MCQ-like format '{target_format}' instructions should mention tasks environment"
         )
         assert "\\task" in instructions or "task" in instructions.lower(), (
-            f"MCQ format '{target_format}' instructions should mention task items"
+            f"MCQ-like format '{target_format}' instructions should mention task items"
         )
     else:
         # Subjective and integer should mention NOT using tasks
@@ -245,3 +250,77 @@ def test_validate_integer_structure():
     \end{solution}
     """
     assert validate_integer_structure(integer_latex)
+
+
+def test_match_instructions_has_table():
+    """Test that match instructions specify table structure."""
+    instructions = get_format_instructions("match")
+    
+    assert "tabular" in instructions.lower() or "table" in instructions.lower(), (
+        "Match instructions should mention table/tabular environment"
+    )
+    assert "column" in instructions.lower(), (
+        "Match instructions should mention columns"
+    )
+    assert "rightarrow" in instructions.lower() or "→" in instructions, (
+        "Match instructions should mention arrow notation for matches"
+    )
+
+
+def test_passage_instructions_has_multiple_questions():
+    """Test that passage instructions specify multiple questions."""
+    instructions = get_format_instructions("passage")
+    
+    assert "passage" in instructions.lower(), (
+        "Passage instructions should mention passage"
+    )
+    assert "question" in instructions.lower(), (
+        "Passage instructions should mention questions"
+    )
+    assert "\\item[]" in instructions or "item[]" in instructions.lower(), (
+        "Passage instructions should mention empty item for header"
+    )
+
+
+def test_validate_match_structure():
+    """Test match type structure validation."""
+    match_latex = r"""
+    \item Match the following:
+    \begin{center}
+        \begin{tabular}{cc}
+        Column I & Column II \\
+        \end{tabular}
+    \end{center}
+    \begin{tasks}(2)
+        \task $a \rightarrow p$ \ans
+        \task $a \rightarrow q$
+    \end{tasks}
+    \begin{solution}
+    Explanation here.
+    \end{solution}
+    """
+    # Match type uses tasks, so MCQ validation should pass
+    assert validate_mcq_structure(match_latex)
+
+
+def test_validate_passage_structure():
+    """Test passage type structure validation."""
+    passage_latex = r"""
+    \item[]
+    \begin{center}
+        \textsc{Passage Title}
+    \end{center}
+    
+    This is the passage text describing a physics scenario.
+    
+    \item What is the velocity?
+    \begin{tasks}(2)
+        \task $10\,\mathrm{m/s}$ \ans
+        \task $20\,\mathrm{m/s}$
+    \end{tasks}
+    \begin{solution}
+    Solution here.
+    \end{solution}
+    """
+    # Passage type uses tasks, so MCQ validation should pass
+    assert validate_mcq_structure(passage_latex)
