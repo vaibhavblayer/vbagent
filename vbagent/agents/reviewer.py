@@ -208,13 +208,13 @@ def _convert_issue_type(issue_type_str: str) -> ReviewIssueType:
 
 
 def _create_suggestion_with_diff(
-    raw: RawSuggestion,
+    raw,  # RawSuggestion instance
     context: ProblemContext,
 ) -> Suggestion:
     """Convert a raw suggestion to a Suggestion with generated diff.
     
     Args:
-        raw: Raw suggestion from the AI
+        raw: Raw suggestion from the AI (RawSuggestion instance)
         context: Problem context for file path resolution
         
     Returns:
