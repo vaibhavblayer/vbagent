@@ -1,0 +1,4 @@
+# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/config.py
+# hypothesis_version: 6.148.7
+
+['.config', 'APPDATA', 'AgentModelConfig', 'AppData', 'ModelSettings', 'Roaming', 'VBAgentConfig', 'XDG_CONFIG_HOME', 'agents', 'alternate', 'classifier', 'converter', 'default', 'default_model', 'effort', 'gpt-4.1', 'gpt-5-mini', 'gpt-5.1', 'gpt-5.1-codex', 'gpt-5.1-codex-max', 'gpt-5.1-codex-mini', 'gpt-5.2', 'high', 'idea', 'max_tokens', 'model', 'models.json', 'reasoning', 'reasoning_effort', 'reviewer', 'scanner', 'temperature', 'tikz', 'tikz_checker', 'variant', 'vbagent', 'win32']

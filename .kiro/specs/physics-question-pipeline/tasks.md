@@ -1,0 +1,218 @@
+# Implementation Plan
+
+- [x] 1. Project Setup and Core Infrastructure
+  - [x] 1.1 Clean existing code and set up fresh project structure
+    - Remove existing vbagent files
+    - Update pyproject.toml with openai-agents dependency
+    - Create directory structure: vbagent/{agents, cli, prompts, references, models}
+    - _Requirements: 11.1_
+  - [x] 1.2 Implement base agent utilities with openai-agents SDK
+    - Create vbagent/agents/base.py with helper functions
+    - Implement encode_image(), create_image_message() for vision
+    - Implement run_agent() and run_agent_sync() wrappers using Runner
+    - _Requirements: 1.1, 2.1_
+  - [x] 1.3 Write property test for BaseAgent
+    - **Property 15: Prompt File Organization**
+    - **Validates: Requirements 11.3**
+  - [x] 1.4 Create data models
+    - Create vbagent/models/classification.py with ClassificationResult dataclass
+    - Create vbagent/models/scan.py with ScanResult dataclass
+    - Create vbagent/models/idea.py with IdeaResult dataclass
+    - Create vbagent/models/pipeline.py with PipelineResult dataclass
+    - _Requirements: 1.3, 4.2_
+
+- [x] 2. Classifier Agent Implementation
+  - [x] 2.1 Create classifier prompt
+    - Create vbagent/prompts/classifier.py with SYSTEM_PROMPT and USER_TEMPLATE
+    - Define JSON output schema in prompt
+    - _Requirements: 1.1, 11.2, 11.3_
+  - [x] 2.2 Implement classifier agent
+    - Create vbagent/agents/classifier.py using Agent from openai-agents
+    - Create classifier_agent with output_type=ClassificationResult for structured output
+    - Implement classify() function using Runner.run_sync()
+    - _Requirements: 1.1, 1.2, 1.3, 1.4_
+  - [x] 2.3 Write property test for classification output validity
+    - **Property 1: Classification Output Validity**
+    - **Validates: Requirements 1.1, 1.2, 1.3**
+  - [x] 2.4 Create classify CLI command
+    - Create vbagent/cli/classify.py with click command
+    - Implement -i/--image, -o/--output, --json options
+    - Add rich console output formatting
+    - _Requirements: 10.1, 10.4, 10.8_
+
+- [x] 3. Scanner Agent Implementation
+  - [x] 3.1 Create scanner prompts for each question type
+    - Create vbagent/prompts/scanner/__init__.py
+    - Create vbagent/prompts/scanner/mcq_sc.py (copy from prompt_kinds)
+    - Create vbagent/prompts/scanner/mcq_mc.py
+    - Create vbagent/prompts/scanner/subjective.py
+    - Create vbagent/prompts/scanner/assertion_reason.py
+    - Create vbagent/prompts/scanner/passage.py
+    - Create vbagent/prompts/scanner/match.py
+    - _Requirements: 2.1, 11.1, 11.2_
+  - [x] 3.2 Implement scanner agent
+    - Create vbagent/agents/scanner.py using Agent from openai-agents
+    - Implement create_scanner_agent() factory for type-specific prompts
+    - Implement scan() function using Runner.run_sync()
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+  - [x] 3.3 Write property test for scanner prompt selection
+    - **Property 2: Scanner Prompt Selection**
+    - **Validates: Requirements 2.1**
+  - [x] 3.4 Write property test for LaTeX output structure
+    - **Property 3: LaTeX Output Structure**
+    - **Validates: Requirements 2.4**
+  - [x] 3.5 Create scan CLI command
+    - Create vbagent/cli/scan.py with click command
+    - Implement -i/--image, -t/--tex, --type, -o/--output options
+    - Integrate with ClassifierAgent for auto-classification
+    - _Requirements: 10.1, 10.2, 10.5, 10.8_
+
+- [x] 4. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 5. Reference Store Implementation
+  - [x] 5.1 Implement ReferenceStore
+    - Create vbagent/references/store.py with ReferenceStore class
+    - Implement index_files() for PDF, TeX, STY files
+    - Implement search() with relevance scoring
+    - _Requirements: 9.1, 9.2, 9.3, 9.5_
+  - [x] 5.2 Write property test for reference search file type support
+    - **Property 12: Reference Search File Type Support**
+    - **Validates: Requirements 9.2, 9.5**
+
+- [x] 6. TikZ Agent Implementation
+  - [x] 6.1 Create TikZ prompt
+    - Create vbagent/prompts/tikz.py with SYSTEM_PROMPT and USER_TEMPLATE
+    - Include TikZ/PGF syntax guidelines
+    - _Requirements: 3.2, 3.3, 11.3_
+  - [x] 6.2 Implement TikZ agent
+    - Create vbagent/agents/tikz.py using Agent from openai-agents
+    - Create @function_tool for search_tikz_reference() to search ReferenceStore
+    - Create tikz_agent with tools=[search_tikz_reference]
+    - Implement generate_tikz() function using Runner.run_sync()
+    - _Requirements: 3.1, 3.2, 3.3, 3.4_
+  - [x] 6.3 Write property test for TikZ generation trigger
+    - **Property 4: TikZ Generation Trigger**
+    - **Validates: Requirements 3.1, 3.3, 3.4**
+  - [x] 6.4 Create tikz CLI command
+    - Create vbagent/cli/tikz.py with click command
+    - Implement -i/--image, -d/--description, --ref, -o/--output options
+    - _Requirements: 10.1, 10.8_
+
+- [x] 7. Idea Agent Implementation
+  - [x] 7.1 Create idea extraction prompt
+    - Create vbagent/prompts/idea.py with SYSTEM_PROMPT and USER_TEMPLATE
+    - Define structured output for concepts, formulas, techniques
+    - _Requirements: 4.1, 4.2, 11.3_
+  - [x] 7.2 Implement idea agent
+    - Create vbagent/agents/idea.py using Agent from openai-agents
+    - Create idea_agent with output_type=IdeaResult for structured output
+    - Implement extract_ideas() function using Runner.run_sync()
+    - _Requirements: 4.1, 4.2, 4.3, 4.4_
+  - [x] 7.3 Write property test for idea extraction completeness
+    - **Property 5: Idea Extraction Completeness**
+    - **Validates: Requirements 4.1, 4.2**
+  - [x] 7.4 Create idea CLI command
+    - Create vbagent/cli/idea.py with click command
+    - Implement -t/--tex, -o/--output options
+    - _Requirements: 10.2, 10.8_
+
+- [x] 8. Alternate Solution Agent Implementation
+  - [x] 8.1 Create alternate solution prompt
+    - Create vbagent/prompts/alternate.py with SYSTEM_PROMPT and USER_TEMPLATE
+    - Include guidelines for maintaining same answer
+    - _Requirements: 5.1, 5.2, 5.3, 11.3_
+  - [x] 8.2 Implement alternate solution agent
+    - Create vbagent/agents/alternate.py using Agent from openai-agents
+    - Create alternate_agent with instructions from prompt
+    - Implement generate_alternate() function using Runner.run_sync()
+    - _Requirements: 5.1, 5.2, 5.3, 5.4_
+  - [x] 8.3 Write property test for alternate solution answer preservation
+    - **Property 6: Alternate Solution Answer Preservation**
+    - **Validates: Requirements 5.3**
+  - [x] 8.4 Create alternate CLI command
+    - Create vbagent/cli/alternate.py with click command
+    - Implement -t/--tex, --ideas, -n/--count, -o/--output options
+    - _Requirements: 10.2, 10.8_
+
+- [x] 9. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 10. Variant Agents Implementation
+  - [x] 10.1 Create variant prompts
+    - Create vbagent/prompts/variants/__init__.py
+    - Create vbagent/prompts/variants/numerical.py (copy from prompt_kinds)
+    - Create vbagent/prompts/variants/context.py (copy from prompt_kinds)
+    - Create vbagent/prompts/variants/conceptual.py (copy from prompt_kinds)
+    - Create vbagent/prompts/variants/conceptual_calculus.py (copy from prompt_kinds)
+    - Create vbagent/prompts/variants/multi_context.py
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 7.1, 11.2_
+  - [x] 10.2 Implement variant agents
+    - Create vbagent/agents/variant.py using Agent from openai-agents
+    - Create VARIANT_PROMPTS dict mapping type to prompt
+    - Implement create_variant_agent() factory function
+    - Implement generate_variant() function using Runner.run_sync()
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
+  - [x] 10.3 Write property test for numerical variant number modification
+    - **Property 7: Numerical Variant Number Modification**
+    - **Validates: Requirements 6.1**
+  - [x] 10.4 Write property test for context variant number preservation
+    - **Property 8: Context Variant Number Preservation**
+    - **Validates: Requirements 6.2**
+  - [x] 10.5 Write property test for variant solution completeness
+    - **Property 9: Variant Solution Completeness**
+    - **Validates: Requirements 6.5, 6.6**
+  - [x] 10.6 Implement multi-context variant agent
+    - Create vbagent/agents/multi_variant.py using Agent from openai-agents
+    - Create multi_context_agent with instructions from prompt
+    - Implement generate_multi_context_variant() function using Runner.run_sync()
+    - _Requirements: 7.1, 7.2, 7.3, 7.4_
+  - [x] 10.7 Write property test for multi-context output coherence
+    - **Property 10: Multi-Context Output Coherence**
+    - **Validates: Requirements 7.3, 7.4**
+  - [x] 10.8 Create variant CLI command
+    - Create vbagent/cli/variant.py with click command
+    - Implement -i/--image, -t/--tex, --type, -r/--range, -n/--count, --context, -o/--output options
+    - _Requirements: 10.1, 10.2, 10.3, 10.6, 10.8_
+  - [x] 10.9 Write property test for CLI range filtering
+    - **Property 13: CLI Range Filtering**
+    - **Validates: Requirements 10.3**
+
+- [x] 11. Format Converter Agent Implementation
+  - [x] 11.1 Create converter prompt
+    - Create vbagent/prompts/converter.py with SYSTEM_PROMPT and USER_TEMPLATE
+    - Include format-specific guidelines for each conversion type
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 11.3_
+  - [x] 11.2 Implement format converter agent
+    - Create vbagent/agents/converter.py using Agent from openai-agents
+    - Create converter_agent with instructions from prompt
+    - Implement convert_format() function using Runner.run_sync()
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
+  - [x] 11.3 Write property test for format conversion structure
+    - **Property 11: Format Conversion Structure**
+    - **Validates: Requirements 8.1, 8.2, 8.3, 8.5**
+  - [x] 11.4 Create convert CLI command
+    - Create vbagent/cli/convert.py with click command
+    - Implement -i/--image, -t/--tex, --from, --to, -o/--output options
+    - _Requirements: 10.1, 10.2, 10.7, 10.8_
+
+- [x] 12. CLI Main and Process Command
+  - [x] 12.1 Create CLI main entry point
+    - Create vbagent/cli/main.py with click group
+    - Register all subcommands
+    - Add version option
+    - _Requirements: 10.4, 10.5, 10.6, 10.7_
+  - [x] 12.2 Create process CLI command (full pipeline)
+    - Create vbagent/cli/process.py with click command
+    - Implement full pipeline orchestration
+    - Support all input types and variant generation
+    - _Requirements: 10.1, 10.2, 10.3, 10.8_
+  - [x] 12.3 Write property test for CLI output persistence
+    - **Property 14: CLI Output Persistence**
+    - **Validates: Requirements 10.8**
+  - [x] 12.4 Update pyproject.toml entry point
+    - Set vbagent = "vbagent.cli.main:main"
+    - _Requirements: 10.4_
+
+- [x] 13. Final Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.

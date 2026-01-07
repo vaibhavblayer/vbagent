@@ -1,0 +1,4 @@
+# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/prompts/variants/__init__.py
+# hypothesis_version: 6.148.7
+
+['CALCULUS_PROMPT', 'CONCEPTUAL_PROMPT', 'CONTEXT_PROMPT', 'MULTI_CONTEXT_PROMPT', 'NUMERICAL_PROMPT']

@@ -1,0 +1,4 @@
+# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/models/diff.py
+# hypothesis_version: 6.148.7
+
+['+', '+++ ', '-', '--- ', '.bak', '@@', 'diff_conflict', 'file.tex', 'file_not_found', 'invalid_diff', 'io_error', 'permission_denied']

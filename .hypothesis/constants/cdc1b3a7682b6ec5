@@ -1,0 +1,4 @@
+# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/cli/process.py
+# hypothesis_version: 6.148.7
+
+[1.0, '(?=\\\\item\\b)', '([_\\-]?)(\\d+)$', ',', '--image', '--output', '--range', '--ref', '--tex', '--variants', '-i', '-o', '-r', '-t', 'Extracted LaTeX', '\\item', 'agentic', 'alternates', 'alternates.tex', 'calculus', 'classification', 'classification.json', 'classifications', 'conceptual', 'context', 'diagram.tex', 'dim', 'full_result', 'general', 'ideas', 'ideas.json', 'item_range', 'latex', 'medium', 'numerical', 'physics', 'pipeline_result.json', 'ref_dirs', 'scan', 'scanned.tex', 'scans', 'subjective', 'tikz', 'variant_types_str', 'variants']

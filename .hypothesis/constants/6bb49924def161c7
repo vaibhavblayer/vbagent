@@ -1,0 +1,4 @@
+# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/agents/tikz_checker.py
+# hypothesis_version: 6.148.7
+
+['% TIKZ_CHECK: PASSED', 'No TikZ errors found', 'TIKZ_CHECK', 'TIKZ_CHECK: PASSED', 'TikZChecker', '\\\\begin\\{axis\\}', '\\\\draw\\s*[\\[\\(]', '\\\\fill\\s*[\\[\\(]', '\\\\node\\s*[\\[\\(]', '\\\\path\\s*[\\[\\(]', '\\\\tikz\\s*[{\\[]', '\\n?```\\s*$', '^```\\s*', 'tikz_checker', '{full_content}']

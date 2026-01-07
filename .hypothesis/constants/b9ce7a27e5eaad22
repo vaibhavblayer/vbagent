@@ -1,0 +1,4 @@
+# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/cli/variant.py
+# hypothesis_version: 6.148.7
+
+['(?=\\\\item\\b)', '--context', '--count', '--help', '--ideas', '--image', '--output', '--range', '--tex', '--type', '-h', '-i', '-n', '-o', '-r', '-t', '\\item', 'calculus', 'conceptual', 'context', 'context_files', 'green', 'help_option_names', 'item_range', 'multi', 'numerical', 'variant_type']
