@@ -1,4 +1,0 @@
-# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/models/pipeline.py
-# hypothesis_version: 6.148.7
-
-['Extracted LaTeX', 'Extracted ideas', 'Generated TikZ code', 'Path to source file']

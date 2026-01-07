@@ -1,4 +1,0 @@
-# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/models/classification.py
-# hypothesis_version: 6.148.7
-
-[0.0, 1.0, 'Difficulty level', 'Estimated marks', 'Key physics concepts', 'Specific subtopic', 'Type of question', 'assertion_reason', 'circuit', 'easy', 'free_body', 'geometry', 'graph', 'hard', 'match', 'mcq_mc', 'mcq_sc', 'medium', 'none', 'passage', 'subjective']

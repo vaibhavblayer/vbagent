@@ -1,4 +1,0 @@
-# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/cli/process.py
-# hypothesis_version: 6.148.7
-
-[1.0, '(?=\\\\item\\b)', '([_\\-]?)(\\d+)$', ',', '--help', '--ideas/--no-ideas', '--image', '--output', '--range', '--ref', '--tex', '--variants', '-h', '-i', '-o', '-r', '-t', 'Alternate Solution', 'CONTEXT.md', 'Extracted Ideas', 'Extracted LaTeX', 'Generated TikZ', '\\OptionA', '\\OptionB', '\\\\def\\\\Option', '\\\\input\\{diagram\\}', '\\begin{center}', '\\def\\Option', '\\input{diagram}', '\\item', 'agentic', 'alternates', 'alternates.tex', 'calculus', 'classification', 'classification.json', 'classifications', 'conceptual', 'context', 'cyan', 'diagram.tex', 'dim', 'full_result', 'general', 'green', 'help_option_names', 'ideas', 'ideas.json', 'item_range', 'latex', 'magenta', 'medium', 'numerical', 'physics', 'pipeline_result.json', 'ref_dirs', 'scan', 'scanned.tex', 'scans', 'subjective', 'tikz', 'variant_types_str', 'variants', 'yellow']

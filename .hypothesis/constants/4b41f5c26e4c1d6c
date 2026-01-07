@@ -1,4 +1,0 @@
-# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/prompts/converter.py
-# hypothesis_version: 6.148.7
-
-['integer', 'mcq_mc', 'mcq_sc', 'subjective']

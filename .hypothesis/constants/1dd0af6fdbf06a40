@@ -1,4 +1,0 @@
-# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/models/batch.py
-# hypothesis_version: 6.148.7
-
-[',', '.', '.vbagent_batch.db', 'alternates', 'classification_json', 'classifying', 'completed', 'completed_at', 'count', 'created_at', 'current_stage', 'error_message', 'failed', 'generate_alternates', 'id', 'ideas', 'ideas_json', 'image_path', 'images_dir', 'in_progress', 'latex', 'output_dir', 'pending', 'scanning', 'status', 'tikz', 'tikz_code', 'total', 'updated_at', 'use_context', 'variant_type', 'variant_types', 'variants']

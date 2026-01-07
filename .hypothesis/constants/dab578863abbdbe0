@@ -1,4 +1,0 @@
-# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/config.py
-# hypothesis_version: 6.148.7
-
-['.config', 'AgentModelConfig', 'ModelSettings', 'VBAgentConfig', 'agents', 'alternate', 'classifier', 'converter', 'default', 'default_model', 'effort', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4o', 'gpt-4o-mini', 'gpt-5.1', 'high', 'idea', 'max_tokens', 'model', 'models.json', 'o1', 'o1-mini', 'o1-pro', 'o3', 'o3-mini', 'o4-mini', 'reasoning', 'reasoning_effort', 'reviewer', 'scanner', 'temperature', 'tikz', 'tikz_checker', 'variant', 'vbagent']

@@ -1,4 +1,0 @@
-# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/references/context.py
-# hypothesis_version: 6.148.7
-
-['.config', 'APPDATA', 'AppData', 'ContextConfig', 'ContextStore', 'ReferenceFile', 'Roaming', 'XDG_CONFIG_HOME', 'by_category', 'category', 'config.json', 'description', 'enabled', 'latex', 'latin-1', 'max_examples', 'name', 'path', 'problems', 'references', 'references.json', 'tikz', 'total', 'utf-8', 'variants', 'vbagent', 'win32']

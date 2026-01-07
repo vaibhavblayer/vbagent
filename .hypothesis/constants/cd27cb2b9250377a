@@ -1,4 +1,0 @@
-# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/references/store.py
-# hypothesis_version: 6.148.7
-
-[0.0, 0.1, 0.5, 500, '*', '.', '...', '.pdf', '.sty', '.tex', 'ReferenceStore', '[\\s,;:]+', 'latin-1', 'utf-8']

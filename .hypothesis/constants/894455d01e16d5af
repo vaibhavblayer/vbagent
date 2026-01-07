@@ -1,4 +1,0 @@
-# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/cli/common.py
-# hypothesis_version: 6.148.7
-
-['\nAction', '(\\d+)', '*.tex', '.', '.tex', '.txt', 'Action', 'Approved', 'Console', 'EDITOR', 'Failed', 'Files processed', 'Generated', 'Metric', 'Passed', 'Problems reviewed', 'Rejected', 'Session Summary', 'Shutdown requested.', 'Skipped', 'Suggestions made', 'VISUAL', 'Value', '\\\\item\\s*(.*)', '\\item', '^\\s*\\\\begin\\{(\\w+)\\}', '^\\s*\\\\def\\\\', '^\\s*\\\\end\\{(\\w+)\\}', '_', 'a', 'apply', 'approve', 'approved', 'approved_count', 'c', 'cancel', 'cyan', 'diff', 'dim', 'e', 'edit', 'extra', 'failed', 'generated', 'green', 'interrupted', 'latex', 'monokai', 'passed', 'problems_reviewed', 'processed', 'q', 'quit', 'r', 'red', 'reject', 'rejected', 'rejected_count', 'right', 's', 'scans', 'session_id', 'skip', 'skipped', 'skipped_count', 'suggestions_made', 'temp_path', 'variants', 'vbagent_edit_', 'vim', 'w', 'yellow']

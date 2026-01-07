@@ -1,4 +1,0 @@
-# file: /Users/vaibhavblayer/pypi-packages/vbagent/vbagent/agents/base.py
-# hypothesis_version: 6.148.7
-
-['.gif', '.jpeg', '.jpg', '.png', '.webp', 'auto', 'content', 'default', 'detail', 'image/gif', 'image/jpeg', 'image/png', 'image/webp', 'image_url', 'input_image', 'input_text', 'message', 'rb', 'role', 'text', 'type', 'user', 'utf-8']
