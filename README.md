@@ -1,6 +1,251 @@
 # VBAgent
 
-A multi-agent CLI tool for processing physics question images. Supports classification, LaTeX extraction, TikZ diagram generation, variant creation, and format conversion.
+A multi-agent library and CLI tool for processing physics question images. Supports classification, LaTeX extraction, TikZ diagram generation, variant creation, and format conversion.
+
+## Installation
+
+### From PyPI
+
+```bash
+# Full installation (library + CLI)
+pip install vbagent[all]
+
+# Library only (no CLI dependencies)
+pip install vbagent
+
+# CLI only
+pip install vbagent[cli]
+```
+
+### From Source
+
+```bash
+# Clone the repository
+git clone https://github.com/vaibhavblayer/vbagent.git
+cd vbagent
+
+# Install with pip
+pip install .
+
+# Or install in development mode
+pip install -e ".[dev]"
+
+# Or using Poetry
+poetry install
+```
+
+## Requirements
+
+- Python 3.12+
+- OpenAI API key (set as `OPENAI_API_KEY` environment variable)
+
+## Library Usage
+
+VBAgent can be used as a Python library in your own projects:
+
+### Quick Start
+
+```python
+from vbagent import classify, scan, generate_variant, generate_tikz
+from vbagent.models import ClassificationResult, ScanResult
+
+# Classify an image
+classification = classify("question.png")
+print(f"Type: {classification.question_type}")
+print(f"Topic: {classification.topic}")
+
+# Scan with classification
+scan_result = scan("question.png", classification)
+print(f"LaTeX: {scan_result.latex}")
+
+# Generate a variant
+variant = generate_variant(scan_result.latex, "numerical")
+print(f"Variant: {variant}")
+
+# Generate TikZ diagram
+tikz = generate_tikz("A free body diagram showing forces on a block")
+print(f"TikZ: {tikz}")
+```
+
+### Configuration
+
+```python
+from vbagent import get_config, set_config, VBAgentConfig
+
+# Get current config
+config = get_config()
+
+# Modify model settings
+config.scanner.model = "gpt-5.2"
+config.scanner.reasoning_effort = "high"
+
+# Apply changes
+set_config(config)
+
+# Or configure specific agent
+from vbagent.config import AgentModelConfig
+config.variant = AgentModelConfig(
+    model="gpt-5.1",
+    reasoning_effort="medium",
+    temperature=0.7
+)
+set_config(config)
+```
+
+### Available Functions
+
+```python
+# Classification
+from vbagent import classify
+result = classify("image.png")  # Returns ClassificationResult
+
+# Scanning
+from vbagent import scan, scan_with_type
+result = scan("image.png", classification)  # Returns ScanResult
+result = scan_with_type("image.png", "mcq_sc")  # Skip classification
+
+# Variants
+from vbagent import (
+    generate_variant,
+    generate_numerical_variant,
+    generate_context_variant,
+    generate_conceptual_variant,
+    generate_calculus_variant,
+)
+variant = generate_variant(latex, "numerical")
+variant = generate_numerical_variant(latex)
+
+# TikZ
+from vbagent import generate_tikz, validate_tikz_output
+tikz = generate_tikz("description", image_path="ref.png")
+is_valid = validate_tikz_output(tikz)
+
+# Ideas
+from vbagent import extract_ideas, generate_idea_latex
+ideas = extract_ideas(problem_latex, solution_latex)  # Returns IdeaResult
+idea_latex = generate_idea_latex(full_content)
+
+# Alternates
+from vbagent import generate_alternate
+alternate = generate_alternate(problem, solution)
+
+# QA Checkers
+from vbagent import check_solution, check_grammar, check_clarity, check_tikz
+passed, summary, corrected = check_solution(content)
+passed, summary, corrected = check_grammar(content)
+passed, summary, corrected = check_clarity(content)
+passed, summary, corrected = check_tikz(content)
+
+# Review
+from vbagent import review_problem, review_problem_sync, ProblemContext
+context = ProblemContext(...)
+result = review_problem_sync(context)  # Returns ReviewResult
+```
+
+### Models
+
+```python
+from vbagent.models import (
+    ClassificationResult,
+    ScanResult,
+    IdeaResult,
+    PipelineResult,
+    ReviewResult,
+    Suggestion,
+    ReviewIssueType,
+)
+
+# Classification result fields
+classification.question_type  # mcq_sc, mcq_mc, subjective, etc.
+classification.difficulty     # easy, medium, hard
+classification.topic          # kinematics, thermodynamics, etc.
+classification.has_diagram    # bool
+classification.diagram_type   # graph, circuit, free_body, etc.
+
+# Scan result fields
+scan_result.latex
+scan_result.has_diagram
+scan_result.raw_diagram_description
+
+# Idea result fields
+ideas.concepts      # List of physics concepts
+ideas.formulas      # List of key formulas
+ideas.techniques    # List of problem-solving techniques
+ideas.difficulty_factors
+```
+
+### Prompts
+
+Access and customize prompts:
+
+```python
+from vbagent.prompts import (
+    get_scanner_prompt,
+    get_variant_prompt,
+    CLASSIFIER_PROMPT,
+    IDEA_PROMPT,
+    TIKZ_PROMPT,
+)
+
+# Get scanner prompt for question type
+prompt = get_scanner_prompt("mcq_sc")
+
+# Get variant prompts
+system_prompt, user_template = get_variant_prompt("numerical")
+```
+
+### References
+
+Manage reference context:
+
+```python
+from vbagent.references import (
+    ReferenceStore,
+    TikZStore,
+    get_context_prompt_section,
+)
+
+# Reference store
+store = ReferenceStore.get_instance()
+results = store.search("query")
+
+# TikZ store
+tikz_store = TikZStore.get_instance()
+context = tikz_store.get_context_for_classification(classification)
+
+# Get context for prompts
+context = get_context_prompt_section("latex")
+```
+
+### Low-Level Agent Access
+
+For advanced usage:
+
+```python
+from vbagent.agents import (
+    create_agent,
+    run_agent,
+    run_agent_sync,
+    encode_image,
+    create_image_message,
+)
+
+# Create custom agent
+agent = create_agent(
+    name="MyAgent",
+    instructions="Your system prompt",
+    agent_type="scanner",  # Uses scanner model config
+)
+
+# Run agent
+result = run_agent_sync(agent, "Your input")
+
+# With image
+message = create_image_message("image.png", "Analyze this")
+result = run_agent_sync(agent, message)
+```
+
+## CLI Usage
 
 ## Project Structure
 
@@ -428,51 +673,7 @@ Agent types: `classifier`, `scanner`, `tikz`, `idea`, `alternate`, `variant`, `c
 
 Reasoning levels: `low`, `medium`, `high`, `xhigh`
 
-## Installation
-
-### From PyPI
-
-```bash
-pip install vbagent
-```
-
-### From Source
-
-```bash
-# Clone the repository
-git clone https://github.com/vaibhavblayer/vbagent.git
-cd vbagent
-
-# Install with pip
-pip install .
-
-# Or install in development mode
-pip install -e .
-
-# Or using Poetry
-poetry install
-```
-
-## Requirements
-
-- Python 3.12+
-- OpenAI API key (set as `OPENAI_API_KEY` environment variable)
-
-## Configuration
-
-Set your OpenAI API key:
-
-```bash
-export OPENAI_API_KEY="your-api-key"
-```
-
-Or configure via the CLI:
-
-```bash
-vbagent config set api-key YOUR_API_KEY
-```
-
-## Usage
+## CLI Usage
 
 ### Quick Start
 

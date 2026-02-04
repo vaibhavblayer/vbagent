@@ -183,3 +183,77 @@ def generate_variant(
     
     # Clean up markdown artifacts from LLM output
     return clean_latex_output(raw_result)
+
+
+# Convenience functions for specific variant types
+
+def generate_numerical_variant(
+    source_latex: str,
+    ideas: Optional[IdeaResult] = None,
+    use_context: bool = True,
+) -> str:
+    """Generate a numerical variant (changes only numerical values).
+    
+    Args:
+        source_latex: The source problem in LaTeX format
+        ideas: Optional IdeaResult with extracted concepts
+        use_context: Whether to include reference context in prompt
+        
+    Returns:
+        The generated variant in LaTeX format
+    """
+    return generate_variant(source_latex, "numerical", ideas, use_context)
+
+
+def generate_context_variant(
+    source_latex: str,
+    ideas: Optional[IdeaResult] = None,
+    use_context: bool = True,
+) -> str:
+    """Generate a context variant (changes only the scenario/context).
+    
+    Args:
+        source_latex: The source problem in LaTeX format
+        ideas: Optional IdeaResult with extracted concepts
+        use_context: Whether to include reference context in prompt
+        
+    Returns:
+        The generated variant in LaTeX format
+    """
+    return generate_variant(source_latex, "context", ideas, use_context)
+
+
+def generate_conceptual_variant(
+    source_latex: str,
+    ideas: Optional[IdeaResult] = None,
+    use_context: bool = True,
+) -> str:
+    """Generate a conceptual variant (changes the core physics concept).
+    
+    Args:
+        source_latex: The source problem in LaTeX format
+        ideas: Optional IdeaResult with extracted concepts
+        use_context: Whether to include reference context in prompt
+        
+    Returns:
+        The generated variant in LaTeX format
+    """
+    return generate_variant(source_latex, "conceptual", ideas, use_context)
+
+
+def generate_calculus_variant(
+    source_latex: str,
+    ideas: Optional[IdeaResult] = None,
+    use_context: bool = True,
+) -> str:
+    """Generate a calculus variant (adds calculus-based modifications).
+    
+    Args:
+        source_latex: The source problem in LaTeX format
+        ideas: Optional IdeaResult with extracted concepts
+        use_context: Whether to include reference context in prompt
+        
+    Returns:
+        The generated variant in LaTeX format
+    """
+    return generate_variant(source_latex, "calculus", ideas, use_context)
