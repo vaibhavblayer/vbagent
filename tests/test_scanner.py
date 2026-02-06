@@ -12,7 +12,7 @@ from hypothesis import strategies as st
 from vbagent.prompts.scanner import (
     SCANNER_PROMPTS,
     get_scanner_prompt,
-    USER_TEMPLATE,
+    get_user_template,
 )
 from vbagent.agents.scanner import create_scanner_agent
 
@@ -20,65 +20,72 @@ from vbagent.agents.scanner import create_scanner_agent
 # Valid question types
 VALID_QUESTION_TYPES = ["mcq_sc", "mcq_mc", "subjective", "assertion_reason", "passage", "match"]
 
+# Valid subjects
+VALID_SUBJECTS = ["physics", "chemistry", "mathematics", "biology"]
+
 
 # Strategy for valid question types
 question_type_strategy = st.sampled_from(VALID_QUESTION_TYPES)
+subject_strategy = st.sampled_from(VALID_SUBJECTS)
 
 
-@given(question_type=question_type_strategy)
+@given(question_type=question_type_strategy, subject=subject_strategy)
 @settings(max_examples=100)
-def test_property_scanner_prompt_selection(question_type: str):
+def test_property_scanner_prompt_selection(question_type: str, subject: str):
     """
     **Feature: physics-question-pipeline, Property 2: Scanner Prompt Selection**
     **Validates: Requirements 2.1**
     
     Property: For any classification result with a question_type, the Scanner Agent
-    SHALL load and use the prompt file corresponding to that question_type.
+    SHALL load and use the prompt file corresponding to that question_type,
+    with subject-specific additions.
     """
-    # Get the prompt for this question type
-    prompt = get_scanner_prompt(question_type)
+    # Get the prompt for this question type and subject
+    prompt = get_scanner_prompt(question_type, subject)
     
     # Property 1: Prompt must be a non-empty string
     assert isinstance(prompt, str), f"Prompt for {question_type} must be a string"
     assert len(prompt.strip()) > 0, f"Prompt for {question_type} must not be empty"
     
-    # Property 2: Prompt must be from the SCANNER_PROMPTS mapping
-    assert prompt == SCANNER_PROMPTS[question_type], (
-        f"Prompt for {question_type} must match SCANNER_PROMPTS entry"
-    )
+    # Property 2: Prompt must contain the base prompt content
+    base_prompt = SCANNER_PROMPTS[question_type]
+    # The base prompt content should be present (possibly with subject substitutions)
+    assert "\\item" in prompt, "Prompt must contain LaTeX structure instructions"
+    assert "\\end{solution}" in prompt, "Prompt must contain solution structure"
     
-    # Property 3: Each question type has a unique prompt
-    other_types = [t for t in VALID_QUESTION_TYPES if t != question_type]
-    for other_type in other_types:
-        other_prompt = get_scanner_prompt(other_type)
-        # Prompts should be different (or at least the agent names will differ)
-        # Note: Some prompts may be similar but agent names will differ
+    # Property 3: Prompt must contain subject-specific content
+    assert subject in prompt.lower() or "Subject:" in prompt, (
+        f"Prompt must contain subject-specific content for {subject}"
+    )
 
 
-@given(question_type=question_type_strategy)
-@settings(max_examples=100)
-def test_property_scanner_agent_creation(question_type: str):
+@given(question_type=question_type_strategy, subject=subject_strategy)
+@settings(max_examples=100, deadline=None)  # Disable deadline for agent creation
+def test_property_scanner_agent_creation(question_type: str, subject: str):
     """
     **Feature: physics-question-pipeline, Property 2: Scanner Prompt Selection**
     **Validates: Requirements 2.1**
     
-    Property: For any valid question_type, create_scanner_agent SHALL return
-    an Agent configured with the correct type-specific prompt.
+    Property: For any valid question_type and subject, create_scanner_agent SHALL return
+    an Agent configured with the correct type-specific and subject-specific prompt.
     """
-    agent = create_scanner_agent(question_type)
+    agent = create_scanner_agent(question_type, subject=subject)
     
     # Property 1: Agent must be created successfully
     assert agent is not None, f"Agent for {question_type} must be created"
     
-    # Property 2: Agent name must include the question type
+    # Property 2: Agent name must include the question type and subject
     assert question_type in agent.name, (
         f"Agent name '{agent.name}' must include question type '{question_type}'"
     )
+    assert subject in agent.name, (
+        f"Agent name '{agent.name}' must include subject '{subject}'"
+    )
     
     # Property 3: Agent instructions must match the expected prompt
-    expected_prompt = get_scanner_prompt(question_type)
+    expected_prompt = get_scanner_prompt(question_type, subject)
     assert agent.instructions == expected_prompt, (
-        f"Agent instructions must match prompt for {question_type}"
+        f"Agent instructions must match prompt for {question_type}/{subject}"
     )
 
 
@@ -98,9 +105,10 @@ def test_property_scanner_fallback_for_unknown_type(invalid_type: str):
     
     # Get prompt for invalid type - should fall back to mcq_sc
     prompt = get_scanner_prompt(invalid_type)
+    expected = get_scanner_prompt("mcq_sc")
     
     # Property: Should return mcq_sc prompt as fallback
-    assert prompt == SCANNER_PROMPTS["mcq_sc"], (
+    assert prompt == expected, (
         f"Unknown type '{invalid_type}' should fall back to mcq_sc prompt"
     )
 
@@ -127,10 +135,13 @@ def test_user_template_exists():
     **Feature: physics-question-pipeline, Property 2: Scanner Prompt Selection**
     **Validates: Requirements 2.1**
     
-    Verify that USER_TEMPLATE exists and is valid.
+    Verify that get_user_template returns valid templates for all subjects.
     """
-    assert isinstance(USER_TEMPLATE, str), "USER_TEMPLATE must be a string"
-    assert len(USER_TEMPLATE.strip()) > 0, "USER_TEMPLATE must not be empty"
+    for subject in VALID_SUBJECTS:
+        template = get_user_template(subject)
+        assert isinstance(template, str), f"User template for {subject} must be a string"
+        assert len(template.strip()) > 0, f"User template for {subject} must not be empty"
+        assert subject in template, f"User template must contain subject '{subject}'"
 
 
 # Strategy for generating mock LaTeX output

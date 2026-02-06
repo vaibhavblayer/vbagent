@@ -54,6 +54,8 @@ LAZY_SUBCOMMANDS = {
     "ref": "vbagent.cli.ref",
     "config": "vbagent.cli.config",
     "check": "vbagent.cli.check",
+    "init": "vbagent.cli.init",
+    "util": "vbagent.cli.util",
 }
 
 
@@ -71,18 +73,20 @@ def main():
     
     \b
     Commands:
-        classify  - Stage 1: Classify physics question image
+        init      - Initialize workspace config (.vbagent.json)
+        process   - Full pipeline orchestration
+        classify  - Stage 1: Classify question image
         scan      - Stage 2: Extract LaTeX from image
         tikz      - Generate TikZ code for diagrams
-        idea      - Extract physics concepts and ideas
+        idea      - Extract concepts and ideas
         alternate - Generate alternative solutions
         variant   - Generate problem variants
         convert   - Convert between question formats
-        process   - Full pipeline orchestration
         batch     - Batch processing with resume capability
+        check     - QA review with interactive approval
         ref       - Manage reference context files
         config    - Configure models and settings
-        check     - QA review with interactive approval
+        util      - File utilities (rename, count, clean)
     """
     pass
 

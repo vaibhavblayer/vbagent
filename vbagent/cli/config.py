@@ -9,9 +9,14 @@ from vbagent.config import (
     get_config,
     save_config,
     reset_config,
+    init_workspace,
+    has_workspace_config,
+    get_workspace_config_path,
     AGENT_TYPES,
     MODELS,
+    SUBJECTS,
     CONFIG_FILE,
+    WORKSPACE_CONFIG_FILE,
 )
 
 
@@ -64,6 +69,13 @@ def show():
     console = _get_console()
     cfg = get_config()
     
+    # Show config source
+    workspace_path = get_workspace_config_path()
+    if workspace_path:
+        console.print(f"[dim]Using workspace config: {workspace_path}[/dim]\n")
+    else:
+        console.print(f"[dim]Using global config: {CONFIG_FILE}[/dim]\n")
+    
     # Create table
     table = _get_table(title="Agent Model Configuration")
     table.add_column("Agent", style="cyan")
@@ -95,10 +107,12 @@ def show():
     
     console.print(table)
     
-    # Show available models and config location
-    console.print("\n[dim]Available models:[/dim]")
-    console.print(f"[dim]{', '.join(MODELS.keys())}[/dim]")
-    console.print(f"\n[dim]Config file: {CONFIG_FILE}[/dim]")
+    # Show subject
+    console.print(f"\n[bold]Subject:[/bold] {cfg.subject}")
+    
+    # Show available models
+    console.print(f"\n[dim]Available models: {', '.join(MODELS.keys())}[/dim]")
+    console.print(f"[dim]Available subjects: {', '.join(SUBJECTS)}[/dim]")
 
 
 @config.command()
@@ -111,7 +125,8 @@ def show():
 )
 @click.option("--temperature", "-t", type=float, help="Temperature (0.0-2.0)")
 @click.option("--max-tokens", type=int, help="Maximum tokens")
-def set(agent_type: str, model: str, reasoning: str, temperature: float, max_tokens: int):
+@click.option("--workspace", "-w", is_flag=True, help="Save to workspace config instead of global")
+def set(agent_type: str, model: str, reasoning: str, temperature: float, max_tokens: int, workspace: bool):
     """Set model configuration for an agent type.
     
     \b
@@ -123,6 +138,7 @@ def set(agent_type: str, model: str, reasoning: str, temperature: float, max_tok
         vbagent config set scanner --model gpt-4o
         vbagent config set variant --model o1-mini --reasoning medium
         vbagent config set default --model gpt-4.1
+        vbagent config set scanner -m gpt-4o --workspace  # Save to .vbagent.json
     """
     console = _get_console()
     cfg = get_config()
@@ -146,7 +162,7 @@ def set(agent_type: str, model: str, reasoning: str, temperature: float, max_tok
         console.print(f"[green]✓[/green] Updated {agent_type} configuration")
     
     # Save to file
-    save_config()
+    config_path = save_config(workspace=workspace)
     
     # Show updated config
     if agent_type == "default":
@@ -161,15 +177,19 @@ def set(agent_type: str, model: str, reasoning: str, temperature: float, max_tok
         if agent_cfg.max_tokens:
             console.print(f"  Max Tokens: {agent_cfg.max_tokens}")
     
-    console.print(f"\n[dim]Saved to: {CONFIG_FILE}[/dim]")
+    console.print(f"\n[dim]Saved to: {config_path}[/dim]")
 
 
 @config.command()
-def reset():
-    """Reset all configurations to defaults."""
+@click.option("--workspace", "-w", is_flag=True, help="Reset workspace config instead of global")
+def reset(workspace: bool):
+    """Reset configuration to defaults."""
     console = _get_console()
-    reset_config()
-    console.print("[green]✓[/green] Configuration reset to defaults")
+    reset_config(workspace=workspace)
+    if workspace:
+        console.print("[green]✓[/green] Workspace configuration removed")
+    else:
+        console.print("[green]✓[/green] Global configuration reset to defaults")
 
 
 @config.command()
@@ -189,3 +209,53 @@ def models():
     console.print("\n[cyan]Reasoning Models (o-series):[/cyan]")
     for m in o_models:
         console.print(f"  • {m}")
+
+
+
+@config.command()
+@click.option("--force", "-f", is_flag=True, help="Overwrite existing workspace config")
+@click.option("--quick", "-q", is_flag=True, help="Quick mode - only ask for subject")
+@click.option("--yes", "-y", is_flag=True, help="Non-interactive mode with defaults")
+@click.pass_context
+def init(ctx, force: bool, quick: bool, yes: bool):
+    """Initialize workspace config interactively.
+    
+    Creates .vbagent.json in current directory with customized settings.
+    This is an alias for `vbagent init`.
+    
+    \b
+    Examples:
+        vbagent config init              # Interactive setup
+        vbagent config init --quick      # Only ask for subject
+        vbagent config init --yes        # Use all defaults
+        vbagent config init --force      # Overwrite existing
+    """
+    # Import and invoke the main init command
+    from vbagent.cli.init import init as main_init
+    ctx.invoke(main_init, force=force, quick=quick, yes=yes)
+
+
+@config.command()
+@click.argument("subject", type=click.Choice(SUBJECTS))
+@click.option("--workspace", "-w", is_flag=True, help="Set in workspace config")
+def subject(subject: str, workspace: bool):
+    """Set the subject for prompts.
+    
+    \b
+    Subjects:
+        physics      - Physics problems (default)
+        chemistry    - Chemistry problems
+        mathematics  - Mathematics problems
+        biology      - Biology problems
+    
+    \b
+    Examples:
+        vbagent config subject chemistry
+        vbagent config subject physics --workspace
+    """
+    console = _get_console()
+    cfg = get_config()
+    cfg.subject = subject
+    config_path = save_config(workspace=workspace)
+    console.print(f"[green]✓[/green] Subject set to: {subject}")
+    console.print(f"[dim]Saved to: {config_path}[/dim]")
