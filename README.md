@@ -1,6 +1,6 @@
 # VBAgent
 
-A multi-agent library and CLI tool for processing physics question images. Supports classification, LaTeX extraction, TikZ diagram generation, variant creation, and format conversion.
+A multi-agent library and CLI for processing physics, chemistry, mathematics, and biology question images. Supports classification, LaTeX extraction, TikZ diagram generation, variant creation, format conversion, LaTeX compilation with auto-fix, and QA review.
 
 ## Installation
 
@@ -20,14 +20,10 @@ pip install vbagent[cli]
 ### From Source
 
 ```bash
-# Clone the repository
 git clone https://github.com/vaibhavblayer/vbagent.git
 cd vbagent
 
 # Install with pip
-pip install .
-
-# Or install in development mode
 pip install -e ".[dev]"
 
 # Or using Poetry
@@ -38,59 +34,52 @@ poetry install
 
 - Python 3.12+
 - OpenAI API key (set as `OPENAI_API_KEY` environment variable)
+- For compilation: `pdflatex` (TeX Live or MacTeX)
+
+### Supported Providers
+
+| Provider | Env Variable | Models |
+|----------|-------------|--------|
+| OpenAI | `OPENAI_API_KEY` | gpt-5.2, gpt-5.1, gpt-5-mini, gpt-5.1-codex |
+| xAI | `XAI_API_KEY` | grok-4, grok-4-fast-reasoning, grok-3, grok-3-mini |
+| Google | `GOOGLE_API_KEY` | gemini-2.5-pro, gemini-2.5-flash, gemini-3-flash-preview |
 
 ## Library Usage
-
-VBAgent can be used as a Python library in your own projects:
 
 ### Quick Start
 
 ```python
 from vbagent import classify, scan, generate_variant, generate_tikz
-from vbagent.models import ClassificationResult, ScanResult
 
 # Classify an image
 classification = classify("question.png")
-print(f"Type: {classification.question_type}")
-print(f"Topic: {classification.topic}")
+print(f"Type: {classification.question_type}, Topic: {classification.topic}")
 
 # Scan with classification
 scan_result = scan("question.png", classification)
-print(f"LaTeX: {scan_result.latex}")
+print(scan_result.latex)
 
 # Generate a variant
 variant = generate_variant(scan_result.latex, "numerical")
-print(f"Variant: {variant}")
 
 # Generate TikZ diagram
 tikz = generate_tikz("A free body diagram showing forces on a block")
-print(f"TikZ: {tikz}")
 ```
 
 ### Configuration
 
 ```python
-from vbagent import get_config, set_config, VBAgentConfig
+from vbagent import get_config, set_config
 
-# Get current config
 config = get_config()
-
-# Modify model settings
 config.scanner.model = "gpt-5.2"
 config.scanner.reasoning_effort = "high"
-
-# Apply changes
-set_config(config)
-
-# Or configure specific agent
-from vbagent.config import AgentModelConfig
-config.variant = AgentModelConfig(
-    model="gpt-5.1",
-    reasoning_effort="medium",
-    temperature=0.7
-)
 set_config(config)
 ```
+
+Configuration hierarchy (later overrides earlier):
+1. Global config: `~/.config/vbagent/models.json`
+2. Workspace config: `.vbagent.json` in current directory
 
 ### Available Functions
 
@@ -101,29 +90,20 @@ result = classify("image.png")  # Returns ClassificationResult
 
 # Scanning
 from vbagent import scan, scan_with_type
-result = scan("image.png", classification)  # Returns ScanResult
+result = scan("image.png", classification)
 result = scan_with_type("image.png", "mcq_sc")  # Skip classification
 
 # Variants
-from vbagent import (
-    generate_variant,
-    generate_numerical_variant,
-    generate_context_variant,
-    generate_conceptual_variant,
-    generate_calculus_variant,
-)
+from vbagent import generate_variant, generate_numerical_variant
 variant = generate_variant(latex, "numerical")
-variant = generate_numerical_variant(latex)
 
 # TikZ
 from vbagent import generate_tikz, validate_tikz_output
 tikz = generate_tikz("description", image_path="ref.png")
-is_valid = validate_tikz_output(tikz)
 
 # Ideas
-from vbagent import extract_ideas, generate_idea_latex
+from vbagent import extract_ideas
 ideas = extract_ideas(problem_latex, solution_latex)  # Returns IdeaResult
-idea_latex = generate_idea_latex(full_content)
 
 # Alternates
 from vbagent import generate_alternate
@@ -132,112 +112,56 @@ alternate = generate_alternate(problem, solution)
 # QA Checkers
 from vbagent import check_solution, check_grammar, check_clarity, check_tikz
 passed, summary, corrected = check_solution(content)
-passed, summary, corrected = check_grammar(content)
-passed, summary, corrected = check_clarity(content)
-passed, summary, corrected = check_tikz(content)
 
 # Review
-from vbagent import review_problem, review_problem_sync, ProblemContext
+from vbagent import review_problem_sync, ProblemContext
 context = ProblemContext(...)
 result = review_problem_sync(context)  # Returns ReviewResult
+
+# Compilation
+from vbagent.compile import compile_latex, compile_and_retry, CompileResult
+result = compile_latex(latex_snippet, subject="physics")
+result = compile_latex(latex_snippet, verbose=True)  # Stream pdflatex output live
 ```
 
 ### Models
 
 ```python
 from vbagent.models import (
-    ClassificationResult,
-    ScanResult,
-    IdeaResult,
-    PipelineResult,
-    ReviewResult,
-    Suggestion,
-    ReviewIssueType,
+    ClassificationResult, ScanResult, IdeaResult,
+    PipelineResult, ReviewResult, Suggestion, ReviewIssueType,
 )
 
-# Classification result fields
-classification.question_type  # mcq_sc, mcq_mc, subjective, etc.
+# Classification fields
+classification.question_type  # mcq_sc, mcq_mc, subjective, assertion_reason, passage, match
 classification.difficulty     # easy, medium, hard
 classification.topic          # kinematics, thermodynamics, etc.
 classification.has_diagram    # bool
 classification.diagram_type   # graph, circuit, free_body, etc.
-
-# Scan result fields
-scan_result.latex
-scan_result.has_diagram
-scan_result.raw_diagram_description
-
-# Idea result fields
-ideas.concepts      # List of physics concepts
-ideas.formulas      # List of key formulas
-ideas.techniques    # List of problem-solving techniques
-ideas.difficulty_factors
-```
-
-### Prompts
-
-Access and customize prompts:
-
-```python
-from vbagent.prompts import (
-    get_scanner_prompt,
-    get_variant_prompt,
-    CLASSIFIER_PROMPT,
-    IDEA_PROMPT,
-    TIKZ_PROMPT,
-)
-
-# Get scanner prompt for question type
-prompt = get_scanner_prompt("mcq_sc")
-
-# Get variant prompts
-system_prompt, user_template = get_variant_prompt("numerical")
 ```
 
 ### References
 
-Manage reference context:
-
 ```python
-from vbagent.references import (
-    ReferenceStore,
-    TikZStore,
-    get_context_prompt_section,
-)
+from vbagent.references import ReferenceStore, TikZStore, get_context_prompt_section
 
-# Reference store
 store = ReferenceStore.get_instance()
 results = store.search("query")
 
-# TikZ store
 tikz_store = TikZStore.get_instance()
 context = tikz_store.get_context_for_classification(classification)
-
-# Get context for prompts
-context = get_context_prompt_section("latex")
 ```
 
 ### Low-Level Agent Access
 
-For advanced usage:
-
 ```python
-from vbagent.agents import (
-    create_agent,
-    run_agent,
-    run_agent_sync,
-    encode_image,
-    create_image_message,
-)
+from vbagent.agents import create_agent, run_agent_sync, create_image_message
 
-# Create custom agent
 agent = create_agent(
     name="MyAgent",
     instructions="Your system prompt",
-    agent_type="scanner",  # Uses scanner model config
+    agent_type="scanner",
 )
-
-# Run agent
 result = run_agent_sync(agent, "Your input")
 
 # With image
@@ -247,437 +171,12 @@ result = run_agent_sync(agent, message)
 
 ## CLI Usage
 
-## Project Structure
-
-```
-vbagent/
-├── pyproject.toml              # Project config & dependencies
-├── poetry.lock                 # Locked dependency versions
-├── README.md                   # Documentation
-│
-├── vbagent/                    # Main package
-│   ├── __init__.py
-│   ├── config.py               # Configuration handling
-│   │
-│   ├── cli/                    # CLI commands (Click-based)
-│   │   ├── main.py             # Entry point
-│   │   ├── common.py           # Shared CLI utilities
-│   │   ├── scan.py             # LaTeX extraction command
-│   │   ├── classify.py         # Classification command
-│   │   ├── tikz.py             # TikZ generation command
-│   │   ├── variant.py          # Variant generation command
-│   │   ├── alternate.py        # Alternate solutions command
-│   │   ├── idea.py             # Concept extraction command
-│   │   ├── convert.py          # Format conversion command
-│   │   ├── process.py          # Full pipeline command
-│   │   ├── batch.py            # Batch processing command
-│   │   ├── check.py            # QA review command
-│   │   ├── ref.py              # Reference management command
-│   │   └── config.py           # Config management command
-│   │
-│   ├── agents/                 # AI agent implementations
-│   │   ├── base.py             # Base agent class
-│   │   ├── scanner.py          # LaTeX extraction agent
-│   │   ├── classifier.py       # Question type classifier
-│   │   ├── tikz.py             # TikZ diagram generator
-│   │   ├── variant.py          # Single variant generator
-│   │   ├── multi_variant.py    # Multi-context variant generator
-│   │   ├── alternate.py        # Alternate solution generator
-│   │   ├── idea.py             # Concept extractor
-│   │   ├── converter.py        # Format converter
-│   │   ├── reviewer.py         # QA reviewer
-│   │   ├── selector.py         # Problem selector
-│   │   ├── solution_checker.py # Solution correctness checker
-│   │   ├── grammar_checker.py  # Grammar checker
-│   │   ├── clarity_checker.py  # Clarity checker
-│   │   └── tikz_checker.py     # TikZ code checker
-│   │
-│   ├── prompts/                # LLM prompt templates
-│   │   ├── classifier.py       # Classification prompts
-│   │   ├── tikz.py             # TikZ generation prompts
-│   │   ├── alternate.py        # Alternate solution prompts
-│   │   ├── idea.py             # Concept extraction prompts
-│   │   ├── converter.py        # Conversion prompts
-│   │   ├── reviewer.py         # Review prompts
-│   │   ├── solution_checker.py # Solution check prompts
-│   │   ├── grammar_checker.py  # Grammar check prompts
-│   │   ├── clarity_checker.py  # Clarity check prompts
-│   │   ├── tikz_checker.py     # TikZ check prompts
-│   │   │
-│   │   ├── scanner/            # Question-type-specific scan prompts
-│   │   │   ├── common.py       # Shared scanner prompts
-│   │   │   ├── mcq_sc.py       # MCQ single correct
-│   │   │   ├── mcq_mc.py       # MCQ multiple correct
-│   │   │   ├── assertion_reason.py
-│   │   │   ├── match.py        # Match the following
-│   │   │   ├── passage.py      # Passage/comprehension
-│   │   │   └── subjective.py   # Subjective/numerical
-│   │   │
-│   │   └── variants/           # Variant generation prompts
-│   │       ├── numerical.py    # Numerical variant prompts
-│   │       ├── context.py      # Context variant prompts
-│   │       ├── conceptual.py   # Conceptual variant prompts
-│   │       ├── conceptual_calculus.py
-│   │       └── multi_context.py
-│   │
-│   ├── models/                 # Pydantic data models
-│   │   ├── batch.py            # Batch processing state
-│   │   ├── classification.py   # Question classification
-│   │   ├── scan.py             # Scan results
-│   │   ├── idea.py             # Extracted concepts
-│   │   ├── review.py           # Review results
-│   │   ├── diff.py             # Diff utilities
-│   │   ├── pipeline.py         # Pipeline state
-│   │   └── version_store.py    # Version tracking
-│   │
-│   ├── references/             # Reference context management
-│   │   ├── store.py            # Reference store
-│   │   ├── context.py          # Context builder
-│   │   └── tikz_store.py       # TikZ reference store
-│   │
-│   └── templates/              # Output templates
-│       └── agentic_context.py  # CONTEXT.md generator
-│
-├── prompt_kinds/               # Question type definitions
-│   ├── mcq_sc_type.py          # MCQ single correct
-│   ├── mcq_mc_type.py          # MCQ multiple correct
-│   ├── assertion_reason_type.py
-│   ├── match_type.py           # Match the following
-│   ├── passage_type.py         # Passage/comprehension
-│   ├── subjective_type.py      # Subjective/numerical
-│   ├── variant_numerical.py    # Numerical variant type
-│   ├── variant_context.py      # Context variant type
-│   ├── variant_conceptual.py   # Conceptual variant type
-│   ├── variant_conceptual_calculus.py
-│   └── variant_numerical_context.py
-│
-└── tests/                      # Test suite
-    ├── test_scanner.py
-    ├── test_classification.py
-    ├── test_tikz.py
-    ├── test_variant.py
-    ├── test_alternate.py
-    ├── test_idea.py
-    ├── test_converter.py
-    ├── test_batch.py
-    ├── test_process.py
-    ├── test_review.py
-    ├── test_selector.py
-    ├── test_context.py
-    ├── test_reference_store.py
-    ├── test_version_store.py
-    └── test_prompt_organization.py
-```
-
-## Command Reference
-
-### classify
-
-Classify physics question image type.
-
-```bash
-vbagent classify -i <image> [-o <output.json>] [--json]
-```
-
-| Option | Description |
-|--------|-------------|
-| `-i, --image` | Path to physics question image (required) |
-| `-o, --output` | Output JSON file path |
-| `--json` | Output result as JSON to stdout |
-
-### scan
-
-Extract LaTeX from physics question image.
-
-```bash
-vbagent scan -i <image> [-t <tex>] [--type <type>] [-o <output.tex>]
-```
-
-| Option | Description |
-|--------|-------------|
-| `-i, --image` | Path to physics question image |
-| `-t, --tex` | Path to existing TeX file (for re-processing) |
-| `--type` | Override question type: `mcq_sc`, `mcq_mc`, `subjective`, `assertion_reason`, `passage`, `match` |
-| `-o, --output` | Output TeX file path |
-
-### tikz
-
-Generate TikZ/PGF code for diagrams.
-
-```bash
-vbagent tikz [-i <image>] [-d <description>] [--ref <dir>...] [-o <output.tex>]
-```
-
-| Option | Description |
-|--------|-------------|
-| `-i, --image` | Path to diagram image |
-| `-d, --description` | Text description of diagram to generate |
-| `--ref` | Reference directories (can be used multiple times) |
-| `-o, --output` | Output TeX file path |
-
-### idea
-
-Extract physics concepts and ideas from problems.
-
-```bash
-vbagent idea -t <tex> [-o <output.json>] [--json]
-```
-
-| Option | Description |
-|--------|-------------|
-| `-t, --tex` | Path to TeX file with problem and solution (required) |
-| `-o, --output` | Output JSON file path |
-| `--json` | Output result as JSON to stdout |
-
-### alternate
-
-Generate alternative solution methods.
-
-```bash
-vbagent alternate -t <tex> [--ideas <ideas.json>] [-n <count>] [-o <output.tex>]
-```
-
-| Option | Description |
-|--------|-------------|
-| `-t, --tex` | Path to TeX file with problem and solution (required) |
-| `--ideas` | Path to ideas JSON file for context |
-| `-n, --count` | Number of alternate solutions (default: 1) |
-| `-o, --output` | Output TeX file path |
-
-### variant
-
-Generate problem variants with controlled modifications.
-
-```bash
-vbagent variant [-i <image>] [-t <tex>] --type <type> [-r <start> <end>] [-n <count>] [--context <file>...] [--ideas <ideas.json>] [-o <output.tex>]
-```
-
-| Option | Description |
-|--------|-------------|
-| `-i, --image` | Image file (will be scanned first) |
-| `-t, --tex` | TeX file containing problem(s) |
-| `--type` | Variant type: `numerical`, `context`, `conceptual`, `calculus`, `multi` (required) |
-| `-r, --range` | Range of items to process (1-based inclusive) |
-| `-n, --count` | Number of variants per problem (default: 1) |
-| `--context` | Additional context files for multi variant |
-| `--ideas` | Path to ideas JSON file |
-| `-o, --output` | Output TeX file path |
-
-### convert
-
-Convert physics questions between formats.
-
-```bash
-vbagent convert [-i <image>] [-t <tex>] [--from <format>] --to <format> [-o <output.tex>]
-```
-
-| Option | Description |
-|--------|-------------|
-| `-i, --image` | Path to physics question image |
-| `-t, --tex` | Path to TeX file |
-| `--from` | Source format (auto-detected if not specified) |
-| `--to` | Target format: `mcq_sc`, `mcq_mc`, `subjective`, `integer` (required) |
-| `-o, --output` | Output TeX file path |
-
-### process
-
-Full pipeline: Classify → Scan → TikZ → Ideas → Variants.
-
-```bash
-vbagent process [-i <image>] [-t <tex>] [-r <start> <end>] [--variants <types>] [--alternate] [--ideas] [--ref <dir>...] [-o <output>] [--context] [-p <workers>]
-```
-
-| Option | Description |
-|--------|-------------|
-| `-i, --image` | Image file to process |
-| `-t, --tex` | TeX file containing problems |
-| `-r, --range` | Range to process (1-based inclusive) |
-| `--variants` | Variant types (comma-separated) |
-| `--alternate` | Generate alternate solutions |
-| `--ideas` | Extract physics concepts |
-| `--ref` | Reference directories for TikZ |
-| `-o, --output` | Output directory (default: `agentic`) |
-| `--context/--no-context` | Use reference context (default: yes) |
-| `-p, --parallel` | Parallel workers (default: 1, max: 10) |
-
-### batch
-
-Batch processing with resume capability.
-
-```bash
-# Initialize batch
-vbagent batch init [-i <images_dir>] [-o <output>] [--variants <types>] [--alternate] [--context]
-
-# Continue processing
-vbagent batch continue [--reset-failed]
-
-# Check status
-vbagent batch status
-```
-
-| Subcommand | Description |
-|------------|-------------|
-| `init` | Initialize and start batch processing |
-| `continue` | Resume from where you left off |
-| `status` | Show current progress |
-
-#### batch init options
-
-| Option | Description |
-|--------|-------------|
-| `-i, --images-dir` | Directory containing images (default: `./images`) |
-| `-o, --output` | Output directory (default: `agentic`) |
-| `--variants` | Variant types (default: all) |
-| `--alternate/--no-alternate` | Generate alternates (default: yes) |
-| `--context/--no-context` | Use reference context (default: yes) |
-
-### check
-
-QA review with interactive approval workflow.
-
-```bash
-# Start review session
-vbagent check run [-c <count>] [-p <problem_id>] [-d <dir>]
-
-# View history
-vbagent check history [-p <problem_id>] [-f <file>] [-n <limit>]
-
-# Apply suggestion
-vbagent check apply <version_id> [-e]
-
-# Resume session
-vbagent check resume <session_id>
-
-# Check/generate TikZ diagrams
-vbagent check tikz [-d <dir>] [-c <count>] [--patch] [--ref-type <type>]
-```
-
-| Subcommand | Description |
-|------------|-------------|
-| `run` | Start a random QA review session |
-| `init` | Initialize problem tracking database |
-| `continue` | Continue from where you left off |
-| `status` | Show check progress |
-| `recheck` | Reset problems for rechecking |
-| `alternate` | Generate alternate solutions |
-| `idea` | Generate idea summaries |
-| `solution` | Check solution correctness |
-| `grammar` | Check grammar and spelling |
-| `clarity` | Check clarity and conciseness |
-| `tikz` | Check existing TikZ or generate from `\input{diagram}` placeholder |
-| `apply` | Apply a stored suggestion |
-| `history` | View suggestion history |
-| `resume` | Resume interrupted session |
-| `stats` | View review statistics |
-
-#### check tikz options
-
-| Option | Description |
-|--------|-------------|
-| `-d, --dir` | Directory or file to check (default: agentic) |
-| `-c, --count` | Number of files to process (default: 5) |
-| `-p, --problem-id` | Check specific problem by ID |
-| `-i, --images-dir` | Directory containing images (auto-discovered if not set) |
-| `--only-tikz` | Only check files with existing TikZ code |
-| `--reset` | Re-check all files |
-| `--patch` | Use apply_patch mode for precise edits |
-| `--ref-type` | Filter references by diagram type (circuit, free_body, etc.) |
-| `--prompt` | Additional instructions for the checker |
-
-### ref
-
-Manage reference context files.
-
-```bash
-# Add reference
-vbagent ref add <category> <file> [-n <name>] [-d <description>]
-
-# Remove reference
-vbagent ref remove <category> <name>
-
-# List references
-vbagent ref list [-c <category>]
-
-# Show reference content
-vbagent ref show <category> <name>
-
-# Enable/disable context
-vbagent ref enable
-vbagent ref disable
-
-# Show status
-vbagent ref status
-
-# Set max examples
-vbagent ref set-max <count>
-```
-
-| Subcommand | Description |
-|------------|-------------|
-| `add` | Add a reference file to a category |
-| `remove` | Remove a reference file |
-| `list` | List all reference files |
-| `show` | Show content of a reference file |
-| `enable` | Enable context usage in prompts |
-| `disable` | Disable context usage |
-| `status` | Show context configuration |
-| `set-max` | Set maximum examples per category |
-
-Categories: `tikz`, `latex`, `variants`, `problems`
-
-#### ref tikz (TikZ references with metadata)
-
-```bash
-# Import from processed problem
-vbagent ref tikz import <path> [-r <start> <end>] [-t <tikz_dir>] [-c <class_dir>]
-
-# List TikZ references
-vbagent ref tikz list [--diagram-type <type>] [--topic <topic>]
-
-# Remove TikZ reference
-vbagent ref tikz remove <ref_id>
-
-# Show TikZ reference
-vbagent ref tikz show <ref_id>
-
-# Show statistics
-vbagent ref tikz status
-```
-
-### config
-
-Configure models and settings.
-
-```bash
-# Show current config
-vbagent config show
-
-# Set agent config
-vbagent config set <agent_type> [--model <model>] [--reasoning <level>] [--temperature <temp>] [--max-tokens <tokens>]
-
-# Reset to defaults
-vbagent config reset
-
-# List available models
-vbagent config models
-```
-
-| Subcommand | Description |
-|------------|-------------|
-| `show` | Show current model configuration |
-| `set` | Set model configuration for an agent |
-| `reset` | Reset all configurations to defaults |
-| `models` | List available models |
-
-Agent types: `classifier`, `scanner`, `tikz`, `idea`, `alternate`, `variant`, `converter`, `default`
-
-Reasoning levels: `low`, `medium`, `high`, `xhigh`
-
-## CLI Usage
-
 ### Quick Start
 
 ```bash
+# Initialize workspace config
+vbagent init
+
 # Scan a physics question image to LaTeX
 vbagent scan -i question.png -o output.tex
 
@@ -687,172 +186,115 @@ vbagent classify -i question.png
 # Generate TikZ diagram from image
 vbagent tikz -i diagram.png -o diagram.tex
 
-# Generate problem variants
-vbagent variant -t problem.tex -o variants.tex
+# Full pipeline
+vbagent process -i question.png --ideas --alternate --variants numerical,context
+
+# Compile-validate generated LaTeX
+vbagent process -i question.png -c
+
+# Verbose compile (see full LaTeX + pdflatex output, interactive prompt)
+vbagent process -i question.png -c --verbose-compile
 ```
 
 ### Commands
 
 | Command | Description |
 |---------|-------------|
+| `init` | Initialize workspace config interactively |
 | `classify` | Classify physics question image type |
 | `scan` | Extract LaTeX from question image |
 | `tikz` | Generate TikZ/PGF code for diagrams |
 | `idea` | Extract physics concepts and ideas |
 | `alternate` | Generate alternative solutions |
-| `variant` | Generate problem variants (numerical, conceptual, context) |
+| `variant` | Generate problem variants |
 | `convert` | Convert between question formats |
 | `process` | Run full processing pipeline |
-| `batch` | Batch process multiple images with resume capability |
+| `batch` | Batch process multiple images with resume |
+| `check` | QA review with interactive approval |
 | `ref` | Manage reference context files |
 | `config` | Configure models and settings |
-| `check` | QA review with interactive approval |
+| `util` | File utilities (rename, count, clean) |
 
-### Batch Processing
+---
 
-Process multiple images with automatic resume on interruption:
+## Command Reference
 
-```bash
-# Initialize batch processing
-vbagent batch init -i ./images -o ./output
+### init
 
-# Continue processing (resumes from where it left off)
-vbagent batch continue
-
-# Check status
-vbagent batch status
-```
-
-### Full Pipeline
-
-Process a single image through the complete pipeline:
+Initialize workspace config interactively. Creates `.vbagent.json` in the current directory.
 
 ```bash
-# Basic processing (classify + scan + tikz)
-vbagent process -i question.png
-
-# With ideas extraction
-vbagent process -i question.png --ideas
-
-# With alternate solutions
-vbagent process -i question.png --alternate
-
-# With variant generation
-vbagent process -i question.png --variants numerical,context
-
-# Full pipeline with all features
-vbagent process -i question.png --ideas --alternate --variants numerical,context,conceptual
+vbagent init              # Interactive setup
+vbagent init --quick      # Only ask for subject
+vbagent init --yes        # Use all defaults (non-interactive)
+vbagent init --force      # Overwrite existing config
 ```
 
-Process a range of images:
+Subjects: `physics`, `chemistry`, `mathematics`, `biology`
+
+### classify
 
 ```bash
-# Process Problem_1.png through Problem_5.png
-vbagent process -i images/Problem_1.png -r 1 5
-
-# Process range with parallel workers (faster)
-vbagent process -i images/Problem_1.png -r 1 10 --parallel 3
-
-# Process range with all features
-vbagent process -i images/Problem_1.png -r 1 5 --ideas --alternate --variants numerical
+vbagent classify -i <image> [-o <output.json>] [--json]
 ```
 
-Process TeX file with multiple items:
+### scan
 
 ```bash
-# Process items 1-5 from a TeX file
-vbagent process -t problems.tex --range 1 5
-
-# With alternate solutions and ideas
-vbagent process -t problems.tex --range 1 5 --alternate --ideas
+vbagent scan -i <image> [--type <type>] [-o <output.tex>] [-c] [--verbose-compile]
 ```
-
-Custom output directory:
-
-```bash
-vbagent process -i question.png -o ./my_output
-```
-
-#### Process Command Options
 
 | Option | Description |
 |--------|-------------|
-| `-i, --image` | Image file to process |
-| `-t, --tex` | TeX file containing problems |
-| `-r, --range` | Range of items to process (1-based, inclusive) |
-| `--variants` | Variant types (comma-separated: numerical,context,conceptual,calculus) |
-| `--alternate` | Generate alternate solutions |
-| `--ideas` | Extract physics concepts |
-| `--ref` | Reference directories for TikZ |
-| `-o, --output` | Output directory (default: agentic) |
-| `--context` | Use reference context (default: yes) |
-| `-p, --parallel` | Parallel workers for batch (default: 1, max: 10) |
+| `-i, --image` | Path to physics question image |
+| `-t, --tex` | Path to existing TeX file (for re-processing) |
+| `--type` | Override question type: `mcq_sc`, `mcq_mc`, `subjective`, `assertion_reason`, `passage`, `match` |
+| `-o, --output` | Output TeX file path |
+| `-c, --compile` | Compile LaTeX to validate; retry with agent on failure |
+| `--verbose-compile` | Show full LaTeX document + live pdflatex output before each compile, prompt to continue/skip/quit |
 
-#### Output Structure
-
-```
-agentic/
-├── scans/problem_1.tex           # Extracted LaTeX
-├── classifications/problem_1.json # Question metadata
-├── tikz/problem_1.tex            # Generated TikZ diagrams
-├── ideas/problem_1.json          # Physics concepts (if --ideas)
-├── alternates/problem_1.tex      # Alternate solutions (if --alternate)
-├── variants/
-│   ├── numerical/problem_1.tex   # Numerical variants
-│   ├── context/problem_1.tex     # Context variants
-│   └── conceptual/problem_1.tex  # Conceptual variants
-└── CONTEXT.md                    # Documentation for AI agents
-```
-
-### Help
+### tikz
 
 ```bash
-# General help
-vbagent --help
-
-# Command-specific help
-vbagent scan --help
-vbagent variant --help
+vbagent tikz [-i <image>] [-d <description>] [--ref <dir>...] [-o <output.tex>] [-c] [--verbose-compile]
 ```
 
-### Scan Command
+| Option | Description |
+|--------|-------------|
+| `-i, --image` | Path to diagram image |
+| `-d, --description` | Text description of diagram to generate |
+| `--ref` | Reference directories (can be used multiple times) |
+| `-o, --output` | Output TeX file path |
+| `-c, --compile` | Compile TikZ to validate; retry with agent on failure |
+| `--verbose-compile` | Show full document + live pdflatex output, interactive prompt |
 
-Extract LaTeX from physics question images:
+### idea
 
 ```bash
-# Basic scan with auto-classification
-vbagent scan -i question.png
-
-# Save output to file
-vbagent scan -i question.png -o output.tex
-
-# Override question type (skip classification)
-vbagent scan -i question.png --type mcq_sc
+vbagent idea -t <tex> [-o <output.json>] [--json]
 ```
 
-### Variant Command
-
-Generate problem variants with controlled modifications:
+### alternate
 
 ```bash
-# Numerical variant (change numbers only)
-vbagent variant -t problem.tex --type numerical
-
-# Context variant (change scenario)
-vbagent variant -t problem.tex --type context
-
-# Generate multiple variants
-vbagent variant -t problem.tex --type numerical --count 3
-
-# Process range of items
-vbagent variant -t problems.tex --type numerical -r 1 5
-
-# Multi-context variant (combine problems)
-vbagent variant --type multi --context p1.tex --context p2.tex -o combined.tex
-
-# From image (scans first)
-vbagent variant -i image.png --type numerical -o variant.tex
+vbagent alternate -t <tex> [--ideas <ideas.json>] [-n <count>] [-o <output.tex>]
 ```
+
+### variant
+
+```bash
+vbagent variant [-i <image>] [-t <tex>] --type <type> [-r <start> <end>] [-n <count>] [-o <output.tex>] [-c] [--verbose-compile]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--type` | `numerical`, `context`, `conceptual`, `calculus`, `multi` (required) |
+| `-r, --range` | Range of items to process (1-based inclusive) |
+| `-n, --count` | Number of variants per problem (default: 1) |
+| `--context` | Additional context files for multi variant |
+| `--ideas` | Path to ideas JSON file |
+| `-c, --compile` | Compile variants to validate; retry with agent on failure |
+| `--verbose-compile` | Show full document + live pdflatex output, interactive prompt |
 
 #### Variant Types
 
@@ -864,158 +306,342 @@ vbagent variant -i image.png --type numerical -o variant.tex
 | `calculus` | Add calculus elements |
 | `multi` | Combine multiple problems |
 
-### Alternate Command
-
-Generate alternative solution methods:
+### convert
 
 ```bash
-# Generate one alternate solution
-vbagent alternate -t problem.tex
-
-# Generate multiple alternates
-vbagent alternate -t problem.tex -n 3
-
-# With ideas context
-vbagent alternate -t problem.tex --ideas ideas.json
-
-# Save to file
-vbagent alternate -t problem.tex -n 2 -o alternates.tex
+vbagent convert [-i <image>] [-t <tex>] [--from <format>] --to <format> [-o <output.tex>]
 ```
 
-### Check Command (QA Review)
+Target formats: `mcq_sc`, `mcq_mc`, `subjective`, `integer`
 
-AI-powered quality review with interactive approval workflow:
+### process
+
+Full pipeline: Classify → Scan → TikZ → Ideas → Variants.
 
 ```bash
-# Start a review session (random 5 problems)
-vbagent check run
-
-# Review more problems
-vbagent check run -c 10
-
-# Review specific problem
-vbagent check run -p Problem_42
-
-# Review from specific directory
-vbagent check run -d ./my_output
-
-# View suggestion history
-vbagent check history
-
-# Apply a stored suggestion
-vbagent check apply 42
-
-# Resume interrupted session
-vbagent check resume abc123
+vbagent process [-i <image>] [-t <tex>] [-r <start> <end>] [--variants <types>] [--alternate] [--ideas] [-o <output>] [-p <workers>] [-c] [--verbose-compile]
 ```
 
-#### Check Subcommands
+| Option | Description |
+|--------|-------------|
+| `-i, --image` | Image file to process |
+| `-t, --tex` | TeX file containing problems |
+| `-r, --range` | Range to process (1-based inclusive) |
+| `--variants` | Variant types (comma-separated: numerical,context,conceptual,calculus) |
+| `--alternate` | Generate alternate solutions |
+| `--ideas` | Extract physics concepts |
+| `--ref` | Reference directories for TikZ |
+| `-o, --output` | Output directory (default: `agentic`) |
+| `--context/--no-context` | Use reference context (default: yes) |
+| `-p, --parallel` | Parallel workers (default: 1, max: 10) |
+| `-c, --compile` | Compile generated LaTeX to validate; retry with agent on failure |
+| `--verbose-compile` | Show full LaTeX document + preamble + live pdflatex output before each compile, prompt to continue/skip/quit |
 
-| Subcommand | Description |
-|------------|-------------|
-| `run` | Start a random QA review session |
-| `history` | View suggestion history |
-| `apply` | Apply a stored suggestion by ID |
-| `resume` | Resume an interrupted session |
-| `solution` | Check solution correctness |
-| `grammar` | Check grammar and spelling |
-| `clarity` | Check clarity and conciseness |
-| `tikz` | Check/generate TikZ diagram code |
-
-#### check tikz - TikZ Check and Generation
-
-The `check tikz` command has two modes:
-
-1. **Check Mode**: Reviews existing TikZ code for errors and best practices
-2. **Generate Mode**: If a file has `\input{diagram}` placeholder but no TikZ, generates TikZ from the corresponding image
+#### Examples
 
 ```bash
-# Check/generate TikZ in default directory
-vbagent check tikz
+# Basic processing
+vbagent process -i question.png
 
-# Check specific directory or file
-vbagent check tikz -d ./scans/
-vbagent check tikz -d ./scans/Problem_1.tex
+# Full pipeline
+vbagent process -i question.png --ideas --alternate --variants numerical,context
 
-# Process multiple files
-vbagent check tikz -c 10
+# Process range with parallel workers
+vbagent process -i images/Problem_1.png -r 1 10 --parallel 3
 
-# Use apply_patch mode (recommended)
-vbagent check tikz --patch
+# With compile validation
+vbagent process -i question.png -c
 
-# Filter by diagram type
-vbagent check tikz --ref-type circuit
+# With verbose compile (see exactly what pdflatex receives)
+vbagent process -i question.png -c --verbose-compile
 
-# Re-check all files
-vbagent check tikz --reset
+# Process TeX file
+vbagent process -t problems.tex --range 1 5 --alternate --ideas
 ```
 
-**Auto-discovery features:**
-- Images are auto-found in `images/` sibling directory (e.g., `scans/Problem_1.tex` → `images/Problem_1.png`)
-- Diagram type is auto-detected from classification metadata
-- Reference examples are matched by diagram type
+#### Output Structure
 
-### TikZ Command
+```
+agentic/
+├── scans/problem_1.tex
+├── classifications/problem_1.json
+├── tikz/problem_1.tex
+├── ideas/problem_1.json          (if --ideas)
+├── alternates/problem_1.tex      (if --alternate)
+├── variants/
+│   ├── numerical/problem_1.tex
+│   ├── context/problem_1.tex
+│   └── conceptual/problem_1.tex
+└── CONTEXT.md
+```
 
-Generate TikZ/PGF code for diagrams:
+### batch
+
+Batch processing with resume capability.
 
 ```bash
-# From image
-vbagent tikz -i diagram.png
-
-# With description
-vbagent tikz -d "A block on an inclined plane with friction"
-
-# Save to file
-vbagent tikz -i diagram.png -o diagram.tex
-
-# With reference directories
-vbagent tikz -i diagram.png --ref ./tikz_examples/
+vbagent batch init -i ./images -o ./output [--variants <types>] [--alternate] [--context]
+vbagent batch continue [--reset-failed]
+vbagent batch status
 ```
 
-### Idea Command
+### check
 
-Extract physics concepts and ideas from problems:
+QA review with interactive approval workflow.
 
 ```bash
-# From TeX file
-vbagent idea -t problem.tex
+# Start review session
+vbagent check run [-c <count>] [-p <problem_id>] [-d <dir>]
 
-# Save to JSON
-vbagent idea -t problem.tex -o ideas.json
+# Initialize problem tracking
+vbagent check init [-d <dir>] [-r <start> <end>] [--reset]
+
+# Continue from where you left off
+vbagent check continue [-c <count>] [-d <dir>]
+
+# Check status
+vbagent check status [-d <dir>] [--status <pending|done|failed>]
+
+# Reset problems for rechecking
+vbagent check recheck [-d <dir>] [--failed] [<problem_ids>...]
+
+# Specialized checkers
+vbagent check solution [-d <dir>] [-c <count>]
+vbagent check grammar [-d <dir>] [-c <count>]
+vbagent check clarity [-d <dir>] [-c <count>]
+vbagent check alternate [-d <dir>] [-c <count>]
+vbagent check idea [-d <dir>] [-c <count>]
+
+# TikZ check/generation
+vbagent check tikz [-d <dir>] [-c <count>] [--patch] [--ref-type <type>] [--reset]
+
+# History and apply
+vbagent check history [-p <problem_id>] [-n <limit>]
+vbagent check apply <version_id> [-e]
+vbagent check resume [<session_id>]
+vbagent check stats [--days <n>]
 ```
+
+#### check tikz
+
+Two modes:
+1. Reviews existing TikZ code for errors and best practices
+2. Generates TikZ from `\input{diagram}` placeholder using the corresponding image
+
+```bash
+vbagent check tikz                        # Check/generate in default directory
+vbagent check tikz -d ./scans/            # Specific directory
+vbagent check tikz -c 10 --patch          # Use apply_patch mode
+vbagent check tikz --ref-type circuit     # Filter by diagram type
+vbagent check tikz --reset                # Re-check all files
+```
+
+Images are auto-discovered from `images/` sibling directory. Diagram type is auto-detected from classification metadata.
+
+### ref
+
+Manage reference context files.
+
+```bash
+# Add/remove references
+vbagent ref add <category> <file> [-n <name>] [-d <description>]
+vbagent ref remove <category> <name>
+vbagent ref list [-c <category>]
+vbagent ref show <category> <name>
+
+# Enable/disable context
+vbagent ref enable
+vbagent ref disable
+vbagent ref status
+vbagent ref set-max <count>
+```
+
+Categories: `tikz`, `latex`, `variants`, `problems`
+
+#### ref tikz (TikZ references with metadata)
+
+```bash
+vbagent ref tikz import <path> [-r <start> <end>]
+vbagent ref tikz list [--diagram-type <type>] [--topic <topic>]
+vbagent ref tikz remove <ref_id>
+vbagent ref tikz show <ref_id>
+vbagent ref tikz status
+```
+
+### config
+
+```bash
+vbagent config show
+vbagent config set <agent_type> [--model <model>] [--reasoning <level>] [--temperature <temp>]
+vbagent config reset
+vbagent config models
+```
+
+Agent types: `classifier`, `scanner`, `tikz`, `tikz_checker`, `idea`, `alternate`, `variant`, `converter`, `reviewer`
+
+Reasoning levels: `low`, `medium`, `high`, `xhigh`
+
+### util
+
+File management utilities.
+
+```bash
+# Rename files to serialized format
+vbagent util rename images/                     # → problem_1.png, problem_2.png, ...
+vbagent util rename . --prefix Q --ext .tex     # → q_1.tex, q_2.tex, ...
+vbagent util rename . --uppercase --pad 3       # → Problem_001.png, ...
+vbagent util rename . --shuffle                 # Randomize order
+vbagent util rename . --dry-run                 # Preview only
+
+# Count files
+vbagent util count images/
+vbagent util count . --recursive
+
+# Clean generated files
+vbagent util clean                # Remove agentic/ output
+vbagent util clean --config      # Remove .vbagent.json
+vbagent util clean --all         # Remove everything
+
+# List files
+vbagent util list images/ --ext .png .jpg
+```
+
+---
+
+## LaTeX Compilation
+
+The `-c` / `--compile` flag validates generated LaTeX by compiling with `pdflatex`. If compilation fails, the compile-fixer agent automatically attempts to fix errors and retries (up to 2 retries).
+
+The `--verbose-compile` flag (used with `-c`) enables a debug mode that:
+1. Prints the full preamble/packages going into the document
+2. Prints your LaTeX snippet
+3. Prints the complete document that `pdflatex` will receive
+4. Streams `pdflatex` output live to the terminal (like running it manually)
+5. Prompts you to **(c)** continue compiling, **(s)** skip compilation, or **(q)** quit
+
+### Compile Preamble Packages
+
+The compilation preamble includes:
+- `amsmath`, `amssymb`, `amsthm`, `mathtools`
+- `tikz` with libraries: calc, decorations, patterns, arrows.meta, positioning, shapes, intersections, angles, quotes
+- `circuitikz` (american style)
+- `pgfplots` (compat=1.18)
+- `tasks` (MCQ options)
+- `enumitem`
+- `kinematikz`, `tzplot` (loaded if available)
+- `mhchem`, `chemfig` (chemistry subject only)
 
 ## Supported Question Types
 
-- MCQ Single Correct
-- MCQ Multiple Correct
-- Assertion-Reason
-- Match the Following
-- Passage/Comprehension
-- Subjective/Numerical
+- MCQ Single Correct (`mcq_sc`)
+- MCQ Multiple Correct (`mcq_mc`)
+- Assertion-Reason (`assertion_reason`)
+- Match the Following (`match`)
+- Passage/Comprehension (`passage`)
+- Subjective/Numerical (`subjective`)
 
-## Variant Types
+## Project Structure
 
-- **Numerical**: Change numerical values while preserving physics
-- **Conceptual**: Modify the underlying concept
-- **Context**: Change the real-world scenario
-
-## Platform Support
-
-Works on macOS, Windows, and Linux. Sleep prevention during batch processing is supported on all platforms.
+```
+vbagent/
+├── __init__.py                 # Public API with lazy imports
+├── config.py                   # Configuration (models, providers, subjects)
+├── compile.py                  # LaTeX compilation, validation, verbose debug
+│
+├── cli/                        # CLI commands (Click-based, lazy-loaded)
+│   ├── main.py                 # Entry point with LazyGroup
+│   ├── common.py               # Shared utilities (panels, prompts, formatting)
+│   ├── init.py                 # Workspace initialization
+│   ├── classify.py             # Classification command
+│   ├── scan.py                 # LaTeX extraction command
+│   ├── tikz.py                 # TikZ generation command
+│   ├── variant.py              # Variant generation command
+│   ├── alternate.py            # Alternate solutions command
+│   ├── idea.py                 # Concept extraction command
+│   ├── convert.py              # Format conversion command
+│   ├── process.py              # Full pipeline command
+│   ├── batch.py                # Batch processing command
+│   ├── check.py                # QA review command
+│   ├── ref.py                  # Reference management command
+│   ├── config.py               # Config management command
+│   └── util.py                 # File utilities (rename, count, clean, list)
+│
+├── agents/                     # AI agent implementations
+│   ├── base.py                 # Base agent (create, run, encode image)
+│   ├── classifier.py           # Question type classifier
+│   ├── scanner.py              # LaTeX extraction
+│   ├── tikz.py                 # TikZ diagram generator
+│   ├── variant.py              # Single variant generator
+│   ├── multi_variant.py        # Multi-context variant generator
+│   ├── alternate.py            # Alternate solution generator
+│   ├── idea.py                 # Concept extractor
+│   ├── converter.py            # Format converter
+│   ├── compile_fixer.py        # LaTeX compile error fixer
+│   ├── reviewer.py             # QA reviewer
+│   ├── selector.py             # Problem selector
+│   ├── solution_checker.py     # Solution correctness checker
+│   ├── grammar_checker.py      # Grammar checker
+│   ├── clarity_checker.py      # Clarity checker
+│   └── tikz_checker.py         # TikZ code checker
+│
+├── prompts/                    # LLM prompt templates
+│   ├── classifier.py
+│   ├── tikz.py
+│   ├── alternate.py
+│   ├── idea.py
+│   ├── converter.py
+│   ├── reviewer.py
+│   ├── solution_checker.py
+│   ├── grammar_checker.py
+│   ├── clarity_checker.py
+│   ├── tikz_checker.py
+│   ├── scanner/                # Question-type-specific scan prompts
+│   │   ├── common.py
+│   │   ├── mcq_sc.py
+│   │   ├── mcq_mc.py
+│   │   ├── assertion_reason.py
+│   │   ├── match.py
+│   │   ├── passage.py
+│   │   └── subjective.py
+│   ├── variants/               # Variant generation prompts
+│   │   ├── numerical.py
+│   │   ├── context.py
+│   │   ├── conceptual.py
+│   │   ├── conceptual_calculus.py
+│   │   └── multi_context.py
+│   └── subjects/               # Subject-specific prompt context
+│       └── __init__.py
+│
+├── models/                     # Pydantic data models
+│   ├── classification.py
+│   ├── scan.py
+│   ├── idea.py
+│   ├── review.py
+│   ├── diff.py
+│   ├── pipeline.py
+│   ├── batch.py
+│   └── version_store.py
+│
+├── references/                 # Reference context management
+│   ├── store.py                # Reference store (.tex, .sty, .pdf)
+│   ├── context.py              # Context builder
+│   └── tikz_store.py           # TikZ reference store with metadata
+│
+└── templates/
+    └── agentic_context.py      # CONTEXT.md generator
+```
 
 ## Development
 
 ```bash
-# Install dev dependencies
 pip install -e ".[dev]"
-
-# Run tests
 pytest
-
-# Run specific test
 pytest tests/test_scanner.py -v
 ```
+
+## Platform Support
+
+Works on macOS, Windows, and Linux.
 
 ## License
 
