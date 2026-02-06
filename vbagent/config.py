@@ -65,12 +65,34 @@ SUBJECTS = ["physics", "chemistry", "mathematics", "biology"]
 
 # Available model presets
 MODELS = {
+    # OpenAI
     "gpt-5.2": "gpt-5.2",
     "gpt-5.1": "gpt-5.1",
     "gpt-5-mini": "gpt-5-mini",
     "gpt-5.1-codex": "gpt-5.1-codex",
     "gpt-5.1-codex-mini": "gpt-5.1-codex-mini",
     "gpt-5.1-codex-max": "gpt-5.1-codex-max",
+    # xAI Grok
+    "grok-4": "grok-4",                                  # Frontier reasoning, 256k ctx, $3/$15
+    "grok-4-fast-reasoning": "grok-4-fast-reasoning",     # 2M ctx, reasoning + tools, $0.20/$0.50
+    "grok-4-fast-non-reasoning": "grok-4-fast-non-reasoning",  # 2M ctx, no reasoning tokens, $0.20/$0.50
+    "grok-4-1-fast-reasoning": "grok-4-1-fast-reasoning",     # 2M ctx, agentic reasoning + tools
+    "grok-4-1-fast-non-reasoning": "grok-4-1-fast-non-reasoning",  # 2M ctx, fast non-reasoning
+    "grok-code-fast-1": "grok-code-fast-1",               # Agentic coding, 256k ctx, $0.20/$1.50
+    "grok-3": "grok-3",                                   # Enterprise generalist, 131k ctx
+    "grok-3-mini": "grok-3-mini",                         # Budget generalist, 131k ctx
+    "grok-2-vision-1212": "grok-2-vision-1212",           # Image understanding, 32k ctx
+    # Google
+    "gemini-2.5-pro": "gemini-2.5-pro",
+    "gemini-2.5-flash": "gemini-2.5-flash",
+    "gemini-3-flash-preview": "gemini-3-flash-preview",   # 1M ctx, thinking model
+}
+
+# Known providers with their base URLs and env var names
+PROVIDERS = {
+    "openai": {"base_url": None, "env_key": "OPENAI_API_KEY"},
+    "xai": {"base_url": "https://api.x.ai/v1", "env_key": "XAI_API_KEY"},
+    "google": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai", "env_key": "GOOGLE_API_KEY"},
 }
 
 # Agent types
@@ -85,6 +107,132 @@ AGENT_TYPES = [
     "converter",
     "reviewer",
 ]
+
+# Model groups: per-provider default models for each agent type.
+# When switching providers, these get auto-applied so every agent
+# gets the right model for that provider.
+MODEL_GROUPS: dict[str, dict[str, str]] = {
+    "openai": {
+        "default_model": "gpt-5.2",
+        "classifier": "gpt-5-mini",
+        "scanner": "gpt-5.2",
+        "tikz": "gpt-5.1-codex",
+        "tikz_checker": "gpt-5-mini",
+        "idea": "gpt-5.2",
+        "alternate": "gpt-5.2",
+        "variant": "gpt-5.2",
+        "converter": "gpt-5-mini",
+        "reviewer": "gpt-5.2",
+    },
+    "xai": {
+        "default_model": "grok-4-1-fast-reasoning",
+        "classifier": "grok-4-1-fast-reasoning",
+        "scanner": "grok-4-1-fast-reasoning",
+        "tikz": "grok-4-1-fast-reasoning",
+        "tikz_checker": "grok-4-1-fast-reasoning",
+        "idea": "grok-4-1-fast-reasoning",
+        "alternate": "grok-4-1-fast-reasoning",
+        "variant": "grok-4-1-fast-reasoning",
+        "converter": "grok-4-1-fast-reasoning",
+        "reviewer": "grok-4-1-fast-reasoning",
+    },
+    "google": {
+        "default_model": "gemini-3-flash-preview",
+        "classifier": "gemini-3-flash-preview",
+        "scanner": "gemini-3-flash-preview",
+        "tikz": "gemini-3-flash-preview",
+        "tikz_checker": "gemini-3-flash-preview",
+        "idea": "gemini-3-flash-preview",
+        "alternate": "gemini-3-flash-preview",
+        "variant": "gemini-3-flash-preview",
+        "converter": "gemini-3-flash-preview",
+        "reviewer": "gemini-3-flash-preview",
+    },
+}
+
+# Per-model reasoning_effort support.
+# Maps model prefix -> set of valid effort values, or None if not supported.
+# Sources:
+#   OpenAI: low, medium, high (gpt-5.1+ also supports none; codex models vary)
+#   xAI: only grok-3-mini supports low/high; all others error on reasoning_effort
+#   Google: low, medium, high (2.5 models also support none/minimal)
+REASONING_SUPPORT: dict[str, Optional[set[str]]] = {
+    # OpenAI models
+    "gpt-5.2": {"low", "medium", "high", "xhigh"},
+    "gpt-5.1": {"none", "low", "medium", "high"},
+    "gpt-5-mini": {"low", "medium", "high"},
+    "gpt-5.1-codex": {"low", "medium", "high"},
+    "gpt-5.1-codex-mini": {"low", "medium", "high"},
+    "gpt-5.1-codex-max": {"low", "medium", "high"},
+    # xAI models — only grok-3-mini supports reasoning_effort
+    "grok-4": None,
+    "grok-4-fast-reasoning": None,
+    "grok-4-fast-non-reasoning": None,
+    "grok-4-1-fast-reasoning": None,
+    "grok-4-1-fast-non-reasoning": None,
+    "grok-code-fast-1": None,
+    "grok-3": None,
+    "grok-3-mini": {"low", "high"},
+    "grok-2-vision-1212": None,
+    # Google models
+    "gemini-2.5-pro": {"none", "low", "medium", "high"},
+    "gemini-2.5-flash": {"none", "low", "medium", "high"},
+    "gemini-3-flash-preview": {"low", "medium", "high"},
+}
+
+
+def get_reasoning_support(model: str) -> Optional[set[str]]:
+    """Get the set of valid reasoning_effort values for a model.
+    
+    Returns:
+        Set of valid effort strings, or None if reasoning_effort is not supported.
+    """
+    # Exact match first
+    if model in REASONING_SUPPORT:
+        return REASONING_SUPPORT[model]
+    # Prefix match for unknown model variants
+    for prefix, values in REASONING_SUPPORT.items():
+        if model.startswith(prefix):
+            return values
+    # Unknown model — assume it supports standard values
+    return {"low", "medium", "high"}
+
+
+def _provider_from_base_url(base_url: Optional[str]) -> Optional[str]:
+    """Detect provider name from a base_url.
+    
+    Returns:
+        Provider name ('openai', 'xai', 'google') or None if unknown.
+    """
+    if not base_url:
+        return "openai"
+    for name, info in PROVIDERS.items():
+        if info["base_url"] and base_url.rstrip("/") == info["base_url"].rstrip("/"):
+            return name
+    return None
+
+
+def apply_model_group(config: "VBAgentConfig", provider_name: str) -> None:
+    """Apply a model group to a config, setting all agent models AND the base_url.
+    
+    This ensures the provider URL and models are always in sync.
+    
+    Args:
+        config: The VBAgentConfig to update.
+        provider_name: Provider key in MODEL_GROUPS (openai, xai, google).
+    """
+    group = MODEL_GROUPS.get(provider_name)
+    if not group:
+        return
+    
+    # Update base_url to match the provider
+    if provider_name in PROVIDERS:
+        config.base_url = PROVIDERS[provider_name]["base_url"]
+    
+    config.default_model = group["default_model"]
+    for agent_type in AGENT_TYPES:
+        if agent_type in group:
+            getattr(config, agent_type).model = group[agent_type]
 
 
 def _get_model_settings_class():
@@ -107,8 +255,17 @@ class AgentModelConfig:
         ModelSettings = _get_model_settings_class()
         settings_dict = {}
 
-        # Add reasoning effort
-        settings_dict["reasoning"] = {"effort": self.reasoning_effort}
+        # Check per-model reasoning_effort support
+        supported = get_reasoning_support(self.model)
+        if supported is not None:
+            effort = self.reasoning_effort
+            # Clamp to nearest valid value if the configured effort isn't supported
+            if effort not in supported:
+                # Pick the closest valid effort
+                priority = ["high", "medium", "low"]
+                effort = next((e for e in priority if e in supported), None)
+            if effort:
+                settings_dict["reasoning"] = {"effort": effort}
 
         # Add optional settings
         if self.temperature is not None:
@@ -148,6 +305,10 @@ class VBAgentConfig:
     
     # Subject for prompts (physics, chemistry, mathematics, biology)
     subject: str = "physics"
+    
+    # Provider settings
+    base_url: Optional[str] = None  # None = OpenAI default
+    api_key: Optional[str] = None   # None = use OPENAI_API_KEY env var
 
     # Per-agent model overrides
     classifier: AgentModelConfig = field(default_factory=AgentModelConfig)
@@ -177,7 +338,7 @@ class VBAgentConfig:
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
-        return {
+        d = {
             "default_model": self.default_model,
             "default_reasoning_effort": self.default_reasoning_effort,
             "subject": self.subject,
@@ -186,6 +347,11 @@ class VBAgentConfig:
                 for agent_type in AGENT_TYPES
             },
         }
+        if self.base_url:
+            d["base_url"] = self.base_url
+        if self.api_key:
+            d["api_key"] = self.api_key
+        return d
 
     @classmethod
     def from_dict(cls, data: dict) -> "VBAgentConfig":
@@ -194,6 +360,8 @@ class VBAgentConfig:
             default_model=data.get("default_model", "gpt-5.2"),
             default_reasoning_effort=data.get("default_reasoning_effort", "high"),
             subject=data.get("subject", "physics"),
+            base_url=data.get("base_url"),
+            api_key=data.get("api_key"),
         )
         agents_data = data.get("agents", {})
         for agent_type in AGENT_TYPES:
@@ -222,6 +390,10 @@ class VBAgentConfig:
             merged.default_reasoning_effort = other_dict["default_reasoning_effort"]
         if other_dict.get("subject"):
             merged.subject = other_dict["subject"]
+        if other_dict.get("base_url"):
+            merged.base_url = other_dict["base_url"]
+        if other_dict.get("api_key"):
+            merged.api_key = other_dict["api_key"]
         
         # Merge agent configs
         for agent_type in AGENT_TYPES:
@@ -442,3 +614,52 @@ DEFAULT_MODEL_SETTINGS = None  # Set to None, actual value created on first use
 def get_default_model_settings() -> "ModelSettings":
     """Get default model settings (lazy loaded)."""
     return _get_default_model_settings()
+
+
+def apply_provider_config() -> None:
+    """Apply base_url and api_key from config to the OpenAI client.
+    
+    Sets environment variables so the openai-agents SDK picks them up.
+    Also disables tracing for non-OpenAI providers (traces go to
+    platform.openai.com and fail with non-OpenAI keys).
+    
+    Resolution order for API key:
+    1. api_key in config (explicit)
+    2. Provider-specific env var (XAI_API_KEY, GOOGLE_API_KEY, etc.)
+    3. OPENAI_API_KEY env var (fallback)
+    """
+    config = get_config()
+    
+    if config.base_url:
+        os.environ["OPENAI_BASE_URL"] = config.base_url
+        # Disable tracing for non-OpenAI providers — the SDK sends traces
+        # to platform.openai.com which rejects non-OpenAI API keys.
+        os.environ["OPENAI_AGENTS_DISABLE_TRACING"] = "1"
+    else:
+        # OpenAI provider — tracing works fine
+        os.environ.pop("OPENAI_AGENTS_DISABLE_TRACING", None)
+        os.environ.pop("OPENAI_BASE_URL", None)
+    
+    if config.api_key:
+        # Explicit key in config takes priority
+        os.environ["OPENAI_API_KEY"] = config.api_key
+    elif config.base_url:
+        # Try to find the matching provider's env var
+        for name, info in PROVIDERS.items():
+            if info["base_url"] and config.base_url.rstrip("/") == info["base_url"].rstrip("/"):
+                env_key = info["env_key"]
+                key_value = os.environ.get(env_key)
+                if key_value and env_key != "OPENAI_API_KEY":
+                    os.environ["OPENAI_API_KEY"] = key_value
+                break
+
+
+def get_provider_name() -> str:
+    """Get a friendly name for the current provider."""
+    config = get_config()
+    if not config.base_url:
+        return "OpenAI"
+    for name, info in PROVIDERS.items():
+        if info["base_url"] and config.base_url.rstrip("/") == info["base_url"].rstrip("/"):
+            return name.upper() if name == "xai" else name.title()
+    return config.base_url

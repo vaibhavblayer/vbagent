@@ -12,9 +12,13 @@ from vbagent.config import (
     init_workspace,
     has_workspace_config,
     get_workspace_config_path,
+    get_provider_name,
+    apply_model_group,
     AGENT_TYPES,
     MODELS,
+    MODEL_GROUPS,
     SUBJECTS,
+    PROVIDERS,
     CONFIG_FILE,
     WORKSPACE_CONFIG_FILE,
 )
@@ -107,12 +111,21 @@ def show():
     
     console.print(table)
     
-    # Show subject
+    # Show subject and provider
     console.print(f"\n[bold]Subject:[/bold] {cfg.subject}")
+    console.print(f"[bold]Provider:[/bold] {get_provider_name()}")
+    if cfg.base_url:
+        console.print(f"[bold]Base URL:[/bold] {cfg.base_url}")
+    if cfg.api_key:
+        # Mask the API key
+        masked = cfg.api_key[:8] + "..." + cfg.api_key[-4:] if len(cfg.api_key) > 12 else "***"
+        console.print(f"[bold]API Key:[/bold] {masked}")
     
     # Show available models
     console.print(f"\n[dim]Available models: {', '.join(MODELS.keys())}[/dim]")
     console.print(f"[dim]Available subjects: {', '.join(SUBJECTS)}[/dim]")
+    console.print(f"[dim]Known providers: {', '.join(PROVIDERS.keys())}[/dim]")
+    console.print(f"[dim]Model groups: {', '.join(MODEL_GROUPS.keys())}[/dim]")
 
 
 @config.command()
@@ -198,17 +211,28 @@ def models():
     console = _get_console()
     console.print("[bold]Available Models:[/bold]\n")
     
-    # Group models
+    # Group models by provider
     gpt_models = [m for m in MODELS.keys() if m.startswith("gpt")]
-    o_models = [m for m in MODELS.keys() if m.startswith("o")]
+    grok_models = [m for m in MODELS.keys() if m.startswith("grok")]
+    gemini_models = [m for m in MODELS.keys() if m.startswith("gemini")]
     
-    console.print("[cyan]GPT Models:[/cyan]")
-    for m in gpt_models:
-        console.print(f"  • {m}")
+    if gpt_models:
+        console.print("[cyan]OpenAI:[/cyan]")
+        for m in gpt_models:
+            console.print(f"  • {m}")
     
-    console.print("\n[cyan]Reasoning Models (o-series):[/cyan]")
-    for m in o_models:
-        console.print(f"  • {m}")
+    if grok_models:
+        console.print("\n[cyan]xAI Grok:[/cyan]")
+        for m in grok_models:
+            console.print(f"  • {m}")
+    
+    if gemini_models:
+        console.print("\n[cyan]Google Gemini:[/cyan]")
+        for m in gemini_models:
+            console.print(f"  • {m}")
+    
+    console.print(f"\n[dim]Model groups available: {', '.join(MODEL_GROUPS.keys())}[/dim]")
+    console.print("[dim]Use 'vbagent config model-group' to view/apply groups[/dim]")
 
 
 
@@ -258,4 +282,144 @@ def subject(subject: str, workspace: bool):
     cfg.subject = subject
     config_path = save_config(workspace=workspace)
     console.print(f"[green]✓[/green] Subject set to: {subject}")
+    console.print(f"[dim]Saved to: {config_path}[/dim]")
+
+
+
+@config.command()
+@click.argument("provider", required=False)
+@click.option("--base-url", "-b", help="Custom base URL")
+@click.option("--api-key", "-k", help="API key for the provider")
+@click.option("--no-models", is_flag=True, help="Don't auto-switch agent models")
+@click.option("--workspace", "-w", is_flag=True, help="Save to workspace config")
+def provider(provider: str, base_url: str, api_key: str, no_models: bool, workspace: bool):
+    """Set the API provider (openai, xai, google, or custom URL).
+    
+    Switching providers auto-applies the matching model group so every
+    agent gets the right model. Use --no-models to skip this.
+    
+    \b
+    Known Providers:
+        openai  - OpenAI (default, no base_url needed)
+        xai     - xAI Grok (https://api.x.ai/v1)
+        google  - Google Gemini (OpenAI-compatible endpoint)
+    
+    \b
+    Examples:
+        vbagent config provider openai
+        vbagent config provider xai --api-key xai-xxx
+        vbagent config provider xai --workspace
+        vbagent config provider xai --no-models   # keep current models
+        vbagent config provider --base-url https://custom.api/v1
+    """
+    console = _get_console()
+    cfg = get_config()
+    
+    resolved_provider = None
+    
+    if provider and provider in PROVIDERS:
+        cfg.base_url = PROVIDERS[provider]["base_url"]
+        resolved_provider = provider
+        console.print(f"[green]✓[/green] Provider: {provider}")
+        if PROVIDERS[provider]["base_url"]:
+            console.print(f"  Base URL: {PROVIDERS[provider]['base_url']}")
+            env_key = PROVIDERS[provider]["env_key"]
+            console.print(f"  API key env var: {env_key}")
+        else:
+            console.print("  Base URL: [dim]default (OpenAI)[/dim]")
+    elif base_url:
+        cfg.base_url = base_url
+        # Try to detect provider from custom URL
+        from vbagent.config import _provider_from_base_url
+        resolved_provider = _provider_from_base_url(base_url)
+        console.print(f"[green]✓[/green] Base URL: {base_url}")
+    elif provider:
+        console.print(f"[yellow]Unknown provider '{provider}'[/yellow]")
+        console.print(f"[dim]Known: {', '.join(PROVIDERS.keys())}[/dim]")
+        console.print("[dim]Or use --base-url for custom endpoints[/dim]")
+        return
+    
+    if api_key:
+        cfg.api_key = api_key
+        masked = api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "***"
+        console.print(f"[green]✓[/green] API Key: {masked}")
+    
+    # Auto-apply model group when switching providers
+    if resolved_provider and not no_models and resolved_provider in MODEL_GROUPS:
+        apply_model_group(cfg, resolved_provider)
+        console.print(f"[green]✓[/green] Applied [bold]{resolved_provider}[/bold] model group")
+        # Show the models that were set
+        table = _get_table(title=f"Model Group: {resolved_provider}")
+        table.add_column("Agent", style="cyan")
+        table.add_column("Model", style="green")
+        table.add_row("[bold]default[/bold]", cfg.default_model, style="dim")
+        for agent_type in AGENT_TYPES:
+            table.add_row(agent_type, getattr(cfg, agent_type).model)
+        console.print(table)
+    
+    if not provider and not base_url and not api_key:
+        # Show current provider info
+        console.print(f"[bold]Current provider:[/bold] {get_provider_name()}")
+        if cfg.base_url:
+            console.print(f"  Base URL: {cfg.base_url}")
+        if cfg.api_key:
+            masked = cfg.api_key[:8] + "..." + cfg.api_key[-4:] if len(cfg.api_key) > 12 else "***"
+            console.print(f"  API Key: {masked}")
+        console.print(f"\n[dim]Known providers: {', '.join(PROVIDERS.keys())}[/dim]")
+        console.print(f"[dim]Model groups: {', '.join(MODEL_GROUPS.keys())}[/dim]")
+        return
+    
+    config_path = save_config(workspace=workspace)
+    console.print(f"[dim]Saved to: {config_path}[/dim]")
+
+
+@config.command("model-group")
+@click.argument("group_name", required=False, type=click.Choice(list(MODEL_GROUPS.keys())))
+@click.option("--workspace", "-w", is_flag=True, help="Save to workspace config")
+def model_group(group_name: str, workspace: bool):
+    """View or apply a model group.
+    
+    Model groups are pre-configured sets of models for each agent,
+    optimized per provider. Switching providers auto-applies the
+    matching group, but you can also apply one manually.
+    
+    \b
+    Examples:
+        vbagent config model-group              # List all groups
+        vbagent config model-group openai       # Apply OpenAI group
+        vbagent config model-group xai          # Apply xAI group
+        vbagent config model-group google -w    # Apply Google group to workspace
+    """
+    console = _get_console()
+    
+    if not group_name:
+        # Show all model groups
+        for name, group in MODEL_GROUPS.items():
+            table = _get_table(title=f"Model Group: {name}")
+            table.add_column("Agent", style="cyan")
+            table.add_column("Model", style="green")
+            table.add_row("[bold]default[/bold]", group["default_model"], style="dim")
+            for agent_type in AGENT_TYPES:
+                if agent_type in group:
+                    table.add_row(agent_type, group[agent_type])
+            console.print(table)
+            console.print()
+        return
+    
+    cfg = get_config()
+    apply_model_group(cfg, group_name)
+    config_path = save_config(workspace=workspace)
+    
+    console.print(f"[green]✓[/green] Applied [bold]{group_name}[/bold] model group")
+    if cfg.base_url:
+        console.print(f"  Base URL: {cfg.base_url}")
+    else:
+        console.print("  Base URL: [dim]default (OpenAI)[/dim]")
+    table = _get_table(title=f"Model Group: {group_name}")
+    table.add_column("Agent", style="cyan")
+    table.add_column("Model", style="green")
+    table.add_row("[bold]default[/bold]", cfg.default_model, style="dim")
+    for agent_type in AGENT_TYPES:
+        table.add_row(agent_type, getattr(cfg, agent_type).model)
+    console.print(table)
     console.print(f"[dim]Saved to: {config_path}[/dim]")

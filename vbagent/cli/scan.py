@@ -66,7 +66,17 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     type=click.Path(),
     help="Output TeX file path for saving results"
 )
-def scan(image: str | None, tex: str | None, question_type: str | None, output: str | None):
+@click.option(
+    "-c", "--compile", "do_compile",
+    is_flag=True,
+    help="Compile LaTeX to validate; retry with agent on failure"
+)
+@click.option(
+    "--verbose-compile", "verbose_compile",
+    is_flag=True,
+    help="Show full LaTeX document + preamble before each compile and prompt to continue/skip/quit"
+)
+def scan(image: str | None, tex: str | None, question_type: str | None, output: str | None, do_compile: bool, verbose_compile: bool):
     """Stage 2: Extract LaTeX from physics question image.
     
     Runs classification first (unless --type provided), then extracts LaTeX
@@ -117,6 +127,22 @@ def scan(image: str | None, tex: str | None, question_type: str | None, output: 
         
         # Display result
         display_scan_result(result, console)
+        
+        # Compile validation if -c flag
+        if do_compile:
+            from vbagent.compile import compile_and_retry
+            from vbagent.agents.compile_fixer import fix_latex
+            from vbagent.config import get_config
+            
+            subject = get_config().subject
+            console.print("[dim]  → Compiling LaTeX...[/dim]")
+            result.latex, compile_result = compile_and_retry(
+                result.latex,
+                retry_fn=fix_latex,
+                subject=subject,
+                console=console,
+                verbose=verbose_compile,
+            )
         
         # Save to file if output path specified
         if output:

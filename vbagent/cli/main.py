@@ -88,7 +88,13 @@ def main():
         config    - Configure models and settings
         util      - File utilities (rename, count, clean)
     """
-    pass
+    # Disable tracing early (before agents SDK import) for non-OpenAI providers.
+    # The SDK initializes tracing at import time, so the env var must be set first.
+    from vbagent.config import get_config
+    cfg = get_config()
+    if cfg.base_url:
+        import os
+        os.environ["OPENAI_AGENTS_DISABLE_TRACING"] = "1"
 
 
 if __name__ == "__main__":

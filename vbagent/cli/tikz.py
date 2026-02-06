@@ -51,11 +51,23 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     type=click.Path(),
     help="Output TeX file path for saving the generated TikZ code"
 )
+@click.option(
+    "-c", "--compile", "do_compile",
+    is_flag=True,
+    help="Compile TikZ to validate; retry with agent on failure"
+)
+@click.option(
+    "--verbose-compile", "verbose_compile",
+    is_flag=True,
+    help="Show full LaTeX document + preamble before each compile and prompt to continue/skip/quit"
+)
 def tikz(
     image: str | None,
     description: str | None,
     ref_dirs: tuple[str, ...],
-    output: str | None
+    output: str | None,
+    do_compile: bool,
+    verbose_compile: bool,
 ):
     """Generate TikZ code for physics diagrams.
     
@@ -109,6 +121,22 @@ def tikz(
         # Display the generated code
         syntax = _get_syntax(tikz_code, "latex", theme="monokai", line_numbers=True)
         console.print(_get_panel(syntax, title="Generated TikZ Code", border_style="green"))
+        
+        # Compile validation if -c flag
+        if do_compile:
+            from vbagent.compile import compile_and_retry
+            from vbagent.agents.compile_fixer import fix_latex
+            from vbagent.config import get_config
+            
+            subject = get_config().subject
+            console.print("[dim]  → Compiling TikZ...[/dim]")
+            tikz_code, compile_result = compile_and_retry(
+                tikz_code,
+                retry_fn=fix_latex,
+                subject=subject,
+                console=console,
+                verbose=verbose_compile,
+            )
         
         # Save to file if output path specified
         if output:

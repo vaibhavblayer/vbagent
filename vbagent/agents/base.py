@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Optional
 if TYPE_CHECKING:
     from agents import Agent, ModelSettings
 
-from vbagent.config import get_model, get_model_settings
+from vbagent.config import get_model, get_model_settings, apply_provider_config
 
 
 def _get_agent_class():
@@ -114,6 +114,9 @@ def create_agent(
         Configured Agent instance
     """
     Agent = _get_agent_class()
+    
+    # Apply provider config (base_url, api_key) before creating agent
+    apply_provider_config()
     
     # Get model and settings from config if not explicitly provided
     if model is None:

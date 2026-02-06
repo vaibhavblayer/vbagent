@@ -111,6 +111,16 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     type=click.Path(),
     help="Output TeX file path for saving results"
 )
+@click.option(
+    "-c", "--compile", "do_compile",
+    is_flag=True,
+    help="Compile variants to validate; retry with agent on failure"
+)
+@click.option(
+    "--verbose-compile", "verbose_compile",
+    is_flag=True,
+    help="Show full LaTeX document + preamble before each compile and prompt to continue/skip/quit"
+)
 def variant(
     image: Optional[str],
     tex: Optional[str],
@@ -120,6 +130,8 @@ def variant(
     context_files: tuple[str, ...],
     ideas: Optional[str],
     output: Optional[str],
+    do_compile: bool,
+    verbose_compile: bool,
 ):
     """Generate problem variants.
     
@@ -148,6 +160,18 @@ def variant(
     from vbagent.agents.classifier import classify
     from vbagent.agents.scanner import scan
     from vbagent.models.idea import IdeaResult
+    
+    # Compile helper (lazy, only if -c)
+    def maybe_compile(latex_content: str) -> str:
+        if not do_compile:
+            return latex_content
+        from vbagent.compile import compile_and_retry
+        from vbagent.agents.compile_fixer import fix_latex
+        from vbagent.config import get_config
+        subject = get_config().subject
+        console.print("[dim]  → Compiling variant...[/dim]")
+        fixed, _ = compile_and_retry(latex_content, retry_fn=fix_latex, subject=subject, console=console, verbose=verbose_compile)
+        return fixed
     
     console = _get_console()
     
@@ -196,6 +220,7 @@ def variant(
             for i in range(count):
                 with console.status(f"[bold green]Generating multi-context variant {i + 1}/{count}..."):
                     result = generate_multi_context_variant(source_problems)
+                    result = maybe_compile(result)
                     all_variants.append(result)
                 
                 console.print(_get_panel(
@@ -227,6 +252,7 @@ def variant(
                         for i in range(count):
                             with console.status(f"[bold green]Generating {variant_type} variant {i + 1}/{count}..."):
                                 result = gen_variant(item, variant_type, ideas_result)
+                                result = maybe_compile(result)
                                 all_variants.append(result)
                             
                             console.print(_get_panel(
@@ -241,6 +267,7 @@ def variant(
                 for i in range(count):
                     with console.status(f"[bold green]Generating {variant_type} variant {i + 1}/{count}..."):
                         result = gen_variant(source_latex, variant_type, ideas_result)
+                        result = maybe_compile(result)
                         all_variants.append(result)
                     
                     console.print(_get_panel(

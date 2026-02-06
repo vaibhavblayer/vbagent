@@ -496,6 +496,16 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     default=1,
     help="Number of images to process in parallel (default: 1, max recommended: 5)"
 )
+@click.option(
+    "-c", "--compile", "do_compile",
+    is_flag=True,
+    help="Compile generated LaTeX to validate; retry with agent on failure"
+)
+@click.option(
+    "--verbose-compile", "verbose_compile",
+    is_flag=True,
+    help="Show full LaTeX document + preamble before each compile and prompt to continue/skip/quit"
+)
 def process(
     image: Optional[str],
     tex: Optional[str],
@@ -507,6 +517,8 @@ def process(
     output: str,
     context: bool,
     parallel: int,
+    do_compile: bool,
+    verbose_compile: bool,
 ):
     """Full pipeline: Classify → Scan → TikZ → Ideas → Variants.
     
@@ -625,6 +637,28 @@ def process(
                             generate_ideas=ideas,
                             use_context=context,
                         )
+                        
+                        # Compile validation if -c flag
+                        if do_compile:
+                            from vbagent.compile import compile_and_retry
+                            from vbagent.agents.compile_fixer import fix_latex
+                            from vbagent.config import get_config as _get_cfg
+                            _subj = _get_cfg().subject
+                            
+                            console.print("[dim]  → Compiling scanned LaTeX...[/dim]")
+                            result.latex, _ = compile_and_retry(
+                                result.latex, retry_fn=fix_latex,
+                                subject=_subj, console=console,
+                                verbose=verbose_compile,
+                            )
+                            if result.tikz_code:
+                                console.print("[dim]  → Compiling TikZ...[/dim]")
+                                result.tikz_code, _ = compile_and_retry(
+                                    result.tikz_code, retry_fn=fix_latex,
+                                    subject=_subj, console=console,
+                                    verbose=verbose_compile,
+                                )
+                        
                         results.append(result)
                         
                         # Save immediately after each successful processing

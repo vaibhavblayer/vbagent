@@ -4,12 +4,14 @@ Shortcut for `vbagent config init`.
 """
 
 import click
+import os
 
 from vbagent.config import (
     init_workspace,
     SUBJECTS,
     MODELS,
     AGENT_TYPES,
+    PROVIDERS,
     VBAgentConfig,
     AgentModelConfig,
     WORKSPACE_CONFIG_FILE,
@@ -165,6 +167,44 @@ def init(force: bool, quick: bool, yes: bool):
     console.print(f"[green]✓[/green] Subject: {subject}")
     
     if not quick and not yes:
+        # === Provider Selection ===
+        provider_names = list(PROVIDERS.keys())
+        current_provider = "openai"
+        if config.base_url:
+            for name, info in PROVIDERS.items():
+                if info["base_url"] and config.base_url.rstrip("/") == info["base_url"].rstrip("/"):
+                    current_provider = name
+                    break
+        
+        selected_provider = _select_from_list(
+            console,
+            "Select Provider",
+            provider_names,
+            current_provider,
+        )
+        config.base_url = PROVIDERS[selected_provider]["base_url"]
+        console.print(f"[green]✓[/green] Provider: {selected_provider}")
+        
+        # Ask for API key if non-OpenAI provider
+        if selected_provider != "openai":
+            env_key = PROVIDERS[selected_provider]["env_key"]
+            has_env = os.environ.get(env_key)
+            
+            if has_env:
+                console.print(f"[dim]  Found {env_key} in environment[/dim]")
+            else:
+                Prompt, _ = _get_prompt()
+                api_key = Prompt.ask(
+                    f"\n[cyan]API key for {selected_provider}[/cyan] [dim](Enter to skip, set {env_key} env var)[/dim]",
+                    default="",
+                    password=True,
+                )
+                if api_key:
+                    config.api_key = api_key
+                    console.print(f"[green]✓[/green] API key set")
+                else:
+                    console.print(f"[yellow]  ⚠ No API key set. Set {env_key} in your environment[/yellow]")
+        
         # === Default Model ===
         console.print("\n[bold]─── Default Settings ───[/bold]")
         
