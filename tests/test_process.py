@@ -59,7 +59,6 @@ def create_test_classification() -> ClassificationResult:
         has_diagram=False,
         diagram_type=None,
         num_options=4,
-        estimated_marks=4,
         key_concepts=["velocity", "acceleration"],
         requires_calculus=False,
         confidence=0.95,

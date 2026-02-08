@@ -29,7 +29,6 @@ class ClassificationResult(BaseModel):
     has_diagram: bool
     diagram_type: DiagramType | None
     num_options: int | None
-    estimated_marks: int
     key_concepts: list[str]
     requires_calculus: bool
     confidence: float
@@ -82,7 +81,6 @@ When classifying a question, the agent will now return:
     "has_diagram": true,
     "diagram_type": "graph",
     "num_options": 4,
-    "estimated_marks": 4,
     "key_concepts": ["velocity components", "time of flight", "range formula"],
     "requires_calculus": false,
     "confidence": 0.95

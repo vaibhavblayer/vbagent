@@ -29,7 +29,6 @@ class QuestionMetadata:
     has_diagram: Optional[bool] = None
     diagram_type: Optional[str] = None
     num_options: Optional[int] = None
-    estimated_marks: Optional[int] = None
     key_concepts: list[str] = field(default_factory=list)
     requires_calculus: Optional[bool] = None
     confidence: Optional[float] = None
@@ -51,7 +50,6 @@ class QuestionMetadata:
             "has_diagram": self.has_diagram,
             "diagram_type": self.diagram_type,
             "num_options": self.num_options,
-            "estimated_marks": self.estimated_marks,
             "key_concepts": self.key_concepts,
             "requires_calculus": self.requires_calculus,
             "confidence": self.confidence,
@@ -75,7 +73,6 @@ class QuestionMetadata:
             has_diagram=data.get("has_diagram"),
             diagram_type=data.get("diagram_type"),
             num_options=data.get("num_options"),
-            estimated_marks=data.get("estimated_marks"),
             key_concepts=data.get("key_concepts", []),
             requires_calculus=data.get("requires_calculus"),
             confidence=data.get("confidence"),
@@ -100,7 +97,6 @@ class MetadataExtractor:
         "has_diagram": re.compile(r"%\s*has_diagram:\s*(true|false|yes|no)", re.IGNORECASE),
         "diagram_type": re.compile(r"%\s*diagram_type:\s*(.+)", re.IGNORECASE),
         "num_options": re.compile(r"%\s*num_options:\s*(\d+)", re.IGNORECASE),
-        "estimated_marks": re.compile(r"%\s*estimated_marks:\s*(\d+)", re.IGNORECASE),
         "key_concepts": re.compile(r"%\s*key_concepts:\s*(.+)", re.IGNORECASE),
         "requires_calculus": re.compile(r"%\s*requires_calculus:\s*(true|false|yes|no)", re.IGNORECASE),
         "confidence": re.compile(r"%\s*confidence:\s*(0?\.\d+|1\.0?)", re.IGNORECASE),
@@ -139,7 +135,6 @@ class MetadataExtractor:
             "has_diagram": None,
             "diagram_type": None,
             "num_options": None,
-            "estimated_marks": None,
             "key_concepts": [],
             "requires_calculus": None,
             "confidence": None,
@@ -161,7 +156,7 @@ class MetadataExtractor:
                     elif key == "has_diagram" or key == "requires_calculus":
                         # Convert to boolean
                         metadata[key] = value.lower() in ("true", "yes")
-                    elif key == "num_options" or key == "estimated_marks":
+                    elif key == "num_options":
                         # Convert to integer
                         metadata[key] = int(value)
                     elif key == "confidence":
@@ -261,7 +256,6 @@ class MetadataStore:
                 has_diagram INTEGER,
                 diagram_type TEXT,
                 num_options INTEGER,
-                estimated_marks INTEGER,
                 key_concepts TEXT,
                 requires_calculus INTEGER,
                 confidence REAL,
@@ -348,10 +342,10 @@ class MetadataStore:
         cursor.execute("""
             INSERT INTO questions (
                 file_path, chapter, topic, subtopic, difficulty, question_type,
-                tags, has_diagram, diagram_type, num_options, estimated_marks,
+                tags, has_diagram, diagram_type, num_options,
                 key_concepts, requires_calculus, confidence,
                 usage_count, last_used, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(file_path) DO UPDATE SET
                 chapter = excluded.chapter,
                 topic = excluded.topic,
@@ -362,7 +356,6 @@ class MetadataStore:
                 has_diagram = excluded.has_diagram,
                 diagram_type = excluded.diagram_type,
                 num_options = excluded.num_options,
-                estimated_marks = excluded.estimated_marks,
                 key_concepts = excluded.key_concepts,
                 requires_calculus = excluded.requires_calculus,
                 confidence = excluded.confidence,
@@ -378,7 +371,6 @@ class MetadataStore:
             1 if metadata.has_diagram else 0 if metadata.has_diagram is not None else None,
             metadata.diagram_type,
             metadata.num_options,
-            metadata.estimated_marks,
             key_concepts_json,
             1 if metadata.requires_calculus else 0 if metadata.requires_calculus is not None else None,
             metadata.confidence,
@@ -622,7 +614,6 @@ class MetadataStore:
                 has_diagram=bool(row["has_diagram"]) if row["has_diagram"] is not None else None,
                 diagram_type=row["diagram_type"],
                 num_options=row["num_options"],
-                estimated_marks=row["estimated_marks"],
                 key_concepts=key_concepts,
                 requires_calculus=bool(row["requires_calculus"]) if row["requires_calculus"] is not None else None,
                 confidence=row["confidence"],

@@ -101,7 +101,6 @@ def classify_tool(
             - has_diagram: Whether question has a diagram
             - diagram_type: Type of diagram if present
             - num_options: Number of options for MCQ
-            - estimated_marks: Estimated marks
             - requires_calculus: Whether calculus is required
             - confidence: Classification confidence (0-1)
             - key_concepts: List of key physics concepts
@@ -132,7 +131,6 @@ def classify_tool(
         "has_diagram": result.has_diagram,
         "diagram_type": result.diagram_type,
         "num_options": result.num_options,
-        "estimated_marks": result.estimated_marks,
         "requires_calculus": result.requires_calculus,
         "confidence": result.confidence,
         "key_concepts": result.key_concepts,

@@ -47,7 +47,6 @@ def classification_with_diagram_strategy(draw):
         has_diagram=True,  # Always True for this strategy
         diagram_type=draw(st.sampled_from(["graph", "circuit", "free_body", "geometry"])),
         num_options=draw(st.none() | st.integers(min_value=2, max_value=6)),
-        estimated_marks=draw(st.integers(min_value=1, max_value=10)),
         key_concepts=draw(st.lists(st.text(min_size=2, max_size=20).filter(lambda x: x.strip()), min_size=1, max_size=3)),
         requires_calculus=draw(st.booleans()),
         confidence=draw(st.floats(min_value=0.5, max_value=1.0)),

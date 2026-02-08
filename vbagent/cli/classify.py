@@ -38,7 +38,6 @@ def format_result_table(result) -> "Table":
     if result.num_options is not None:
         table.add_row("Number of Options", str(result.num_options))
     
-    table.add_row("Estimated Marks", str(result.estimated_marks))
     table.add_row("Requires Calculus", "Yes" if result.requires_calculus else "No")
     table.add_row("Confidence", f"{result.confidence:.2%}")
     

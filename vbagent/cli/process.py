@@ -1045,7 +1045,6 @@ def process_tex_item(
         has_diagram=False,
         diagram_type=None,
         num_options=None,
-        estimated_marks=4,
         key_concepts=[],
         requires_calculus=False,
         confidence=1.0,

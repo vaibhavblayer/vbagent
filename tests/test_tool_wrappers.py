@@ -101,7 +101,6 @@ class TestClassifyTool:
         mock_result.has_diagram = True
         mock_result.diagram_type = "free_body"
         mock_result.num_options = 4
-        mock_result.estimated_marks = 4
         mock_result.requires_calculus = False
         mock_result.confidence = 0.95
         mock_result.key_concepts = ["velocity", "acceleration"]

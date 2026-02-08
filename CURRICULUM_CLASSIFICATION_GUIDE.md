@@ -13,58 +13,19 @@ The classification agent now uses predefined curriculum structures for all four 
 
 ## Curriculum Structure
 
-### Physics (10 Chapters, 27 Topics)
-- **Mechanics**: kinematics, laws of motion, work energy and power, system of particles and rotational motion, gravitation
-- **Properties of Bulk Matter**: mechanical properties of solids, mechanical properties of fluids, thermal properties of matter
-- **Thermodynamics**: thermodynamics, kinetic theory
-- **Oscillations and Waves**: oscillations, waves
-- **Electrostatics**: electric charges and fields, electrostatic potential and capacitance
-- **Current Electricity**: current electricity, moving charges and magnetism, magnetism and matter
-- **Electromagnetic Induction and AC**: electromagnetic induction, alternating current, electromagnetic waves
-- **Optics**: ray optics and optical instruments, wave optics
-- **Dual Nature of Radiation and Matter**: dual nature of radiation and matter, atoms, nuclei
-- **Electronic Devices**: semiconductor electronics, communication systems
+The curriculum is defined in `vbagent/prompts/subjects/taxonomy.py` and provides comprehensive chapter-topic mappings for all subjects.
 
-### Chemistry (14 Chapters, 54 Topics)
-- **Some Basic Concepts of Chemistry**: mole concept, stoichiometry, atomic mass and molecular mass, percentage composition
-- **Structure of Atom**: atomic models, quantum numbers, electronic configuration, periodic trends
-- **Classification of Elements and Periodicity**: periodic table, periodic properties, ionization energy, electronegativity
-- **Chemical Bonding and Molecular Structure**: ionic bonding, covalent bonding, hybridization, molecular orbital theory, VSEPR theory
-- **States of Matter**: gaseous state, liquid state, solid state
-- **Thermodynamics**: first law of thermodynamics, enthalpy, entropy, gibbs free energy, hess law
-- **Equilibrium**: chemical equilibrium, law of mass action, le chatelier principle, equilibrium constant
-- **Redox Reactions**: oxidation and reduction, balancing redox equations, oxidation number
-- **Hydrogen**: hydrogen, water, hydrogen peroxide
-- **s-Block Elements**: alkali metals, alkaline earth metals
-- **p-Block Elements**: group 13-18 elements
-- **Organic Chemistry - Basic Principles**: nomenclature, isomerism, reaction mechanisms, inductive effect, resonance
-- **Hydrocarbons**: alkanes, alkenes, alkynes, aromatic hydrocarbons
-- **Environmental Chemistry**: pollution, green chemistry
+### Physics (27 Chapters)
+Includes chapters like: Kinematics, Laws of Motion, Work Energy and Power, System of Particles and Rotational Motion, Gravitation, Mechanical Properties of Solids, Mechanical Properties of Fluids, Thermal Properties of Matter, Thermodynamics, Kinetic Theory, Oscillations, Waves, Electric Charges and Fields, Electrostatic Potential and Capacitance, Current Electricity, Moving Charges and Magnetism, Magnetism and Matter, Electromagnetic Induction, Alternating Current, Electromagnetic Waves, Ray Optics and Optical Instruments, Wave Optics, Dual Nature of Radiation and Matter, Atoms, Nuclei, Semiconductor Electronics, Communication Systems
 
-### Mathematics (9 Chapters, 47 Topics)
-- **Sets, Relations and Functions**: sets, relations, functions, inverse functions, composite functions
-- **Algebra**: complex numbers, quadratic equations, linear inequalities, permutations and combinations, binomial theorem, sequences and series, mathematical induction
-- **Coordinate Geometry**: straight lines, circles, parabola, ellipse, hyperbola, conic sections
-- **Calculus**: limits and continuity, differentiation, applications of derivatives, indefinite integration, definite integration, applications of integrals, differential equations
-- **Vectors and Three-Dimensional Geometry**: vectors, scalar and vector products, three dimensional geometry, direction cosines
-- **Linear Algebra**: matrices, determinants, system of linear equations
-- **Probability and Statistics**: probability, conditional probability, bayes theorem, random variables, probability distributions, statistics, mean and variance
-- **Trigonometry**: trigonometric functions, trigonometric equations, inverse trigonometric functions, properties of triangles
-- **Mathematical Reasoning**: statements, logical operations, implications, validating statements
+### Chemistry (28 Chapters)
+Includes chapters like: Some Basic Concepts of Chemistry, Structure of Atom, Classification of Elements and Periodicity, Chemical Bonding and Molecular Structure, States of Matter, Thermodynamics, Equilibrium, Redox Reactions, Hydrogen, s-Block Elements, p-Block Elements, Organic Chemistry - Basic Principles, Hydrocarbons, Environmental Chemistry, Solid State, Solutions, Electrochemistry, Chemical Kinetics, Surface Chemistry, d and f Block Elements, Coordination Compounds, Haloalkanes and Haloarenes, Alcohols Phenols and Ethers, Aldehydes Ketones and Carboxylic Acids, Amines, Biomolecules, Polymers, Chemistry in Everyday Life
 
-### Biology (12 Chapters, 52 Topics)
-- **The Living World**: diversity in living world, biological classification, taxonomy
-- **Plant Kingdom**: algae, bryophytes, pteridophytes, gymnosperms, angiosperms
-- **Animal Kingdom**: animal classification, phyla, vertebrates, invertebrates
-- **Structural Organization in Animals and Plants**: morphology of flowering plants, anatomy of flowering plants, animal tissues, organ systems
-- **Cell: The Unit of Life**: cell structure, cell organelles, cell membrane, cell wall, cell division
-- **Biomolecules**: carbohydrates, proteins, lipids, nucleic acids, enzymes
-- **Plant Physiology**: transport in plants, mineral nutrition, photosynthesis, respiration, plant growth and development
-- **Human Physiology**: digestion and absorption, breathing and exchange of gases, body fluids and circulation, excretory products and elimination, locomotion and movement, neural control and coordination, chemical coordination and integration
-- **Reproduction**: reproduction in organisms, sexual reproduction in flowering plants, human reproduction, reproductive health
-- **Genetics and Evolution**: principles of inheritance and variation, molecular basis of inheritance, evolution, human health and disease
-- **Biotechnology**: biotechnology principles and processes, biotechnology and its applications
-- **Ecology and Environment**: organisms and populations, ecosystem, biodiversity and conservation, environmental issues
+### Mathematics (10 Chapters)
+Includes chapters like: Sets and Functions, Algebra, Coordinate Geometry, Calculus, Vectors and 3D Geometry, Linear Programming, Probability, Trigonometry, Matrices and Determinants, Statistics
+
+### Biology (38 Chapters)
+Includes chapters like: The Living World, Biological Classification, Plant Kingdom, Animal Kingdom, Morphology of Flowering Plants, Anatomy of Flowering Plants, Structural Organisation in Animals, Cell: The Unit of Life, Biomolecules, Cell Cycle and Cell Division, Transport in Plants, Mineral Nutrition, Photosynthesis in Higher Plants, Respiration in Plants, Plant Growth and Development, Digestion and Absorption, Breathing and Exchange of Gases, Body Fluids and Circulation, Excretory Products and their Elimination, Locomotion and Movement, Neural Control and Coordination, Chemical Coordination and Integration, Reproduction in Organisms, Sexual Reproduction in Flowering Plants, Human Reproduction, Reproductive Health, Principles of Inheritance and Variation, Molecular Basis of Inheritance, Evolution, Human Health and Disease, Strategies for Enhancement in Food Production, Microbes in Human Welfare, Biotechnology: Principles and Processes, Biotechnology and its Applications, Organisms and Populations, Ecosystem, Biodiversity and Conservation, Environmental Issues
 
 ## Usage
 
@@ -84,7 +45,7 @@ print(f"Subtopic: {result.subtopic}")     # e.g., "position-time graphs"
 ### Accessing Curriculum Programmatically
 
 ```python
-from vbagent.prompts.subjects.curriculum import (
+from vbagent.prompts.subjects.taxonomy import (
     get_chapters,
     get_all_topics,
     get_chapter_for_topic
@@ -92,8 +53,7 @@ from vbagent.prompts.subjects.curriculum import (
 
 # Get all chapters for a subject
 chapters = get_chapters("physics")
-for chapter in chapters:
-    print(f"{chapter.display_name}: {len(chapter.topics)} topics")
+print(f"Physics has {len(chapters)} chapters")
 
 # Get all topics (flattened list)
 topics = get_all_topics("chemistry")
@@ -101,7 +61,7 @@ print(f"Total chemistry topics: {len(topics)}")
 
 # Find chapter for a specific topic
 chapter = get_chapter_for_topic("mathematics", "differentiation")
-print(f"Differentiation belongs to: {chapter}")  # "calculus"
+print(f"Differentiation belongs to: {chapter}")  # "Calculus"
 ```
 
 ### Metadata Storage
@@ -139,19 +99,18 @@ store.upsert(metadata)
 
 To modify the curriculum for your needs:
 
-1. Edit `vbagent/prompts/subjects/curriculum.py`
+1. Edit `vbagent/prompts/subjects/taxonomy.py`
 2. Update the chapter and topic lists for each subject
 3. The changes will automatically be reflected in the classifier prompt
 
 Example:
 
 ```python
-# Add a new chapter to Physics
-PHYSICS_CHAPTERS.append(
-    Chapter(
-        name="quantum_mechanics",
-        display_name="Quantum Mechanics",
-        topics=["wave-particle duality", "uncertainty principle", "quantum tunneling"]
+# Add topics to an existing chapter in Physics
+PHYSICS_TAXONOMY.append(
+    ChapterTopics(
+        chapter="Advanced Mechanics",
+        topics=["Lagrangian mechanics", "Hamiltonian mechanics", "chaos theory"]
     )
 )
 ```

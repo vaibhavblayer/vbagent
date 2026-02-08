@@ -47,7 +47,6 @@ You MUST respond with ONLY a valid JSON object (no markdown, no explanation) wit
     "has_diagram": true | false,
     "diagram_type": "<type if present: {diagram_types_str}, none>",
     "num_options": <number of options if MCQ, else null>,
-    "estimated_marks": <integer>,
     "key_concepts": ["<concept1>", "<concept2>"],
     "requires_calculus": true | false,
     "confidence": <0.0 to 1.0>
