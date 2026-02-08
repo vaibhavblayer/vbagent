@@ -201,6 +201,11 @@ vbagent process -i question.png -c --verbose-compile
 | Command | Description |
 |---------|-------------|
 | `init` | Initialize workspace config interactively |
+| `chat` | Interactive conversational interface with LLM orchestration |
+| `mcp` | Start MCP server for external agents (Kiro, Cursor, etc.) |
+| `metadata` | Manage question bank metadata (index, query, stats) |
+| `dpp` | Create Daily Practice Problem sets with smart selection |
+| `export` | Export LaTeX files in different formats (flat, structured, project) |
 | `classify` | Classify physics question image type |
 | `scan` | Extract LaTeX from question image |
 | `tikz` | Generate TikZ/PGF code for diagrams |
@@ -214,6 +219,111 @@ vbagent process -i question.png -c --verbose-compile
 | `ref` | Manage reference context files |
 | `config` | Configure models and settings |
 | `util` | File utilities (rename, count, clean) |
+
+---
+
+## Conversational Orchestrator
+
+VBAgent includes a conversational interface that allows natural language interaction with all vbagent functions through LLM orchestration.
+
+### Chat Interface
+
+Start an interactive chat session:
+
+```bash
+vbagent chat
+```
+
+The chat interface provides:
+- Natural language commands (e.g., "create a 10 question DPP from mechanics")
+- Access to all vbagent tools through conversation
+- Multi-turn context and conversation history
+- Rich terminal formatting with progress indicators
+
+### Question Bank Metadata
+
+Index and query your question bank with searchable metadata:
+
+```bash
+# Index a directory of LaTeX questions
+vbagent metadata index ./questions
+
+# Query questions by filters
+vbagent metadata query --topic Kinematics --difficulty medium
+vbagent metadata query --tags "motion,graphs" --limit 10
+
+# View statistics
+vbagent metadata stats
+```
+
+Metadata can be specified in LaTeX file comments:
+```latex
+% chapter: Mechanics
+% topic: Kinematics
+% difficulty: medium
+% type: mcq_sc
+% tags: motion, velocity, acceleration
+
+\item A car moves with constant acceleration...
+```
+
+### Daily Practice Problem (DPP) Sets
+
+Create curated problem sets with smart selection strategies:
+
+```bash
+# Create a balanced DPP
+vbagent dpp create -n 10
+
+# Create with topic filter and topic coverage strategy
+vbagent dpp create -n 15 -s topic_coverage -t Mechanics
+
+# Create and compile to PDF
+vbagent dpp create -n 8 -d medium --compile
+```
+
+Selection strategies:
+- `balanced`: 40% easy, 40% medium, 20% hard distribution
+- `topic_coverage`: Maximize topic diversity
+- `random`: Random selection with usage fairness
+
+### Export System
+
+Export LaTeX files in different formats:
+
+```bash
+# Flat export (all files in one directory)
+vbagent export run *.tex -o output/ -m flat
+
+# Structured export (organized subdirectories)
+vbagent export directory questions/ -o output/ -m structured
+
+# Project export (main.tex with \input{} references)
+vbagent export run *.tex -o output/ -m project --title "My DPP"
+```
+
+### MCP Server Mode
+
+Run vbagent as an MCP (Model Context Protocol) server for integration with external agents:
+
+```bash
+vbagent mcp
+```
+
+Configure in your MCP client (e.g., Kiro's `mcp.json`):
+```json
+{
+  "mcpServers": {
+    "vbagent": {
+      "command": "vbagent",
+      "args": ["mcp"],
+      "env": {}
+    }
+  }
+}
+```
+
+This exposes all vbagent tools to external agents like Kiro, Cursor, and Claude Desktop.
 
 ---
 

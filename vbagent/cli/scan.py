@@ -114,16 +114,114 @@ def scan(image: str | None, tex: str | None, question_type: str | None, output: 
             with console.status("[bold green]Scanning image..."):
                 result = scan_with_type(image, question_type)
         else:
-            # Run classification first
-            with console.status("[bold green]Classifying image..."):
-                classification = classify_image(image)
+            # Check for existing classification file
+            from vbagent.models.classification import ClassificationResult
+            image_path = Path(image)
+            base_name = image_path.stem
+            classification_file = Path("agentic/classifications") / f"{base_name}.json"
             
-            console.print(f"[cyan]Detected type:[/cyan] {classification.question_type}")
-            console.print(f"[cyan]Confidence:[/cyan] {classification.confidence:.2%}")
+            classification = None
+            if classification_file.exists():
+                try:
+                    import json
+                    with open(classification_file) as f:
+                        data = json.load(f)
+                    classification = ClassificationResult(**data)
+                    console.print(f"[dim]  ✓ Loaded existing classification from {classification_file}[/dim]")
+                    console.print(f"[cyan]Type:[/cyan] {classification.question_type}")
+                    console.print(f"[cyan]Confidence:[/cyan] {classification.confidence:.2%}")
+                except Exception as e:
+                    console.print(f"[yellow]  ⚠ Failed to load classification: {e}[/yellow]")
+                    classification = None
+            
+            if classification is None:
+                # Run classification
+                with console.status("[bold green]Classifying image..."):
+                    classification = classify_image(image)
+                
+                console.print(f"[cyan]Detected type:[/cyan] {classification.question_type}")
+                console.print(f"[cyan]Confidence:[/cyan] {classification.confidence:.2%}")
             
             # Then scan with classified type
-            with console.status("[bold green]Scanning image..."):
-                result = scan_image(image, classification)
+            if classification.has_diagram:
+                # Run scanning and TikZ generation in parallel
+                import threading
+                from vbagent.agents.tikz import generate_tikz
+                
+                console.print("[bold green]Scanning & TikZ (parallel)...[/bold green]")
+                
+                # Prepare TikZ description
+                tikz_description = f"Generate TikZ for {classification.diagram_type or 'diagram'}"
+                
+                # Results holders
+                scan_result_holder = {"result": None, "error": None, "done": False}
+                tikz_result_holder = {"result": None, "error": None, "done": False}
+                
+                def run_scan():
+                    try:
+                        scan_result_holder["result"] = scan_image(image, classification)
+                    except Exception as e:
+                        scan_result_holder["error"] = e
+                    finally:
+                        scan_result_holder["done"] = True
+                
+                def run_tikz():
+                    try:
+                        tikz_result_holder["result"] = generate_tikz(
+                            description=tikz_description,
+                            image_path=image,
+                            use_context=True,
+                            classification=classification,
+                        )
+                    except Exception as e:
+                        tikz_result_holder["error"] = e
+                    finally:
+                        tikz_result_holder["done"] = True
+                
+                # Start both threads
+                scan_thread = threading.Thread(target=run_scan, daemon=True)
+                tikz_thread = threading.Thread(target=run_tikz, daemon=True)
+                
+                console.print("[dim]  → Scanning LaTeX...[/dim]")
+                console.print("[dim]  → Generating TikZ...[/dim]")
+                
+                scan_thread.start()
+                tikz_thread.start()
+                
+                # Wait for both
+                scan_thread.join()
+                tikz_thread.join()
+                
+                # Check for errors
+                if scan_result_holder["error"]:
+                    raise scan_result_holder["error"]
+                
+                result = scan_result_holder["result"]
+                console.print("[green]  ✓ Scanning complete[/green]")
+                
+                if tikz_result_holder["error"]:
+                    console.print(f"[yellow]  ⚠ TikZ generation failed: {tikz_result_holder['error']}[/yellow]")
+                    tikz_code = None
+                else:
+                    tikz_code = tikz_result_holder["result"]
+                    console.print("[green]  ✓ TikZ complete[/green]")
+                    
+                    # Show TikZ code
+                    tikz_syntax = _get_syntax(tikz_code, "latex", theme="monokai", line_numbers=True)
+                    console.print(_get_panel(tikz_syntax, title="Generated TikZ", border_style="cyan"))
+                    
+                    # Combine if needed
+                    if r'\input{diagram}' in result.latex:
+                        from vbagent.cli.process import insert_tikz_into_latex
+                        from vbagent.cli.common import format_latex
+                        console.print("[dim]  → Combining LaTeX + TikZ...[/dim]")
+                        result.latex = insert_tikz_into_latex(result.latex, tikz_code)
+                        result.latex = format_latex(result.latex)
+                        console.print("[green]  ✓ Combined[/green]")
+            else:
+                # No diagram - just run scanning
+                with console.status("[bold green]Scanning image..."):
+                    result = scan_image(image, classification)
         
         # Display result
         display_scan_result(result, console)

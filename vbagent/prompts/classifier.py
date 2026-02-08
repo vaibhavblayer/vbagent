@@ -38,12 +38,18 @@ You MUST respond with ONLY a valid JSON object (no markdown, no explanation) wit
 }}
 
 Question type definitions:
-- mcq_sc: Multiple choice with single correct answer
-- mcq_mc: Multiple choice with multiple correct answers  
+- mcq_sc: Multiple choice with single correct answer (standalone question)
+- mcq_mc: Multiple choice with multiple correct answers (standalone question)
 - subjective: Open-ended requiring detailed solution
 - assertion_reason: Assertion and reason type questions
-- passage: Comprehension/passage based questions
-- match: Match the following type
+- passage: Comprehension/passage based questions - MULTIPLE questions based on a SHARED passage, graph, or scenario. Look for:
+  * A passage/paragraph/graph/scenario at the top
+  * Multiple numbered questions (e.g., 42, 43, 44) referring to the same passage
+  * Headers like "Comprehensive Passage", "Passage", "Comprehension", or question ranges like [42-45]
+  * If you see 2+ questions sharing the same context/diagram, classify as "passage"
+- match: Match the following type (two columns to be matched)
+
+CRITICAL: If the image contains MULTIPLE questions (e.g., items 42, 43, 44) all referring to the SAME passage/graph/scenario, classify as "passage", NOT mcq_sc.
 
 Respond with ONLY the JSON object."""
 

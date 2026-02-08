@@ -174,20 +174,27 @@ _tikz_agent = None
 
 
 def generate_tikz(
-    description: str,
+    description: str = "",
     image_path: str | None = None,
+    problem_text: str | None = None,
     search_references: bool = True,
     use_context: bool = True,
     classification=None,
 ) -> str:
     """Generate TikZ code for a diagram.
     
-    Can generate from a text description, an image, or both.
+    Can generate from:
+    - A text description
+    - An image
+    - A problem text (LaTeX)
+    - Any combination of the above
+    
     The agent can search reference files for relevant syntax.
     
     Args:
         description: Text description of the diagram to generate
         image_path: Optional path to an image of the diagram
+        problem_text: Optional LaTeX problem text to analyze and generate diagram from
         search_references: Whether to enable reference search (default True)
         use_context: Whether to include reference context in prompt
         classification: Optional ClassificationResult for metadata-based context
@@ -197,12 +204,27 @@ def generate_tikz(
         
     Raises:
         FileNotFoundError: If image_path is provided but file doesn't exist
+        ValueError: If neither description, image_path, nor problem_text is provided
     """
+    from vbagent.prompts.tikz import USER_TEMPLATE, USER_TEMPLATE_FROM_PROBLEM
+    
+    # Validate inputs
+    if not description and not image_path and not problem_text:
+        raise ValueError("Must provide at least one of: description, image_path, or problem_text")
+    
     # Create agent with context setting and classification for metadata matching
     agent = create_tikz_agent(use_context, classification)
     
-    # Format the user message
-    user_message = USER_TEMPLATE.format(description=description)
+    # Format the user message based on what's provided
+    if problem_text:
+        # Use problem-based template
+        user_message = USER_TEMPLATE_FROM_PROBLEM.format(problem_text=problem_text)
+        # If description also provided, append it as additional context
+        if description:
+            user_message += f"\n\n**Additional context:** {description}"
+    else:
+        # Use description-based template
+        user_message = USER_TEMPLATE.format(description=description or "Generate diagram from the provided image")
     
     if image_path:
         # Create message with image and text

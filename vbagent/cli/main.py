@@ -56,6 +56,11 @@ LAZY_SUBCOMMANDS = {
     "check": "vbagent.cli.check",
     "init": "vbagent.cli.init",
     "util": "vbagent.cli.util",
+    "chat": "vbagent.cli.chat",
+    "metadata": "vbagent.cli.metadata",
+    "dpp": "vbagent.cli.dpp",
+    "export": "vbagent.cli.export",
+    "mcp": "vbagent.cli.mcp",
 }
 
 
@@ -74,6 +79,11 @@ def main():
     \b
     Commands:
         init      - Initialize workspace config (.vbagent.json)
+        chat      - Interactive conversational interface
+        mcp       - Start MCP server for external agents
+        metadata  - Manage question bank metadata
+        dpp       - Create Daily Practice Problem sets
+        export    - Export LaTeX files in different formats
         process   - Full pipeline orchestration
         classify  - Stage 1: Classify question image
         scan      - Stage 2: Extract LaTeX from image

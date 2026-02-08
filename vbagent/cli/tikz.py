@@ -41,6 +41,11 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     help="Text description of the diagram to generate"
 )
 @click.option(
+    "-t", "--tex",
+    type=click.Path(exists=True),
+    help="Path to TeX file with problem text (generates diagram from problem description)"
+)
+@click.option(
     "--ref", "ref_dirs",
     multiple=True,
     type=click.Path(exists=True),
@@ -64,6 +69,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 def tikz(
     image: str | None,
     description: str | None,
+    tex: str | None,
     ref_dirs: tuple[str, ...],
     output: str | None,
     do_compile: bool,
@@ -71,15 +77,20 @@ def tikz(
 ):
     """Generate TikZ code for physics diagrams.
     
-    Can generate TikZ code from an image, a text description, or both.
+    Can generate TikZ code from:
+    - An image (-i/--image)
+    - A text description (-d/--description)
+    - A problem text file (-t/--tex)
+    - Any combination of the above
+    
     Optionally searches reference files (STY, TeX, PDF) for syntax examples.
     
     \b
     Examples:
         vbagent tikz -d "Free body diagram with gravity and normal force"
-        vbagent tikz --description "Projectile motion" --output motion.tex
         vbagent tikz -i diagram.png -o diagram.tex
-        vbagent tikz -i img.png --ref refs/tikz/ --ref refs/pgf/
+        vbagent tikz -t problem.tex -o diagram.tex
+        vbagent tikz -t problem.tex -i reference.png -o diagram.tex
         vbagent tikz -d "RC circuit" --ref refs/circuitikz/ -o circuit.tex
     """
     # Lazy imports - only load heavy dependencies when command runs
@@ -89,8 +100,8 @@ def tikz(
     console = _get_console()
     
     # Validate that at least one input is provided
-    if not image and not description:
-        console.print("[red]Error:[/red] Either --image or --description must be provided")
+    if not image and not description and not tex:
+        console.print("[red]Error:[/red] At least one of --image, --description, or --tex must be provided")
         raise SystemExit(1)
     
     try:
@@ -101,17 +112,27 @@ def tikz(
                 indexed_count = store.index_files()
             console.print(f"[dim]Indexed {indexed_count} reference files[/dim]")
         
+        # Read problem text if provided
+        problem_text = None
+        if tex:
+            tex_path = Path(tex)
+            problem_text = tex_path.read_text()
+            console.print(f"[dim]Loaded problem from {tex}[/dim]")
+        
         # Build description from inputs
         if description:
             desc = description
-        else:
+        elif not problem_text:
             desc = "Generate TikZ code for the diagram shown in the image."
+        else:
+            desc = ""  # Will use problem_text instead
         
         # Generate TikZ code
         with console.status("[bold green]Generating TikZ code..."):
             tikz_code = generate_tikz(
                 description=desc,
                 image_path=image,
+                problem_text=problem_text,
             )
         
         # Validate output

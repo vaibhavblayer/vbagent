@@ -484,3 +484,23 @@ Requirements:
 - Use appropriate TikZ libraries
 - Include comments for complex sections
 - Scale appropriately for the content"""
+
+USER_TEMPLATE_FROM_PROBLEM = """Analyze the following physics problem and generate an appropriate TikZ diagram to visualize it.
+
+**Problem:**
+```latex
+{problem_text}
+```
+
+**Your task:**
+1. Identify what physical scenario/setup the problem describes
+2. Determine what type of diagram would best illustrate it (free body diagram, circuit, geometry, graph, etc.)
+3. Generate clean, compilable TikZ code for that diagram
+
+**Requirements:**
+- Code must be valid and compilable
+- Use appropriate TikZ libraries and styles
+- Include comments for complex sections
+- Scale appropriately for the content
+- If the problem already contains TikZ code, you may improve/replace it or generate a complementary diagram"""
+
