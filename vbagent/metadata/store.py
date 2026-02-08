@@ -22,9 +22,17 @@ class QuestionMetadata:
     file_path: str
     chapter: Optional[str] = None
     topic: Optional[str] = None
+    subtopic: Optional[str] = None
     difficulty: Optional[str] = None  # easy, medium, hard
     question_type: Optional[str] = None
     tags: list[str] = field(default_factory=list)
+    has_diagram: Optional[bool] = None
+    diagram_type: Optional[str] = None
+    num_options: Optional[int] = None
+    estimated_marks: Optional[int] = None
+    key_concepts: list[str] = field(default_factory=list)
+    requires_calculus: Optional[bool] = None
+    confidence: Optional[float] = None
     usage_count: int = 0
     last_used: Optional[datetime] = None
     created_at: datetime = field(default_factory=datetime.now)
@@ -36,9 +44,17 @@ class QuestionMetadata:
             "file_path": self.file_path,
             "chapter": self.chapter,
             "topic": self.topic,
+            "subtopic": self.subtopic,
             "difficulty": self.difficulty,
             "question_type": self.question_type,
             "tags": self.tags,
+            "has_diagram": self.has_diagram,
+            "diagram_type": self.diagram_type,
+            "num_options": self.num_options,
+            "estimated_marks": self.estimated_marks,
+            "key_concepts": self.key_concepts,
+            "requires_calculus": self.requires_calculus,
+            "confidence": self.confidence,
             "usage_count": self.usage_count,
             "last_used": self.last_used.isoformat() if self.last_used else None,
             "created_at": self.created_at.isoformat(),
@@ -52,9 +68,17 @@ class QuestionMetadata:
             file_path=data["file_path"],
             chapter=data.get("chapter"),
             topic=data.get("topic"),
+            subtopic=data.get("subtopic"),
             difficulty=data.get("difficulty"),
             question_type=data.get("question_type"),
             tags=data.get("tags", []),
+            has_diagram=data.get("has_diagram"),
+            diagram_type=data.get("diagram_type"),
+            num_options=data.get("num_options"),
+            estimated_marks=data.get("estimated_marks"),
+            key_concepts=data.get("key_concepts", []),
+            requires_calculus=data.get("requires_calculus"),
+            confidence=data.get("confidence"),
             usage_count=data.get("usage_count", 0),
             last_used=datetime.fromisoformat(data["last_used"]) if data.get("last_used") else None,
             created_at=datetime.fromisoformat(data["created_at"]) if data.get("created_at") else datetime.now(),
@@ -69,9 +93,17 @@ class MetadataExtractor:
     METADATA_PATTERNS = {
         "chapter": re.compile(r"%\s*chapter:\s*(.+)", re.IGNORECASE),
         "topic": re.compile(r"%\s*topic:\s*(.+)", re.IGNORECASE),
+        "subtopic": re.compile(r"%\s*subtopic:\s*(.+)", re.IGNORECASE),
         "difficulty": re.compile(r"%\s*difficulty:\s*(easy|medium|hard)", re.IGNORECASE),
         "question_type": re.compile(r"%\s*type:\s*(.+)", re.IGNORECASE),
         "tags": re.compile(r"%\s*tags:\s*(.+)", re.IGNORECASE),
+        "has_diagram": re.compile(r"%\s*has_diagram:\s*(true|false|yes|no)", re.IGNORECASE),
+        "diagram_type": re.compile(r"%\s*diagram_type:\s*(.+)", re.IGNORECASE),
+        "num_options": re.compile(r"%\s*num_options:\s*(\d+)", re.IGNORECASE),
+        "estimated_marks": re.compile(r"%\s*estimated_marks:\s*(\d+)", re.IGNORECASE),
+        "key_concepts": re.compile(r"%\s*key_concepts:\s*(.+)", re.IGNORECASE),
+        "requires_calculus": re.compile(r"%\s*requires_calculus:\s*(true|false|yes|no)", re.IGNORECASE),
+        "confidence": re.compile(r"%\s*confidence:\s*(0?\.\d+|1\.0?)", re.IGNORECASE),
     }
     
     def extract(self, tex_path: Path) -> QuestionMetadata:
@@ -100,9 +132,17 @@ class MetadataExtractor:
             "file_path": str(tex_path),
             "chapter": None,
             "topic": None,
+            "subtopic": None,
             "difficulty": None,
             "question_type": None,
             "tags": [],
+            "has_diagram": None,
+            "diagram_type": None,
+            "num_options": None,
+            "estimated_marks": None,
+            "key_concepts": [],
+            "requires_calculus": None,
+            "confidence": None,
         }
         
         # Parse first 50 lines for metadata comments
@@ -112,12 +152,21 @@ class MetadataExtractor:
                 match = pattern.search(line)
                 if match:
                     value = match.group(1).strip()
-                    if key == "tags":
-                        # Split comma-separated tags
+                    if key == "tags" or key == "key_concepts":
+                        # Split comma-separated values
                         metadata[key] = [t.strip() for t in value.split(",") if t.strip()]
                     elif key == "difficulty":
                         # Normalize difficulty to lowercase
                         metadata[key] = value.lower()
+                    elif key == "has_diagram" or key == "requires_calculus":
+                        # Convert to boolean
+                        metadata[key] = value.lower() in ("true", "yes")
+                    elif key == "num_options" or key == "estimated_marks":
+                        # Convert to integer
+                        metadata[key] = int(value)
+                    elif key == "confidence":
+                        # Convert to float
+                        metadata[key] = float(value)
                     else:
                         metadata[key] = value
         
@@ -205,9 +254,17 @@ class MetadataStore:
                 file_path TEXT UNIQUE NOT NULL,
                 chapter TEXT,
                 topic TEXT,
+                subtopic TEXT,
                 difficulty TEXT,
                 question_type TEXT,
                 tags TEXT,
+                has_diagram INTEGER,
+                diagram_type TEXT,
+                num_options INTEGER,
+                estimated_marks INTEGER,
+                key_concepts TEXT,
+                requires_calculus INTEGER,
+                confidence REAL,
                 usage_count INTEGER DEFAULT 0,
                 last_used TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -217,9 +274,11 @@ class MetadataStore:
         
         # Create indexes for common queries
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_topic ON questions(topic)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_subtopic ON questions(subtopic)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_difficulty ON questions(difficulty)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_chapter ON questions(chapter)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_question_type ON questions(question_type)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_has_diagram ON questions(has_diagram)")
         
         self.conn.commit()
     
@@ -282,28 +341,47 @@ class MetadataStore:
         
         cursor = self.conn.cursor()
         
-        # Convert tags list to JSON string
+        # Convert lists to JSON strings
         tags_json = json.dumps(metadata.tags)
+        key_concepts_json = json.dumps(metadata.key_concepts)
         
         cursor.execute("""
             INSERT INTO questions (
-                file_path, chapter, topic, difficulty, question_type,
-                tags, usage_count, last_used, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                file_path, chapter, topic, subtopic, difficulty, question_type,
+                tags, has_diagram, diagram_type, num_options, estimated_marks,
+                key_concepts, requires_calculus, confidence,
+                usage_count, last_used, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(file_path) DO UPDATE SET
                 chapter = excluded.chapter,
                 topic = excluded.topic,
+                subtopic = excluded.subtopic,
                 difficulty = excluded.difficulty,
                 question_type = excluded.question_type,
                 tags = excluded.tags,
+                has_diagram = excluded.has_diagram,
+                diagram_type = excluded.diagram_type,
+                num_options = excluded.num_options,
+                estimated_marks = excluded.estimated_marks,
+                key_concepts = excluded.key_concepts,
+                requires_calculus = excluded.requires_calculus,
+                confidence = excluded.confidence,
                 updated_at = excluded.updated_at
         """, (
             metadata.file_path,
             metadata.chapter,
             metadata.topic,
+            metadata.subtopic,
             metadata.difficulty,
             metadata.question_type,
             tags_json,
+            1 if metadata.has_diagram else 0 if metadata.has_diagram is not None else None,
+            metadata.diagram_type,
+            metadata.num_options,
+            metadata.estimated_marks,
+            key_concepts_json,
+            1 if metadata.requires_calculus else 0 if metadata.requires_calculus is not None else None,
+            metadata.confidence,
             metadata.usage_count,
             metadata.last_used.isoformat() if metadata.last_used else None,
             metadata.created_at.isoformat(),
@@ -315,20 +393,26 @@ class MetadataStore:
     def query(
         self,
         topic: Optional[str] = None,
+        subtopic: Optional[str] = None,
         difficulty: Optional[str] = None,
         chapter: Optional[str] = None,
         question_type: Optional[str] = None,
         tags: Optional[list[str]] = None,
+        has_diagram: Optional[bool] = None,
+        requires_calculus: Optional[bool] = None,
         limit: Optional[int] = None,
     ) -> list[QuestionMetadata]:
         """Query questions by metadata filters.
         
         Args:
             topic: Filter by topic (exact match)
+            subtopic: Filter by subtopic (exact match)
             difficulty: Filter by difficulty (easy, medium, hard)
             chapter: Filter by chapter (exact match)
             question_type: Filter by question type
             tags: Filter by tags (questions must have all specified tags)
+            has_diagram: Filter by presence of diagram
+            requires_calculus: Filter by calculus requirement
             limit: Maximum number of results to return
             
         Returns:
@@ -345,6 +429,10 @@ class MetadataStore:
             conditions.append("topic = ?")
             params.append(topic)
         
+        if subtopic:
+            conditions.append("subtopic = ?")
+            params.append(subtopic)
+        
         if difficulty:
             conditions.append("difficulty = ?")
             params.append(difficulty.lower())
@@ -356,6 +444,14 @@ class MetadataStore:
         if question_type:
             conditions.append("question_type = ?")
             params.append(question_type)
+        
+        if has_diagram is not None:
+            conditions.append("has_diagram = ?")
+            params.append(1 if has_diagram else 0)
+        
+        if requires_calculus is not None:
+            conditions.append("requires_calculus = ?")
+            params.append(1 if requires_calculus else 0)
         
         # Tags require special handling (JSON search)
         if tags:
@@ -511,18 +607,27 @@ class MetadataStore:
         return stats
     
     def _row_to_metadata(self, row: sqlite3.Row) -> QuestionMetadata:
-        """Convert database row to QuestionMetadata object."""
-        tags = json.loads(row["tags"]) if row["tags"] else []
-        
-        return QuestionMetadata(
-            file_path=row["file_path"],
-            chapter=row["chapter"],
-            topic=row["topic"],
-            difficulty=row["difficulty"],
-            question_type=row["question_type"],
-            tags=tags,
-            usage_count=row["usage_count"],
-            last_used=datetime.fromisoformat(row["last_used"]) if row["last_used"] else None,
-            created_at=datetime.fromisoformat(row["created_at"]) if row["created_at"] else datetime.now(),
-            updated_at=datetime.fromisoformat(row["updated_at"]) if row["updated_at"] else datetime.now(),
-        )
+            """Convert database row to QuestionMetadata object."""
+            tags = json.loads(row["tags"]) if row["tags"] else []
+            key_concepts = json.loads(row["key_concepts"]) if row["key_concepts"] else []
+
+            return QuestionMetadata(
+                file_path=row["file_path"],
+                chapter=row["chapter"],
+                topic=row["topic"],
+                subtopic=row["subtopic"],
+                difficulty=row["difficulty"],
+                question_type=row["question_type"],
+                tags=tags,
+                has_diagram=bool(row["has_diagram"]) if row["has_diagram"] is not None else None,
+                diagram_type=row["diagram_type"],
+                num_options=row["num_options"],
+                estimated_marks=row["estimated_marks"],
+                key_concepts=key_concepts,
+                requires_calculus=bool(row["requires_calculus"]) if row["requires_calculus"] is not None else None,
+                confidence=row["confidence"],
+                usage_count=row["usage_count"],
+                last_used=datetime.fromisoformat(row["last_used"]) if row["last_used"] else None,
+                created_at=datetime.fromisoformat(row["created_at"]) if row["created_at"] else datetime.now(),
+                updated_at=datetime.fromisoformat(row["updated_at"]) if row["updated_at"] else datetime.now(),
+            )

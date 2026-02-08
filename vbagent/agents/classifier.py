@@ -17,6 +17,7 @@ from vbagent.agents.base import (
 from vbagent.config import get_config
 from vbagent.models.classification import ClassificationResult
 from vbagent.prompts.classifier import get_classifier_prompt, get_user_template
+from vbagent.prompts.subjects.taxonomy import get_chapter_for_topic
 
 
 def create_classifier_agent(subject: Optional[str] = None) -> "Agent":
@@ -53,7 +54,7 @@ def classify(image_path: str, subject: Optional[str] = None) -> ClassificationRe
         subject: Subject override (uses config if not provided)
         
     Returns:
-        ClassificationResult with extracted metadata
+        ClassificationResult with extracted metadata (chapter auto-determined)
         
     Raises:
         FileNotFoundError: If the image file doesn't exist
@@ -65,4 +66,9 @@ def classify(image_path: str, subject: Optional[str] = None) -> ClassificationRe
     user_template = get_user_template(subject)
     message = create_image_message(image_path, user_template)
     result = run_agent_sync(agent, message)
+    
+    # Auto-determine chapter from topic
+    if result.topic and not result.chapter:
+        result.chapter = get_chapter_for_topic(subject, result.topic)
+    
     return result

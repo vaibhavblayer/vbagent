@@ -1,6 +1,7 @@
 """Classifier agent prompts."""
 
 from vbagent.prompts.subjects import get_subject_config, SUBJECTS
+from vbagent.prompts.subjects.taxonomy import get_chapters, get_all_topics
 
 
 def get_classifier_prompt(subject: str = "physics") -> str:
@@ -16,7 +17,21 @@ def get_classifier_prompt(subject: str = "physics") -> str:
         subject = "physics"
     
     config = get_subject_config(subject)
-    topics_str = ", ".join(config.topics[:10])  # First 10 topics as examples
+    
+    # Get chapters and topics from taxonomy
+    chapters = get_chapters(subject)
+    all_topics = get_all_topics(subject)
+    
+    # Format chapters list (first 10 as examples)
+    chapters_str = ", ".join(f'"{c}"' for c in chapters[:10])
+    if len(chapters) > 10:
+        chapters_str += f", ... ({len(chapters)} total)"
+    
+    # Format topics list (first 15 as examples)
+    topics_str = ", ".join(f'"{t}"' for t in all_topics[:15])
+    if len(all_topics) > 15:
+        topics_str += f", ... ({len(all_topics)} total)"
+    
     diagram_types_str = ", ".join(config.diagram_types)
     
     return f"""You are an expert {config.display_name.lower()} question classifier. Analyze the provided image of a {config.display_name.lower()} problem and extract structured metadata.
@@ -26,7 +41,8 @@ You MUST respond with ONLY a valid JSON object (no markdown, no explanation) wit
 {{
     "question_type": "mcq_sc" | "mcq_mc" | "subjective" | "assertion_reason" | "passage" | "match",
     "difficulty": "easy" | "medium" | "hard",
-    "topic": "<{config.display_name.lower()} topic e.g., {topics_str}>",
+    "chapter": "<chapter name from the list below>",
+    "topic": "<topic name from the list below>",
     "subtopic": "<specific subtopic>",
     "has_diagram": true | false,
     "diagram_type": "<type if present: {diagram_types_str}, none>",
@@ -36,6 +52,19 @@ You MUST respond with ONLY a valid JSON object (no markdown, no explanation) wit
     "requires_calculus": true | false,
     "confidence": <0.0 to 1.0>
 }}
+
+**IMPORTANT: You MUST choose chapter and topic from these predefined lists:**
+
+**Available Chapters:** {chapters_str}
+
+**Available Topics:** {topics_str}
+
+**Rules for chapter and topic selection:**
+1. Choose the MOST APPROPRIATE chapter from the list above
+2. Choose the MOST APPROPRIATE topic from the list above
+3. If unsure, choose the closest matching chapter/topic
+4. The topic should be related to the chosen chapter
+5. Use exact names from the lists (case-insensitive matching is acceptable)
 
 Question type definitions:
 - mcq_sc: Multiple choice with single correct answer (standalone question)

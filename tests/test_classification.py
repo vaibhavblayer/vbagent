@@ -46,6 +46,7 @@ def classification_result_strategy(draw):
     return {
         "question_type": question_type,
         "difficulty": draw(difficulty_strategy),
+        "chapter": draw(topic_strategy),
         "topic": draw(topic_strategy),
         "subtopic": draw(topic_strategy),
         "has_diagram": has_diagram,
@@ -104,6 +105,7 @@ def test_property_invalid_question_type_rejected(question_type: str):
         ClassificationResult(
             question_type=question_type,
             difficulty="easy",
+            chapter="Mechanics",
             topic="physics",
             subtopic="mechanics",
             has_diagram=False,
@@ -126,6 +128,7 @@ def test_property_invalid_difficulty_rejected(difficulty: str):
         ClassificationResult(
             question_type="mcq_sc",
             difficulty=difficulty,
+            chapter="Mechanics",
             topic="physics",
             subtopic="mechanics",
             has_diagram=False,
@@ -148,6 +151,7 @@ def test_property_invalid_confidence_rejected(confidence: float):
         ClassificationResult(
             question_type="mcq_sc",
             difficulty="easy",
+            chapter="Mechanics",
             topic="physics",
             subtopic="mechanics",
             has_diagram=False,
@@ -160,6 +164,7 @@ def test_classification_result_json_serialization():
     result = ClassificationResult(
         question_type="mcq_sc",
         difficulty="medium",
+        chapter="Kinematics",
         topic="kinematics",
         subtopic="projectile motion",
         has_diagram=True,
