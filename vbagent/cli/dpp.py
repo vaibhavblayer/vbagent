@@ -112,7 +112,7 @@ def create(
     try:
         # Get config and database path
         config = get_config()
-        db_path = Path(config.workspace_root) / ".vbagent" / "metadata.db"
+        db_path = Path.cwd() / ".vbagent" / "metadata.db"
         
         if not db_path.exists():
             console.print(

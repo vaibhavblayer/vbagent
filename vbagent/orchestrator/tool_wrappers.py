@@ -441,8 +441,7 @@ def index_metadata_tool(
         raise ValueError(f"Not a directory: {directory}")
     
     # Get database path
-    config = get_config()
-    db_path = Path(config.workspace_root) / ".vbagent" / "metadata.db"
+    db_path = Path.cwd() / ".vbagent" / "metadata.db"
     
     # Index directory
     with MetadataStore(db_path) as store:
@@ -481,8 +480,7 @@ def query_metadata_tool(
     from vbagent.config import get_config
     
     # Get database path
-    config = get_config()
-    db_path = Path(config.workspace_root) / ".vbagent" / "metadata.db"
+    db_path = Path.cwd() / ".vbagent" / "metadata.db"
     
     if not db_path.exists():
         raise FileNotFoundError(
@@ -559,7 +557,7 @@ def create_dpp_tool(
     
     # Get database path
     config = get_config()
-    db_path = Path(config.workspace_root) / ".vbagent" / "metadata.db"
+    db_path = Path.cwd() / ".vbagent" / "metadata.db"
     
     if not db_path.exists():
         raise FileNotFoundError(

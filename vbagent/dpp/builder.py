@@ -13,7 +13,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from vbagent.compile import compile_latex
 from vbagent.metadata.store import MetadataStore, QuestionMetadata
 
 
@@ -267,28 +266,84 @@ class DPPResult:
         Returns:
             Tuple of (success, pdf_path or error_message)
         """
+        import shutil
+        import subprocess
+        
         if not self.main_tex_path.exists():
             return False, f"main.tex not found: {self.main_tex_path}"
         
-        # Read the main.tex content
-        content = self.main_tex_path.read_text(encoding="utf-8")
+        # Check pdflatex is available
+        if not shutil.which("pdflatex"):
+            return False, "pdflatex not found. Install TeX Live or MacTeX."
         
         # Determine output directory
         if output_dir is None:
             output_dir = self.main_tex_path.parent
-        
-        # Compile using vbagent.compile
-        result = compile_latex(
-            content,
-            subject="physics",
-            output_dir=str(output_dir),
-            verbose=verbose
-        )
-        
-        if result.success:
-            return True, result.pdf_path or str(output_dir / "compile_test.pdf")
         else:
-            return False, result.error_summary
+            output_dir = Path(output_dir)
+        
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Run pdflatex directly on the complete document
+        # The DPP already has a complete LaTeX document, so we don't need compile_latex()
+        cmd = [
+            "pdflatex",
+            "-interaction=nonstopmode",
+            "-output-directory", str(output_dir),
+            str(self.main_tex_path),
+        ]
+        
+        try:
+            if verbose:
+                # Stream output to terminal
+                import sys
+                print(f"\n$ {' '.join(cmd)}\n", flush=True)
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    cwd=str(self.main_tex_path.parent),
+                )
+                stdout_lines = []
+                while True:
+                    line = proc.stdout.readline()
+                    if not line and proc.poll() is not None:
+                        break
+                    if line:
+                        sys.stdout.write(line)
+                        sys.stdout.flush()
+                        stdout_lines.append(line)
+                proc.wait(timeout=30)
+                returncode = proc.returncode
+            else:
+                # Silent mode
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                    cwd=str(self.main_tex_path.parent),
+                )
+                returncode = result.returncode
+                stdout_lines = result.stdout.splitlines()
+            
+            # Check for PDF output
+            pdf_name = self.main_tex_path.stem + ".pdf"
+            pdf_path = output_dir / pdf_name
+            
+            if returncode == 0 and pdf_path.exists():
+                return True, str(pdf_path)
+            else:
+                # Parse errors from output
+                error_lines = [line for line in stdout_lines if line.startswith("!") or "Error" in line]
+                error_msg = "\n".join(error_lines[:5]) if error_lines else "Compilation failed (check log)"
+                return False, error_msg
+                
+        except subprocess.TimeoutExpired:
+            return False, "pdflatex timed out (possible infinite loop)"
+        except Exception as e:
+            return False, f"Compilation error: {e}"
 
 
 class DPPBuilder:
@@ -413,12 +468,27 @@ class DPPBuilder:
             r"\usepackage{tasks}",
             r"\usepackage{enumitem}",
             r"\usepackage{geometry}",
+            r"\usepackage{xcolor}",
+            r"\usepackage{comment}",
+            r"\usepackage{siunitx}",
+            r"\usepackage{upgreek}",
+            r"\usepackage[utopia]{mathdesign}",
             r"\geometry{margin=1in}",
             r"",
             r"% TikZ libraries",
             r"\usetikzlibrary{calc, decorations.pathmorphing, decorations.markings,",
             r"                patterns, arrows.meta, positioning, shapes.geometric,",
             r"                intersections, angles, quotes}",
+            r"",
+            r"% Custom commands and environments",
+            r"\newcommand{\ans}{\quad}",
+            r"\def\ansint#1{\quad}",
+            r"\newenvironment{solution}{\par\color{red!85!black}$\Rightarrow$}{}",
+            r"\newenvironment{alternatesolution}{\par\color{blue!90!black}$\Rightarrow$}{}",
+            r"\newenvironment{idea}{\par\color{purple!90!black}$\Rightarrow$}{}",
+            r"% \excludecomment{solution}  % Uncomment to hide solutions",
+            r"% \excludecomment{alternatesolution}  % Uncomment to hide alternate solutions",
+            r"% \excludecomment{idea}  % Uncomment to hide ideas",
             r"",
             r"% Document info",
             f"\\title{{{title}}}",

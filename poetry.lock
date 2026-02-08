@@ -283,7 +283,7 @@ description = "Composable command line interface toolkit"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "sys_platform != \"emscripten\" or extra == \"cli\" or extra == \"dev\" or extra == \"all\""
+markers = "extra == \"cli\" or extra == \"dev\" or extra == \"all\" or sys_platform != \"emscripten\""
 files = [
     {file = "click-8.3.1-py3-none-any.whl", hash = "sha256:981153a64e25f12d547d3426c367a4857371575ee7ad18df2a6183ab0545b2a6"},
     {file = "click-8.3.1.tar.gz", hash = "sha256:12ff4785d337a1bb490bb7e9c2b1ee5da3112e94a8622f26a6c77f5d2fc6842a"},
@@ -1632,4 +1632,4 @@ dev = ["click", "hypothesis", "pytest", "rich"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "afbc78c5ee95ba09d044905a2dd9b33bb32065268041109580f2ed6bd865b28b"
+content-hash = "58e8571556fca11c65969509f8df2aa9e12129cbf3cae34250c64b078822324f"
