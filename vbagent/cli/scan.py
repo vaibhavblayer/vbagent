@@ -186,12 +186,26 @@ def scan(
                 
                 def run_tikz():
                     try:
-                        tikz_result_holder["result"] = generate_tikz(
-                            description=tikz_description,
-                            image_path=image,
-                            use_context=True,
-                            classification=classification,
-                        )
+                        # Use router if diagram analysis available
+                        if analyze_diagram and diagram_analysis:
+                            from vbagent.agents.tikz_router import generate_tikz_with_routing
+                            tikz_code, agent_used = generate_tikz_with_routing(
+                                image_path=image,
+                                description=tikz_description,
+                                diagram=diagram_analysis,
+                                primary=primary if 'primary' in locals() else None,
+                                use_context=True
+                            )
+                            tikz_result_holder["result"] = tikz_code
+                            tikz_result_holder["agent"] = agent_used
+                        else:
+                            tikz_result_holder["result"] = generate_tikz(
+                                description=tikz_description,
+                                image_path=image,
+                                use_context=True,
+                                classification=classification,
+                            )
+                            tikz_result_holder["agent"] = "generic"
                     except Exception as e:
                         tikz_result_holder["error"] = e
                     finally:
@@ -223,11 +237,12 @@ def scan(
                     tikz_code = None
                 else:
                     tikz_code = tikz_result_holder["result"]
-                    console.print("[green]  ✓ TikZ complete[/green]")
+                    agent_used = tikz_result_holder.get("agent", "generic")
+                    console.print(f"[green]  ✓ TikZ complete (agent: {agent_used})[/green]")
                     
                     # Show TikZ code
                     tikz_syntax = _get_syntax(tikz_code, "latex", theme="monokai", line_numbers=True)
-                    console.print(_get_panel(tikz_syntax, title="Generated TikZ", border_style="cyan"))
+                    console.print(_get_panel(tikz_syntax, title=f"Generated TikZ ({agent_used})", border_style="cyan"))
                     
                     # Combine if needed
                     if r'\input{diagram}' in result.latex:
