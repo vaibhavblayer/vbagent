@@ -8,8 +8,8 @@ Version 2.0 of classification system with support for:
 - TikZ validation
 """
 
-from typing import Literal, Optional
-from pydantic import BaseModel, Field
+from typing import Literal, Optional, Dict, Any
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 
 
@@ -39,6 +39,8 @@ CombinationStrategy = Literal["sequential", "parallel", "nested"]
 # Agent 1: Primary Classification (Image or LaTeX)
 class PrimaryClassification(BaseModel):
     """Output from Agent 1 (Image Classifier) or Agent 4 (LaTeX Classifier)"""
+    model_config = ConfigDict(extra='forbid')
+    
     subject: str
     question_type: QuestionType
     chapter: str
@@ -60,6 +62,8 @@ class PrimaryClassification(BaseModel):
 # Agent 2: Diagram Analysis
 class DiagramFeatures(BaseModel):
     """Visual features of the diagram"""
+    model_config = ConfigDict(extra='forbid')
+    
     has_labels: bool = False
     has_measurements: bool = False
     has_vectors: bool = False
@@ -70,6 +74,8 @@ class DiagramFeatures(BaseModel):
 
 class TikZRequirements(BaseModel):
     """TikZ generation requirements"""
+    model_config = ConfigDict(extra='forbid')
+    
     libraries: list[str] = Field(default_factory=list)
     packages: list[str] = Field(default_factory=list)
     complexity_score: int = Field(ge=1, le=10, default=5)
@@ -77,6 +83,8 @@ class TikZRequirements(BaseModel):
 
 class DiagramAnalysis(BaseModel):
     """Output from Agent 2: Diagram Analyzer"""
+    model_config = ConfigDict(extra='forbid')
+    
     diagram_type: str
     diagram_category: DiagramCategory
     diagram_complexity: DiagramComplexity
@@ -91,6 +99,8 @@ class DiagramAnalysis(BaseModel):
 # Agent 3: Difficulty Assessment
 class DifficultyFactors(BaseModel):
     """Factors contributing to difficulty"""
+    model_config = ConfigDict(extra='forbid')
+    
     concept_complexity: Literal["low", "moderate", "high"] = "moderate"
     calculation_complexity: Literal["low", "moderate", "high"] = "moderate"
     multi_step: bool = False
@@ -101,6 +111,8 @@ class DifficultyFactors(BaseModel):
 
 class ProblemStructure(BaseModel):
     """Structure of the problem"""
+    model_config = ConfigDict(extra='forbid')
+    
     has_given_data: bool = False
     has_find_statement: bool = False
     has_constraints: bool = False
@@ -109,6 +121,8 @@ class ProblemStructure(BaseModel):
 
 class ExamRelevance(BaseModel):
     """Relevance to different exams"""
+    model_config = ConfigDict(extra='forbid')
+    
     jee_main: float = Field(ge=0.0, le=1.0, default=0.5)
     jee_advanced: float = Field(ge=0.0, le=1.0, default=0.5)
     neet: float = Field(ge=0.0, le=1.0, default=0.5)
@@ -116,6 +130,8 @@ class ExamRelevance(BaseModel):
 
 class DifficultyAssessment(BaseModel):
     """Output from Agent 3: Difficulty Assessor"""
+    model_config = ConfigDict(extra='forbid')
+    
     difficulty: Difficulty
     difficulty_score: float = Field(ge=1.0, le=10.0)
     difficulty_factors: DifficultyFactors = Field(default_factory=DifficultyFactors)
@@ -140,13 +156,15 @@ class DifficultyAssessment(BaseModel):
 # Agent 5: Idea Generator
 class GeneratedProblem(BaseModel):
     """Output from Agent 5: Idea-to-Problem Generator"""
+    model_config = ConfigDict(extra='allow')  # Allow for generation_metadata flexibility
+    
     problem_latex: str
     solution_latex: str
     alternate_solution_latex: Optional[str] = None
     idea_latex: str
     diagram_description: Optional[str] = None
     
-    generation_metadata: dict = Field(default_factory=dict)
+    generation_metadata: Dict[str, Any] = Field(default_factory=dict)
     # Contains: source_ideas, formulas_used, concepts_covered
     
     generated_at: str = Field(default_factory=lambda: datetime.now().isoformat())
@@ -155,12 +173,14 @@ class GeneratedProblem(BaseModel):
 # Agent 6: Problem Combiner
 class CombinedProblem(BaseModel):
     """Output from Agent 6: Multi-Problem Combiner"""
+    model_config = ConfigDict(extra='allow')  # Allow for combination_metadata flexibility
+    
     combined_problem_latex: str
     combined_solution_latex: str
     combined_ideas: list[str] = Field(default_factory=list)
     source_problems: list[int] = Field(default_factory=list)
     
-    combination_metadata: dict = Field(default_factory=dict)
+    combination_metadata: Dict[str, Any] = Field(default_factory=dict)
     # Contains: strategy_used, subjects_combined, connection_points, difficulty_justification
     
     combined_at: str = Field(default_factory=lambda: datetime.now().isoformat())
@@ -169,6 +189,8 @@ class CombinedProblem(BaseModel):
 # Agent 7: TikZ Validation
 class TikZError(BaseModel):
     """A single TikZ error"""
+    model_config = ConfigDict(extra='forbid')
+    
     type: str  # "syntax", "missing_library", "undefined_command"
     line: int
     message: str
@@ -177,6 +199,8 @@ class TikZError(BaseModel):
 
 class TikZFix(BaseModel):
     """A fix applied to TikZ code"""
+    model_config = ConfigDict(extra='forbid')
+    
     type: str
     description: str
     before: str
@@ -185,6 +209,8 @@ class TikZFix(BaseModel):
 
 class TikZValidation(BaseModel):
     """Output from Agent 7: TikZ Checker/Fixer"""
+    model_config = ConfigDict(extra='allow')  # Allow for validation_metadata flexibility
+    
     is_valid: bool
     compilation_status: Literal["success", "fixed", "failed"]
     fixed_tikz_code: Optional[str] = None
@@ -192,7 +218,7 @@ class TikZValidation(BaseModel):
     errors_found: list[TikZError] = Field(default_factory=list)
     fixes_applied: list[TikZFix] = Field(default_factory=list)
     
-    validation_metadata: dict = Field(default_factory=dict)
+    validation_metadata: Dict[str, Any] = Field(default_factory=dict)
     # Contains: libraries_used, packages_required, complexity_score, compilation_time_ms
     
     suggestions: list[str] = Field(default_factory=list)

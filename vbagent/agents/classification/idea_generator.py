@@ -60,10 +60,13 @@ def create_idea_generator_agent(subject: Optional[str] = None):
     
     prompt = get_idea_generator_prompt(subject)
     
+    # Import AgentOutputSchema to disable strict schema
+    from agents import AgentOutputSchema
+    
     return create_agent(
         name=f"IdeaGenerator-{subject}",
         instructions=prompt,
-        output_type=GeneratedProblem,
+        output_type=AgentOutputSchema(GeneratedProblem, strict_json_schema=False),
         agent_type="variant",
     )
 
