@@ -206,6 +206,8 @@ vbagent process -i question.png -c --verbose-compile
 | `metadata` | Manage question bank metadata (index, query, stats) |
 | `dpp` | Create Daily Practice Problem sets with smart selection |
 | `export` | Export LaTeX files in different formats (flat, structured, project) |
+| `extans` | Extract answers from LaTeX problem files |
+| `db` | Database management for question bank with full content storage |
 | `classify` | Classify physics question image type |
 | `scan` | Extract LaTeX from question image |
 | `tikz` | Generate TikZ/PGF code for diagrams |
@@ -286,6 +288,62 @@ Selection strategies:
 - `balanced`: 40% easy, 40% medium, 20% hard distribution
 - `topic_coverage`: Maximize topic diversity
 - `random`: Random selection with usage fairness
+
+### Answer Extraction (extans)
+
+Extract answers from LaTeX problem files:
+
+```bash
+# Extract from main.tex
+vbagent extans
+
+# Specify file and format
+vbagent extans -f main.tex --format json
+vbagent extans -o answers.yaml --format yaml
+vbagent extans --format latex -o answers.tex
+```
+
+Features:
+- Parses `\foreach` loops and `\input{}` statements
+- Handles nested folders (physics/, chemistry/, etc.)
+- Recursive parsing of intermediate files
+- Supports MCQ (`\ans` marker) and integer (`\ansint{}`) answers
+- Multiple correct answers (A,C format)
+- Output formats: text, json, yaml, latex
+
+### Database Management (db)
+
+Complete SQLite-based question bank with full content storage:
+
+```bash
+# Initialize database
+vbagent db init ./questions
+
+# Check existing database
+vbagent db init
+
+# Insert new problems
+vbagent db insert ./new_questions
+
+# Query questions
+vbagent db query --topic Kinematics --difficulty medium
+vbagent db query --type passage --format json
+
+# Show statistics
+vbagent db stats
+
+# Delete question
+vbagent db delete 42
+```
+
+Features:
+- Stores full LaTeX content (problem, solution, alternate, idea, TikZ)
+- Context-aware TikZ storage (tracks which section each diagram belongs to)
+- Parent-child relationship for passage/comprehension questions
+- JSON storage for lists (tags, key_concepts)
+- Metadata extraction from inline comments
+- Accurate question counting (effective vs total entries)
+- Children never exported/queried separately
 
 ### Export System
 
