@@ -506,6 +506,21 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     is_flag=True,
     help="Show full LaTeX document + preamble before each compile and prompt to continue/skip/quit"
 )
+@click.option(
+    "--assess-difficulty", "assess_difficulty",
+    is_flag=True,
+    help="Assess difficulty after scanning (uses Agent 3)"
+)
+@click.option(
+    "--analyze-diagram", "analyze_diagram",
+    is_flag=True,
+    help="Analyze diagram in detail (uses Agent 2)"
+)
+@click.option(
+    "--validate-tikz", "validate_tikz",
+    is_flag=True,
+    help="Validate and fix TikZ code (uses Agent 7)"
+)
 def process(
     image: Optional[str],
     tex: Optional[str],
@@ -519,6 +534,9 @@ def process(
     parallel: int,
     do_compile: bool,
     verbose_compile: bool,
+    assess_difficulty: bool,
+    analyze_diagram: bool,
+    validate_tikz: bool,
 ):
     """Full pipeline: Classify → Scan → TikZ → Ideas → Variants.
     

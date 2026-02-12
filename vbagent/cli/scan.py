@@ -76,7 +76,26 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     is_flag=True,
     help="Show full LaTeX document + preamble before each compile and prompt to continue/skip/quit"
 )
-def scan(image: str | None, tex: str | None, question_type: str | None, output: str | None, do_compile: bool, verbose_compile: bool):
+@click.option(
+    "--assess-difficulty", "assess_difficulty",
+    is_flag=True,
+    help="Assess difficulty after scanning (uses Agent 3)"
+)
+@click.option(
+    "--analyze-diagram", "analyze_diagram",
+    is_flag=True,
+    help="Analyze diagram in detail (uses Agent 2)"
+)
+def scan(
+    image: str | None,
+    tex: str | None,
+    question_type: str | None,
+    output: str | None,
+    do_compile: bool,
+    verbose_compile: bool,
+    assess_difficulty: bool,
+    analyze_diagram: bool
+):
     """Stage 2: Extract LaTeX from physics question image.
     
     Runs classification first (unless --type provided), then extracts LaTeX
@@ -225,6 +244,102 @@ def scan(image: str | None, tex: str | None, question_type: str | None, output: 
         
         # Display result
         display_scan_result(result, console)
+        
+        # NEW: Diagram analysis (Agent 2) if requested
+        diagram_analysis = None
+        if analyze_diagram and classification.has_diagram and image:
+            console.print("\n[bold cyan]Running diagram analysis (Agent 2)...[/bold cyan]")
+            try:
+                from vbagent.agents.classification import analyze_diagram as analyze_diagram_agent
+                from vbagent.models.classification_v2 import PrimaryClassification
+                
+                # Convert to PrimaryClassification
+                primary = PrimaryClassification(
+                    subject=getattr(classification, 'subject', 'physics'),
+                    question_type=classification.question_type,
+                    chapter=classification.chapter,
+                    topic=classification.topic,
+                    subtopic=classification.subtopic,
+                    has_diagram=classification.has_diagram,
+                    num_options=classification.num_options,
+                    key_concepts=classification.key_concepts,
+                    requires_calculus=classification.requires_calculus,
+                    confidence=classification.confidence,
+                    classified_from="image"
+                )
+                
+                with console.status("[bold green]Analyzing diagram..."):
+                    diagram_analysis = analyze_diagram_agent(image, primary)
+                
+                console.print(f"[green]  ✓ Diagram Type:[/green] {diagram_analysis.diagram_type}")
+                console.print(f"[green]  ✓ Category:[/green] {diagram_analysis.diagram_category}")
+                console.print(f"[green]  ✓ Complexity:[/green] {diagram_analysis.diagram_complexity}")
+                console.print(f"[green]  ✓ Suggested Agent:[/green] {diagram_analysis.suggested_tikz_agent}")
+                
+                if diagram_analysis.tikz_requirements.libraries:
+                    console.print(f"[dim]  Libraries: {', '.join(diagram_analysis.tikz_requirements.libraries)}[/dim]")
+                
+            except Exception as e:
+                console.print(f"[yellow]  ⚠ Diagram analysis failed: {e}[/yellow]")
+        
+        # NEW: Difficulty assessment (Agent 3) if requested
+        difficulty_assessment = None
+        if assess_difficulty:
+            console.print("\n[bold cyan]Running difficulty assessment (Agent 3)...[/bold cyan]")
+            try:
+                from vbagent.agents.classification import assess_difficulty as assess_difficulty_agent
+                from vbagent.models.classification_v2 import PrimaryClassification
+                
+                # Convert to PrimaryClassification if not already done
+                if not diagram_analysis:
+                    primary = PrimaryClassification(
+                        subject=getattr(classification, 'subject', 'physics'),
+                        question_type=classification.question_type,
+                        chapter=classification.chapter,
+                        topic=classification.topic,
+                        subtopic=classification.subtopic,
+                        has_diagram=classification.has_diagram,
+                        num_options=classification.num_options,
+                        key_concepts=classification.key_concepts,
+                        requires_calculus=classification.requires_calculus,
+                        confidence=classification.confidence,
+                        classified_from="image"
+                    )
+                
+                with console.status("[bold green]Assessing difficulty..."):
+                    difficulty_assessment = assess_difficulty_agent(
+                        result.latex,
+                        primary,
+                        diagram_analysis,
+                        tikz_code if 'tikz_code' in locals() else None
+                    )
+                
+                console.print(f"[green]  ✓ Difficulty:[/green] {difficulty_assessment.difficulty} ({difficulty_assessment.difficulty_score:.1f}/10)")
+                console.print(f"[green]  ✓ Solve Time:[/green] {difficulty_assessment.expected_solve_time_minutes} min")
+                console.print(f"[green]  ✓ Cognitive Level:[/green] {difficulty_assessment.cognitive_level}")
+                
+                if difficulty_assessment.difficulty_reasoning:
+                    console.print(f"\n[cyan]Reasoning:[/cyan]")
+                    console.print(f"[dim]{difficulty_assessment.difficulty_reasoning}[/dim]")
+                
+                if difficulty_assessment.prerequisite_concepts:
+                    console.print(f"\n[cyan]Prerequisites:[/cyan] {', '.join(difficulty_assessment.prerequisite_concepts[:3])}")
+                
+                if difficulty_assessment.common_mistakes:
+                    console.print(f"[cyan]Common Mistakes:[/cyan]")
+                    for mistake in difficulty_assessment.common_mistakes[:2]:
+                        console.print(f"  • {mistake}")
+                
+                # Save difficulty assessment
+                if output:
+                    import json
+                    output_path = Path(output)
+                    difficulty_file = output_path.parent / f"{output_path.stem}_difficulty.json"
+                    difficulty_file.write_text(difficulty_assessment.model_dump_json(indent=2))
+                    console.print(f"\n[dim]Difficulty saved to: {difficulty_file}[/dim]")
+                
+            except Exception as e:
+                console.print(f"[yellow]  ⚠ Difficulty assessment failed: {e}[/yellow]")
         
         # Compile validation if -c flag
         if do_compile:
