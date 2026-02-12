@@ -87,6 +87,14 @@ class ClassificationPipeline:
             self._problem_combiner = create_problem_combiner_agent()
         return self._problem_combiner
     
+    @property
+    def tikz_checker(self):
+        """Lazy load TikZ checker"""
+        if self._tikz_checker is None:
+            from .tikz_checker import create_tikz_checker_agent
+            self._tikz_checker = create_tikz_checker_agent()
+        return self._tikz_checker
+    
     def classify_from_image(
         self,
         image_path: str,
@@ -132,6 +140,16 @@ class ClassificationPipeline:
         """Step 3: Assess difficulty (Agent 3) - After scan"""
         from .difficulty_assessor import assess_difficulty
         return assess_difficulty(latex_content, primary, diagram, tikz_code)
+    
+    def validate_tikz_code(
+        self,
+        tikz_code: str,
+        context: Optional[str] = None,
+        auto_fix: bool = True
+    ):
+        """Validate and fix TikZ code (Agent 7)"""
+        from .tikz_checker import validate_tikz
+        return validate_tikz(tikz_code, context, auto_fix)
     
     def process(
         self,
