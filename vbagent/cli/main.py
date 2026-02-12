@@ -9,6 +9,15 @@ heavy imports (openai, agents, mcp, etc.) until commands are actually invoked.
 import click
 
 
+def _get_version():
+    """Get version from package metadata."""
+    try:
+        from importlib.metadata import version
+        return version("vbagent")
+    except Exception:
+        return "0.2.1"  # Fallback
+
+
 class LazyGroup(click.Group):
     """A click Group that lazily loads subcommands.
     
@@ -63,6 +72,7 @@ LAZY_SUBCOMMANDS = {
     "export": "vbagent.cli.export",
     "mcp": "vbagent.cli.mcp",
     "extans": "vbagent.cli.extans",
+    "db": "vbagent.cli.db",
 }
 
 
@@ -70,7 +80,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 
 @click.group(cls=LazyGroup, lazy_subcommands=LAZY_SUBCOMMANDS, context_settings=CONTEXT_SETTINGS)
-@click.version_option(version="0.1.0", prog_name="vbagent")
+@click.version_option(version=_get_version(), prog_name="vbagent")
 def main():
     """VBAgent - Physics question processing pipeline.
     
@@ -87,6 +97,7 @@ def main():
         dpp       - Create Daily Practice Problem sets
         export    - Export LaTeX files in different formats
         extans    - Extract answers from LaTeX problem files
+        db        - Database management for question bank
         process   - Full pipeline orchestration
         classify  - Stage 1: Classify question image
         scan      - Stage 2: Extract LaTeX from image
