@@ -47,8 +47,9 @@ class ClassificationPipeline:
     def latex_classifier(self):
         """Lazy load LaTeX classifier"""
         if self._latex_classifier is None:
-            # TODO: Implement LaTeX classifier
-            pass
+            from .latex_classifier import create_latex_classifier_agent
+            from vbagent.config import get_config
+            self._latex_classifier = create_latex_classifier_agent(get_config().subject)
         return self._latex_classifier
     
     @property
@@ -69,6 +70,23 @@ class ClassificationPipeline:
             self._difficulty_assessor = create_difficulty_assessor_agent(get_config().subject)
         return self._difficulty_assessor
     
+    @property
+    def idea_generator(self):
+        """Lazy load idea generator"""
+        if self._idea_generator is None:
+            from .idea_generator import create_idea_generator_agent
+            from vbagent.config import get_config
+            self._idea_generator = create_idea_generator_agent(get_config().subject)
+        return self._idea_generator
+    
+    @property
+    def problem_combiner(self):
+        """Lazy load problem combiner"""
+        if self._problem_combiner is None:
+            from .problem_combiner import create_problem_combiner_agent
+            self._problem_combiner = create_problem_combiner_agent()
+        return self._problem_combiner
+    
     def classify_from_image(
         self,
         image_path: str,
@@ -84,8 +102,8 @@ class ClassificationPipeline:
         subject: Optional[str] = None
     ) -> PrimaryClassification:
         """Step 1: Classify from LaTeX (Agent 4)"""
-        # TODO: Implement LaTeX classification
-        raise NotImplementedError("LaTeX classifier not yet implemented")
+        from .latex_classifier import classify_from_latex
+        return classify_from_latex(latex_content, subject)
     
     def analyze_diagram(
         self,
