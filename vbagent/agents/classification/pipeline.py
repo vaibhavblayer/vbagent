@@ -38,9 +38,9 @@ class ClassificationPipeline:
     def image_classifier(self):
         """Lazy load image classifier"""
         if self._image_classifier is None:
-            from vbagent.agents.classifier import create_classifier_agent
+            from .image_classifier import create_image_classifier_agent
             from vbagent.config import get_config
-            self._image_classifier = create_classifier_agent(get_config().subject)
+            self._image_classifier = create_image_classifier_agent(get_config().subject)
         return self._image_classifier
     
     @property
@@ -55,16 +55,18 @@ class ClassificationPipeline:
     def diagram_analyzer(self):
         """Lazy load diagram analyzer"""
         if self._diagram_analyzer is None:
-            # TODO: Implement diagram analyzer
-            pass
+            from .diagram_analyzer import create_diagram_analyzer_agent
+            from vbagent.config import get_config
+            self._diagram_analyzer = create_diagram_analyzer_agent(get_config().subject)
         return self._diagram_analyzer
     
     @property
     def difficulty_assessor(self):
         """Lazy load difficulty assessor"""
         if self._difficulty_assessor is None:
-            # TODO: Implement difficulty assessor
-            pass
+            from .difficulty_assessor import create_difficulty_assessor_agent
+            from vbagent.config import get_config
+            self._difficulty_assessor = create_difficulty_assessor_agent(get_config().subject)
         return self._difficulty_assessor
     
     def classify_from_image(
@@ -73,24 +75,8 @@ class ClassificationPipeline:
         subject: Optional[str] = None
     ) -> PrimaryClassification:
         """Step 1: Classify from image (Agent 1)"""
-        from vbagent.agents.classifier import classify
-        
-        result = classify(image_path, subject)
-        
-        # Convert to PrimaryClassification
-        return PrimaryClassification(
-            subject=result.subject if hasattr(result, 'subject') else subject or "physics",
-            question_type=result.question_type,
-            chapter=result.chapter,
-            topic=result.topic,
-            subtopic=result.subtopic,
-            has_diagram=result.has_diagram,
-            num_options=result.num_options,
-            key_concepts=result.key_concepts,
-            requires_calculus=result.requires_calculus,
-            confidence=result.confidence,
-            classified_from="image"
-        )
+        from .image_classifier import classify_from_image
+        return classify_from_image(image_path, subject)
     
     def classify_from_latex(
         self,
@@ -111,8 +97,11 @@ class ClassificationPipeline:
         if not primary.has_diagram:
             return None
         
-        # TODO: Implement diagram analyzer
-        raise NotImplementedError("Diagram analyzer not yet implemented")
+        if not image_path:
+            return None
+        
+        from .diagram_analyzer import analyze_diagram
+        return analyze_diagram(image_path, primary)
     
     def assess_difficulty(
         self,
@@ -123,8 +112,8 @@ class ClassificationPipeline:
         tikz_code: Optional[str] = None
     ) -> DifficultyAssessment:
         """Step 3: Assess difficulty (Agent 3) - After scan"""
-        # TODO: Implement difficulty assessor
-        raise NotImplementedError("Difficulty assessor not yet implemented")
+        from .difficulty_assessor import assess_difficulty
+        return assess_difficulty(latex_content, primary, diagram, tikz_code)
     
     def process(
         self,
@@ -164,31 +153,19 @@ class ClassificationPipeline:
         
         # Step 2: Diagram analysis (conditional)
         diagram = None
-        if primary.has_diagram:
-            try:
-                diagram = self.analyze_diagram(
-                    input_data if input_type == "image" else None,
-                    latex_content,
-                    primary
-                )
-            except NotImplementedError:
-                # Diagram analyzer not ready yet
-                pass
+        if primary.has_diagram and input_type == "image":
+            diagram = self.analyze_diagram(input_data, latex_content, primary)
         
         # Step 3: Difficulty assessment (if latex_content provided)
         difficulty = None
         if latex_content:
-            try:
-                difficulty = self.assess_difficulty(
-                    input_data if input_type == "image" else None,
-                    latex_content,
-                    primary,
-                    diagram,
-                    tikz_code
-                )
-            except NotImplementedError:
-                # Difficulty assessor not ready yet
-                pass
+            difficulty = self.assess_difficulty(
+                input_data if input_type == "image" else None,
+                latex_content,
+                primary,
+                diagram,
+                tikz_code
+            )
         
         # Combine results
         return ClassificationResult.from_agents(primary, diagram, difficulty)
