@@ -19,7 +19,6 @@ The metadata system now supports extended fields for richer question classificat
 - **has_diagram** (bool, optional): Whether the question includes a diagram
 - **diagram_type** (str, optional): Type of diagram (e.g., "graph", "circuit", "free_body", "ray_diagram")
 - **num_options** (int, optional): Number of options for MCQ questions
-- **estimated_marks** (int, optional): Expected marks for the question
 - **key_concepts** (list[str], optional): List of key concepts tested
 - **requires_calculus** (bool, optional): Whether the question requires calculus knowledge
 - **confidence** (float, optional): Confidence score (0.0 to 1.0) for auto-generated metadata
@@ -44,7 +43,6 @@ Add metadata as comments at the top of your LaTeX files:
 % has_diagram: true
 % diagram_type: graph
 % num_options: 4
-% estimated_marks: 4
 % key_concepts: position vs time graphs, velocity as slope, overtaking
 % requires_calculus: false
 % confidence: 0.9
@@ -70,7 +68,6 @@ metadata = QuestionMetadata(
     has_diagram=True,
     diagram_type="graph",
     num_options=4,
-    estimated_marks=4,
     key_concepts=[
         "position vs time graphs",
         "velocity as slope of x-t graph",
@@ -151,7 +148,6 @@ CREATE TABLE questions (
     has_diagram INTEGER,          -- 0/1 for false/true
     diagram_type TEXT,
     num_options INTEGER,
-    estimated_marks INTEGER,
     key_concepts TEXT,            -- JSON array
     requires_calculus INTEGER,    -- 0/1 for false/true
     confidence REAL,

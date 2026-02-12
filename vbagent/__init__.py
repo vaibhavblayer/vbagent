@@ -67,6 +67,9 @@ if TYPE_CHECKING:
         # TikZ generation
         generate_tikz,
         validate_tikz_output,
+        # FBD generation
+        generate_fbd,
+        validate_fbd_output,
         # QA Checkers
         check_solution,
         check_grammar,
@@ -135,6 +138,9 @@ __all__ = [
     # TikZ generation
     "generate_tikz",
     "validate_tikz_output",
+    # FBD generation
+    "generate_fbd",
+    "validate_fbd_output",
     # QA Checkers
     "check_solution",
     "check_grammar",
@@ -190,6 +196,7 @@ def __getattr__(name: str):
         "generate_conceptual_variant", "generate_calculus_variant",
         "get_variant_prompt", "VALID_VARIANT_TYPES",
         "generate_tikz", "validate_tikz_output",
+        "generate_fbd", "validate_fbd_output",
         "check_solution", "check_grammar", "check_clarity", "check_tikz", "check_tikz_with_patch",
         "review_problem", "review_problem_sync",
         "discover_problems", "select_random", "load_problem_context", "ProblemContext",

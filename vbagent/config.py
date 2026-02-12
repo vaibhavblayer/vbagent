@@ -100,6 +100,7 @@ AGENT_TYPES = [
     "classifier",
     "scanner",
     "tikz",
+    "fbd",
     "tikz_checker",
     "idea",
     "alternate",
@@ -117,6 +118,7 @@ MODEL_GROUPS: dict[str, dict[str, str]] = {
         "classifier": "gpt-5-mini",
         "scanner": "gpt-5.2",
         "tikz": "gpt-5.1-codex",
+        "fbd": "gpt-5.1-codex",
         "tikz_checker": "gpt-5-mini",
         "idea": "gpt-5.2",
         "alternate": "gpt-5.2",
@@ -129,6 +131,7 @@ MODEL_GROUPS: dict[str, dict[str, str]] = {
         "classifier": "grok-4-1-fast-reasoning",
         "scanner": "grok-4-1-fast-reasoning",
         "tikz": "grok-4-1-fast-reasoning",
+        "fbd": "grok-4-1-fast-reasoning",
         "tikz_checker": "grok-4-1-fast-reasoning",
         "idea": "grok-4-1-fast-reasoning",
         "alternate": "grok-4-1-fast-reasoning",
@@ -141,6 +144,7 @@ MODEL_GROUPS: dict[str, dict[str, str]] = {
         "classifier": "gemini-3-flash-preview",
         "scanner": "gemini-3-flash-preview",
         "tikz": "gemini-3-flash-preview",
+        "fbd": "gemini-3-flash-preview",
         "tikz_checker": "gemini-3-flash-preview",
         "idea": "gemini-3-flash-preview",
         "alternate": "gemini-3-flash-preview",
@@ -314,6 +318,7 @@ class VBAgentConfig:
     classifier: AgentModelConfig = field(default_factory=AgentModelConfig)
     scanner: AgentModelConfig = field(default_factory=AgentModelConfig)
     tikz: AgentModelConfig = field(default_factory=AgentModelConfig)
+    fbd: AgentModelConfig = field(default_factory=AgentModelConfig)
     tikz_checker: AgentModelConfig = field(default_factory=AgentModelConfig)
     idea: AgentModelConfig = field(default_factory=AgentModelConfig)
     alternate: AgentModelConfig = field(default_factory=AgentModelConfig)

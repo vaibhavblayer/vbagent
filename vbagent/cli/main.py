@@ -45,6 +45,7 @@ LAZY_SUBCOMMANDS = {
     "classify": "vbagent.cli.classify",
     "scan": "vbagent.cli.scan",
     "tikz": "vbagent.cli.tikz",
+    "fbd": "vbagent.cli.fbd",
     "idea": "vbagent.cli.idea",
     "alternate": "vbagent.cli.alternate",
     "variant": "vbagent.cli.variant",
@@ -61,6 +62,7 @@ LAZY_SUBCOMMANDS = {
     "dpp": "vbagent.cli.dpp",
     "export": "vbagent.cli.export",
     "mcp": "vbagent.cli.mcp",
+    "extans": "vbagent.cli.extans",
 }
 
 
@@ -84,10 +86,12 @@ def main():
         metadata  - Manage question bank metadata
         dpp       - Create Daily Practice Problem sets
         export    - Export LaTeX files in different formats
+        extans    - Extract answers from LaTeX problem files
         process   - Full pipeline orchestration
         classify  - Stage 1: Classify question image
         scan      - Stage 2: Extract LaTeX from image
         tikz      - Generate TikZ code for diagrams
+        fbd       - Generate Free Body Diagram TikZ code
         idea      - Extract concepts and ideas
         alternate - Generate alternative solutions
         variant   - Generate problem variants

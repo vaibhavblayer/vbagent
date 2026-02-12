@@ -71,6 +71,12 @@ if TYPE_CHECKING:
         validate_tikz_output,
         search_tikz_reference,
     )
+    from .fbd import (
+        generate_fbd,
+        create_fbd_agent,
+        validate_fbd_output,
+        search_fbd_reference,
+    )
     from .reviewer import (
         review_problem,
         review_problem_sync,
@@ -140,6 +146,11 @@ __all__ = [
     "create_tikz_agent",
     "validate_tikz_output",
     "search_tikz_reference",
+    # FBD generator
+    "generate_fbd",
+    "create_fbd_agent",
+    "validate_fbd_output",
+    "search_fbd_reference",
     # Reviewer
     "review_problem",
     "review_problem_sync",
@@ -202,6 +213,10 @@ def __getattr__(name: str):
     if name in ("generate_tikz", "create_tikz_agent", "validate_tikz_output", "search_tikz_reference"):
         from . import tikz
         return getattr(tikz, name)
+    
+    if name in ("generate_fbd", "create_fbd_agent", "validate_fbd_output", "search_fbd_reference"):
+        from . import fbd
+        return getattr(fbd, name)
     
     if name in ("review_problem", "review_problem_sync", "ReviewAgentError", "ReviewError", "ReviewErrorType"):
         from . import reviewer

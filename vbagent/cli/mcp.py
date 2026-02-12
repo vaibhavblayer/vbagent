@@ -41,7 +41,25 @@ def mcp(verbose: bool):
             "vbagent": {
               "command": "vbagent",
               "args": ["mcp"],
-              "env": {}
+              "env": {
+                "OPENAI_API_KEY": "your-api-key-here"
+              }
+            }
+          }
+        }
+        
+        Or use environment variable references:
+        
+        {
+          "mcpServers": {
+            "vbagent": {
+              "command": "vbagent",
+              "args": ["mcp"],
+              "env": {
+                "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+                "XAI_API_KEY": "${XAI_API_KEY}",
+                "GOOGLE_API_KEY": "${GOOGLE_API_KEY}"
+              }
             }
           }
         }
@@ -59,6 +77,10 @@ def mcp(verbose: bool):
         )
     
     try:
+        # Apply provider config early to ensure API keys are set
+        from vbagent.config import apply_provider_config
+        apply_provider_config()
+        
         # Create tool registry and register all tools
         registry = ToolRegistry()
         register_core_tools(registry)

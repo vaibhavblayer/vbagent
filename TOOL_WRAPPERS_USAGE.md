@@ -48,7 +48,6 @@ Classify a physics question image to extract metadata.
     "has_diagram": bool,       # Whether question has a diagram
     "diagram_type": str,       # Type of diagram if present
     "num_options": int,        # Number of options for MCQ
-    "estimated_marks": int,    # Estimated marks
     "requires_calculus": bool, # Whether calculus is required
     "confidence": float,       # Classification confidence (0-1)
     "key_concepts": list[str], # List of key physics concepts
