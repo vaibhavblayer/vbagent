@@ -52,6 +52,27 @@ class QuestionRecord:
     requires_calculus: bool = False
     confidence: Optional[float] = None
     
+    # NEW: Agent 2 (Diagram Analysis) fields
+    diagram_category: Optional[str] = None
+    diagram_complexity: Optional[str] = None
+    diagram_elements: list[str] = field(default_factory=list)
+    suggested_tikz_agent: Optional[str] = None
+    tikz_libraries: list[str] = field(default_factory=list)
+    
+    # NEW: Agent 3 (Difficulty Assessment) fields
+    difficulty_score: Optional[float] = None
+    difficulty_reasoning: Optional[str] = None
+    expected_solve_time_minutes: Optional[int] = None
+    expected_error_rate: Optional[float] = None
+    prerequisite_concepts: list[str] = field(default_factory=list)
+    common_mistakes: list[str] = field(default_factory=list)
+    cognitive_level: Optional[str] = None
+    solution_approach: list[str] = field(default_factory=list)
+    required_formulas: list[str] = field(default_factory=list)
+    exam_relevance: dict = field(default_factory=dict)
+    learning_objectives: list[str] = field(default_factory=list)
+    tags_auto: list[str] = field(default_factory=list)
+    
     # Usage tracking
     usage_count: int = 0
     last_used: Optional[datetime] = None
@@ -127,6 +148,27 @@ class QuestionDatabase:
                 requires_calculus BOOLEAN DEFAULT 0,
                 confidence REAL,
                 
+                -- NEW: Agent 2 (Diagram Analysis) fields
+                diagram_category TEXT,
+                diagram_complexity TEXT,
+                diagram_elements TEXT,
+                suggested_tikz_agent TEXT,
+                tikz_libraries TEXT,
+                
+                -- NEW: Agent 3 (Difficulty Assessment) fields
+                difficulty_score REAL,
+                difficulty_reasoning TEXT,
+                expected_solve_time_minutes INTEGER,
+                expected_error_rate REAL,
+                prerequisite_concepts TEXT,
+                common_mistakes TEXT,
+                cognitive_level TEXT,
+                solution_approach TEXT,
+                required_formulas TEXT,
+                exam_relevance TEXT,
+                learning_objectives TEXT,
+                tags_auto TEXT,
+                
                 usage_count INTEGER DEFAULT 0,
                 last_used TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -156,8 +198,12 @@ class QuestionDatabase:
                 passage_text, problem_latex, solution_latex, alternate_solution_latex,
                 idea_latex, tikz_diagrams, tags, key_concepts, has_solution, has_alternate,
                 has_idea, has_tikz, tikz_count, has_diagram, diagram_type, num_options,
-                requires_calculus, confidence, usage_count, metadata_source
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                requires_calculus, confidence, usage_count, metadata_source,
+                diagram_category, diagram_complexity, diagram_elements, suggested_tikz_agent,
+                tikz_libraries, difficulty_score, difficulty_reasoning, expected_solve_time_minutes,
+                expected_error_rate, prerequisite_concepts, common_mistakes, cognitive_level,
+                solution_approach, required_formulas, exam_relevance, learning_objectives, tags_auto
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             record.file_path, record.question_type, record.is_passage, record.parent_question_id,
             record.passage_order, record.num_subquestions, record.subject, record.chapter,
@@ -167,7 +213,17 @@ class QuestionDatabase:
             json.dumps(record.key_concepts), record.has_solution, record.has_alternate,
             record.has_idea, record.has_tikz, record.tikz_count, record.has_diagram,
             record.diagram_type, record.num_options, record.requires_calculus, record.confidence,
-            record.usage_count, record.metadata_source
+            record.usage_count, record.metadata_source,
+            # Agent 2 fields
+            record.diagram_category, record.diagram_complexity, json.dumps(record.diagram_elements),
+            record.suggested_tikz_agent, json.dumps(record.tikz_libraries),
+            # Agent 3 fields
+            record.difficulty_score, record.difficulty_reasoning, record.expected_solve_time_minutes,
+            record.expected_error_rate, json.dumps(record.prerequisite_concepts),
+            json.dumps(record.common_mistakes), record.cognitive_level,
+            json.dumps(record.solution_approach), json.dumps(record.required_formulas),
+            json.dumps(record.exam_relevance), json.dumps(record.learning_objectives),
+            json.dumps(record.tags_auto)
         ))
         self.conn.commit()
         return cursor.lastrowid
@@ -358,6 +414,26 @@ class QuestionDatabase:
             num_options=row['num_options'],
             requires_calculus=bool(row['requires_calculus']),
             confidence=row['confidence'],
+            # Agent 2 fields
+            diagram_category=row['diagram_category'] if 'diagram_category' in row.keys() else None,
+            diagram_complexity=row['diagram_complexity'] if 'diagram_complexity' in row.keys() else None,
+            diagram_elements=json.loads(row['diagram_elements']) if 'diagram_elements' in row.keys() and row['diagram_elements'] else [],
+            suggested_tikz_agent=row['suggested_tikz_agent'] if 'suggested_tikz_agent' in row.keys() else None,
+            tikz_libraries=json.loads(row['tikz_libraries']) if 'tikz_libraries' in row.keys() and row['tikz_libraries'] else [],
+            # Agent 3 fields
+            difficulty_score=row['difficulty_score'] if 'difficulty_score' in row.keys() else None,
+            difficulty_reasoning=row['difficulty_reasoning'] if 'difficulty_reasoning' in row.keys() else None,
+            expected_solve_time_minutes=row['expected_solve_time_minutes'] if 'expected_solve_time_minutes' in row.keys() else None,
+            expected_error_rate=row['expected_error_rate'] if 'expected_error_rate' in row.keys() else None,
+            prerequisite_concepts=json.loads(row['prerequisite_concepts']) if 'prerequisite_concepts' in row.keys() and row['prerequisite_concepts'] else [],
+            common_mistakes=json.loads(row['common_mistakes']) if 'common_mistakes' in row.keys() and row['common_mistakes'] else [],
+            cognitive_level=row['cognitive_level'] if 'cognitive_level' in row.keys() else None,
+            solution_approach=json.loads(row['solution_approach']) if 'solution_approach' in row.keys() and row['solution_approach'] else [],
+            required_formulas=json.loads(row['required_formulas']) if 'required_formulas' in row.keys() and row['required_formulas'] else [],
+            exam_relevance=json.loads(row['exam_relevance']) if 'exam_relevance' in row.keys() and row['exam_relevance'] else {},
+            learning_objectives=json.loads(row['learning_objectives']) if 'learning_objectives' in row.keys() and row['learning_objectives'] else [],
+            tags_auto=json.loads(row['tags_auto']) if 'tags_auto' in row.keys() and row['tags_auto'] else [],
+            # Tracking
             usage_count=row['usage_count'],
             last_used=datetime.fromisoformat(row['last_used']) if row['last_used'] else None,
             created_at=datetime.fromisoformat(row['created_at']) if row['created_at'] else datetime.now(),
