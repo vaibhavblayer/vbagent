@@ -66,6 +66,61 @@ variant = generate_variant(scan_result.latex, "numerical")
 tikz = generate_tikz("A free body diagram showing forces on a block")
 ```
 
+### Multi-Agent Classification System (v2.0)
+
+VBAgent includes a comprehensive 7-agent classification pipeline for advanced metadata extraction:
+
+```python
+from vbagent.agents.classification import (
+    get_pipeline,
+    classify_from_image,
+    analyze_diagram,
+    assess_difficulty,
+    validate_tikz,
+)
+
+# Agent 1: Image Classification
+primary = classify_from_image("question.png")
+print(f"Topic: {primary.topic}, Concepts: {primary.key_concepts}")
+
+# Agent 2: Diagram Analysis (if has_diagram)
+if primary.has_diagram:
+    diagram = analyze_diagram("question.png", primary)
+    print(f"Diagram: {diagram.diagram_type}, Agent: {diagram.suggested_tikz_agent}")
+
+# Agent 3: Difficulty Assessment (after scanning)
+difficulty = assess_difficulty(latex_content, primary, diagram)
+print(f"Difficulty: {difficulty.difficulty} ({difficulty.difficulty_score}/10)")
+print(f"Reasoning: {difficulty.difficulty_reasoning}")
+print(f"Prerequisites: {difficulty.prerequisite_concepts}")
+print(f"Common Mistakes: {difficulty.common_mistakes}")
+
+# Agent 7: TikZ Validation
+validation = validate_tikz(tikz_code, auto_fix=True, compile_test=True)
+if validation.is_valid:
+    print("TikZ code is valid!")
+```
+
+**7 Specialized Agents:**
+1. **Image Classifier** - Classifies from images without difficulty
+2. **Diagram Analyzer** - Hierarchical diagram categorization, TikZ routing
+3. **Difficulty Assessor** - Post-scan difficulty with 5 metadata types
+4. **LaTeX Classifier** - Batch processing of LaTeX files
+5. **Idea Generator** - Generate problems from concepts
+6. **Problem Combiner** - Combine multiple problems (cross-subject support)
+7. **TikZ Checker** - Automatic validation and fixing
+
+**Key Features:**
+- Multiple input modalities (image, latex, idea, multi_problem)
+- Detailed difficulty assessment (reasoning, time, prerequisites, mistakes, exam relevance)
+- Hierarchical diagram classification (mechanics, circuits, optics, etc.)
+- Automatic TikZ validation with error fixing
+- Specialized TikZ agent routing (fbd, circuit, graph, optics)
+- Bloom's taxonomy cognitive levels
+- Cross-subject problem combination
+
+See `examples/multi_agent_pipeline.py` for complete usage examples.
+
 ### Configuration
 
 ```python
@@ -409,7 +464,7 @@ vbagent classify -i <image> [-o <output.json>] [--json]
 ### scan
 
 ```bash
-vbagent scan -i <image> [--type <type>] [-o <output.tex>] [-c] [--verbose-compile]
+vbagent scan -i <image> [--type <type>] [-o <output.tex>] [-c] [--verbose-compile] [--assess-difficulty] [--analyze-diagram]
 ```
 
 | Option | Description |
@@ -420,6 +475,8 @@ vbagent scan -i <image> [--type <type>] [-o <output.tex>] [-c] [--verbose-compil
 | `-o, --output` | Output TeX file path |
 | `-c, --compile` | Compile LaTeX to validate; retry with agent on failure |
 | `--verbose-compile` | Show full LaTeX document + live pdflatex output before each compile, prompt to continue/skip/quit |
+| `--assess-difficulty` | **NEW:** Assess difficulty after scanning (uses Agent 3) |
+| `--analyze-diagram` | **NEW:** Analyze diagram in detail (uses Agent 2) |
 
 ### tikz
 
@@ -487,7 +544,7 @@ Target formats: `mcq_sc`, `mcq_mc`, `subjective`, `integer`
 Full pipeline: Classify → Scan → TikZ → Ideas → Variants.
 
 ```bash
-vbagent process [-i <image>] [-t <tex>] [-r <start> <end>] [--variants <types>] [--alternate] [--ideas] [-o <output>] [-p <workers>] [-c] [--verbose-compile]
+vbagent process [-i <image>] [-t <tex>] [-r <start> <end>] [--variants <types>] [--alternate] [--ideas] [-o <output>] [-p <workers>] [-c] [--verbose-compile] [--assess-difficulty] [--analyze-diagram] [--validate-tikz]
 ```
 
 | Option | Description |
@@ -504,6 +561,9 @@ vbagent process [-i <image>] [-t <tex>] [-r <start> <end>] [--variants <types>] 
 | `-p, --parallel` | Parallel workers (default: 1, max: 10) |
 | `-c, --compile` | Compile generated LaTeX to validate; retry with agent on failure |
 | `--verbose-compile` | Show full LaTeX document + preamble + live pdflatex output before each compile, prompt to continue/skip/quit |
+| `--assess-difficulty` | **NEW:** Assess difficulty after scanning (uses Agent 3) |
+| `--analyze-diagram` | **NEW:** Analyze diagram in detail (uses Agent 2) |
+| `--validate-tikz` | **NEW:** Validate and fix TikZ code (uses Agent 7) |
 
 #### Examples
 
@@ -511,8 +571,9 @@ vbagent process [-i <image>] [-t <tex>] [-r <start> <end>] [--variants <types>] 
 # Basic processing
 vbagent process -i question.png
 
-# Full pipeline
-vbagent process -i question.png --ideas --alternate --variants numerical,context
+# Full pipeline with new agents
+vbagent process -i question.png --ideas --alternate --variants numerical,context \
+  --assess-difficulty --analyze-diagram --validate-tikz
 
 # Process range with parallel workers
 vbagent process -i images/Problem_1.png -r 1 10 --parallel 3
