@@ -68,6 +68,30 @@ Your output MUST be complete TikZ code:
     \draw[->] (block.south)--++(0, -1) node[below]{$mg$};
     \draw[->] (block.north)--++(0, 1) node[above]{$T$};
 \end{tikzpicture}
+
+\begin{tikzpicture}[font=\footnotesize, line cap=round, line join=round]
+% Requires (in preamble): \usetikzlibrary{arrows.meta,calc,patterns,decorations.pathmorphing}
+
+    \tikzset{
+        mass/.style={
+            draw, thick,
+            inner sep=2pt, align=center,
+        },
+    }
+
+    \node[mass, minimum width=3.4cm, minimum height=1.0cm, anchor=south] (mFive) at (0,0) {$5\,\mathrm{kg}$};
+    \node[mass, minimum width=2.5cm, minimum height=0.85cm, anchor=south, above of=mFive] (mThree) at (mFive.north) {$3\,\mathrm{kg}$};
+    \node[mass, minimum width=1.7cm, minimum height=0.65cm, anchor=south, above of=mThree] (mTwo) at (mThree.north) {$2\,\mathrm{kg}$};
+
+
+    \draw[->](mThree.east)--++(1, 0)node[right]{$100\ \mathrm{N}$};
+    \draw[->] (mThree.north west)--++(-1, 0)node[left]{$f_{32}$};
+    \draw[->] (mThree.south west)--++(-1, 0)node[left]{$f_{35}$};
+
+    \draw[->] (mTwo.south east)--++(1, 0) node[right]{$f_{23}$}; 
+    \draw[->] (mFive.north east)--++(1, 0) node[right]{$f_{53}$}; 
+
+\end{tikzpicture}
 ```
 
 ## Best Practices
