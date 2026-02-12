@@ -782,24 +782,38 @@ vbagent/
 │   ├── common.py               # Shared utilities (panels, prompts, formatting)
 │   ├── init.py                 # Workspace initialization
 │   ├── classify.py             # Classification command
-│   ├── scan.py                 # LaTeX extraction command
+│   ├── scan.py                 # LaTeX extraction command (with Agent 2 & 3)
 │   ├── tikz.py                 # TikZ generation command
 │   ├── variant.py              # Variant generation command
 │   ├── alternate.py            # Alternate solutions command
 │   ├── idea.py                 # Concept extraction command
 │   ├── convert.py              # Format conversion command
-│   ├── process.py              # Full pipeline command
+│   ├── process.py              # Full pipeline command (with all agents)
 │   ├── batch.py                # Batch processing command
 │   ├── check.py                # QA review command
 │   ├── ref.py                  # Reference management command
 │   ├── config.py               # Config management command
+│   ├── db.py                   # Database management command
+│   ├── extans.py               # Answer extraction command
 │   └── util.py                 # File utilities (rename, count, clean, list)
 │
 ├── agents/                     # AI agent implementations
 │   ├── base.py                 # Base agent (create, run, encode image)
-│   ├── classifier.py           # Question type classifier
+│   ├── classifier.py           # Question type classifier (v1)
+│   ├── classification/         # Multi-agent classification system (v2)
+│   │   ├── __init__.py         # Pipeline exports
+│   │   ├── pipeline.py         # Orchestrator with lazy loading
+│   │   ├── image_classifier.py # Agent 1: Image classification
+│   │   ├── diagram_analyzer.py # Agent 2: Diagram analysis
+│   │   ├── difficulty_assessor.py # Agent 3: Difficulty assessment
+│   │   ├── latex_classifier.py # Agent 4: LaTeX classification
+│   │   ├── idea_generator.py   # Agent 5: Idea-to-problem generator
+│   │   ├── problem_combiner.py # Agent 6: Multi-problem combiner
+│   │   └── tikz_checker.py     # Agent 7: TikZ validation
+│   ├── tikz_router.py          # TikZ agent routing system
 │   ├── scanner.py              # LaTeX extraction
-│   ├── tikz.py                 # TikZ diagram generator
+│   ├── tikz.py                 # TikZ diagram generator (generic)
+│   ├── fbd.py                  # Free body diagram generator (specialized)
 │   ├── variant.py              # Single variant generator
 │   ├── multi_variant.py        # Multi-context variant generator
 │   ├── alternate.py            # Alternate solution generator
@@ -811,7 +825,7 @@ vbagent/
 │   ├── solution_checker.py     # Solution correctness checker
 │   ├── grammar_checker.py      # Grammar checker
 │   ├── clarity_checker.py      # Clarity checker
-│   └── tikz_checker.py         # TikZ code checker
+│   └── tikz_checker.py         # TikZ code checker (v1)
 │
 ├── prompts/                    # LLM prompt templates
 │   ├── classifier.py
@@ -842,12 +856,50 @@ vbagent/
 │       └── __init__.py
 │
 ├── models/                     # Pydantic data models
-│   ├── classification.py
+│   ├── classification.py       # v1 models
+│   ├── classification_v2.py    # v2 models (multi-agent)
 │   ├── scan.py
 │   ├── idea.py
 │   ├── review.py
 │   ├── diff.py
 │   ├── pipeline.py
+│   ├── batch.py
+│   └── version_store.py
+│
+├── database/                   # SQLite question bank
+│   ├── __init__.py
+│   ├── store.py                # QuestionDatabase with extended schema
+│   ├── extractor.py            # ContentExtractor
+│   ├── reconstructor.py        # LaTeX reconstruction
+│   └── metadata_helper.py      # Agent metadata population
+│
+├── parsers/                    # LaTeX parsing
+│   ├── __init__.py
+│   └── tex_parser.py           # Answer extraction
+│
+├── references/                 # Reference context management
+│   ├── store.py                # Reference store (.tex, .sty, .pdf)
+│   ├── context.py              # Context builder
+│   └── tikz_store.py           # TikZ reference store with metadata
+│
+├── templates/
+│   └── agentic_context.py      # CONTEXT.md generator
+│
+├── tests/                      # Test suite
+│   └── agents/
+│       └── classification/     # Multi-agent tests
+│           ├── test_models.py  # Model tests (7 tests)
+│           ├── test_router.py  # Router tests (8 tests)
+│           └── test_database.py # Database tests (6 tests)
+│
+├── examples/
+│   └── multi_agent_pipeline.py # Usage examples
+│
+└── docs/
+    └── specs/
+        ├── IMPLEMENTATION_STATUS.md # Complete status
+        └── PERFORMANCE.md           # Performance guide
+```
 │   ├── batch.py
 │   └── version_store.py
 │
