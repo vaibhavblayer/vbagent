@@ -63,15 +63,19 @@ def db():
 @click.option("--force", is_flag=True, help="Recreate database if exists")
 @click.option("--recursive/--no-recursive", default=True, help="Scan subdirectories")
 def init(path: str, db_path: str, force: bool, recursive: bool):
-    """Initialize database from directory.
+    """Initialize database from directory of LaTeX files.
+    
+    If database exists, shows statistics. Use --force to recreate.
     
     \b
     Examples:
-        vbagent db init ./questions
-        vbagent db init --db-path custom.db --force
-        vbagent db init  # Check existing database
+        vbagent db init ./questions          # Scan questions directory
+        vbagent db init .                    # Scan current directory
+        vbagent db init --db-path custom.db  # Check custom database
+        vbagent db init ./questions --force  # Recreate database
     """
     from vbagent.database import QuestionDatabase, ContentExtractor
+    from .ui import print_status
     
     console = Console()
     
@@ -83,7 +87,6 @@ def init(path: str, db_path: str, force: bool, recursive: bool):
     
     # Check if database exists
     if db_file.exists() and not force:
-        from .ui import print_status
         print_status(console, f"Database already exists at: {db_file}", "info")
         
         # Show stats
@@ -105,11 +108,16 @@ def init(path: str, db_path: str, force: bool, recursive: bool):
         console.print()
         return
     
-    # Need path to initialize
+    # Need path to initialize new database
     if not path:
-        console.print("[red]Error:[/red] PATH required to initialize new database")
-        console.print("[dim]Usage: vbagent db init <path>[/dim]")
-        return
+        from .ui import print_status
+        print_status(console, "PATH required to initialize new database", "error")
+        console.print("\n[dim]Usage:[/dim]")
+        console.print("  vbagent db init [cyan]./questions[/cyan]     # Scan questions directory")
+        console.print("  vbagent db init [cyan].[/cyan]               # Scan current directory")
+        console.print("\n[dim]Or check existing database:[/dim]")
+        console.print("  vbagent db stats")
+        raise click.Abort()
     
     # Create database
     console.print(f"\n[cyan]Initializing database at:[/cyan] {db_file}")
@@ -330,13 +338,18 @@ def stats(db_path: str, subject: str):
         vbagent db stats --subject physics
     """
     from vbagent.database import QuestionDatabase
+    from .ui import print_status
     
     console = Console()
     db_file = Path(db_path) if db_path else _get_db_path()
     
     if not db_file.exists():
-        console.print("[red]Error:[/red] Database not found")
-        return
+        print_status(console, "Database not found", "error")
+        console.print("\n[dim]Initialize a database first:[/dim]")
+        console.print("  vbagent db init [cyan]./questions[/cyan]")
+        console.print("\n[dim]Or specify custom database:[/dim]")
+        console.print("  vbagent db stats --db-path [cyan]custom.db[/cyan]")
+        raise click.Abort()
     
     with QuestionDatabase(db_file) as database:
         stats_data = database.get_stats()
