@@ -60,6 +60,18 @@ def _print_debug_input(agent: "Agent", input_text: Any) -> None:
     
     console = Console()
     
+    # Get agent info
+    model = agent.model or "default"
+    reasoning = "unknown"
+    if agent.model_settings:
+        settings = agent.model_settings
+        if hasattr(settings, 'reasoning') and settings.reasoning:
+            reasoning_obj = settings.reasoning
+            if isinstance(reasoning_obj, dict):
+                reasoning = reasoning_obj.get('effort', 'unknown')
+            elif hasattr(reasoning_obj, 'effort'):
+                reasoning = reasoning_obj.effort or 'unknown'
+    
     # Extract input text
     if isinstance(input_text, str):
         display_text = _truncate_text(input_text)
@@ -85,12 +97,19 @@ def _print_debug_input(agent: "Agent", input_text: Any) -> None:
     else:
         display_text = str(input_text)
     
+    content = [
+        f"Agent      : {agent.name}",
+        f"Model      : {model}",
+        f"Reasoning  : {reasoning}",
+        "",
+        display_text,
+    ]
+    
     console.print(Panel(
-        f"[cyan]Agent:[/cyan] {agent.name}\n"
-        f"[cyan]Model:[/cyan] {agent.model}\n"
-        f"[cyan]Input:[/cyan]\n\n{display_text}",
-        title="🔍 [bold yellow]DEBUG: Agent Input[/bold yellow]",
-        border_style="yellow"
+        "\n".join(content),
+        title="[bold]DEBUG - INPUT[/bold]",
+        border_style="yellow",
+        padding=(0, 1)
     ))
 
 
@@ -108,23 +127,56 @@ def _print_debug_output(agent: "Agent", output: Any, duration: float) -> None:
         # Pydantic model - convert to JSON
         output_str = json.dumps(output.model_dump(), indent=2)
         syntax = Syntax(output_str, "json", theme="monokai", line_numbers=False)
-        output_display = syntax
+        
+        content = [
+            f"Agent      : {agent.name}",
+            f"Duration   : {duration:.2f}s",
+            f"Status     : Success",
+            "",
+        ]
+        
+        console.print(Panel(
+            "\n".join(content),
+            title="[bold]DEBUG - OUTPUT[/bold]",
+            border_style="green",
+            padding=(0, 1)
+        ))
+        console.print(syntax)
+        console.print()
     elif isinstance(output, (dict, list)):
         output_str = json.dumps(output, indent=2)
         syntax = Syntax(output_str, "json", theme="monokai", line_numbers=False)
-        output_display = syntax
+        
+        content = [
+            f"Agent      : {agent.name}",
+            f"Duration   : {duration:.2f}s",
+            f"Status     : Success",
+            "",
+        ]
+        
+        console.print(Panel(
+            "\n".join(content),
+            title="[bold]DEBUG - OUTPUT[/bold]",
+            border_style="green",
+            padding=(0, 1)
+        ))
+        console.print(syntax)
+        console.print()
     else:
-        output_display = str(output)
-    
-    console.print(Panel(
-        f"[cyan]Agent:[/cyan] {agent.name}\n"
-        f"[cyan]Duration:[/cyan] {duration:.2f}s\n"
-        f"[cyan]Output:[/cyan]\n\n",
-        title="✅ [bold green]DEBUG: Agent Output[/bold green]",
-        border_style="green"
-    ))
-    console.print(output_display)
-    console.print()  # Empty line
+        content = [
+            f"Agent      : {agent.name}",
+            f"Duration   : {duration:.2f}s",
+            f"Status     : Success",
+            "",
+            str(output),
+        ]
+        
+        console.print(Panel(
+            "\n".join(content),
+            title="[bold]DEBUG - OUTPUT[/bold]",
+            border_style="green",
+            padding=(0, 1)
+        ))
 
 
 def encode_image(image_path: str) -> tuple[str, str]:
@@ -233,27 +285,9 @@ def create_agent(
 
 
 def _print_agent_info(agent: "Agent") -> None:
-    """Print agent information when running.
-    
-    Args:
-        agent: The Agent instance being run
-    """
-    model = agent.model or "default"
-    reasoning = "unknown"
-    
-    # Extract reasoning effort from model_settings if available
-    if agent.model_settings:
-        settings = agent.model_settings
-        if hasattr(settings, 'reasoning') and settings.reasoning:
-            reasoning_obj = settings.reasoning
-            # Handle both dict and Reasoning object
-            if isinstance(reasoning_obj, dict):
-                reasoning = reasoning_obj.get('effort', 'unknown')
-            elif hasattr(reasoning_obj, 'effort'):
-                reasoning = reasoning_obj.effort or 'unknown'
-    
-    # Use dim styling for subtle output
-    print(f"\033[2m⚡ {agent.name} | model: {model} | reasoning: {reasoning}\033[0m")
+    """Print agent information when running (now uses spinner in run_agent_sync)."""
+    # Deprecated - spinner is shown in run_agent_sync
+    pass
 
 
 async def run_agent(agent: "Agent", input_text: str | list) -> Any:
@@ -292,18 +326,45 @@ def run_agent_sync(agent: "Agent", input_text: str | list) -> Any:
     import time
     import json
     from ..config import get_config
+    from rich.console import Console
+    from rich.progress import Progress, SpinnerColumn, TextColumn
     
     Runner = _get_runner_class()
-    _print_agent_info(agent)
+    
+    # Get agent info for display
+    model = agent.model or "default"
+    reasoning = "unknown"
+    if agent.model_settings:
+        settings = agent.model_settings
+        if hasattr(settings, 'reasoning') and settings.reasoning:
+            reasoning_obj = settings.reasoning
+            if isinstance(reasoning_obj, dict):
+                reasoning = reasoning_obj.get('effort', 'unknown')
+            elif hasattr(reasoning_obj, 'effort'):
+                reasoning = reasoning_obj.effort or 'unknown'
+    
+    console = Console()
+    config = get_config()
     
     # Debug mode: print input
-    config = get_config()
     if config.debug:
         _print_debug_input(agent, input_text)
     
+    # Show spinner during execution
+    start_time = time.time()
+    progress = Progress(
+        SpinnerColumn(),
+        TextColumn("[bold cyan]{task.description}[/bold cyan]"),
+        TextColumn("│"),
+        TextColumn("[dim]{task.fields[model]}[/dim]"),
+        TextColumn("│"),
+        TextColumn("[dim]{task.fields[reasoning]} reasoning[/dim]"),
+        console=console,
+        transient=True
+    )
+    
     # Use a thread pool to run the agent, allowing Ctrl+C to interrupt
     result_holder = {"result": None, "error": None}
-    start_time = time.time()
     
     def run_in_thread():
         try:
@@ -311,18 +372,29 @@ def run_agent_sync(agent: "Agent", input_text: str | list) -> Any:
         except Exception as e:
             result_holder["error"] = e
     
-    thread = threading.Thread(target=run_in_thread, daemon=True)
-    thread.start()
-    
-    # Wait for thread with small intervals to allow Ctrl+C handling
-    while thread.is_alive():
-        thread.join(timeout=0.1)  # Check every 100ms for interrupt
+    with progress:
+        task = progress.add_task(
+            agent.name,
+            model=model,
+            reasoning=reasoning,
+            total=None
+        )
+        
+        thread = threading.Thread(target=run_in_thread, daemon=True)
+        thread.start()
+        
+        # Wait for thread with small intervals to allow Ctrl+C handling
+        while thread.is_alive():
+            thread.join(timeout=0.1)
     
     if result_holder["error"]:
         raise result_holder["error"]
     
     duration = time.time() - start_time
     final_output = result_holder["result"].final_output
+    
+    # Print completion (subtle)
+    console.print(f"[dim]│ {agent.name} │ {model} │ {duration:.1f}s[/dim]")
     
     # Debug mode: print output
     if config.debug:
