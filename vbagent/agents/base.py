@@ -306,7 +306,7 @@ async def run_agent(agent: "Agent", input_text: str | list) -> Any:
     return result.final_output
 
 
-def run_agent_sync(agent: "Agent", input_text: str | list) -> Any:
+def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = True) -> Any:
     """Run an agent synchronously and return the final output.
     
     Uses a thread to allow immediate Ctrl+C interruption.
@@ -314,6 +314,7 @@ def run_agent_sync(agent: "Agent", input_text: str | list) -> Any:
     Args:
         agent: The Agent instance to run
         input_text: The input text or message (can be string or list for images)
+        show_spinner: Whether to show animated spinner (default: True)
         
     Returns:
         The agent's final output (string or structured type)
@@ -350,18 +351,8 @@ def run_agent_sync(agent: "Agent", input_text: str | list) -> Any:
     if config.debug:
         _print_debug_input(agent, input_text)
     
-    # Show spinner during execution
+    # Show spinner during execution (if enabled)
     start_time = time.time()
-    progress = Progress(
-        SpinnerColumn(),
-        TextColumn("[bold cyan]{task.description}[/bold cyan]"),
-        TextColumn("│"),
-        TextColumn("[dim]{task.fields[model]}[/dim]"),
-        TextColumn("│"),
-        TextColumn("[dim]{task.fields[reasoning]} reasoning[/dim]"),
-        console=console,
-        transient=True
-    )
     
     # Use a thread pool to run the agent, allowing Ctrl+C to interrupt
     result_holder = {"result": None, "error": None}
@@ -372,18 +363,36 @@ def run_agent_sync(agent: "Agent", input_text: str | list) -> Any:
         except Exception as e:
             result_holder["error"] = e
     
-    with progress:
-        task = progress.add_task(
-            agent.name,
-            model=model,
-            reasoning=reasoning,
-            total=None
+    if show_spinner:
+        progress = Progress(
+            SpinnerColumn(),
+            TextColumn("[bold cyan]{task.description}[/bold cyan]"),
+            TextColumn("│"),
+            TextColumn("[dim]{task.fields[model]}[/dim]"),
+            TextColumn("│"),
+            TextColumn("[dim]{task.fields[reasoning]} reasoning[/dim]"),
+            console=console,
+            transient=True
         )
         
+        with progress:
+            task = progress.add_task(
+                agent.name,
+                model=model,
+                reasoning=reasoning,
+                total=None
+            )
+            
+            thread = threading.Thread(target=run_in_thread, daemon=True)
+            thread.start()
+            
+            # Wait for thread with small intervals to allow Ctrl+C handling
+            while thread.is_alive():
+                thread.join(timeout=0.1)
+    else:
+        # No spinner - just run in thread
         thread = threading.Thread(target=run_in_thread, daemon=True)
         thread.start()
-        
-        # Wait for thread with small intervals to allow Ctrl+C handling
         while thread.is_alive():
             thread.join(timeout=0.1)
     
@@ -393,8 +402,9 @@ def run_agent_sync(agent: "Agent", input_text: str | list) -> Any:
     duration = time.time() - start_time
     final_output = result_holder["result"].final_output
     
-    # Print completion (subtle)
-    console.print(f"[dim]│ {agent.name} │ {model} │ {duration:.1f}s[/dim]")
+    # Print completion (subtle) - only if spinner was shown
+    if show_spinner:
+        console.print(f"[dim]│ {agent.name} │ {model} │ {duration:.1f}s[/dim]")
     
     # Debug mode: print output
     if config.debug:

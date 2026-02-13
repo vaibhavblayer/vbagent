@@ -151,6 +151,7 @@ def generate_fbd(
     search_references: bool = True,
     use_context: bool = True,
     classification=None,
+    show_spinner: bool = True,
 ) -> str:
     """Generate FBD TikZ code for a physics problem.
     
@@ -194,7 +195,7 @@ def generate_fbd(
     else:
         message = user_message
     
-    raw_result = run_agent_sync(agent, message)
+    raw_result = run_agent_sync(agent, message, show_spinner=show_spinner)
     
     return clean_latex_output(raw_result)
 

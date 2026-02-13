@@ -166,8 +166,9 @@ def scan(
                 # Run scanning and TikZ generation in parallel
                 import threading
                 from vbagent.agents.tikz import generate_tikz
+                from rich.progress import Progress, SpinnerColumn, TextColumn
                 
-                console.print("\n[bold]Parallel Processing[/bold]")
+                console.print("\n[cyan]Stage 2+3: Scanning & TikZ (parallel)...[/cyan]")
                 
                 # Prepare TikZ description
                 tikz_description = f"Generate TikZ for {classification.diagram_type or 'diagram'}"
@@ -178,7 +179,7 @@ def scan(
                 
                 def run_scan():
                     try:
-                        scan_result_holder["result"] = scan_image(image, classification)
+                        scan_result_holder["result"] = scan_image(image, classification, show_spinner=False)
                     except Exception as e:
                         scan_result_holder["error"] = e
                     finally:
@@ -194,7 +195,8 @@ def scan(
                                 description=tikz_description,
                                 diagram=diagram_analysis,
                                 primary=primary if 'primary' in locals() else None,
-                                use_context=True
+                                use_context=True,
+                                show_spinner=False
                             )
                             tikz_result_holder["result"] = tikz_code
                             tikz_result_holder["agent"] = agent_used
@@ -204,6 +206,7 @@ def scan(
                                 image_path=image,
                                 use_context=True,
                                 classification=classification,
+                                show_spinner=False
                             )
                             tikz_result_holder["agent"] = "generic"
                     except Exception as e:
@@ -215,15 +218,24 @@ def scan(
                 scan_thread = threading.Thread(target=run_scan, daemon=True)
                 tikz_thread = threading.Thread(target=run_tikz, daemon=True)
                 
-                console.print("[dim]  → Scanning LaTeX...[/dim]")
-                console.print("[dim]  → Generating TikZ...[/dim]")
+                # Show combined spinner
+                progress = Progress(
+                    SpinnerColumn(),
+                    TextColumn("[bold cyan]{task.description}[/bold cyan]"),
+                    console=console,
+                    transient=True
+                )
                 
-                scan_thread.start()
-                tikz_thread.start()
-                
-                # Wait for both
-                scan_thread.join()
-                tikz_thread.join()
+                with progress:
+                    task = progress.add_task("Processing Scanner + TikZ...", total=None)
+                    
+                    scan_thread.start()
+                    tikz_thread.start()
+                    
+                    # Wait for both
+                    while scan_thread.is_alive() or tikz_thread.is_alive():
+                        scan_thread.join(timeout=0.1)
+                        tikz_thread.join(timeout=0.1)
                 
                 # Check for errors
                 if scan_result_holder["error"]:

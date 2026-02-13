@@ -180,6 +180,7 @@ def generate_tikz(
     search_references: bool = True,
     use_context: bool = True,
     classification=None,
+    show_spinner: bool = True,
 ) -> str:
     """Generate TikZ code for a diagram.
     
@@ -198,6 +199,7 @@ def generate_tikz(
         search_references: Whether to enable reference search (default True)
         use_context: Whether to include reference context in prompt
         classification: Optional ClassificationResult for metadata-based context
+        show_spinner: Whether to show animated spinner (default: True)
         
     Returns:
         Generated TikZ code as a string
@@ -233,7 +235,7 @@ def generate_tikz(
         message = user_message
     
     # Run the agent
-    raw_result = run_agent_sync(agent, message)
+    raw_result = run_agent_sync(agent, message, show_spinner=show_spinner)
     
     # Clean up markdown artifacts from LLM output
     return clean_latex_output(raw_result)

@@ -105,7 +105,8 @@ def generate_tikz_with_routing(
     description: Optional[str] = None,
     diagram: Optional[DiagramAnalysis] = None,
     primary: Optional[PrimaryClassification] = None,
-    use_context: bool = True
+    use_context: bool = True,
+    show_spinner: bool = True,
 ) -> tuple[str, AgentType]:
     """Generate TikZ code with automatic agent routing.
     
@@ -115,6 +116,7 @@ def generate_tikz_with_routing(
         diagram: DiagramAnalysis from Agent 2
         primary: PrimaryClassification from Agent 1
         use_context: Whether to use reference context
+        show_spinner: Whether to show animated spinner (default: True)
         
     Returns:
         Tuple of (tikz_code, agent_type_used)
@@ -128,7 +130,8 @@ def generate_tikz_with_routing(
         tikz_code = generate_fbd(
             image_path=image_path,
             description=description,
-            use_context=use_context
+            use_context=use_context,
+            show_spinner=show_spinner
         )
     elif agent_type == "circuit":
         # TODO: Implement specialized circuit agent
@@ -136,7 +139,8 @@ def generate_tikz_with_routing(
         tikz_code = generate_tikz(
             image_path=image_path,
             description=description or "Circuit diagram",
-            use_context=use_context
+            use_context=use_context,
+            show_spinner=show_spinner
         )
     elif agent_type == "graph":
         # TODO: Implement specialized graph agent
@@ -144,7 +148,8 @@ def generate_tikz_with_routing(
         tikz_code = generate_tikz(
             image_path=image_path,
             description=description or "Graph/plot",
-            use_context=use_context
+            use_context=use_context,
+            show_spinner=show_spinner
         )
     elif agent_type == "optics":
         # TODO: Implement specialized optics agent

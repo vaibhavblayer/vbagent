@@ -90,6 +90,7 @@ def scan(
     classification: ClassificationResult,
     use_context: bool = True,
     subject: Optional[str] = None,
+    show_spinner: bool = True,
 ) -> ScanResult:
     """Extract LaTeX from a question image.
     
@@ -101,6 +102,7 @@ def scan(
         classification: Classification result with question type info
         use_context: Whether to include reference context in prompt
         subject: Subject override (uses config if not provided)
+        show_spinner: Whether to show animated spinner (default: True)
         
     Returns:
         ScanResult with extracted LaTeX and diagram info
@@ -115,7 +117,7 @@ def scan(
     agent = create_scanner_agent(classification.question_type, use_context, subject)
     user_template = get_user_template(subject)
     message = create_image_message(image_path, user_template)
-    raw_latex = run_agent_sync(agent, message)
+    raw_latex = run_agent_sync(agent, message, show_spinner=show_spinner)
     
     # Clean up markdown artifacts from LLM output
     latex = clean_latex_output(raw_latex)
