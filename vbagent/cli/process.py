@@ -97,6 +97,23 @@ def parse_tex_file(tex_path: str) -> str:
     return Path(tex_path).read_text()
 
 
+def convert_primary_to_classification(primary: "PrimaryClassification") -> "ClassificationResult":
+    """Convert PrimaryClassification (v2) to ClassificationResult (v1) for compatibility.
+    
+    Used when calling legacy functions that expect ClassificationResult.
+    """
+    from vbagent.models.classification import ClassificationResult
+    return ClassificationResult(
+        question_type=primary.question_type,
+        difficulty="medium",  # Default, will be overridden by Agent 3 if available
+        chapter=primary.chapter,
+        topic=primary.topic,
+        has_diagram=primary.has_diagram,
+        diagram_type=None,  # Comes from DiagramAnalysis (Agent 2), not PrimaryClassification
+        confidence=primary.confidence,
+    )
+
+
 def extract_items_from_tex(content: str) -> list[str]:
     """Extract individual items from a TeX file.
     
@@ -895,16 +912,7 @@ def process_image(
         
         def run_scan():
             try:
-                # Convert primary to old ClassificationResult for compatibility
-                classification = ClassificationResult(
-                    question_type=primary.question_type,
-                    difficulty="medium",  # Default, will be overridden by Agent 3
-                    chapter=primary.chapter,
-                    topic=primary.topic,
-                    has_diagram=primary.has_diagram,
-                    diagram_type=None,  # Will be set from diagram_analysis if available
-                    confidence=primary.confidence,
-                )
+                classification = convert_primary_to_classification(primary)
                 scan_result_holder["result"] = scan_image(
                     image_path, classification, use_context=use_context, show_spinner=False
                 )
@@ -927,14 +935,7 @@ def process_image(
                     tikz_result_holder["agent"] = agent_used
                 else:
                     # Fallback to generic TikZ (no diagram analysis available)
-                    classification = ClassificationResult(
-                        question_type=primary.question_type,
-                        difficulty="medium",  # Default since primary doesn't have difficulty
-                        chapter=primary.chapter,
-                        topic=primary.topic,
-                        has_diagram=primary.has_diagram,
-                        diagram_type=None,  # No diagram analysis available
-                    )
+                    classification = convert_primary_to_classification(primary)
                     tikz_result_holder["result"] = generate_tikz(
                         description=tikz_description,
                         image_path=image_path,
@@ -1021,16 +1022,7 @@ def process_image(
     else:
         # No diagram - just run scanning
         console.print("[bold green]Stage 2: Scanning image...[/bold green]")
-        # Convert primary to old ClassificationResult for compatibility
-        classification = ClassificationResult(
-            question_type=primary.question_type,
-            difficulty="medium",  # Default, will be overridden by Agent 3
-            chapter=primary.chapter,
-            topic=primary.topic,
-            has_diagram=primary.has_diagram,
-            diagram_type=None,  # Will be set from diagram_analysis if available
-            confidence=primary.confidence,
-        )
+        classification = convert_primary_to_classification(primary)
         scan_result = scan_image(image_path, classification, use_context=use_context)
         
         latex = scan_result.latex

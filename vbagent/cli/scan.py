@@ -194,7 +194,7 @@ def scan(
                                 image_path=image,
                                 description=tikz_description,
                                 diagram=diagram_analysis,
-                                primary=primary if 'primary' in locals() else None,
+                                primary=primary,
                                 use_context=True,
                                 show_spinner=False
                             )
