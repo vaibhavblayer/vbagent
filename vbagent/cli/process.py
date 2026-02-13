@@ -74,8 +74,6 @@ def merge_metadata_into_latex(
             comments.append(f"% diagram_elements: {', '.join(diagram.diagram_elements)}")
     elif primary.has_diagram:
         comments.append(f"% has_diagram: true")
-        if primary.diagram_type:
-            comments.append(f"% diagram_type: {primary.diagram_type}")
     
     # Difficulty details from Agent 3
     if difficulty:
@@ -889,7 +887,7 @@ def process_image(
         console.print("[bold green]Stage 2+3: Scanning & TikZ (parallel)...[/bold green]")
         
         # Prepare TikZ description based on classification
-        tikz_description = f"Generate TikZ for {diagram_analysis.diagram_type if diagram_analysis else primary.diagram_type or 'diagram'}"
+        tikz_description = f"Generate TikZ for {diagram_analysis.diagram_type if diagram_analysis else 'diagram'}"
         
         # Results holders
         scan_result_holder = {"result": None, "error": None}
@@ -928,14 +926,14 @@ def process_image(
                     tikz_result_holder["result"] = tikz_code
                     tikz_result_holder["agent"] = agent_used
                 else:
-                    # Fallback to generic TikZ
+                    # Fallback to generic TikZ (no diagram analysis available)
                     classification = ClassificationResult(
                         question_type=primary.question_type,
-                        difficulty=primary.difficulty,
+                        difficulty="medium",  # Default since primary doesn't have difficulty
                         chapter=primary.chapter,
                         topic=primary.topic,
                         has_diagram=primary.has_diagram,
-                        diagram_type=primary.diagram_type,
+                        diagram_type=None,  # No diagram analysis available
                     )
                     tikz_result_holder["result"] = generate_tikz(
                         description=tikz_description,
