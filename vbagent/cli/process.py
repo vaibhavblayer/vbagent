@@ -54,11 +54,9 @@ def merge_metadata_into_latex(
     if primary.subtopic:
         comments.append(f"% subtopic: {primary.subtopic}")
     
-    # Use difficulty from Agent 3 if available, otherwise from Agent 1
+    # Use difficulty from Agent 3 if available
     if difficulty:
         comments.append(f"% difficulty: {difficulty.difficulty}")
-    elif primary.difficulty:
-        comments.append(f"% difficulty: {primary.difficulty}")
     
     comments.append(f"% type: {primary.question_type}")
     
@@ -872,7 +870,6 @@ def process_image(
         primary = classify_from_image(image_path, show_spinner=False)
     
     console.print(f"[cyan]Type:[/cyan] {primary.question_type}")
-    console.print(f"[cyan]Difficulty:[/cyan] {primary.difficulty}")
     console.print(f"[cyan]Has Diagram:[/cyan] {'Yes' if primary.has_diagram else 'No'}")
     
     # Stage 1b: Diagram analysis (if enabled and has diagram)
@@ -903,11 +900,11 @@ def process_image(
                 # Convert primary to old ClassificationResult for compatibility
                 classification = ClassificationResult(
                     question_type=primary.question_type,
-                    difficulty=primary.difficulty,
+                    difficulty="medium",  # Default, will be overridden by Agent 3
                     chapter=primary.chapter,
                     topic=primary.topic,
                     has_diagram=primary.has_diagram,
-                    diagram_type=primary.diagram_type,
+                    diagram_type=None,  # Will be set from diagram_analysis if available
                     confidence=primary.confidence,
                 )
                 scan_result_holder["result"] = scan_image(
@@ -1029,11 +1026,11 @@ def process_image(
         # Convert primary to old ClassificationResult for compatibility
         classification = ClassificationResult(
             question_type=primary.question_type,
-            difficulty=primary.difficulty,
+            difficulty="medium",  # Default, will be overridden by Agent 3
             chapter=primary.chapter,
             topic=primary.topic,
             has_diagram=primary.has_diagram,
-            diagram_type=primary.diagram_type,
+            diagram_type=None,  # Will be set from diagram_analysis if available
             confidence=primary.confidence,
         )
         scan_result = scan_image(image_path, classification, use_context=use_context)
@@ -1113,11 +1110,11 @@ def process_image(
     # Convert primary back to old ClassificationResult for PipelineResult
     final_classification = ClassificationResult(
         question_type=primary.question_type,
-        difficulty=difficulty_result.difficulty if difficulty_result else primary.difficulty,
+        difficulty=difficulty_result.difficulty if difficulty_result else "medium",
         chapter=primary.chapter,
         topic=primary.topic,
         has_diagram=primary.has_diagram,
-        diagram_type=diagram_analysis.diagram_type if diagram_analysis else primary.diagram_type,
+        diagram_type=diagram_analysis.diagram_type if diagram_analysis else None,
         confidence=primary.confidence,
     )
     
