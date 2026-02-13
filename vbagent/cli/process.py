@@ -63,8 +63,8 @@ def merge_metadata_into_latex(
     # Tags and concepts
     if primary.key_concepts:
         comments.append(f"% key_concepts: {', '.join(primary.key_concepts)}")
-    if primary.tags:
-        comments.append(f"% tags: {', '.join(primary.tags)}")
+    if difficulty and difficulty.tags_auto:
+        comments.append(f"% tags: {', '.join(difficulty.tags_auto)}")
     
     # Diagram info
     if diagram:
