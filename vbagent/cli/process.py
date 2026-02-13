@@ -22,6 +22,7 @@ from vbagent.cli.common import (
 
 if TYPE_CHECKING:
     from vbagent.models.pipeline import PipelineResult
+    from vbagent.models.classification_v2 import PrimaryClassification, DiagramAnalysis, DifficultyAssessment
 
 
 # Module-level console for helper functions (lazy initialized)
@@ -34,6 +35,65 @@ def _ensure_console():
     if _console is None:
         _console = _get_console()
     return _console
+
+
+def merge_metadata_into_latex(
+    latex: str,
+    primary: "PrimaryClassification",
+    diagram: Optional["DiagramAnalysis"] = None,
+    difficulty: Optional["DifficultyAssessment"] = None,
+) -> str:
+    """Prepend classification metadata as comments to LaTeX content."""
+    comments = []
+    
+    # Basic metadata from Agent 1
+    if primary.chapter:
+        comments.append(f"% chapter: {primary.chapter}")
+    if primary.topic:
+        comments.append(f"% topic: {primary.topic}")
+    if primary.subtopic:
+        comments.append(f"% subtopic: {primary.subtopic}")
+    
+    # Use difficulty from Agent 3 if available, otherwise from Agent 1
+    if difficulty:
+        comments.append(f"% difficulty: {difficulty.difficulty}")
+    elif primary.difficulty:
+        comments.append(f"% difficulty: {primary.difficulty}")
+    
+    comments.append(f"% type: {primary.question_type}")
+    
+    # Tags and concepts
+    if primary.key_concepts:
+        comments.append(f"% key_concepts: {', '.join(primary.key_concepts)}")
+    if primary.tags:
+        comments.append(f"% tags: {', '.join(primary.tags)}")
+    
+    # Diagram info
+    if diagram:
+        comments.append(f"% has_diagram: true")
+        comments.append(f"% diagram_type: {diagram.diagram_type}")
+        if diagram.diagram_elements:
+            comments.append(f"% diagram_elements: {', '.join(diagram.diagram_elements)}")
+    elif primary.has_diagram:
+        comments.append(f"% has_diagram: true")
+        if primary.diagram_type:
+            comments.append(f"% diagram_type: {primary.diagram_type}")
+    
+    # Difficulty details from Agent 3
+    if difficulty:
+        if difficulty.prerequisite_concepts:
+            comments.append(f"% prerequisites: {', '.join(difficulty.prerequisite_concepts)}")
+        if difficulty.cognitive_level:
+            comments.append(f"% cognitive_level: {difficulty.cognitive_level}")
+        comments.append(f"% estimated_time: {difficulty.estimated_time_minutes} min")
+    
+    # Other metadata
+    if primary.requires_calculus:
+        comments.append(f"% requires_calculus: true")
+    
+    # Join and prepend
+    metadata_block = "\n".join(comments)
+    return f"{metadata_block}\n\n{latex}"
 
 
 def parse_tex_file(tex_path: str) -> str:
@@ -379,6 +439,9 @@ def _process_images_parallel(
                 generate_alternate=generate_alternate,
                 generate_ideas=generate_ideas,
                 use_context=use_context,
+                assess_difficulty=assess_difficulty,
+                analyze_diagram=analyze_diagram,
+                merge_metadata=merge_metadata,
             )
             
             # Save immediately (thread-safe - each file is unique)
@@ -510,19 +573,24 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     help="Show full LaTeX document + preamble before each compile and prompt to continue/skip/quit"
 )
 @click.option(
-    "--assess-difficulty", "assess_difficulty",
-    is_flag=True,
-    help="Assess difficulty after scanning (uses Agent 3)"
+    "--assess-difficulty/--no-assess-difficulty", "assess_difficulty",
+    default=True,
+    help="Assess difficulty after scanning (uses Agent 3) [default: on]"
 )
 @click.option(
-    "--analyze-diagram", "analyze_diagram",
-    is_flag=True,
-    help="Analyze diagram in detail (uses Agent 2)"
+    "--analyze-diagram/--no-analyze-diagram", "analyze_diagram",
+    default=True,
+    help="Analyze diagram in detail (uses Agent 2) [default: on]"
 )
 @click.option(
     "--validate-tikz", "validate_tikz",
     is_flag=True,
     help="Validate and fix TikZ code (uses Agent 7)"
+)
+@click.option(
+    "--merge-metadata/--no-merge-metadata", "merge_metadata",
+    default=True,
+    help="Merge classification metadata into scanned LaTeX [default: on]"
 )
 def process(
     image: Optional[str],
@@ -540,6 +608,7 @@ def process(
     assess_difficulty: bool,
     analyze_diagram: bool,
     validate_tikz: bool,
+    merge_metadata: bool,
 ):
     """Full pipeline: Classify → Scan → TikZ → Ideas → Variants.
     
@@ -657,6 +726,9 @@ def process(
                             generate_alternate=alternate,
                             generate_ideas=ideas,
                             use_context=context,
+                            assess_difficulty=assess_difficulty,
+                            analyze_diagram=analyze_diagram,
+                            merge_metadata=merge_metadata,
                         )
                         
                         # Compile validation if -c flag
@@ -767,173 +839,158 @@ def process_image(
     generate_alternate: bool,
     generate_ideas: bool = False,
     use_context: bool = True,
+    assess_difficulty: bool = True,
+    analyze_diagram: bool = True,
+    merge_metadata: bool = True,
 ) -> PipelineResult:
     """Process an image through the full pipeline.
     
     Pipeline stages:
-    1. Classification (sequential - needed for other stages)
-    2. Scanning + TikZ (PARALLEL if has_diagram - both use same image)
-    3. Ideas, Alternates, Variants (sequential, optional)
+    1. Classification (Agent 1 + optional Agent 2)
+    2. Scanning (Agent 3 + optional difficulty assessment)
+    3. TikZ (parallel with scanning if has_diagram)
+    4. Ideas, Alternates, Variants (sequential, optional)
     """
     import concurrent.futures
     import threading
     
     # Lazy imports
-    from vbagent.agents.classifier import classify as classify_image
+    from vbagent.agents.classification import classify_from_image, analyze_diagram as analyze_diagram_agent, assess_difficulty as assess_difficulty_agent
     from vbagent.agents.scanner import scan as scan_image
+    from vbagent.agents.tikz_router import generate_tikz_with_routing
     from vbagent.agents.tikz import generate_tikz
     from vbagent.agents.idea import extract_ideas
     from vbagent.agents.variant import generate_variant
     from vbagent.models.pipeline import PipelineResult
+    from vbagent.models.classification import ClassificationResult
+    from rich.progress import Progress, SpinnerColumn, TextColumn
     
     console = _get_console()
     
-    # Stage 1: Classification (must be sequential - needed for scanning)
+    # Stage 1: Classification with new multi-agent system
     with console.status("[bold green]Stage 1: Classifying image..."):
-        classification = classify_image(image_path)
+        primary = classify_from_image(image_path)
     
-    console.print(f"[cyan]Type:[/cyan] {classification.question_type}")
-    console.print(f"[cyan]Difficulty:[/cyan] {classification.difficulty}")
-    console.print(f"[cyan]Has Diagram:[/cyan] {'Yes' if classification.has_diagram else 'No'}")
+    console.print(f"[cyan]Type:[/cyan] {primary.question_type}")
+    console.print(f"[cyan]Difficulty:[/cyan] {primary.difficulty}")
+    console.print(f"[cyan]Has Diagram:[/cyan] {'Yes' if primary.has_diagram else 'No'}")
+    
+    # Stage 1b: Diagram analysis (if enabled and has diagram)
+    diagram_analysis = None
+    if analyze_diagram and primary.has_diagram:
+        with console.status("[bold green]Analyzing diagram..."):
+            diagram_analysis = analyze_diagram_agent(image_path, primary)
+        console.print(f"[cyan]Diagram Type:[/cyan] {diagram_analysis.diagram_type}")
     
     # Stage 2 & 3: Scanning + TikZ (PARALLEL if has_diagram)
     tikz_code = None
     latex = None
+    difficulty_result = None
     
-    if classification.has_diagram:
+    if primary.has_diagram:
         # Run scanning and TikZ generation in parallel
         console.print("[bold green]Stage 2+3: Scanning & TikZ (parallel)...[/bold green]")
         
         # Prepare TikZ description based on classification
-        tikz_description = f"Generate TikZ for {classification.diagram_type or 'diagram'}"
+        tikz_description = f"Generate TikZ for {diagram_analysis.diagram_type if diagram_analysis else primary.diagram_type or 'diagram'}"
         
-        # Results holders with completion flags
-        scan_result_holder = {"result": None, "error": None, "done": False}
-        tikz_result_holder = {"result": None, "error": None, "done": False}
-        scan_shown = False
-        tikz_shown = False
+        # Results holders
+        scan_result_holder = {"result": None, "error": None}
+        tikz_result_holder = {"result": None, "error": None, "agent": "generic"}
         
         def run_scan():
             try:
+                # Convert primary to old ClassificationResult for compatibility
+                classification = ClassificationResult(
+                    question_type=primary.question_type,
+                    difficulty=primary.difficulty,
+                    chapter=primary.chapter,
+                    topic=primary.topic,
+                    has_diagram=primary.has_diagram,
+                    diagram_type=primary.diagram_type,
+                    confidence=primary.confidence,
+                )
                 scan_result_holder["result"] = scan_image(
-                    image_path, classification, use_context=use_context
+                    image_path, classification, use_context=use_context, show_spinner=False
                 )
             except Exception as e:
                 scan_result_holder["error"] = e
-            finally:
-                scan_result_holder["done"] = True
         
         def run_tikz():
             try:
-                tikz_result_holder["result"] = generate_tikz(
-                    description=tikz_description,
-                    image_path=image_path,
-                    use_context=use_context,
-                    classification=classification,  # Pass for metadata-based context
-                )
+                if diagram_analysis:
+                    # Use router with diagram analysis
+                    tikz_code, agent_used = generate_tikz_with_routing(
+                        image_path=image_path,
+                        description=tikz_description,
+                        diagram=diagram_analysis,
+                        primary=primary,
+                        use_context=use_context,
+                        show_spinner=False
+                    )
+                    tikz_result_holder["result"] = tikz_code
+                    tikz_result_holder["agent"] = agent_used
+                else:
+                    # Fallback to generic TikZ
+                    classification = ClassificationResult(
+                        question_type=primary.question_type,
+                        difficulty=primary.difficulty,
+                        chapter=primary.chapter,
+                        topic=primary.topic,
+                        has_diagram=primary.has_diagram,
+                        diagram_type=primary.diagram_type,
+                    )
+                    tikz_result_holder["result"] = generate_tikz(
+                        description=tikz_description,
+                        image_path=image_path,
+                        use_context=use_context,
+                        classification=classification,
+                        show_spinner=False
+                    )
             except Exception as e:
                 tikz_result_holder["error"] = e
-            finally:
-                tikz_result_holder["done"] = True
         
-        # Start both threads
-        scan_thread = threading.Thread(target=run_scan, daemon=True)
-        tikz_thread = threading.Thread(target=run_tikz, daemon=True)
+        # Start both threads with combined spinner
+        progress = Progress(
+            SpinnerColumn(),
+            TextColumn("[bold cyan]{task.description}[/bold cyan]"),
+            console=console,
+            transient=True
+        )
         
-        console.print("[dim]  → Scanning LaTeX...[/dim]")
-        console.print("[dim]  → Generating TikZ...[/dim]")
-        
-        scan_thread.start()
-        tikz_thread.start()
-        
-        # Wait for both with interrupt handling, show results as they complete
-        # Timeout for TikZ generation (5 minutes max) - prevents infinite hangs
-        import time
-        tikz_timeout = 600  # 5 minutes
-        tikz_start_time = time.time()
-        tikz_timed_out = False
-        
-        while scan_thread.is_alive() or tikz_thread.is_alive():
-            # Check if scan completed and show result
-            if scan_result_holder["done"] and not scan_shown:
-                scan_shown = True
-                from .ui import print_status
-                if scan_result_holder["error"]:
-                    print_status(console, "Scanning failed", "error")
-                else:
-                    print_status(console, "Scanning complete", "success")
-                    console.print(_get_panel(
-                        scan_result_holder["result"].latex,
-                        title="Extracted LaTeX",
-                        border_style="dim"
-                    ))
+        with progress:
+            task = progress.add_task("Processing Scanner + TikZ...", total=None)
             
-            # Check if tikz completed and show result
-            if tikz_result_holder["done"] and not tikz_shown:
-                tikz_shown = True
-                from .ui import print_status
-                if tikz_result_holder["error"]:
-                    print_status(console, "TikZ generation failed", "error")
-                else:
-                    print_status(console, "TikZ complete", "success")
-                    console.print(_get_panel(
-                        tikz_result_holder["result"],
-                        title="Generated TikZ",
-                        border_style="cyan"
-                    ))
+            scan_thread = threading.Thread(target=run_scan, daemon=True)
+            tikz_thread = threading.Thread(target=run_tikz, daemon=True)
             
-            # Check for TikZ timeout (only if scan is done but tikz is still running)
-            if scan_result_holder["done"] and tikz_thread.is_alive() and not tikz_timed_out:
-                elapsed = time.time() - tikz_start_time
-                if elapsed > tikz_timeout:
-                    tikz_timed_out = True
-                    from .ui import print_status
-                    print_status(console, f"TikZ generation timed out after {int(elapsed)}s, continuing without diagram", "warning")
-                    tikz_result_holder["error"] = TimeoutError(f"TikZ generation timed out after {tikz_timeout}s")
-                    tikz_result_holder["done"] = True
-                    break
+            scan_thread.start()
+            tikz_thread.start()
             
-            scan_thread.join(timeout=0.1)
-            tikz_thread.join(timeout=0.1)
+            # Wait for both
+            while scan_thread.is_alive() or tikz_thread.is_alive():
+                scan_thread.join(timeout=0.1)
+                tikz_thread.join(timeout=0.1)
         
-        # Show any remaining results that weren't shown in the loop
-        if not scan_shown and scan_result_holder["done"]:
-            if scan_result_holder["error"]:
-                console.print("[red]  ✗ Scanning failed[/red]")
-            else:
-                console.print("[green]  ✓ Scanning complete[/green]")
-                console.print(_get_panel(
-                    scan_result_holder["result"].latex,
-                    title="Extracted LaTeX",
-                    border_style="dim"
-                ))
-        
-        if not tikz_shown and tikz_result_holder["done"]:
-            if tikz_result_holder["error"]:
-                console.print("[red]  ✗ TikZ generation failed[/red]")
-            else:
-                console.print("[green]  ✓ TikZ complete[/green]")
-                console.print(_get_panel(
-                    tikz_result_holder["result"],
-                    title="Generated TikZ",
-                    border_style="cyan"
-                ))
-        
-        # Check for errors - scan errors are fatal, tikz errors are recoverable
+        # Check for errors
         if scan_result_holder["error"]:
             raise scan_result_holder["error"]
         
         latex = scan_result_holder["result"].latex
+        console.print("[green]✓[/green] Scanning complete")
         
-        # TikZ errors are recoverable - continue without diagram
+        # TikZ errors are recoverable
         if tikz_result_holder["error"]:
-            if tikz_timed_out:
-                console.print("[yellow]  ⚠ Continuing without TikZ diagram due to timeout[/yellow]")
-            else:
-                console.print(f"[yellow]  ⚠ TikZ generation failed: {tikz_result_holder['error']}[/yellow]")
+            console.print(f"[yellow]![/yellow] TikZ generation failed: {tikz_result_holder['error']}")
             tikz_code = None
         else:
             tikz_code = tikz_result_holder["result"]
+            agent_used = tikz_result_holder.get("agent", "generic")
+            console.print(f"[green]✓[/green] TikZ complete (agent: {agent_used})")
+            
+            # Insert TikZ if needed
+            if r'\input{diagram}' in latex:
+                latex = insert_tikz_into_latex(latex, tikz_code)
         
         # Check if we need to handle option diagrams (detected after scanning)
         has_option_diagrams = r'\OptionA' in latex or r'\OptionB' in latex
@@ -969,12 +1026,20 @@ def process_image(
     else:
         # No diagram - just run scanning
         console.print("[bold green]Stage 2: Scanning image...[/bold green]")
-        console.print("[dim]  → Scanning LaTeX...[/dim]")
+        # Convert primary to old ClassificationResult for compatibility
+        classification = ClassificationResult(
+            question_type=primary.question_type,
+            difficulty=primary.difficulty,
+            chapter=primary.chapter,
+            topic=primary.topic,
+            has_diagram=primary.has_diagram,
+            diagram_type=primary.diagram_type,
+            confidence=primary.confidence,
+        )
         scan_result = scan_image(image_path, classification, use_context=use_context)
         
         latex = scan_result.latex
-        console.print("[green]  ✓ Scanning complete[/green]")
-        console.print(_get_panel(latex, title="Extracted LaTeX", border_style="dim"))
+        console.print("[green]✓[/green] Scanning complete")
         
         # Check for option diagrams even if has_diagram is False
         has_option_diagrams = r'\OptionA' in latex or r'\OptionB' in latex
@@ -1002,6 +1067,19 @@ def process_image(
             latex = format_latex(latex)
             console.print("[green]  ✓ Combined[/green]")
             console.print(_get_panel(latex, title="Final Combined LaTeX", border_style="green"))
+    
+    # Stage 3b: Difficulty assessment (if enabled)
+    if assess_difficulty:
+        with console.status("[bold green]Assessing difficulty..."):
+            difficulty_result = assess_difficulty_agent(latex, primary, diagram_analysis)
+        console.print(f"[cyan]Difficulty:[/cyan] {difficulty_result.difficulty} ({difficulty_result.difficulty_score}/10)")
+        console.print(f"[cyan]Cognitive Level:[/cyan] {difficulty_result.cognitive_level}")
+        console.print(f"[cyan]Estimated Time:[/cyan] {difficulty_result.estimated_time_minutes} min")
+    
+    # Stage 3c: Merge metadata into LaTeX (if enabled)
+    if merge_metadata:
+        latex = merge_metadata_into_latex(latex, primary, diagram_analysis, difficulty_result)
+        console.print("[green]✓[/green] Metadata merged into LaTeX")
     
     # Stage 4: Ideas (optional)
     problem, solution = extract_problem_solution(latex)
@@ -1032,9 +1110,20 @@ def process_image(
             variants[vtype] = variant_latex
         console.print(_get_panel(variant_latex, title=f"{vtype.title()} Variant", border_style="green"))
     
+    # Convert primary back to old ClassificationResult for PipelineResult
+    final_classification = ClassificationResult(
+        question_type=primary.question_type,
+        difficulty=difficulty_result.difficulty if difficulty_result else primary.difficulty,
+        chapter=primary.chapter,
+        topic=primary.topic,
+        has_diagram=primary.has_diagram,
+        diagram_type=diagram_analysis.diagram_type if diagram_analysis else primary.diagram_type,
+        confidence=primary.confidence,
+    )
+    
     return PipelineResult(
         source_path=image_path,
-        classification=classification,
+        classification=final_classification,
         latex=latex,
         tikz_code=tikz_code,
         ideas=ideas,
