@@ -28,7 +28,7 @@ class ClassificationResult(BaseModel):
     difficulty: Difficulty = Field(description="Difficulty level")
     chapter: str = Field(description="Chapter name from predefined list")
     topic: str = Field(description="Topic name from predefined list")
-    subtopic: str = Field(description="Specific subtopic")
+    subtopic: str | None = Field(default=None, description="Specific subtopic")
     has_diagram: bool = Field(description="Whether the question contains a diagram")
     diagram_type: DiagramType | None = Field(default=None, description="Type of diagram if present")
     num_options: int | None = Field(default=None, description="Number of options if MCQ")
