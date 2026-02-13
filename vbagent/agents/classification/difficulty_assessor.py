@@ -104,7 +104,8 @@ def assess_difficulty(
     primary: PrimaryClassification,
     diagram: Optional[DiagramAnalysis] = None,
     tikz_code: Optional[str] = None,
-    subject: Optional[str] = None
+    subject: Optional[str] = None,
+    show_spinner: bool = True
 ) -> DifficultyAssessment:
     """Assess difficulty after LaTeX extraction (Agent 3).
     
@@ -114,6 +115,7 @@ def assess_difficulty(
         diagram: Diagram analysis (if available)
         tikz_code: Generated TikZ code (if available)
         subject: Subject override
+        show_spinner: Whether to show animated spinner
         
     Returns:
         DifficultyAssessment with detailed metadata
@@ -162,5 +164,5 @@ def assess_difficulty(
 
 Analyze the problem thoroughly and provide detailed difficulty assessment with reasoning."""
     
-    result = run_agent_sync(agent, context)
+    result = run_agent_sync(agent, context, show_spinner=show_spinner)
     return result

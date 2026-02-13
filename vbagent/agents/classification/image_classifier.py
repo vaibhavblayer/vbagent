@@ -83,12 +83,13 @@ def create_image_classifier_agent(subject: Optional[str] = None):
     )
 
 
-def classify_from_image(image_path: str, subject: Optional[str] = None) -> PrimaryClassification:
+def classify_from_image(image_path: str, subject: Optional[str] = None, show_spinner: bool = True) -> PrimaryClassification:
     """Classify question from image (Agent 1).
     
     Args:
         image_path: Path to question image
         subject: Subject override
+        show_spinner: Whether to show animated spinner
         
     Returns:
         PrimaryClassification without difficulty
@@ -99,5 +100,5 @@ def classify_from_image(image_path: str, subject: Optional[str] = None) -> Prima
     agent = create_image_classifier_agent(subject)
     message = create_image_message(image_path, f"Classify this {subject} question.")
     
-    result = run_agent_sync(agent, message)
+    result = run_agent_sync(agent, message, show_spinner=show_spinner)
     return result

@@ -869,7 +869,7 @@ def process_image(
     
     # Stage 1: Classification with new multi-agent system
     with console.status("[bold green]Stage 1: Classifying image..."):
-        primary = classify_from_image(image_path)
+        primary = classify_from_image(image_path, show_spinner=False)
     
     console.print(f"[cyan]Type:[/cyan] {primary.question_type}")
     console.print(f"[cyan]Difficulty:[/cyan] {primary.difficulty}")
@@ -879,7 +879,7 @@ def process_image(
     diagram_analysis = None
     if analyze_diagram and primary.has_diagram:
         with console.status("[bold green]Analyzing diagram..."):
-            diagram_analysis = analyze_diagram_agent(image_path, primary)
+            diagram_analysis = analyze_diagram_agent(image_path, primary, show_spinner=False)
         console.print(f"[cyan]Diagram Type:[/cyan] {diagram_analysis.diagram_type}")
     
     # Stage 2 & 3: Scanning + TikZ (PARALLEL if has_diagram)
@@ -1071,7 +1071,7 @@ def process_image(
     # Stage 3b: Difficulty assessment (if enabled)
     if assess_difficulty:
         with console.status("[bold green]Assessing difficulty..."):
-            difficulty_result = assess_difficulty_agent(latex, primary, diagram_analysis)
+            difficulty_result = assess_difficulty_agent(latex, primary, diagram_analysis, show_spinner=False)
         console.print(f"[cyan]Difficulty:[/cyan] {difficulty_result.difficulty} ({difficulty_result.difficulty_score}/10)")
         console.print(f"[cyan]Cognitive Level:[/cyan] {difficulty_result.cognitive_level}")
         console.print(f"[cyan]Estimated Time:[/cyan] {difficulty_result.estimated_time_minutes} min")

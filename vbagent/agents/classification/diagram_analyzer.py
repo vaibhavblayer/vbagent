@@ -87,7 +87,8 @@ def create_diagram_analyzer_agent(subject: Optional[str] = None):
 def analyze_diagram(
     image_path: str,
     primary: PrimaryClassification,
-    subject: Optional[str] = None
+    subject: Optional[str] = None,
+    show_spinner: bool = True
 ) -> DiagramAnalysis:
     """Analyze diagram in detail (Agent 2).
     
@@ -95,6 +96,7 @@ def analyze_diagram(
         image_path: Path to question image
         primary: Primary classification result
         subject: Subject override
+        show_spinner: Whether to show animated spinner
         
     Returns:
         DiagramAnalysis with TikZ requirements
@@ -113,5 +115,5 @@ Focus on diagram structure, elements, and TikZ generation requirements."""
     
     message = create_image_message(image_path, context)
     
-    result = run_agent_sync(agent, message)
+    result = run_agent_sync(agent, message, show_spinner=show_spinner)
     return result
