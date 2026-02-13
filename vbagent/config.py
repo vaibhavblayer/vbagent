@@ -329,6 +329,15 @@ class VBAgentConfig:
     converter: AgentModelConfig = field(default_factory=AgentModelConfig)
     reviewer: AgentModelConfig = field(default_factory=AgentModelConfig)
 
+    def __post_init__(self):
+        """Set better defaults for specific agents."""
+        # Classifier doesn't need high reasoning - it's simple categorization
+        if self.classifier.reasoning_effort == "high":
+            self.classifier.reasoning_effort = "low"
+        # TikZ checker also doesn't need high reasoning
+        if self.tikz_checker.reasoning_effort == "high":
+            self.tikz_checker.reasoning_effort = "low"
+
     def get_model(self, agent_type: str) -> str:
         """Get the model for a specific agent type."""
         config = getattr(self, agent_type, None)
