@@ -83,7 +83,7 @@ def merge_metadata_into_latex(
             comments.append(f"% prerequisites: {', '.join(difficulty.prerequisite_concepts)}")
         if difficulty.cognitive_level:
             comments.append(f"% cognitive_level: {difficulty.cognitive_level}")
-        comments.append(f"% estimated_time: {difficulty.estimated_time_minutes} min")
+        comments.append(f"% estimated_time: {difficulty.expected_solve_time_minutes} min")
     
     # Other metadata
     if primary.requires_calculus:
@@ -1071,7 +1071,7 @@ def process_image(
             difficulty_result = assess_difficulty_agent(latex, primary, diagram_analysis, show_spinner=False)
         console.print(f"[cyan]Difficulty:[/cyan] {difficulty_result.difficulty} ({difficulty_result.difficulty_score}/10)")
         console.print(f"[cyan]Cognitive Level:[/cyan] {difficulty_result.cognitive_level}")
-        console.print(f"[cyan]Estimated Time:[/cyan] {difficulty_result.estimated_time_minutes} min")
+        console.print(f"[cyan]Estimated Time:[/cyan] {difficulty_result.expected_solve_time_minutes} min")
     
     # Stage 3c: Merge metadata into LaTeX (if enabled)
     if merge_metadata:
