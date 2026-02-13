@@ -146,11 +146,11 @@ def scan(
                     with open(classification_file) as f:
                         data = json.load(f)
                     classification = ClassificationResult(**data)
-                    console.print(f"[dim]  ✓ Loaded existing classification from {classification_file}[/dim]")
-                    console.print(f"[cyan]Type:[/cyan] {classification.question_type}")
-                    console.print(f"[cyan]Confidence:[/cyan] {classification.confidence:.2%}")
+                    from .common import print_status
+                    print_status(console, f"Loaded existing classification from {classification_file}", "info")
                 except Exception as e:
-                    console.print(f"[yellow]  ⚠ Failed to load classification: {e}[/yellow]")
+                    from .common import print_status
+                    print_status(console, f"Failed to load classification: {e}", "warning")
                     classification = None
             
             if classification is None:
@@ -158,8 +158,8 @@ def scan(
                 with console.status("[bold green]Classifying image..."):
                     classification = classify_image(image)
                 
-                console.print(f"[cyan]Detected type:[/cyan] {classification.question_type}")
-                console.print(f"[cyan]Confidence:[/cyan] {classification.confidence:.2%}")
+                from .common import print_classification
+                print_classification(console, classification.model_dump())
             
             # Then scan with classified type
             if classification.has_diagram:
@@ -167,7 +167,7 @@ def scan(
                 import threading
                 from vbagent.agents.tikz import generate_tikz
                 
-                console.print("[bold green]Scanning & TikZ (parallel)...[/bold green]")
+                console.print("\n[bold]Parallel Processing[/bold]")
                 
                 # Prepare TikZ description
                 tikz_description = f"Generate TikZ for {classification.diagram_type or 'diagram'}"
@@ -230,15 +230,16 @@ def scan(
                     raise scan_result_holder["error"]
                 
                 result = scan_result_holder["result"]
-                console.print("[green]  ✓ Scanning complete[/green]")
+                from .common import print_status
+                print_status(console, "Scanning complete", "success")
                 
                 if tikz_result_holder["error"]:
-                    console.print(f"[yellow]  ⚠ TikZ generation failed: {tikz_result_holder['error']}[/yellow]")
+                    print_status(console, f"TikZ generation failed: {tikz_result_holder['error']}", "warning")
                     tikz_code = None
                 else:
                     tikz_code = tikz_result_holder["result"]
                     agent_used = tikz_result_holder.get("agent", "generic")
-                    console.print(f"[green]  ✓ TikZ complete (agent: {agent_used})[/green]")
+                    print_status(console, f"TikZ complete (agent: {agent_used})", "success")
                     
                     # Show TikZ code
                     tikz_syntax = _get_syntax(tikz_code, "latex", theme="monokai", line_numbers=True)
@@ -329,21 +330,8 @@ def scan(
                         tikz_code if 'tikz_code' in locals() else None
                     )
                 
-                console.print(f"[green]  ✓ Difficulty:[/green] {difficulty_assessment.difficulty} ({difficulty_assessment.difficulty_score:.1f}/10)")
-                console.print(f"[green]  ✓ Solve Time:[/green] {difficulty_assessment.expected_solve_time_minutes} min")
-                console.print(f"[green]  ✓ Cognitive Level:[/green] {difficulty_assessment.cognitive_level}")
-                
-                if difficulty_assessment.difficulty_reasoning:
-                    console.print(f"\n[cyan]Reasoning:[/cyan]")
-                    console.print(f"[dim]{difficulty_assessment.difficulty_reasoning}[/dim]")
-                
-                if difficulty_assessment.prerequisite_concepts:
-                    console.print(f"\n[cyan]Prerequisites:[/cyan] {', '.join(difficulty_assessment.prerequisite_concepts[:3])}")
-                
-                if difficulty_assessment.common_mistakes:
-                    console.print(f"[cyan]Common Mistakes:[/cyan]")
-                    for mistake in difficulty_assessment.common_mistakes[:2]:
-                        console.print(f"  • {mistake}")
+                from .common import print_difficulty
+                print_difficulty(console, difficulty_assessment.model_dump())
                 
                 # Save difficulty assessment
                 if output:
@@ -351,10 +339,12 @@ def scan(
                     output_path = Path(output)
                     difficulty_file = output_path.parent / f"{output_path.stem}_difficulty.json"
                     difficulty_file.write_text(difficulty_assessment.model_dump_json(indent=2))
-                    console.print(f"\n[dim]Difficulty saved to: {difficulty_file}[/dim]")
+                    from .common import print_status
+                    print_status(console, f"Difficulty saved to: {difficulty_file}", "info")
                 
             except Exception as e:
-                console.print(f"[yellow]  ⚠ Difficulty assessment failed: {e}[/yellow]")
+                from .common import print_status
+                print_status(console, f"Difficulty assessment failed: {e}", "warning")
         
         # Compile validation if -c flag
         if do_compile:

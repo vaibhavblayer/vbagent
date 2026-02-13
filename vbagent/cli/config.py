@@ -153,6 +153,7 @@ def set(agent_type: str, model: str, reasoning: str, temperature: float, max_tok
         vbagent config set default --model gpt-4.1
         vbagent config set scanner -m gpt-4o --workspace  # Save to .vbagent.json
     """
+    from .common import print_status
     console = _get_console()
     cfg = get_config()
     
@@ -161,7 +162,7 @@ def set(agent_type: str, model: str, reasoning: str, temperature: float, max_tok
             cfg.default_model = model
         if reasoning:
             cfg.default_reasoning_effort = reasoning
-        console.print(f"[green]✓[/green] Updated default configuration")
+        print_status(console, "Updated default configuration", "success")
     else:
         agent_cfg = getattr(cfg, agent_type)
         if model:
@@ -172,7 +173,7 @@ def set(agent_type: str, model: str, reasoning: str, temperature: float, max_tok
             agent_cfg.temperature = temperature
         if max_tokens is not None:
             agent_cfg.max_tokens = max_tokens
-        console.print(f"[green]✓[/green] Updated {agent_type} configuration")
+        print_status(console, f"Updated {agent_type} configuration", "success")
     
     # Save to file
     config_path = save_config(workspace=workspace)
@@ -197,12 +198,13 @@ def set(agent_type: str, model: str, reasoning: str, temperature: float, max_tok
 @click.option("--workspace", "-w", is_flag=True, help="Reset workspace config instead of global")
 def reset(workspace: bool):
     """Reset configuration to defaults."""
+    from .common import print_status
     console = _get_console()
     reset_config(workspace=workspace)
     if workspace:
-        console.print("[green]✓[/green] Workspace configuration removed")
+        print_status(console, "Workspace configuration removed", "success")
     else:
-        console.print("[green]✓[/green] Global configuration reset to defaults")
+        print_status(console, "Global configuration reset to defaults", "success")
 
 
 @config.command()
@@ -220,22 +222,23 @@ def debug(mode: str, workspace: bool):
         vbagent config debug status      # Show current status
         vbagent config debug on -w       # Enable in workspace config
     """
+    from .common import print_status
     console = _get_console()
     
     if mode == "status":
         cfg = get_config()
-        status = "[green]ON[/green]" if cfg.debug else "[red]OFF[/red]"
+        status = "ON" if cfg.debug else "OFF"
         config_type = "workspace" if has_workspace_config() else "global"
-        console.print(f"Debug mode: {status} ({config_type} config)")
+        console.print(f"Debug mode: [{'green' if cfg.debug else 'red'}]{status}[/] ({config_type} config)")
         return
     
     cfg = get_config()
     cfg.debug = (mode == "on")
     save_config(workspace=workspace)
     
-    status = "[green]enabled[/green]" if cfg.debug else "[red]disabled[/red]"
+    status = "enabled" if cfg.debug else "disabled"
     config_type = "workspace" if workspace else "global"
-    console.print(f"[green]✓[/green] Debug mode {status} ({config_type} config)")
+    print_status(console, f"Debug mode {status} ({config_type} config)", "success")
 
 
 @config.command()
