@@ -110,7 +110,8 @@ def add(category: str, file: str, name: str, description: str):
             name=name,
             description=description,
         )
-        console.print(f"[green]✓[/green] Added '{ref.name}' to {category}")
+        from .common import print_status
+        print_status(console, f"Added '{ref.name}' to {category}", "success")
         console.print(f"  [dim]Stored at: {ref.path}[/dim]")
         
     except FileExistsError as e:
@@ -225,10 +226,11 @@ def enable():
     When enabled, reference files will be included as examples
     in LLM prompts to improve output quality.
     """
+    from .common import print_status
     _ensure_imports()
     store = ContextStore.get_instance()
     store.enable_context()
-    console.print("[green]✓[/green] Context enabled")
+    print_status(console, "Context enabled", "success")
     console.print("[dim]Reference files will be included in prompts[/dim]")
 
 
@@ -238,10 +240,11 @@ def disable():
     
     When disabled, reference files will not be included in prompts.
     """
+    from .common import print_status
     _ensure_imports()
     store = ContextStore.get_instance()
     store.disable_context()
-    console.print("[yellow]✓[/yellow] Context disabled")
+    print_status(console, "Context disabled", "warning")
     console.print("[dim]Reference files will not be included in prompts[/dim]")
 
 
