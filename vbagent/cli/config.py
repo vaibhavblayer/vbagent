@@ -206,6 +206,39 @@ def reset(workspace: bool):
 
 
 @config.command()
+@click.argument("mode", type=click.Choice(["on", "off", "status"]))
+@click.option("-w", "--workspace", is_flag=True, help="Save to workspace config")
+def debug(mode: str, workspace: bool):
+    """Enable or disable debug mode.
+    
+    Debug mode prints detailed input/output for all agent calls.
+    
+    \b
+    Examples:
+        vbagent config debug on          # Enable debug mode
+        vbagent config debug off         # Disable debug mode
+        vbagent config debug status      # Show current status
+        vbagent config debug on -w       # Enable in workspace config
+    """
+    console = _get_console()
+    
+    if mode == "status":
+        cfg = get_config()
+        status = "[green]ON[/green]" if cfg.debug else "[red]OFF[/red]"
+        config_type = "workspace" if has_workspace_config() else "global"
+        console.print(f"Debug mode: {status} ({config_type} config)")
+        return
+    
+    cfg = get_config()
+    cfg.debug = (mode == "on")
+    save_config(workspace=workspace)
+    
+    status = "[green]enabled[/green]" if cfg.debug else "[red]disabled[/red]"
+    config_type = "workspace" if workspace else "global"
+    console.print(f"[green]✓[/green] Debug mode {status} ({config_type} config)")
+
+
+@config.command()
 def models():
     """List available models."""
     console = _get_console()

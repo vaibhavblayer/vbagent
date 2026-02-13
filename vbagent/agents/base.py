@@ -1,6 +1,7 @@
 """Base agent utilities using OpenAI Agents SDK."""
 
 import base64
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -27,6 +28,103 @@ def _get_model_settings_class():
     """Lazy import of ModelSettings class."""
     from agents import ModelSettings
     return ModelSettings
+
+
+def _truncate_text(text: str, max_chars: int = 500) -> str:
+    """Truncate text intelligently: first 200, middle 100, last 200 chars."""
+    if len(text) <= max_chars:
+        return text
+    
+    first = 200
+    middle = 100
+    last = 200
+    
+    if len(text) <= first + last:
+        return text
+    
+    start = text[:first]
+    end = text[-last:]
+    
+    # Try to get middle section
+    mid_start = (len(text) - middle) // 2
+    mid_section = text[mid_start:mid_start + middle]
+    
+    return f"{start}\n\n... [truncated {len(text) - first - middle - last} chars] ...\n\n{mid_section}\n\n... [truncated] ...\n\n{end}"
+
+
+def _print_debug_input(agent: "Agent", input_text: Any) -> None:
+    """Print debug information about agent input."""
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.syntax import Syntax
+    
+    console = Console()
+    
+    # Extract input text
+    if isinstance(input_text, str):
+        display_text = _truncate_text(input_text)
+    elif isinstance(input_text, list):
+        # Handle image messages
+        has_image = any(
+            isinstance(item, dict) and 
+            item.get("type") == "message" and
+            any(c.get("type") == "input_image" for c in item.get("content", []))
+            for item in input_text
+        )
+        text_parts = []
+        for item in input_text:
+            if isinstance(item, dict) and item.get("type") == "message":
+                for content in item.get("content", []):
+                    if content.get("type") == "input_text":
+                        text_parts.append(content.get("text", ""))
+        
+        display_text = "\n".join(text_parts)
+        if has_image:
+            display_text = "[Image attached]\n\n" + display_text
+        display_text = _truncate_text(display_text)
+    else:
+        display_text = str(input_text)
+    
+    console.print(Panel(
+        f"[cyan]Agent:[/cyan] {agent.name}\n"
+        f"[cyan]Model:[/cyan] {agent.model}\n"
+        f"[cyan]Input:[/cyan]\n\n{display_text}",
+        title="🔍 [bold yellow]DEBUG: Agent Input[/bold yellow]",
+        border_style="yellow"
+    ))
+
+
+def _print_debug_output(agent: "Agent", output: Any, duration: float) -> None:
+    """Print debug information about agent output."""
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.syntax import Syntax
+    from pydantic import BaseModel
+    
+    console = Console()
+    
+    # Format output
+    if isinstance(output, BaseModel):
+        # Pydantic model - convert to JSON
+        output_str = json.dumps(output.model_dump(), indent=2)
+        syntax = Syntax(output_str, "json", theme="monokai", line_numbers=False)
+        output_display = syntax
+    elif isinstance(output, (dict, list)):
+        output_str = json.dumps(output, indent=2)
+        syntax = Syntax(output_str, "json", theme="monokai", line_numbers=False)
+        output_display = syntax
+    else:
+        output_display = str(output)
+    
+    console.print(Panel(
+        f"[cyan]Agent:[/cyan] {agent.name}\n"
+        f"[cyan]Duration:[/cyan] {duration:.2f}s\n"
+        f"[cyan]Output:[/cyan]\n\n",
+        title="✅ [bold green]DEBUG: Agent Output[/bold green]",
+        border_style="green"
+    ))
+    console.print(output_display)
+    console.print()  # Empty line
 
 
 def encode_image(image_path: str) -> tuple[str, str]:
@@ -191,12 +289,21 @@ def run_agent_sync(agent: "Agent", input_text: str | list) -> Any:
     """
     import concurrent.futures
     import threading
+    import time
+    import json
+    from ..config import get_config
     
     Runner = _get_runner_class()
     _print_agent_info(agent)
     
+    # Debug mode: print input
+    config = get_config()
+    if config.debug:
+        _print_debug_input(agent, input_text)
+    
     # Use a thread pool to run the agent, allowing Ctrl+C to interrupt
     result_holder = {"result": None, "error": None}
+    start_time = time.time()
     
     def run_in_thread():
         try:
@@ -214,4 +321,11 @@ def run_agent_sync(agent: "Agent", input_text: str | list) -> Any:
     if result_holder["error"]:
         raise result_holder["error"]
     
-    return result_holder["result"].final_output
+    duration = time.time() - start_time
+    final_output = result_holder["result"].final_output
+    
+    # Debug mode: print output
+    if config.debug:
+        _print_debug_output(agent, final_output, duration)
+    
+    return final_output

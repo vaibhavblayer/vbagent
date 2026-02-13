@@ -310,6 +310,9 @@ class VBAgentConfig:
     # Subject for prompts (physics, chemistry, mathematics, biology)
     subject: str = "physics"
     
+    # Debug mode
+    debug: bool = False
+    
     # Provider settings
     base_url: Optional[str] = None  # None = OpenAI default
     api_key: Optional[str] = None   # None = use OPENAI_API_KEY env var
@@ -347,6 +350,7 @@ class VBAgentConfig:
             "default_model": self.default_model,
             "default_reasoning_effort": self.default_reasoning_effort,
             "subject": self.subject,
+            "debug": self.debug,
             "agents": {
                 agent_type: getattr(self, agent_type).to_dict()
                 for agent_type in AGENT_TYPES
@@ -365,6 +369,7 @@ class VBAgentConfig:
             default_model=data.get("default_model", "gpt-5.2"),
             default_reasoning_effort=data.get("default_reasoning_effort", "high"),
             subject=data.get("subject", "physics"),
+            debug=data.get("debug", False),
             base_url=data.get("base_url"),
             api_key=data.get("api_key"),
         )
