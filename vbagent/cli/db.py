@@ -58,23 +58,21 @@ def db():
 
 
 @db.command()
-@click.argument("path", type=click.Path(exists=True), required=False)
 @click.option("--db-path", type=click.Path(), help="Custom database location")
 @click.option("--force", is_flag=True, help="Recreate database if exists")
-@click.option("--recursive/--no-recursive", default=True, help="Scan subdirectories")
-def init(path: str, db_path: str, force: bool, recursive: bool):
-    """Initialize database from directory of LaTeX files.
+def init(db_path: str, force: bool):
+    """Initialize empty database.
     
-    If database exists, shows statistics. Use --force to recreate.
+    Creates database schema without inserting any questions.
+    Use 'vbagent db insert' to add questions later.
     
     \b
     Examples:
-        vbagent db init ./questions          # Scan questions directory
-        vbagent db init .                    # Scan current directory
-        vbagent db init --db-path custom.db  # Check custom database
-        vbagent db init ./questions --force  # Recreate database
+        vbagent db init                      # Create default database
+        vbagent db init --db-path custom.db  # Create custom database
+        vbagent db init --force              # Recreate existing database
     """
-    from vbagent.database import QuestionDatabase, ContentExtractor
+    from vbagent.database import QuestionDatabase
     from .ui import print_status
     
     console = Console()
@@ -105,72 +103,27 @@ def init(path: str, db_path: str, force: bool, recursive: bool):
         table.add_row("Effective question count", str(stats['effective_question_count']))
         
         console.print(table)
-        console.print()
+        console.print("\n[dim]To add questions:[/dim]")
+        console.print("  vbagent db insert [cyan]./questions[/cyan]")
         return
     
-    # Need path to initialize new database
-    if not path:
-        from .ui import print_status
-        print_status(console, "PATH required to initialize new database", "error")
-        console.print("\n[dim]Usage:[/dim]")
-        console.print("  vbagent db init [cyan]./questions[/cyan]     # Scan questions directory")
-        console.print("  vbagent db init [cyan].[/cyan]               # Scan current directory")
-        console.print("\n[dim]Or check existing database:[/dim]")
-        console.print("  vbagent db stats")
-        raise click.Abort()
+    # Create empty database
+    if force and db_file.exists():
+        db_file.unlink()
+        print_status(console, f"Removed existing database", "info")
     
-    # Create database
-    console.print(f"\n[cyan]Initializing database at:[/cyan] {db_file}")
-    console.print(f"[cyan]Scanning directory:[/cyan] {path}\n")
+    db_file.parent.mkdir(parents=True, exist_ok=True)
     
-    dir_path = Path(path)
-    
-    # Find all .tex files
-    if recursive:
-        tex_files = list(dir_path.rglob("*.tex"))
-    else:
-        tex_files = list(dir_path.glob("*.tex"))
-    
-    if not tex_files:
-        console.print("[yellow]No .tex files found[/yellow]")
-        return
-    
-    console.print(f"[green]Found {len(tex_files)} .tex files[/green]\n")
-    
-    # Create database and insert
     with QuestionDatabase(db_file) as database:
-        total_questions = 0
-        
-        for tex_file in track(tex_files, description="Processing files..."):
-            try:
-                records = ContentExtractor.extract_from_file(tex_file)
-                
-                if not records:
-                    continue
-                
-                # Insert records
-                if records[0].is_passage:
-                    # Insert parent first
-                    parent_id = database.insert(records[0])
-                    # Insert children with parent_id
-                    for child in records[1:]:
-                        child.parent_question_id = parent_id
-                        database.insert(child)
-                    total_questions += 1
-                else:
-                    # Insert standalone questions
-                    for record in records:
-                        database.insert(record)
-                        total_questions += 1
-            
-            except Exception as e:
-                console.print(f"[yellow]Warning:[/yellow] Failed to process {tex_file.name}: {e}")
+        pass  # Just creates schema
     
     # Save database path to config
     _save_db_path(db_file)
     
-    console.print(f"\n[green]✓[/green] Database initialized with {total_questions} questions")
-    console.print(f"[dim]Database path saved to config[/dim]\n")
+    print_status(console, f"Database initialized at: {db_file}", "success")
+    console.print("\n[dim]Next steps:[/dim]")
+    console.print("  vbagent db insert [cyan]./questions[/cyan]     # Add questions from directory")
+    console.print("  vbagent db stats                    # View statistics")
 
 
 @db.command()
