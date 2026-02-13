@@ -110,7 +110,7 @@ def add(category: str, file: str, name: str, description: str):
             name=name,
             description=description,
         )
-        from .common import print_status
+        from .ui import print_status
         print_status(console, f"Added '{ref.name}' to {category}", "success")
         console.print(f"  [dim]Stored at: {ref.path}[/dim]")
         
@@ -226,7 +226,7 @@ def enable():
     When enabled, reference files will be included as examples
     in LLM prompts to improve output quality.
     """
-    from .common import print_status
+    from .ui import print_status
     _ensure_imports()
     store = ContextStore.get_instance()
     store.enable_context()
@@ -240,7 +240,7 @@ def disable():
     
     When disabled, reference files will not be included in prompts.
     """
-    from .common import print_status
+    from .ui import print_status
     _ensure_imports()
     store = ContextStore.get_instance()
     store.disable_context()

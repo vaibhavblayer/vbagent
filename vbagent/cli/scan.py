@@ -146,10 +146,10 @@ def scan(
                     with open(classification_file) as f:
                         data = json.load(f)
                     classification = ClassificationResult(**data)
-                    from .common import print_status
+                    from .ui import print_status
                     print_status(console, f"Loaded existing classification from {classification_file}", "info")
                 except Exception as e:
-                    from .common import print_status
+                    from .ui import print_status
                     print_status(console, f"Failed to load classification: {e}", "warning")
                     classification = None
             
@@ -158,7 +158,7 @@ def scan(
                 with console.status("[bold green]Classifying image..."):
                     classification = classify_image(image)
                 
-                from .common import print_classification
+                from .ui import print_classification
                 print_classification(console, classification.model_dump())
             
             # Then scan with classified type
@@ -230,7 +230,7 @@ def scan(
                     raise scan_result_holder["error"]
                 
                 result = scan_result_holder["result"]
-                from .common import print_status
+                from .ui import print_status
                 print_status(console, "Scanning complete", "success")
                 
                 if tikz_result_holder["error"]:
@@ -330,7 +330,7 @@ def scan(
                         tikz_code if 'tikz_code' in locals() else None
                     )
                 
-                from .common import print_difficulty
+                from .ui import print_difficulty
                 print_difficulty(console, difficulty_assessment.model_dump())
                 
                 # Save difficulty assessment
@@ -339,11 +339,11 @@ def scan(
                     output_path = Path(output)
                     difficulty_file = output_path.parent / f"{output_path.stem}_difficulty.json"
                     difficulty_file.write_text(difficulty_assessment.model_dump_json(indent=2))
-                    from .common import print_status
+                    from .ui import print_status
                     print_status(console, f"Difficulty saved to: {difficulty_file}", "info")
                 
             except Exception as e:
-                from .common import print_status
+                from .ui import print_status
                 print_status(console, f"Difficulty assessment failed: {e}", "warning")
         
         # Compile validation if -c flag

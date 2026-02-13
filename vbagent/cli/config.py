@@ -153,7 +153,7 @@ def set(agent_type: str, model: str, reasoning: str, temperature: float, max_tok
         vbagent config set default --model gpt-4.1
         vbagent config set scanner -m gpt-4o --workspace  # Save to .vbagent.json
     """
-    from .common import print_status
+    from .ui import print_status
     console = _get_console()
     cfg = get_config()
     
@@ -198,7 +198,7 @@ def set(agent_type: str, model: str, reasoning: str, temperature: float, max_tok
 @click.option("--workspace", "-w", is_flag=True, help="Reset workspace config instead of global")
 def reset(workspace: bool):
     """Reset configuration to defaults."""
-    from .common import print_status
+    from .ui import print_status
     console = _get_console()
     reset_config(workspace=workspace)
     if workspace:
@@ -222,7 +222,7 @@ def debug(mode: str, workspace: bool):
         vbagent config debug status      # Show current status
         vbagent config debug on -w       # Enable in workspace config
     """
-    from .common import print_status
+    from .ui import print_status
     console = _get_console()
     
     if mode == "status":

@@ -164,7 +164,7 @@ def init(force: bool, quick: bool, yes: bool):
             config.subject,
         )
     config.subject = subject
-    from .common import print_status
+    from .ui import print_status
     print_status(console, f"Subject: {subject}", "success")
     
     if not quick and not yes:

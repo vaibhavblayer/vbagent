@@ -420,19 +420,19 @@ def _process_images_parallel(
                     if error:
                         with lock:
                             completed["failed"] += 1
-                        from .common import print_status
+                        from .ui import print_status
                         print_status(console, f"{img_name}: {error}", "error")
                     else:
                         with lock:
                             completed["success"] += 1
                             results.append(result)
-                        from .common import print_status
+                        from .ui import print_status
                         print_status(console, img_name, "success")
                         
                 except Exception as e:
                     with lock:
                         completed["failed"] += 1
-                    from .common import print_status
+                    from .ui import print_status
                     print_status(console, f"{img_name}: {e}", "error")
                 
                 progress.update(task, advance=1)
@@ -857,7 +857,7 @@ def process_image(
             # Check if scan completed and show result
             if scan_result_holder["done"] and not scan_shown:
                 scan_shown = True
-                from .common import print_status
+                from .ui import print_status
                 if scan_result_holder["error"]:
                     print_status(console, "Scanning failed", "error")
                 else:
@@ -871,7 +871,7 @@ def process_image(
             # Check if tikz completed and show result
             if tikz_result_holder["done"] and not tikz_shown:
                 tikz_shown = True
-                from .common import print_status
+                from .ui import print_status
                 if tikz_result_holder["error"]:
                     print_status(console, "TikZ generation failed", "error")
                 else:
@@ -887,7 +887,7 @@ def process_image(
                 elapsed = time.time() - tikz_start_time
                 if elapsed > tikz_timeout:
                     tikz_timed_out = True
-                    from .common import print_status
+                    from .ui import print_status
                     print_status(console, f"TikZ generation timed out after {int(elapsed)}s, continuing without diagram", "warning")
                     tikz_result_holder["error"] = TimeoutError(f"TikZ generation timed out after {tikz_timeout}s")
                     tikz_result_holder["done"] = True
