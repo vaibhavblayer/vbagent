@@ -10,26 +10,27 @@ requires-python = ">=3.12"
 dependencies = [
     "openai-agents>=0.6.2",
     "pydantic>=2.0.0",
-    "pillow>=10.0.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "pyyaml>=6.0.0",
     "jsonschema>=4.0.0",
     "mcp>=1.0.0",
 ]
 
 [project.optional-dependencies]
-cli = [
-    "click>=8.1.0",
-    "rich>=13.0.0",
-]
 dev = [
     "pytest>=8.0.0",
     "hypothesis>=6.0.0",
-    "click>=8.1.0",
-    "rich>=13.0.0",
 ]
-# Full installation (library + CLI)
+# Full installation (same as base - kept for backward compatibility)
 all = [
+    "openai-agents>=0.6.2",
+    "pydantic>=2.0.0",
     "click>=8.1.0",
     "rich>=13.0.0",
+    "pyyaml>=6.0.0",
+    "jsonschema>=4.0.0",
+    "mcp>=1.0.0",
 ]
 
 [project.scripts]
