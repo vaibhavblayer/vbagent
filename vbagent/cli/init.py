@@ -164,7 +164,8 @@ def init(force: bool, quick: bool, yes: bool):
             config.subject,
         )
     config.subject = subject
-    console.print(f"[green]✓[/green] Subject: {subject}")
+    from .common import print_status
+    print_status(console, f"Subject: {subject}", "success")
     
     if not quick and not yes:
         # === Provider Selection ===
@@ -183,7 +184,7 @@ def init(force: bool, quick: bool, yes: bool):
             current_provider,
         )
         config.base_url = PROVIDERS[selected_provider]["base_url"]
-        console.print(f"[green]✓[/green] Provider: {selected_provider}")
+        print_status(console, f"Provider: {selected_provider}", "success")
         
         # Ask for API key if non-OpenAI provider
         if selected_provider != "openai":
@@ -201,18 +202,18 @@ def init(force: bool, quick: bool, yes: bool):
                 )
                 if api_key:
                     config.api_key = api_key
-                    console.print(f"[green]✓[/green] API key set")
+                    print_status(console, "API key set", "success")
                 else:
-                    console.print(f"[yellow]  ⚠ No API key set. Set {env_key} in your environment[/yellow]")
+                    print_status(console, f"No API key set. Set {env_key} in your environment", "warning")
         
         # === Default Model ===
         console.print("\n[bold]─── Default Settings ───[/bold]")
         
         config.default_model = _select_model(console, "default", config.default_model)
-        console.print(f"[green]✓[/green] Default model: {config.default_model}")
+        print_status(console, f"Default model: {config.default_model}", "success")
         
         config.default_reasoning_effort = _select_reasoning(console, "default", config.default_reasoning_effort)
-        console.print(f"[green]✓[/green] Default reasoning: {config.default_reasoning_effort}")
+        print_status(console, f"Default reasoning: {config.default_reasoning_effort}", "success")
         
         # === Per-Agent Configuration ===
         customize_agents = Prompt.ask(

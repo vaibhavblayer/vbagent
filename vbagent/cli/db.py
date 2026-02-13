@@ -83,7 +83,8 @@ def init(path: str, db_path: str, force: bool, recursive: bool):
     
     # Check if database exists
     if db_file.exists() and not force:
-        console.print(f"\n[green]✓[/green] Database already exists at: [cyan]{db_file}[/cyan]\n")
+        from .common import print_status
+        print_status(console, f"Database already exists at: {db_file}", "info")
         
         # Show stats
         with QuestionDatabase(db_file) as database:
