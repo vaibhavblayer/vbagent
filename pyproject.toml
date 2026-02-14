@@ -22,6 +22,11 @@ dev = [
     "pytest>=8.0.0",
     "hypothesis>=6.0.0",
 ]
+docs = [
+    "mkdocs-material>=9.0.0",
+    "mkdocstrings[python]>=1.0.0",
+    "pymdown-extensions>=10.0.0",
+]
 # Full installation (same as base - kept for backward compatibility)
 all = [
     "openai-agents>=0.6.2",
