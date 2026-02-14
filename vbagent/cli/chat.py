@@ -53,11 +53,38 @@ class ChatInterface:
         # Display welcome message
         self._display_welcome()
         
-        # Set system message for the orchestrator
+        # Set system message for the orchestrator with clarification guidance
         self.orchestrator.set_system_message(
             "You are a helpful assistant for vbagent, a physics question processing system. "
             "You can help users with tasks like scanning questions, generating variants, "
-            "creating DPPs, and more. Use the available tools to accomplish user requests."
+            "creating DPPs, generating problems from ideas, and more.\n\n"
+            "**Problem Generation Guidance:**\n"
+            "When a user wants to generate a problem but doesn't provide all necessary details, "
+            "ask clarifying questions ONE AT A TIME in a conversational manner:\n\n"
+            "Required information:\n"
+            "- idea: What the problem is about (e.g., 'double block friction system')\n"
+            "- topic: Physics topic (e.g., 'Mechanics', 'Thermodynamics', 'Kinematics')\n\n"
+            "Optional information (ask if not provided):\n"
+            "- question_type: Type of question (mcq_sc, mcq_mc, passage, subjective, assertion_reason, match)\n"
+            "  Default: passage\n"
+            "- num_questions: Number of questions (for passage type, typically 2-4)\n"
+            "  Default: 2\n"
+            "- difficulty: Difficulty level (easy, medium, hard)\n"
+            "  Default: medium\n"
+            "- with_diagram: Whether to include diagrams (yes/no)\n"
+            "  Default: yes\n"
+            "- concepts: Specific concepts to cover (optional list)\n\n"
+            "Examples of good clarification:\n"
+            "User: 'Create a problem on friction'\n"
+            "You: 'I can help you generate a problem on friction! What topic is this for? "
+            "(e.g., Mechanics, Dynamics)'\n\n"
+            "User: 'Mechanics'\n"
+            "You: 'Great! What type of question would you like? "
+            "(mcq_sc for single correct MCQ, passage for comprehension with multiple questions, or subjective)'\n\n"
+            "User: 'passage'\n"
+            "You: 'Perfect! How many questions should the passage have? (typically 2-4)'\n\n"
+            "After collecting all information, call the generate_problem tool with the parameters.\n\n"
+            "Use the available tools to accomplish user requests."
         )
         
         # Enter input loop
@@ -72,6 +99,13 @@ class ChatInterface:
         """Display welcome message."""
         welcome_text = Text()
         welcome_text.append("Welcome to VBAgent Chat!\n\n", style="bold cyan")
+        welcome_text.append("I can help you with:\n", style="bold")
+        welcome_text.append("  • Scanning question images to LaTeX\n")
+        welcome_text.append("  • Generating problems from ideas\n", style="green")
+        welcome_text.append("  • Creating TikZ diagrams\n")
+        welcome_text.append("  • Generating variants and alternates\n")
+        welcome_text.append("  • Creating DPP sets\n")
+        welcome_text.append("  • And more!\n\n")
         welcome_text.append("Type your questions or commands in natural language.\n")
         welcome_text.append("Type ", style="dim")
         welcome_text.append("exit", style="bold")
