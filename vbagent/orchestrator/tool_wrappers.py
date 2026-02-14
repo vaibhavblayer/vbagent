@@ -632,6 +632,9 @@ def register_core_tools(registry: "ToolRegistry") -> None:
     # Register export tools
     register_export_tools(registry)
     
+    # Register generation tools
+    register_generation_tools(registry)
+    
     # Register scan tool
     registry.register(
         name="scan",
@@ -1741,4 +1744,163 @@ def register_dpp_tools(registry: "ToolRegistry") -> None:
             "required": ["count"]
         },
         function=create_dpp_tool
+    )
+
+
+
+def generate_problem_tool(
+    idea: str,
+    topic: str,
+    concepts: Optional[list[str]] = None,
+    question_type: str = "passage",
+    num_questions: int = 2,
+    difficulty: str = "medium",
+    with_diagram: bool = True,
+    output_dir: str = "agentic/generated",
+    run_pipeline: bool = True
+) -> dict[str, Any]:
+    """Generate a complete problem from an idea or concept description.
+    
+    Uses Agent 5 (Idea Generator) to create a problem, then optionally runs
+    the full pipeline (TikZ generation, classification, difficulty assessment).
+    
+    Args:
+        idea: Description of the problem idea (e.g., "double block friction system")
+        topic: Topic for the problem (e.g., "Mechanics", "Thermodynamics")
+        concepts: List of specific concepts to cover (optional)
+        question_type: Type of question (mcq_sc, mcq_mc, passage, subjective, etc.)
+        num_questions: Number of questions (for passage type)
+        difficulty: Target difficulty level (easy, medium, hard)
+        with_diagram: Whether to include diagrams
+        output_dir: Directory to save generated files
+        run_pipeline: Whether to run full pipeline (classification, TikZ, difficulty)
+        
+    Returns:
+        Dictionary containing:
+            - problem_latex: Generated problem LaTeX
+            - solution_latex: Generated solution LaTeX
+            - idea_latex: Core concepts and ideas
+            - diagram_description: Description of diagram if generated
+            - saved_to: Path where problem was saved
+            - metadata: Classification and difficulty metadata (if run_pipeline=True)
+    """
+    from vbagent.agents.classification.idea_generator import generate_from_idea
+    from vbagent.cli.process import process_generated_problem
+    from pathlib import Path
+    
+    # Prepare concepts list
+    if concepts is None:
+        concepts = []
+    
+    # Prepare ideas list from the main idea
+    ideas = [idea]
+    
+    # Generate problem using Agent 5
+    generated = generate_from_idea(
+        ideas=ideas,
+        concepts=concepts,
+        topic=topic,
+        difficulty=difficulty,
+        question_type=question_type
+    )
+    
+    # Create output directory
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+    
+    # Find next available problem number
+    existing = list(output_path.glob("problem_*.tex"))
+    next_num = len(existing) + 1
+    problem_file = output_path / f"problem_{next_num}.tex"
+    
+    # Save basic problem
+    problem_file.write_text(generated.problem_latex)
+    
+    result = {
+        "problem_latex": generated.problem_latex,
+        "solution_latex": generated.solution_latex,
+        "idea_latex": generated.idea_latex,
+        "diagram_description": generated.diagram_description,
+        "saved_to": str(problem_file),
+        "generation_metadata": generated.generation_metadata
+    }
+    
+    # Run full pipeline if requested
+    if run_pipeline:
+        pipeline_result = process_generated_problem(
+            generated=generated,
+            problem_num=next_num,
+            output_base_dir=Path(output_dir).parent if output_dir != "agentic/generated" else Path("agentic")
+        )
+        result["metadata"] = pipeline_result
+        result["saved_to"] = pipeline_result.get("problem_path", str(problem_file))
+    
+    return result
+
+
+def register_generation_tools(registry: "ToolRegistry") -> None:
+    """Register problem generation tools with the registry.
+    
+    Args:
+        registry: ToolRegistry instance to register tools with
+    """
+    registry.register(
+        name="generate_problem",
+        description="Generate a complete physics/chemistry problem from an idea or concept description. "
+                   "Creates problem statement, solution, and optionally diagrams with full metadata.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "idea": {
+                    "type": "string",
+                    "description": "Description of the problem idea (e.g., 'double block friction system', "
+                                 "'projectile motion with air resistance')"
+                },
+                "topic": {
+                    "type": "string",
+                    "description": "Topic for the problem (e.g., 'Mechanics', 'Thermodynamics', 'Kinematics')"
+                },
+                "concepts": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of specific concepts to cover (e.g., ['friction', 'normal force', 'energy conservation'])"
+                },
+                "question_type": {
+                    "type": "string",
+                    "enum": ["mcq_sc", "mcq_mc", "subjective", "passage", "assertion_reason", "match"],
+                    "description": "Type of question to generate",
+                    "default": "passage"
+                },
+                "num_questions": {
+                    "type": "integer",
+                    "description": "Number of questions (relevant for passage type)",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "default": 2
+                },
+                "difficulty": {
+                    "type": "string",
+                    "enum": ["easy", "medium", "hard"],
+                    "description": "Target difficulty level",
+                    "default": "medium"
+                },
+                "with_diagram": {
+                    "type": "boolean",
+                    "description": "Whether to include diagrams in the problem",
+                    "default": True
+                },
+                "output_dir": {
+                    "type": "string",
+                    "description": "Directory to save generated files",
+                    "default": "agentic/generated"
+                },
+                "run_pipeline": {
+                    "type": "boolean",
+                    "description": "Whether to run full pipeline (TikZ generation, classification, difficulty assessment)",
+                    "default": True
+                }
+            },
+            "required": ["idea", "topic"]
+        },
+        function=generate_problem_tool
     )

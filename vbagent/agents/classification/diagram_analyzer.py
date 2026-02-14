@@ -117,3 +117,40 @@ Focus on diagram structure, elements, and TikZ generation requirements."""
     
     result = run_agent_sync(agent, message, show_spinner=show_spinner)
     return result
+
+
+
+def analyze_diagram_from_description(
+    description: str,
+    primary: "PrimaryClassification",
+    subject: Optional[str] = None
+) -> DiagramAnalysis:
+    """Analyze diagram from text description (for generated problems).
+    
+    Args:
+        description: Text description of the diagram
+        primary: Primary classification result
+        subject: Subject override
+        
+    Returns:
+        DiagramAnalysis with TikZ requirements
+    """
+    if subject is None:
+        subject = primary.subject
+    
+    agent = create_diagram_analyzer_agent(subject)
+    
+    context = f"""Analyze this diagram based on its description.
+
+**Question Context:**
+- Type: {primary.question_type}
+- Topic: {primary.topic}
+- Subtopic: {primary.subtopic}
+
+**Diagram Description:**
+{description}
+
+Provide diagram analysis including type, elements, complexity, and TikZ requirements."""
+    
+    result = run_agent_sync(agent, context, show_spinner=False)
+    return result
