@@ -25,7 +25,7 @@ code {
   overflow-wrap: break-word;
 }
 
-/* API documentation signatures */
+/* API documentation signatures - mkdocstrings specific */
 .doc .doc-heading code {
   white-space: pre-wrap !important;
   word-wrap: break-word;
@@ -33,8 +33,30 @@ code {
   padding: 0.5em;
 }
 
+.doc-heading code,
+.doc-heading .highlight {
+  white-space: pre-wrap !important;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+/* Force wrapping on function signatures */
+.doc-heading .doc-signature,
+.doc-heading code.highlight {
+  display: block !important;
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  overflow-wrap: anywhere !important;
+}
+
 /* Inline code */
 p code, li code {
   word-wrap: break-word;
   white-space: normal;
 }
+
+/* mkdocstrings signature spans */
+.doc .doc-heading .highlight span {
+  white-space: pre-wrap !important;
+}
+
