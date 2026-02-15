@@ -96,7 +96,7 @@ Your output MUST be valid TikZ code that can be placed inside a tikzpicture envi
 **PRINCIPLES:**
 1. Define only BASE dimensions as variables (things you might want to adjust)
 2. Use NODES with anchors for objects (blocks, shapes) - enables relative positioning
-3. Use TikZ RELATIVE POSITIONING: `below of=`, `above of=`, `xshift`, `yshift`
+3. Use TikZ COORDINATE CALCULATIONS with calc library: `$(ref)+(x,y)$` - elegant and clear
 4. Use `node[midway]` for labels on lines/springs - NO position calculations
 5. Use SCOPES to avoid coordinate bloat for repeated structures
 6. NO variable bloat - don't create a variable for every single position
@@ -117,17 +117,19 @@ Your output MUST be valid TikZ code that can be placed inside a tikzpicture envi
 }
 ```
 
-**Use TikZ Native Relative Positioning (CRITICAL):**
+**Use Coordinate Calculations with calc Library (BEST PRACTICE):**
 ```latex
-% GOOD - use relative positioning with node placement options:
+\\usetikzlibrary{calc}  % Always include for coordinate calculations
+
+% BEST - use coordinate calculations (elegant and clear):
 \\node[pulley] (pulley1) at (0,0) {};
-\\node[block] (box1) [below of=pulley1, yshift=-1cm] {$m_1$};
-\\node[block] (box2) [below of=pulley1, xshift=-1.5cm, yshift=-2cm] {$m_2$};
+\\node[block] (box1) at ($(pulley1)+(0,-2.5)$) {$m_1$};
+\\node[block] (box2) at ($(pulley1)+(-1.5,-3.5)$) {$m_2$};
 
-% GOOD - fine-tune with xshift/yshift on nodes:
-\\node[block] (mass) [below of=support, yshift=-1.5cm, xshift=5mm] {$M$};
+% GOOD - relative positioning for simple cases:
+\\node[block] (mass) [below=2cm of support] {$M$};
 
-% BAD - calculating absolute coordinates:
+% BAD - calculating absolute coordinates with variables:
 \\pgfmathsetmacro{\\boxOneX}{0}
 \\pgfmathsetmacro{\\boxOneY}{-2.5}
 \\node[block] (box1) at (\\boxOneX, \\boxOneY) {$m_1$};

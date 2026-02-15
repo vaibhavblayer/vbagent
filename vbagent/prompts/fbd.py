@@ -37,18 +37,22 @@ For ground, walls, inclined planes, and pivots, use the **kinematikz** package:
 
 ```latex
 \usepackage{kinematikz}
+\usetikzlibrary{calc}  % Required for coordinate calculations
 
 % Ground/floor surface
 \pic (ground) at (0,0) {frame=5cm};
 
-% Block ABOVE surface with gap
-\node[draw, thick, minimum width=2cm, minimum height=1.5cm] (block) at ([yshift=1.5cm]ground-center) {$m$};
+% Block ABOVE surface with gap using coordinate calculation
+\node[draw, thick, minimum width=2cm, minimum height=1.5cm] (block) at ($(ground-center)+(0,1.5)$) {$m$};
 
 % Wall (vertical surface)
 \pic (wall) at (0,0) {frame=3cm, angle=90};
 
 % Inclined plane
 \pic (incline) at (0,0) {frame=4cm, angle=30};
+
+% Block on incline using coordinate calculation
+\node[draw, thick, rotate=30] (block) at ($(incline-center)+(-1,2)$) {$m$};
 
 % Pivot point
 \pic (pivot) at (2,3) {pivot};
@@ -57,6 +61,7 @@ For ground, walls, inclined planes, and pivots, use the **kinematikz** package:
 ## Standard TikZ Style
 
 ```latex
+\usetikzlibrary{calc}  % Always include for coordinate calculations
 \tikzset{>=latex}  % Use latex arrow tips
 \tikzstyle{force}=[->, thick, draw=blue!70!black]
 \tikzstyle{body}=[draw, thick, minimum width=2cm, minimum height=1.5cm]
@@ -66,13 +71,14 @@ For ground, walls, inclined planes, and pivots, use the **kinematikz** package:
 
 ```latex
 \begin{tikzpicture}
+    \usetikzlibrary{calc}
     \tikzset{>=latex}
     
     % Surface using kinematikz
     \pic (surface) at (0,0) {frame=6cm};
     
-    % Body ABOVE surface (not touching)
-    \node[draw, thick, minimum width=2cm, minimum height=1.5cm] (block) at ([yshift=1.5cm]surface-center) {$m$};
+    % Body ABOVE surface using coordinate calculation (elegant!)
+    \node[draw, thick, minimum width=2cm, minimum height=1.5cm] (block) at ($(surface-center)+(0,1.5)$) {$m$};
     
     % Forces from appropriate anchor points
     \draw[->, thick, blue!70!black] (block.south) -- ++(0,-1.5) node[right] {$mg$};
@@ -105,20 +111,22 @@ For ground, walls, inclined planes, and pivots, use the **kinematikz** package:
 
 ## Best Practices
 
-1. **Gap between surface and body** - use `yshift` or `above=` positioning
+1. **Gap between surface and body** - use `$(reference)+(x,y)$` coordinate calculations
 2. **Forces from correct anchors** - not all from center
-3. Use relative coordinates `++` for force vectors
-4. Position labels with `node[right/left/above/below]` at arrow end
-5. Keep force lengths proportional (visually balanced)
-6. **Omit axes unless needed** for component analysis
-7. Add angle marks only for inclined planes or force components
+3. **Always include calc library** - `\usetikzlibrary{calc}` for coordinate calculations
+4. Use relative coordinates `++` for force vectors
+5. Position labels with `node[right/left/above/below]` at arrow end
+6. Keep force lengths proportional (visually balanced)
+7. **Omit axes unless needed** for component analysis
+8. Add angle marks only for inclined planes or force components
 
 ## Common Scenarios
 
 **Block on horizontal surface:**
 ```latex
+\usetikzlibrary{calc}
 \pic (ground) at (0,0) {frame=5cm};
-\node[draw, thick, minimum width=2cm, minimum height=1.5cm] (block) at ([yshift=1.5cm]ground-center) {$m$};
+\node[draw, thick, minimum width=2cm, minimum height=1.5cm] (block) at ($(ground-center)+(0,1.5)$) {$m$};
 \draw[->] (block.south) -- ++(0,-1.5) node[right] {$mg$};
 \draw[->] (block.north) -- ++(0,1.2) node[right] {$N$};
 \draw[->] (block.east) -- ++(1.5,0) node[above] {$F$};
@@ -126,6 +134,14 @@ For ground, walls, inclined planes, and pivots, use the **kinematikz** package:
 ```
 
 **Inclined plane:**
+```latex
+\usetikzlibrary{calc}
+\pic (incline) at (0,0) {frame=4cm, angle=30};
+\node[draw, thick, rotate=30, minimum width=2cm, minimum height=1.5cm] (block) at ($(incline-center)+(-1,2)$) {$m$};
+\draw[->] (block.south) -- ++(0,-1.5) node[right] {$mg$};
+\draw[->] (block.north) -- ++(0,1.2) node[right] {$N$};
+% Friction along incline if needed
+```
 - Show angle of incline
 - Normal perpendicular to plane from top surface
 - Weight vertically downward from center
