@@ -21,7 +21,7 @@ _REVIEW_CHECKLIST = r"""## Review Checklist
 - Using commands from unloaded libraries
 
 **3. Best Practices**
-- Use arrows.meta syntax: `-{Stealth}` for physics diagrams
+- Use arrows.meta syntax: `->, >=latex` for physics diagrams (NOT Stealth)
 - Use `\node` for labels
 - Define reusable styles with `\tikzset`
 
@@ -101,7 +101,7 @@ GOOD - calc-based positioning and node[midway] for labels (PREFERRED):
 ```
 
 **6. Physics Diagram Conventions**
-- Force vectors: proper arrow tips (`-{Stealth}`), labels
+- Force vectors: proper arrow tips (`->, >=latex`), labels
 - Axes: use pgfplots `axis` environment for graphs
 - Springs/Coils: use `decoration={coil, ...}` NOT manual bezier curves
 

@@ -42,6 +42,12 @@ class SolutionOrchestrator:
     ) -> SolutionResult:
         """Generate complete solution using orchestration.
         
+        Process:
+        1. Extract problem statement using scanner
+        2. Plan solution approach
+        3. Execute specialist agents
+        4. Assemble: problem + specialist outputs
+        
         Args:
             image_path: Path to solution image
             problem_context: Context about the problem
@@ -51,8 +57,24 @@ class SolutionOrchestrator:
         Returns:
             Complete solution with metadata
         """
+        from vbagent.agents.scanner import scan_problem
+        
         if verbose:
-            print("Phase 1: Planning...")
+            print("Phase 0: Extracting problem statement...")
+        
+        # Phase 0: Extract problem using scanner
+        problem_latex = scan_problem(
+            image_path=str(image_path),
+            question_type=question_type,
+            use_context=True,
+            show_spinner=verbose,
+        )
+        
+        if verbose:
+            print(f"  ✓ Problem extracted ({len(problem_latex)} chars)")
+        
+        if verbose:
+            print("\nPhase 1: Planning solution approach...")
         
         # Phase 1: Create plan
         plan = self.planner.plan(
@@ -84,8 +106,9 @@ class SolutionOrchestrator:
         if verbose:
             print("\nPhase 3: Assembling solution...")
         
-        # Phase 3: Assemble solution
+        # Phase 3: Assemble solution (problem + specialist outputs)
         result = self.assembler.assemble(
+            problem_latex=problem_latex,
             plan=plan,
             agent_outputs=agent_outputs,
         )

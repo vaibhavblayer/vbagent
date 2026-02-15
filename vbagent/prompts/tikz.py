@@ -257,15 +257,37 @@ Your output MUST be valid TikZ code that can be placed inside a tikzpicture envi
 - BAD: Calculating label position separately
 - GOOD: Use the exact `spring/.style` defined above with `node[midway]` for labels
 
-**Force vectors:**
+**Arrow Tips:**
+Use `latex` arrow tips (NOT `Stealth`):
 ```latex
-\\draw[-{Stealth}, thick] (0,0) -- (2,0) node[midway, above] {$F$};
-\\draw[-{Stealth}, thick] (mass.south) -- ++(0,-1.5) node[midway, right] {$mg$};
+\tikzset{>=latex}  % Set default arrow tip
+
+% Force vectors
+\draw[->, thick] (0,0) -- (2,0) node[midway, above] {$F$};
+\draw[->, thick] (mass.south) -- ++(0,-1.5) node[midway, right] {$mg$};
+```
+
+**Surfaces and Frames (kinematikz):**
+For ground, walls, inclined planes, and pivots:
+```latex
+% Ground/floor
+\pic (ground) at (0,0) {frame=5cm};
+
+% Wall (vertical)
+\pic (wall) at (0,0) {frame=3cm, angle=90};
+
+% Inclined plane
+\pic (incline) at (0,0) {frame=4cm, angle=30};
+
+% Pivot point
+\pic (pivot) at (2,3) {pivot};
+
+% Then reference: (ground-center), (wall-center), (pivot)
 ```
 
 **Angles:**
 ```latex
-\\draw pic[draw, angle radius=0.5cm, "$\\theta$"] {angle=A--O--B};
+\draw pic[draw, angle radius=0.5cm, "$\theta$"] {angle=A--O--B};
 ```
 
 **Dashed lines:**

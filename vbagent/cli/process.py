@@ -455,6 +455,8 @@ def _process_images_parallel(
                 assess_difficulty=assess_difficulty,
                 analyze_diagram=analyze_diagram,
                 merge_metadata=merge_metadata,
+                use_orchestrator=use_orchestrator,
+                use_cache=use_cache,
             )
             
             # Save immediately (thread-safe - each file is unique)
@@ -610,6 +612,16 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     default=True,
     help="Merge classification metadata into scanned LaTeX [default: on]"
 )
+@click.option(
+    "--no-cache",
+    is_flag=True,
+    help="Disable pipeline cache (force re-run all stages)"
+)
+@click.option(
+    "--clear-cache",
+    is_flag=True,
+    help="Clear pipeline cache before processing"
+)
 def process(
     image: Optional[str],
     tex: Optional[str],
@@ -628,6 +640,8 @@ def process(
     validate_tikz: bool,
     use_orchestrator: bool,
     merge_metadata: bool,
+    no_cache: bool,
+    clear_cache: bool,
 ):
     """Full pipeline: Classify → Scan → TikZ → Ideas → Variants.
     
@@ -675,8 +689,18 @@ def process(
     from vbagent.agents.variant import generate_variant
     from vbagent.models.pipeline import PipelineResult
     from vbagent.references.store import ReferenceStore
+    from vbagent.cache import PipelineCache
     
     console = _get_console()
+    
+    # Handle cache flags
+    use_cache = not no_cache
+    if clear_cache:
+        cache = PipelineCache()
+        cache.clear()
+        console.print("[yellow]✓[/yellow] Pipeline cache cleared")
+        if not image and not tex:
+            return  # Just clear cache and exit
     
     # Parse variant types from comma-separated string
     valid_variants = {"numerical", "context", "conceptual", "calculus"}
@@ -748,6 +772,8 @@ def process(
                             assess_difficulty=assess_difficulty,
                             analyze_diagram=analyze_diagram,
                             merge_metadata=merge_metadata,
+                            use_orchestrator=use_orchestrator,
+                            use_cache=use_cache,
                         )
                         
                         # Compile validation if -c flag
@@ -861,6 +887,9 @@ def process_image(
     assess_difficulty: bool = True,
     analyze_diagram: bool = True,
     merge_metadata: bool = True,
+    use_orchestrator: bool = False,
+    use_cache: bool = True,
+    problem_id: Optional[str] = None,
 ) -> PipelineResult:
     """Process an image through the full pipeline.
     
@@ -869,12 +898,17 @@ def process_image(
     2. Scanning (Agent 3 + optional difficulty assessment)
     3. TikZ (parallel with scanning if has_diagram)
     4. Ideas, Alternates, Variants (sequential, optional)
+    
+    Args:
+        use_cache: If True, use cached results from previous runs
+        problem_id: Problem identifier for caching (auto-generated if None)
     """
     import concurrent.futures
     import threading
     
     # Lazy imports
     from vbagent.agents.classification import classify_from_image, analyze_diagram as analyze_diagram_agent, assess_difficulty as assess_difficulty_agent
+    from vbagent.cache import PipelineCache
     from vbagent.agents.scanner import scan as scan_image
     from vbagent.agents.tikz_router import generate_tikz_with_routing
     from vbagent.agents.tikz import generate_tikz
@@ -882,13 +916,33 @@ def process_image(
     from vbagent.agents.variant import generate_variant
     from vbagent.models.pipeline import PipelineResult
     from vbagent.models.classification import ClassificationResult
+    from vbagent.models.classification_v2 import PrimaryClassification, DiagramAnalysis
     from rich.progress import Progress, SpinnerColumn, TextColumn
     
     console = _get_console()
     
+    # Initialize cache
+    cache = PipelineCache() if use_cache else None
+    if problem_id is None:
+        problem_id = Path(image_path).stem
+    
+    # Show cached stages if any
+    if cache:
+        cached_stages = cache.get_cached_stages(problem_id)
+        if cached_stages:
+            console.print(f"[dim]Found cached: {', '.join(cached_stages)}[/dim]")
+    
     # Stage 1: Classification with new multi-agent system
-    with console.status("[bold green]Stage 1: Classifying image..."):
-        primary = classify_from_image(image_path, show_spinner=False)
+    primary = None
+    if cache and cache.has(problem_id, "classification"):
+        console.print("[dim]Loading cached classification...[/dim]")
+        cached_data = cache.get(problem_id, "classification")
+        primary = PrimaryClassification(**cached_data)
+    else:
+        with console.status("[bold green]Stage 1: Classifying image..."):
+            primary = classify_from_image(image_path, show_spinner=False)
+        if cache:
+            cache.set(problem_id, "classification", primary.model_dump())
     
     console.print(f"[cyan]Type:[/cyan] {primary.question_type}")
     console.print(f"[cyan]Has Diagram:[/cyan] {'Yes' if primary.has_diagram else 'No'}")
@@ -896,8 +950,15 @@ def process_image(
     # Stage 1b: Diagram analysis (if enabled and has diagram)
     diagram_analysis = None
     if analyze_diagram and primary.has_diagram:
-        with console.status("[bold green]Analyzing diagram..."):
-            diagram_analysis = analyze_diagram_agent(image_path, primary, show_spinner=False)
+        if cache and cache.has(problem_id, "diagram"):
+            console.print("[dim]Loading cached diagram analysis...[/dim]")
+            cached_data = cache.get(problem_id, "diagram")
+            diagram_analysis = DiagramAnalysis(**cached_data)
+        else:
+            with console.status("[bold green]Analyzing diagram..."):
+                diagram_analysis = analyze_diagram_agent(image_path, primary, show_spinner=False)
+            if cache:
+                cache.set(problem_id, "diagram", diagram_analysis.model_dump())
         console.print(f"[cyan]Diagram Type:[/cyan] {diagram_analysis.diagram_type}")
     
     # Stage 2 & 3: Scanning + TikZ (PARALLEL if has_diagram) OR Orchestrator
@@ -935,51 +996,67 @@ def process_image(
                     tikz_code += "\n\n" + output.content
     
     elif primary.has_diagram:
-        # Run scanning and TikZ generation in parallel
-        console.print("[bold green]Stage 2+3: Scanning & TikZ (parallel)...[/bold green]")
+        # Check cache first
+        latex_cached = cache and cache.has(problem_id, "scan")
+        tikz_cached = cache and cache.has(problem_id, "tikz")
         
-        # Prepare TikZ description based on classification
-        tikz_description = f"Generate TikZ for {diagram_analysis.diagram_type if diagram_analysis else 'diagram'}"
-        
-        # Results holders
-        scan_result_holder = {"result": None, "error": None}
-        tikz_result_holder = {"result": None, "error": None, "agent": "generic"}
-        
-        def run_scan():
-            try:
-                classification = convert_primary_to_classification(primary)
-                scan_result_holder["result"] = scan_image(
-                    image_path, classification, use_context=use_context, show_spinner=False
-                )
-            except Exception as e:
-                scan_result_holder["error"] = e
-        
-        def run_tikz():
-            try:
-                if diagram_analysis:
-                    # Use router with diagram analysis
-                    tikz_code, agent_used = generate_tikz_with_routing(
-                        image_path=image_path,
-                        description=tikz_description,
-                        diagram=diagram_analysis,
-                        primary=primary,
-                        use_context=use_context,
-                        show_spinner=False
-                    )
-                    tikz_result_holder["result"] = tikz_code
-                    tikz_result_holder["agent"] = agent_used
-                else:
-                    # Fallback to generic TikZ (no diagram analysis available)
+        if latex_cached and tikz_cached:
+            console.print("[dim]Loading cached scan & TikZ...[/dim]")
+            latex = cache.get(problem_id, "scan")
+            tikz_code = cache.get(problem_id, "tikz")
+            console.print("[green]✓[/green] Loaded from cache")
+        else:
+            # Run scanning and TikZ generation in parallel
+            console.print("[bold green]Stage 2+3: Scanning & TikZ (parallel)...[/bold green]")
+            
+            # Prepare TikZ description based on classification
+            tikz_description = f"Generate TikZ for {diagram_analysis.diagram_type if diagram_analysis else 'diagram'}"
+            
+            # Results holders
+            scan_result_holder = {"result": None, "error": None}
+            tikz_result_holder = {"result": None, "error": None, "agent": "generic"}
+            
+            def run_scan():
+                if latex_cached:
+                    scan_result_holder["result"] = type('obj', (object,), {'latex': cache.get(problem_id, "scan")})()
+                    return
+                try:
                     classification = convert_primary_to_classification(primary)
-                    tikz_result_holder["result"] = generate_tikz(
-                        description=tikz_description,
-                        image_path=image_path,
-                        use_context=use_context,
-                        classification=classification,
-                        show_spinner=False
+                    scan_result_holder["result"] = scan_image(
+                        image_path, classification, use_context=use_context, show_spinner=False
                     )
-            except Exception as e:
-                tikz_result_holder["error"] = e
+                except Exception as e:
+                    scan_result_holder["error"] = e
+            
+            def run_tikz():
+                if tikz_cached:
+                    tikz_result_holder["result"] = cache.get(problem_id, "tikz")
+                    return
+                try:
+                    if diagram_analysis:
+                        # Use router with diagram analysis
+                        tikz_code, agent_used = generate_tikz_with_routing(
+                            image_path=image_path,
+                            description=tikz_description,
+                            diagram=diagram_analysis,
+                            primary=primary,
+                            use_context=use_context,
+                            show_spinner=False
+                        )
+                        tikz_result_holder["result"] = tikz_code
+                        tikz_result_holder["agent"] = agent_used
+                    else:
+                        # Fallback to generic TikZ (no diagram analysis available)
+                        classification = convert_primary_to_classification(primary)
+                        tikz_result_holder["result"] = generate_tikz(
+                            description=tikz_description,
+                            image_path=image_path,
+                            use_context=use_context,
+                            classification=classification,
+                            show_spinner=False
+                        )
+                except Exception as e:
+                    tikz_result_holder["error"] = e
         
         # Start both threads with combined spinner
         progress = Progress(
@@ -1008,6 +1085,8 @@ def process_image(
             raise scan_result_holder["error"]
         
         latex = scan_result_holder["result"].latex
+        if cache and not latex_cached:
+            cache.set(problem_id, "scan", latex)
         console.print("[green]✓[/green] Scanning complete")
         
         # TikZ errors are recoverable
@@ -1016,6 +1095,8 @@ def process_image(
             tikz_code = None
         else:
             tikz_code = tikz_result_holder["result"]
+            if cache and not tikz_cached:
+                cache.set(problem_id, "tikz", tikz_code)
             agent_used = tikz_result_holder.get("agent", "generic")
             console.print(f"[green]✓[/green] TikZ complete (agent: {agent_used})")
             
@@ -1107,8 +1188,15 @@ def process_image(
     problem, solution = extract_problem_solution(latex)
     ideas = None
     if generate_ideas and problem and solution:
-        with console.status("[bold green]Stage 4: Extracting ideas..."):
-            ideas = extract_ideas(problem, solution)
+        if cache and cache.has(problem_id, "ideas"):
+            console.print("[dim]Loading cached ideas...[/dim]")
+            from vbagent.models.idea import IdeaResult
+            ideas = IdeaResult(**cache.get(problem_id, "ideas"))
+        else:
+            with console.status("[bold green]Stage 4: Extracting ideas..."):
+                ideas = extract_ideas(problem, solution)
+            if cache:
+                cache.set(problem_id, "ideas", ideas.model_dump())
         # Display ideas in a formatted panel
         ideas_text = f"[bold]Concepts:[/bold] {', '.join(ideas.concepts)}\n"
         ideas_text += f"[bold]Formulas:[/bold] {', '.join(ideas.formulas)}\n"
@@ -1119,18 +1207,47 @@ def process_image(
     # Stage 5: Alternates (optional)
     alternate_solutions = []
     if generate_alternate and problem and solution:
-        with console.status("[bold green]Stage 5: Generating alternate solution..."):
-            alt = generate_alternate_solution(problem, solution, ideas)
+        if cache and cache.has(problem_id, "alternate"):
+            console.print("[dim]Loading cached alternate...[/dim]")
+            alt = cache.get(problem_id, "alternate")
             alternate_solutions.append(alt)
+        else:
+            with console.status("[bold green]Stage 5: Generating alternate solution..."):
+                alt = generate_alternate_solution(problem, solution, ideas)
+                alternate_solutions.append(alt)
+            if cache:
+                cache.set(problem_id, "alternate", alt)
         console.print(_get_panel(alt, title="Alternate Solution", border_style="magenta"))
     
     # Stage 6: Variants (optional)
     variants = {}
     for vtype in variant_types:
-        with console.status(f"[bold green]Stage 6: Generating {vtype} variant..."):
-            variant_latex = generate_variant(latex, vtype, ideas, use_context=use_context)
+        cache_key = f"variant_{vtype}"
+        if cache and cache.has(problem_id, cache_key):
+            console.print(f"[dim]Loading cached {vtype} variant...[/dim]")
+            variant_latex = cache.get(problem_id, cache_key)
             variants[vtype] = variant_latex
+        else:
+            with console.status(f"[bold green]Stage 6: Generating {vtype} variant..."):
+                variant_latex = generate_variant(latex, vtype, ideas, use_context=use_context)
+                variants[vtype] = variant_latex
+            if cache:
+                cache.set(problem_id, cache_key, variant_latex)
         console.print(_get_panel(variant_latex, title=f"{vtype.title()} Variant", border_style="green"))
+    
+    # Map v2 diagram_type to v1 enum
+    v1_diagram_type = None
+    if diagram_analysis:
+        # Map detailed v2 types to v1 limited enum
+        diagram_map = {
+            "free_body": "free_body",
+            "fbd": "free_body",
+            "circuit": "circuit",
+            "graph": "graph",
+            "geometry": "geometry",
+            "none": "none",
+        }
+        v1_diagram_type = diagram_map.get(diagram_analysis.diagram_type, "geometry")
     
     # Convert primary back to old ClassificationResult for PipelineResult
     final_classification = ClassificationResult(
@@ -1139,7 +1256,7 @@ def process_image(
         chapter=primary.chapter,
         topic=primary.topic,
         has_diagram=primary.has_diagram,
-        diagram_type=diagram_analysis.diagram_type if diagram_analysis else None,
+        diagram_type=v1_diagram_type,
         confidence=primary.confidence,
     )
     

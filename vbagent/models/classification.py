@@ -1,7 +1,8 @@
 """Classification result data model."""
 
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+from datetime import datetime
 
 
 QuestionType = Literal[
@@ -35,3 +36,12 @@ class ClassificationResult(BaseModel):
     key_concepts: list[str] = Field(default_factory=list, description="Key concepts")
     requires_calculus: bool = Field(default=False, description="Whether calculus is required")
     confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Classification confidence")
+    classified_at: str = Field(default_factory=lambda: datetime.now().isoformat(), description="Timestamp of classification")
+    
+    @field_validator('classified_at', mode='before')
+    @classmethod
+    def fix_classified_at(cls, v):
+        """Ensure classified_at is a timestamp"""
+        if not v or v in ["image", "latex", "generated", "combined"]:
+            return datetime.now().isoformat()
+        return v

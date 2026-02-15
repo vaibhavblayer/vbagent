@@ -9,7 +9,7 @@ Version 2.0 of classification system with support for:
 """
 
 from typing import Literal, Optional, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from datetime import datetime
 
 
@@ -57,6 +57,14 @@ class PrimaryClassification(BaseModel):
     # Metadata
     classified_from: Literal["image", "latex"] = "image"
     classified_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+    
+    @field_validator('classified_at', mode='before')
+    @classmethod
+    def fix_classified_at(cls, v):
+        """Ensure classified_at is a timestamp, not a string like 'image'"""
+        if v in ["image", "latex", "generated", "combined"]:
+            return datetime.now().isoformat()
+        return v
 
 
 # Agent 2: Diagram Analysis
@@ -276,6 +284,15 @@ class ClassificationResult(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0, default=1.0)
     classification_version: str = "2.0"
     classified_from: Literal["image", "latex", "generated", "combined"] = "image"
+    classified_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+    
+    @field_validator('classified_at', mode='before')
+    @classmethod
+    def fix_classified_at(cls, v):
+        """Ensure classified_at is a timestamp, not a string like 'image'"""
+        if v in ["image", "latex", "generated", "combined"]:
+            return datetime.now().isoformat()
+        return v
     
     @classmethod
     def from_primary(cls, primary: PrimaryClassification) -> "ClassificationResult":

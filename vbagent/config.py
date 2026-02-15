@@ -251,7 +251,6 @@ class AgentModelConfig:
 
     model: str = "gpt-5.2"
     reasoning_effort: str = "high"  # low, medium, high
-    temperature: Optional[float] = None
     max_tokens: Optional[int] = None
 
     def to_model_settings(self) -> "ModelSettings":
@@ -272,8 +271,6 @@ class AgentModelConfig:
                 settings_dict["reasoning"] = {"effort": effort}
 
         # Add optional settings
-        if self.temperature is not None:
-            settings_dict["temperature"] = self.temperature
         if self.max_tokens is not None:
             settings_dict["max_tokens"] = self.max_tokens
 
@@ -284,7 +281,6 @@ class AgentModelConfig:
         return {
             "model": self.model,
             "reasoning_effort": self.reasoning_effort,
-            "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }
 
@@ -294,7 +290,6 @@ class AgentModelConfig:
         return cls(
             model=data.get("model", "gpt-5.2"),
             reasoning_effort=data.get("reasoning_effort", "high"),
-            temperature=data.get("temperature"),
             max_tokens=data.get("max_tokens"),
         )
 

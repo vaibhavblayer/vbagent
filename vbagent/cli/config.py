@@ -85,7 +85,6 @@ def show():
     table.add_column("Agent", style="cyan")
     table.add_column("Model", style="green")
     table.add_column("Reasoning", style="yellow")
-    table.add_column("Temperature")
     table.add_column("Max Tokens")
     
     # Add default row
@@ -93,7 +92,6 @@ def show():
         "[bold]default[/bold]",
         cfg.default_model,
         cfg.default_reasoning_effort,
-        "-",
         "-",
         style="dim"
     )
@@ -105,7 +103,6 @@ def show():
             agent_type,
             agent_cfg.model,
             agent_cfg.reasoning_effort,
-            str(agent_cfg.temperature) if agent_cfg.temperature else "-",
             str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
         )
     
@@ -136,10 +133,9 @@ def show():
     type=click.Choice(["low", "medium", "high", "xhigh"]),
     help="Reasoning effort level"
 )
-@click.option("--temperature", "-t", type=float, help="Temperature (0.0-2.0)")
 @click.option("--max-tokens", type=int, help="Maximum tokens")
 @click.option("--workspace", "-w", is_flag=True, help="Save to workspace config instead of global")
-def set(agent_type: str, model: str, reasoning: str, temperature: float, max_tokens: int, workspace: bool):
+def set(agent_type: str, model: str, reasoning: str, max_tokens: int, workspace: bool):
     """Set model configuration for an agent type.
     
     \b
@@ -169,8 +165,6 @@ def set(agent_type: str, model: str, reasoning: str, temperature: float, max_tok
             agent_cfg.model = model
         if reasoning:
             agent_cfg.reasoning_effort = reasoning
-        if temperature is not None:
-            agent_cfg.temperature = temperature
         if max_tokens is not None:
             agent_cfg.max_tokens = max_tokens
         print_status(console, f"Updated {agent_type} configuration", "success")
@@ -186,8 +180,6 @@ def set(agent_type: str, model: str, reasoning: str, temperature: float, max_tok
         agent_cfg = getattr(cfg, agent_type)
         console.print(f"  Model: {agent_cfg.model}")
         console.print(f"  Reasoning: {agent_cfg.reasoning_effort}")
-        if agent_cfg.temperature:
-            console.print(f"  Temperature: {agent_cfg.temperature}")
         if agent_cfg.max_tokens:
             console.print(f"  Max Tokens: {agent_cfg.max_tokens}")
     

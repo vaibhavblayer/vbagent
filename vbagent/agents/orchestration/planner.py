@@ -11,15 +11,13 @@ from vbagent.prompts.solution_orchestrator import get_planner_prompt
 class SolutionPlanner:
     """Analyzes solution and creates execution plan."""
     
-    def __init__(self, model: str = "gpt-5.2", temperature: float = 0.3):
+    def __init__(self, model: str = "gpt-5.2"):
         """Initialize planner.
         
         Args:
             model: Model to use for planning
-            temperature: Temperature for generation
         """
         self.model = model
-        self.temperature = temperature
         self._agent = None
     
     def _get_agent(self):
@@ -30,8 +28,7 @@ class SolutionPlanner:
                 instructions=get_planner_prompt(),
                 agent_type="planner",
                 model=self.model,
-                temperature=self.temperature,
-                response_format=SolutionPlan,
+                output_type=SolutionPlan,
             )
         return self._agent
     
