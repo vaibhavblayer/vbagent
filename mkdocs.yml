@@ -7,6 +7,9 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  font:
+    text: Roboto Mono
+    code: Courier New
   palette:
     # Light mode
     - scheme: default
