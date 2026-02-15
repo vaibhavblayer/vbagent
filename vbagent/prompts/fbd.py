@@ -45,11 +45,11 @@ For ground, walls, inclined planes, and pivots, use the **kinematikz** package:
 % Block ABOVE surface with gap using coordinate calculation
 \node[draw, thick, minimum width=2cm, minimum height=1.5cm] (block) at ($(ground-center)+(0,1.5)$) {$m$};
 
-% Wall (vertical surface)
-\pic (wall) at (0,0) {frame=3cm, angle=90};
+% Wall (vertical surface) - use rotate on pic
+\pic[rotate=90] (wall) at (0,0) {frame=3cm};
 
-% Inclined plane
-\pic (incline) at (0,0) {frame=4cm, angle=30};
+% Inclined plane - use rotate on pic
+\pic[rotate=30] (incline) at (0,0) {frame=4cm};
 
 % Block on incline using coordinate calculation
 \node[draw, thick, rotate=30] (block) at ($(incline-center)+(-1,2)$) {$m$};
@@ -136,12 +136,13 @@ For ground, walls, inclined planes, and pivots, use the **kinematikz** package:
 **Inclined plane:**
 ```latex
 \usetikzlibrary{calc}
-\pic (incline) at (0,0) {frame=4cm, angle=30};
+\pic[rotate=30] (incline) at (0,0) {frame=4cm};
 \node[draw, thick, rotate=30, minimum width=2cm, minimum height=1.5cm] (block) at ($(incline-center)+(-1,2)$) {$m$};
 \draw[->] (block.south) -- ++(0,-1.5) node[right] {$mg$};
 \draw[->] (block.north) -- ++(0,1.2) node[right] {$N$};
 % Friction along incline if needed
 ```
+- Use `\pic[rotate=angle]` for inclined frames (NOT `angle=` parameter)
 - Show angle of incline
 - Normal perpendicular to plane from top surface
 - Weight vertically downward from center
