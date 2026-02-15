@@ -105,7 +105,7 @@ class _SearchTikzReferenceAccessor:
 search_tikz_reference = _SearchTikzReferenceAccessor()
 
 
-def create_tikz_agent(use_context: bool = True, classification=None):
+def create_tikz_agent(use_context: bool = True, classification: "ClassificationResult | None" = None):
     """Create a TikZ agent with optional context.
     
     Args:
@@ -179,7 +179,7 @@ def generate_tikz(
     problem_text: str | None = None,
     search_references: bool = True,
     use_context: bool = True,
-    classification=None,
+    classification: "ClassificationResult | None" = None,
     show_spinner: bool = True,
 ) -> str:
     """Generate TikZ code for a diagram.

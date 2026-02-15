@@ -56,7 +56,7 @@ def _get_text(*args, **kwargs):
 open_suggested_in_editor = open_content_in_editor
 
 
-def display_suggestion(suggestion, console: "Console") -> None:
+def display_suggestion(suggestion: "Suggestion", console: "Console") -> None:
     """Display a suggestion with all details.
     
     Args:
@@ -84,7 +84,7 @@ def display_suggestion(suggestion, console: "Console") -> None:
     display_diff(suggestion.diff, console)
 
 
-def prompt_review_action(suggestion, console: "Console") -> ReviewAction:
+def prompt_review_action(suggestion: "Suggestion", console: "Console") -> ReviewAction:
     """Display suggestion and prompt user for action.
     
     Args:
@@ -98,7 +98,7 @@ def prompt_review_action(suggestion, console: "Console") -> ReviewAction:
     return prompt_full_review(console)
 
 
-def apply_suggestion(suggestion, problem_id: str = ""):
+def apply_suggestion(suggestion: "Suggestion", problem_id: str = ""):
     """Apply an approved suggestion to the file.
     
     Args:
@@ -123,7 +123,7 @@ def apply_suggestion(suggestion, problem_id: str = ""):
     return apply_diff_safe(resolved_path, suggestion.diff)
 
 
-def format_diff_error(result) -> str:
+def format_diff_error(result: "DiffResult") -> str:
     """Format a diff error for display.
     
     Args:
@@ -207,7 +207,7 @@ def resolve_file_path(stored_path: str, problem_id: str) -> Optional[str]:
 
 def run_review_session(
     problems: list,
-    store,
+    store: "VersionStore",
     console: "Console",
     output_dir: str = "agentic",
     session_id: Optional[str] = None,

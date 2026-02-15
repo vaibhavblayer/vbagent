@@ -232,7 +232,7 @@ class VersionStore:
     
     def save_suggestion(
         self,
-        suggestion,  # Suggestion from review.py
+        suggestion: "Suggestion",  # Suggestion from review.py
         problem_id: str,
         status: SuggestionStatus,
         session_id: Optional[str] = None
