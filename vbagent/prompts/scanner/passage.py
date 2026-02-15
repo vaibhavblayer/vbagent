@@ -40,14 +40,14 @@ SYSTEM_PROMPT = r"""
     ```latex
     \item[]
     \begin{center}
-        \textsc{<Title from image>} \hfill [\arabic{enumi} to \number\numexpr\value{enumi}+N-1\relax]
+        \textsc{<Title from image>} \hfill [\number\numexpr\value{enumi}+1\relax\ to \number\numexpr\value{enumi}+N\relax]
     \end{center}
     ```
     where `N` is the total number of questions in this passage.
     
     **Example:** If passage has 3 questions, use:
     ```latex
-    \textsc{Comprehension Passage} \hfill [\arabic{enumi} to \number\numexpr\value{enumi}+2\relax]
+    \textsc{Comprehension Passage} \hfill [\number\numexpr\value{enumi}+1\relax\ to \number\numexpr\value{enumi}+3\relax]
     ```
     This will auto-display as `[5 to 7]` if questions are numbered 5, 6, 7.
 

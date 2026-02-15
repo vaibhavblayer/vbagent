@@ -156,14 +156,14 @@ Extract the passage and all sub-questions with their options.
    ```latex
    \item[]
    \begin{center}
-   \textsc{[Passage Title]} \hfill [\arabic{enumi} to \number\numexpr\value{enumi}+N-1\relax]
+   \textsc{[Passage Title]} \hfill [\number\numexpr\value{enumi}+1\relax\ to \number\numexpr\value{enumi}+N\relax]
    \end{center}
    ```
    where `N` is the total number of questions in this passage.
    
    **Example:** If passage has 4 questions:
    ```latex
-   \textsc{Comprehension Passage} \hfill [\arabic{enumi} to \number\numexpr\value{enumi}+3\relax]
+   \textsc{Comprehension Passage} \hfill [\number\numexpr\value{enumi}+1\relax\ to \number\numexpr\value{enumi}+4\relax]
    ```
 
 2. **Passage Text**

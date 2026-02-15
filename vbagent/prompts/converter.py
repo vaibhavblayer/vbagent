@@ -150,8 +150,8 @@ Therefore, the correct option is (b).
 ```latex
 \item[]
 \begin{center}
-    \textsc{Passage Title (if any)} \hfill [\arabic{enumi} to \number\numexpr\value{enumi}+N-1\relax]
-\end{center}
+    \textsc{Passage Title (if any)} \hfill [\number\numexpr\value{enumi}+1\relax\ to \number\numexpr\value{enumi}+N\relax]
+\end{center>
 
 \noindent [Passage text describing the physics scenario, setup, or context. This can be multiple paragraphs with equations, diagrams, etc.]
 
@@ -190,7 +190,7 @@ Therefore, the correct option is (a).
 \end{solution}
 ```
 - Starts with `\item[]` for the passage header (empty item)
-- Title uses `\textsc{}` with question range: `[\arabic{enumi} to \number\numexpr\value{enumi}+N-1\relax]` where N = number of questions
+- Title uses `\textsc{}` with question range: `[\number\numexpr\value{enumi}+1\relax\ to \number\numexpr\value{enumi}+N\relax]` where N = number of questions
 - Use `\noindent` for first paragraph after title
 - Passage text follows (can include math, diagrams)
 - Separate multiple paragraphs with blank lines
@@ -335,7 +335,7 @@ Structure:
 Structure:
 \item[]
 \begin{center}
-    \textsc{Passage Title} \hfill [\arabic{enumi} to \number\numexpr\value{enumi}+N-1\relax]
+    \textsc{Passage Title} \hfill [\number\numexpr\value{enumi}+1\relax\ to \number\numexpr\value{enumi}+N\relax]
 \end{center}
 
 \noindent [Passage text - can be multiple paragraphs with equations]
