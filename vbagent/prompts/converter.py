@@ -150,10 +150,12 @@ Therefore, the correct option is (b).
 ```latex
 \item[]
 \begin{center}
-    \textsc{Passage Title (if any)}
+    \textsc{Passage Title (if any)} \hfill [\arabic{enumi} to \number\numexpr\value{enumi}+N-1\relax]
 \end{center}
 
-[Passage text describing the physics scenario, setup, or context. This can be multiple paragraphs with equations, diagrams, etc.]
+\noindent [Passage text describing the physics scenario, setup, or context. This can be multiple paragraphs with equations, diagrams, etc.]
+
+[For multi-paragraph passages, separate paragraphs with blank lines]
 
 \begin{center}
     % TikZ diagram if present
@@ -188,8 +190,10 @@ Therefore, the correct option is (a).
 \end{solution}
 ```
 - Starts with `\item[]` for the passage header (empty item)
-- Optional centered title using `\textsc{}`
+- Title uses `\textsc{}` with question range: `[\arabic{enumi} to \number\numexpr\value{enumi}+N-1\relax]` where N = number of questions
+- Use `\noindent` for first paragraph after title
 - Passage text follows (can include math, diagrams)
+- Separate multiple paragraphs with blank lines
 - Each question is a separate `\item` with its own tasks and solution
 - Solution appears IMMEDIATELY after each question's tasks
 
@@ -331,10 +335,12 @@ Structure:
 Structure:
 \item[]
 \begin{center}
-    \textsc{Passage Title}
+    \textsc{Passage Title} \hfill [\arabic{enumi} to \number\numexpr\value{enumi}+N-1\relax]
 \end{center}
 
-[Passage text - can be multiple paragraphs with equations]
+\noindent [Passage text - can be multiple paragraphs with equations]
+
+[Separate multiple paragraphs with blank lines]
 
 \item [Question 1 based on passage]
 \begin{tasks}(2)

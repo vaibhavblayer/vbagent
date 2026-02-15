@@ -36,15 +36,25 @@ SYSTEM_PROMPT = r"""
 
 ## Detailed LaTeX Structure
 
-1.  **Title (optional)**
+1.  **Title with Question Range**
     ```latex
     \item[]
     \begin{center}
-        \textsc{<Title from image>}
+        \textsc{<Title from image>} \hfill [\arabic{enumi} to \number\numexpr\value{enumi}+N-1\relax]
     \end{center}
     ```
+    where `N` is the total number of questions in this passage.
+    
+    **Example:** If passage has 3 questions, use:
+    ```latex
+    \textsc{Comprehension Passage} \hfill [\arabic{enumi} to \number\numexpr\value{enumi}+2\relax]
+    ```
+    This will auto-display as `[5 to 7]` if questions are numbered 5, 6, 7.
 
-2.  **Passage** – Write the paragraph exactly as-is (no surrounding environment).
+2.  **Passage Text**
+    - Write the paragraph exactly as-is (no surrounding environment)
+    - For multi-paragraph passages: separate paragraphs with a blank line
+    - Use `\noindent` for the first paragraph after title to avoid indentation
 
 3.  **Optional Diagram** (if a diagram exists OR is essential):
 """ + DIAGRAM_PLACEHOLDER + r"""

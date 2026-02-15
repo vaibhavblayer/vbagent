@@ -152,15 +152,24 @@ def get_problem_prompt(question_type: str) -> str:
 
 Extract the passage and all sub-questions with their options.
 
-1. **Passage Title (if present)**
+1. **Passage Title with Question Range**
    ```latex
+   \item[]
    \begin{center}
-   \textbf{[Passage Title]}
+   \textsc{[Passage Title]} \hfill [\arabic{enumi} to \number\numexpr\value{enumi}+N-1\relax]
    \end{center}
+   ```
+   where `N` is the total number of questions in this passage.
+   
+   **Example:** If passage has 4 questions:
+   ```latex
+   \textsc{Comprehension Passage} \hfill [\arabic{enumi} to \number\numexpr\value{enumi}+3\relax]
    ```
 
 2. **Passage Text**
    - Extract full passage text
+   - Use `\noindent` for first paragraph after title
+   - Separate multiple paragraphs with blank lines
    - Use inline math for symbols
 
 3. **Sub-questions**
