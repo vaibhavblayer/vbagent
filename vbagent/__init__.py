@@ -51,6 +51,9 @@ if TYPE_CHECKING:
         # Scanning
         scan,
         scan_with_type,
+        # Solution Orchestration
+        create_solution_orchestrator,
+        SolutionOrchestrator,
         # Ideas
         extract_ideas,
         generate_idea_latex,
@@ -100,6 +103,10 @@ if TYPE_CHECKING:
         ReviewStats,
         Suggestion,
         ReviewIssueType,
+        SolutionPlan,
+        AgentCall,
+        AgentOutput,
+        SolutionResult,
     )
     from vbagent.config import (
         VBAgentConfig,
@@ -122,6 +129,9 @@ __all__ = [
     # Scanning
     "scan",
     "scan_with_type",
+    # Solution Orchestration
+    "create_solution_orchestrator",
+    "SolutionOrchestrator",
     # Ideas
     "extract_ideas",
     "generate_idea_latex",
@@ -170,6 +180,10 @@ __all__ = [
     "ReviewStats",
     "Suggestion",
     "ReviewIssueType",
+    "SolutionPlan",
+    "AgentCall",
+    "AgentOutput",
+    "SolutionResult",
     # Configuration
     "VBAgentConfig",
     "AgentModelConfig",
@@ -206,11 +220,20 @@ def __getattr__(name: str):
         from vbagent import agents
         return getattr(agents, name)
     
+    # Orchestrator
+    if name in ("create_solution_orchestrator", "SolutionOrchestrator"):
+        from vbagent.agents.solution_orchestrator import (
+            create_solution_orchestrator,
+            SolutionOrchestrator,
+        )
+        return create_solution_orchestrator if name == "create_solution_orchestrator" else SolutionOrchestrator
+    
     # Models
     if name in (
         "ClassificationResult", "ScanResult", "IdeaResult",
         "PipelineResult", "ReviewResult", "ReviewStats",
         "Suggestion", "ReviewIssueType",
+        "SolutionPlan", "AgentCall", "AgentOutput", "SolutionResult",
     ):
         from vbagent import models
         return getattr(models, name)

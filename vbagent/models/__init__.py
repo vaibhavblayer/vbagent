@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from .version_store import SuggestionStatus, StoredSuggestion, VersionStore
     from .batch import BatchDatabase, ImageRecord, ProcessingStatus
     from .diff import generate_unified_diff, apply_unified_diff, apply_diff, parse_diff
+    from .orchestration import SolutionPlan, AgentCall, AgentOutput, SolutionResult
 
 __all__ = [
     # Classification
@@ -54,6 +55,11 @@ __all__ = [
     "apply_unified_diff",
     "apply_diff",
     "parse_diff",
+    # Orchestration
+    "SolutionPlan",
+    "AgentCall",
+    "AgentOutput",
+    "SolutionResult",
 ]
 
 
@@ -90,5 +96,9 @@ def __getattr__(name: str):
     if name in ("generate_unified_diff", "apply_unified_diff", "apply_diff", "parse_diff"):
         from . import diff
         return getattr(diff, name)
+    
+    if name in ("SolutionPlan", "AgentCall", "AgentOutput", "SolutionResult"):
+        from . import orchestration
+        return getattr(orchestration, name)
     
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

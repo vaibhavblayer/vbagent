@@ -86,6 +86,11 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     is_flag=True,
     help="Analyze diagram in detail (uses Agent 2)"
 )
+@click.option(
+    "--orchestrate", "use_orchestrator",
+    is_flag=True,
+    help="Use solution orchestrator to coordinate specialist agents for complex solutions"
+)
 def scan(
     image: str | None,
     tex: str | None,
@@ -94,7 +99,8 @@ def scan(
     do_compile: bool,
     verbose_compile: bool,
     assess_difficulty: bool,
-    analyze_diagram: bool
+    analyze_diagram: bool,
+    use_orchestrator: bool,
 ):
     """Stage 2: Extract LaTeX from physics question image.
     
@@ -161,8 +167,40 @@ def scan(
                 from .ui import print_classification
                 print_classification(console, classification.model_dump())
             
+            # Use orchestrator if requested
+            if use_orchestrator:
+                console.print("\n[cyan]Using Solution Orchestrator...[/cyan]")
+                from vbagent.agents.solution_orchestrator import create_solution_orchestrator
+                
+                orchestrator = create_solution_orchestrator()
+                
+                problem_context = f"Question type: {classification.question_type}, Topic: {classification.topic}"
+                if classification.subtopic:
+                    problem_context += f", Subtopic: {classification.subtopic}"
+                
+                orchestrator_result = orchestrator.generate_solution(
+                    image_path=image,
+                    problem_context=problem_context,
+                    question_type=classification.question_type,
+                    verbose=True,
+                )
+                
+                # Convert to ScanResult format
+                result = ScanResult(
+                    latex=orchestrator_result.latex,
+                    question_type=classification.question_type,
+                    metadata={
+                        "orchestrated": True,
+                        "plan_structure": orchestrator_result.plan.structure,
+                        "agents_used": [o.agent for o in orchestrator_result.agent_outputs],
+                        **orchestrator_result.metadata,
+                    }
+                )
+                
+                console.print(f"\n[green]✓ Solution generated using {len(orchestrator_result.agent_outputs)} specialist agents[/green]")
+            
             # Then scan with classified type
-            if classification.has_diagram:
+            elif classification.has_diagram:
                 # Run scanning and TikZ generation in parallel
                 import threading
                 from vbagent.agents.tikz import generate_tikz

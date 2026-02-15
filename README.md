@@ -66,6 +66,39 @@ variant = generate_variant(scan_result.latex, "numerical")
 tikz = generate_tikz("A free body diagram showing forces on a block")
 ```
 
+### Solution Orchestrator (NEW)
+
+For complex solutions with diagrams, calculus, and multiple steps, use the solution orchestrator to automatically coordinate specialist agents:
+
+```python
+from vbagent import create_solution_orchestrator
+
+# Create orchestrator
+orchestrator = create_solution_orchestrator()
+
+# Generate solution with automatic agent coordination
+result = orchestrator.generate_solution(
+    image_path="solution.png",
+    problem_context="Mechanics problem on friction",
+    question_type="subjective",
+    verbose=True,
+)
+
+print(result.latex)  # Complete unified solution
+print(f"Agents used: {[o.agent for o in result.agent_outputs]}")
+```
+
+**How it works:**
+1. **Planning Phase**: Analyzes solution and identifies needed components (FBD, calculus, graphs, etc.)
+2. **Execution Phase**: Calls specialist agents (FBD, circuit, tikz, calculus) as needed
+3. **Assembly Phase**: Combines outputs into unified, well-formatted solution
+
+**Benefits:**
+- Automatically routes to specialized agents (FBD, circuit, graph, etc.)
+- Better quality for complex solutions with multiple components
+- Reuses existing specialized agents
+- Handles diagrams, calculus, tables, and multi-step solutions
+
 ### Multi-Agent Classification System (v2.0)
 
 VBAgent includes a comprehensive 7-agent classification pipeline for advanced metadata extraction:
@@ -464,7 +497,7 @@ vbagent classify -i <image> [-o <output.json>] [--json]
 ### scan
 
 ```bash
-vbagent scan -i <image> [--type <type>] [-o <output.tex>] [-c] [--verbose-compile] [--assess-difficulty] [--analyze-diagram]
+vbagent scan -i <image> [--type <type>] [-o <output.tex>] [-c] [--verbose-compile] [--assess-difficulty] [--analyze-diagram] [--orchestrate]
 ```
 
 | Option | Description |
@@ -477,6 +510,7 @@ vbagent scan -i <image> [--type <type>] [-o <output.tex>] [-c] [--verbose-compil
 | `--verbose-compile` | Show full LaTeX document + live pdflatex output before each compile, prompt to continue/skip/quit |
 | `--assess-difficulty` | **NEW:** Assess difficulty after scanning (uses Agent 3) |
 | `--analyze-diagram` | **NEW:** Analyze diagram in detail (uses Agent 2) |
+| `--orchestrate` | **NEW:** Use solution orchestrator for complex solutions with automatic specialist agent coordination |
 
 ### tikz
 
@@ -544,7 +578,7 @@ Target formats: `mcq_sc`, `mcq_mc`, `subjective`, `integer`
 Full pipeline: Classify → Scan → TikZ → Ideas → Variants.
 
 ```bash
-vbagent process [-i <image>] [-t <tex>] [-r <start> <end>] [--variants <types>] [--alternate] [--ideas] [-o <output>] [-p <workers>] [-c] [--verbose-compile] [--assess-difficulty] [--analyze-diagram] [--validate-tikz]
+vbagent process [-i <image>] [-t <tex>] [-r <start> <end>] [--variants <types>] [--alternate] [--ideas] [-o <output>] [-p <workers>] [-c] [--verbose-compile] [--assess-difficulty] [--analyze-diagram] [--validate-tikz] [--orchestrate]
 ```
 
 | Option | Description |
@@ -564,6 +598,7 @@ vbagent process [-i <image>] [-t <tex>] [-r <start> <end>] [--variants <types>] 
 | `--assess-difficulty` | **NEW:** Assess difficulty after scanning (uses Agent 3) |
 | `--analyze-diagram` | **NEW:** Analyze diagram in detail (uses Agent 2) |
 | `--validate-tikz` | **NEW:** Validate and fix TikZ code (uses Agent 7) |
+| `--orchestrate` | **NEW:** Use solution orchestrator for complex solutions with automatic specialist agent coordination |
 
 #### Examples
 
@@ -571,9 +606,15 @@ vbagent process [-i <image>] [-t <tex>] [-r <start> <end>] [--variants <types>] 
 # Basic processing
 vbagent process -i question.png
 
+# With solution orchestrator for complex solutions
+vbagent process -i question.png --orchestrate
+
 # Full pipeline with new agents
 vbagent process -i question.png --ideas --alternate --variants numerical,context \
   --assess-difficulty --analyze-diagram --validate-tikz
+
+# Orchestrator with compilation
+vbagent process -i question.png --orchestrate -c
 
 # Process range with parallel workers
 vbagent process -i images/Problem_1.png -r 1 10 --parallel 3

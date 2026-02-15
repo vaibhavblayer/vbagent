@@ -601,6 +601,11 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     help="Validate and fix TikZ code (uses Agent 7)"
 )
 @click.option(
+    "--orchestrate", "use_orchestrator",
+    is_flag=True,
+    help="Use solution orchestrator for complex solutions with automatic specialist agent coordination"
+)
+@click.option(
     "--merge-metadata/--no-merge-metadata", "merge_metadata",
     default=True,
     help="Merge classification metadata into scanned LaTeX [default: on]"
@@ -621,6 +626,7 @@ def process(
     assess_difficulty: bool,
     analyze_diagram: bool,
     validate_tikz: bool,
+    use_orchestrator: bool,
     merge_metadata: bool,
 ):
     """Full pipeline: Classify → Scan → TikZ → Ideas → Variants.
@@ -894,12 +900,41 @@ def process_image(
             diagram_analysis = analyze_diagram_agent(image_path, primary, show_spinner=False)
         console.print(f"[cyan]Diagram Type:[/cyan] {diagram_analysis.diagram_type}")
     
-    # Stage 2 & 3: Scanning + TikZ (PARALLEL if has_diagram)
+    # Stage 2 & 3: Scanning + TikZ (PARALLEL if has_diagram) OR Orchestrator
     tikz_code = None
     latex = None
     difficulty_result = None
     
-    if primary.has_diagram:
+    # Use orchestrator if requested
+    if use_orchestrator:
+        console.print("[bold green]Stage 2: Solution Orchestrator...[/bold green]")
+        from vbagent.agents.solution_orchestrator import create_solution_orchestrator
+        
+        orchestrator = create_solution_orchestrator()
+        
+        problem_context = f"Question type: {primary.question_type}, Topic: {primary.topic}"
+        if primary.subtopic:
+            problem_context += f", Subtopic: {primary.subtopic}"
+        
+        orchestrator_result = orchestrator.generate_solution(
+            image_path=image_path,
+            problem_context=problem_context,
+            question_type=primary.question_type,
+            verbose=False,
+        )
+        
+        latex = orchestrator_result.latex
+        console.print(f"[green]✓ Solution generated using {len(orchestrator_result.agent_outputs)} specialist agents[/green]")
+        
+        # Extract TikZ if any agent generated it
+        for output in orchestrator_result.agent_outputs:
+            if output.agent in ["fbd", "circuit", "graph", "tikz", "ray_diagram", "optics"]:
+                if tikz_code is None:
+                    tikz_code = output.content
+                else:
+                    tikz_code += "\n\n" + output.content
+    
+    elif primary.has_diagram:
         # Run scanning and TikZ generation in parallel
         console.print("[bold green]Stage 2+3: Scanning & TikZ (parallel)...[/bold green]")
         
