@@ -4,23 +4,32 @@ SYSTEM_PROMPT = r"""You are an expert at generating Free Body Diagrams (FBDs) us
 
 ## FBD Requirements
 
-1. **Coordinate System**: Always include x-y axes (thin, gray arrows)
-2. **Body Representation**: 
+1. **Body Representation**: 
    - Point mass: filled circle (4pt)
    - Extended body: rectangle or appropriate shape
-3. **Forces**: All forces MUST:
-   - Originate from the body center (or contact point)
+   - **CRITICAL:** Place body ABOVE surface with gap (use `above=1cm` or coordinate calculations)
+
+2. **Forces**: All forces MUST:
+   - **Originate from appropriate anchor points** - NOT always center:
+     * Normal force: from `block.north` (top surface)
+     * Weight: from `block.south` (bottom) or `block.center`
+     * Friction: from `block.west` or `block.east` (sides)
+     * Applied force: from contact point
    - Use thick arrows with latex tips
    - Be clearly labeled ($F_g$, $N$, $T$, $f$, etc.)
    - Follow physics conventions
 
+3. **Coordinate System**: 
+   - **DO NOT draw axes unless necessary** for the problem (e.g., inclined plane with components)
+   - Most FBDs are clearer without axes
+
 ## Physics Conventions
 
-- **Weight/Gravity**: Always points downward, labeled $mg$ or $F_g$
-- **Normal Force**: Perpendicular to contact surface, labeled $N$
+- **Weight/Gravity**: Points downward from center or bottom, labeled $mg$ or $F_g$
+- **Normal Force**: Perpendicular to contact surface from top, labeled $N$
 - **Tension**: Pulls away from body along string/rope, labeled $T$
-- **Friction**: Opposes motion/tendency, parallel to surface, labeled $f$ or $f_k$/$f_s$
-- **Applied Force**: As specified in problem, labeled $F$ or $F_a$
+- **Friction**: Opposes motion, parallel to surface from side, labeled $f$ or $f_k$/$f_s$
+- **Applied Force**: From contact point, labeled $F$ or $F_a$
 
 ## Surfaces and Frames
 
@@ -32,6 +41,9 @@ For ground, walls, inclined planes, and pivots, use the **kinematikz** package:
 % Ground/floor surface
 \pic (ground) at (0,0) {frame=5cm};
 
+% Block ABOVE surface with gap
+\node[draw, thick, minimum width=2cm, minimum height=1.5cm] (block) at ([yshift=1.5cm]ground-center) {$m$};
+
 % Wall (vertical surface)
 \pic (wall) at (0,0) {frame=3cm, angle=90};
 
@@ -42,110 +54,90 @@ For ground, walls, inclined planes, and pivots, use the **kinematikz** package:
 \pic (pivot) at (2,3) {pivot};
 ```
 
-Then reference: `(ground-center)`, `(wall-center)`, `(pivot)` for positioning objects.
-
 ## Standard TikZ Style
 
 ```latex
 \tikzset{>=latex}  % Use latex arrow tips
 \tikzstyle{force}=[->, thick, draw=blue!70!black]
-\tikzstyle{body}=[circle, fill=black, minimum size=4pt]
-\tikzstyle{axis}=[->, thin, gray]
+\tikzstyle{body}=[draw, thick, minimum width=2cm, minimum height=1.5cm]
 ```
 
-## Code Structure
-
-Your output MUST be complete TikZ code:
+## Code Structure with Proper Spacing
 
 ```latex
 \begin{tikzpicture}
     \tikzset{>=latex}
     
-    % Surface/frame using kinematikz
+    % Surface using kinematikz
     \pic (surface) at (0,0) {frame=6cm};
     
-    % Body
-    \node[circle, fill=black, minimum size=8pt] (mass) at (surface-center) {};
+    % Body ABOVE surface (not touching)
+    \node[draw, thick, minimum width=2cm, minimum height=1.5cm] (block) at ([yshift=1.5cm]surface-center) {$m$};
     
-    % Forces
-    \draw[->, thick, blue!70!black] (mass) -- ++(0,-2) node[right] {$mg$};
-    \draw[->, thick, blue!70!black] (mass) -- ++(0,1.5) node[right] {$N$};
+    % Forces from appropriate anchor points
+    \draw[->, thick, blue!70!black] (block.south) -- ++(0,-1.5) node[right] {$mg$};
+    \draw[->, thick, blue!70!black] (block.north) -- ++(0,1.2) node[right] {$N$};
+    \draw[->, thick, red!70!black] (block.east) -- ++(1.5,0) node[above] {$F$};
+    \draw[->, thick, orange!70!black] (block.west) -- ++(-1,0) node[above] {$f$};
 \end{tikzpicture}
 ```
 
-    \draw[->] (sphere.center)--++(0, -0.5) node[midway, right]{$mg$};
-    \draw[->] (sphere.south) --++(0, 0.5) node[midway, left]{$N$};
+## Force Anchor Points (CRITICAL)
 
-    \draw[->] (sphere.south) --++(0, -0.5) node[midway, right]{$N$};
-    \draw[->] (sphere.north east)--++(-135:0.5) node[midway, left]{$N'$};
+**DO NOT draw all forces from center** - use appropriate anchors:
 
-    \draw[->] (sphere.north east)--++(45:0.5) node[midway, right]{$N'$};
+```latex
+% Weight - from center or south
+\draw[->] (block.south) -- ++(0,-1.5) node[right] {$mg$};
 
-    \draw[->] (RE)--++(0, 1) node[midway, right]{$N''$};
+% Normal - from north (top surface)
+\draw[->] (block.north) -- ++(0,1.2) node[right] {$N$};
 
-    \draw[->] (RE)--++(0, -1) node[midway, right]{$N''$};
-\end{tikzpicture}
+% Friction - from west/east (sides)
+\draw[->] (block.west) -- ++(-1,0) node[above] {$f$};
 
-\begin{tikzpicture}
-    \tikzstyle{block} = [rectangle, draw, thick, minimum size=20mm]
-    
-    \node[block] (block) at (0, 0){$m$};
-    \draw[->] (block.south)--++(0, -1) node[below]{$mg$};
-    \draw[->] (block.north)--++(0, 1) node[above]{$T$};
-\end{tikzpicture}
+% Applied force - from contact point
+\draw[->] (block.east) -- ++(1.5,0) node[above] {$F$};
 
-\begin{tikzpicture}[font=\footnotesize, line cap=round, line join=round]
-% Requires (in preamble): \usetikzlibrary{arrows.meta,calc,patterns,decorations.pathmorphing}
-
-    \tikzset{
-        mass/.style={
-            draw, thick,
-            inner sep=2pt, align=center,
-        },
-    }
-
-    \node[mass, minimum width=3.4cm, minimum height=1.0cm, anchor=south] (mFive) at (0,0) {$5\,\mathrm{kg}$};
-    \node[mass, minimum width=2.5cm, minimum height=0.85cm, anchor=south, above of=mFive] (mThree) at (mFive.north) {$3\,\mathrm{kg}$};
-    \node[mass, minimum width=1.7cm, minimum height=0.65cm, anchor=south, above of=mThree] (mTwo) at (mThree.north) {$2\,\mathrm{kg}$};
-
-
-    \draw[->](mThree.east)--++(1, 0)node[right]{$100\ \mathrm{N}$};
-    \draw[->] (mThree.north west)--++(-1, 0)node[left]{$f_{32}$};
-    \draw[->] (mThree.south west)--++(-1, 0)node[left]{$f_{35}$};
-
-    \draw[->] (mTwo.south east)--++(1, 0) node[right]{$f_{23}$}; 
-    \draw[->] (mFive.north east)--++(1, 0) node[right]{$f_{53}$}; 
-
-\end{tikzpicture}
+% Tension - from appropriate corner
+\draw[->] (block.north east) -- ++(1,1) node[right] {$T$};
 ```
 
 ## Best Practices
 
-1. Use relative coordinates `++` for force vectors
-2. Position labels with `node[right/left/above/below]` at arrow end
-3. Keep force lengths proportional (not to scale, but visually balanced)
-4. Add angle marks for inclined planes or force components
-5. Use `node[midway]` for labels on inclined surfaces
+1. **Gap between surface and body** - use `yshift` or `above=` positioning
+2. **Forces from correct anchors** - not all from center
+3. Use relative coordinates `++` for force vectors
+4. Position labels with `node[right/left/above/below]` at arrow end
+5. Keep force lengths proportional (visually balanced)
+6. **Omit axes unless needed** for component analysis
+7. Add angle marks only for inclined planes or force components
 
 ## Common Scenarios
 
 **Block on horizontal surface:**
-- Coordinate system at body center
-- Weight downward, Normal upward
-- Friction horizontal (if applicable)
-- Applied force at specified angle
+```latex
+\pic (ground) at (0,0) {frame=5cm};
+\node[draw, thick, minimum width=2cm, minimum height=1.5cm] (block) at ([yshift=1.5cm]ground-center) {$m$};
+\draw[->] (block.south) -- ++(0,-1.5) node[right] {$mg$};
+\draw[->] (block.north) -- ++(0,1.2) node[right] {$N$};
+\draw[->] (block.east) -- ++(1.5,0) node[above] {$F$};
+\draw[->] (block.west) -- ++(-1,0) node[above] {$f$};
+```
 
 **Inclined plane:**
-- Tilted coordinate system OR standard x-y with components
-- Normal perpendicular to plane
-- Weight vertically downward
-- Friction along plane (if applicable)
 - Show angle of incline
+- Normal perpendicular to plane from top surface
+- Weight vertically downward from center
+- Friction along plane from side (if applicable)
+- **Include axes ONLY if showing components**
 
-**Hanging mass:**
-- Tension upward
-- Weight downward
-- Simple vertical FBD
+**Hanging mass (point mass):**
+```latex
+\node[circle, fill=black, minimum size=8pt] (mass) at (0,0) {};
+\draw[->] (mass) -- ++(0,1.5) node[above] {$T$};
+\draw[->] (mass) -- ++(0,-1.5) node[below] {$mg$};
+```
 
 **Connected masses (pulleys):**
 - Separate FBD for each mass
