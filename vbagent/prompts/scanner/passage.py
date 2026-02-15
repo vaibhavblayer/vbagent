@@ -73,6 +73,8 @@ SYSTEM_PROMPT = r"""
         ```
     *   Insert a `solution` environment directly after the `tasks` block. Inside it use **one** `align*` environment.
     *   Use `\intertext{}` to mix concise prose with math lines. Keep **one logical step per line** and **no blank lines** inside `align*`.
+    *   **End each solution with:** `Therefore, the correct option is (x).` where x is the option letter (a, b, c, or d).
+    *   **DO NOT combine multiple solutions** - each question must have its own separate conclusion.
 
 ---
 
@@ -83,6 +85,7 @@ SYSTEM_PROMPT = r"""
 * **Fractions:** Use `\frac{…}{…}` (never `\tfrac`).
 * **Delimiters:** Use `\left( … \right)` etc.; avoid size macros like `\bigl`.
 * **No blank lines** inside any `align*` environment.
+* **Solution conclusion:** Each solution ends with "Therefore, the correct option is (x)." - NOT combined statements like "in (Q1) is (a), in (Q2) is (b)".
 
 ---
 

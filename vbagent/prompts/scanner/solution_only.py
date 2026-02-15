@@ -172,8 +172,7 @@ Extract solutions for all sub-questions.
 ```latex
 \begin{solution}
 \begin{align*}
-\intertext{For question 1:}
-[analysis] &= [result]
+[analysis for Q1] &= [result]
 \end{align*}
 
 Therefore, the correct option is (c).
@@ -181,8 +180,7 @@ Therefore, the correct option is (c).
 
 \begin{solution}
 \begin{align*}
-\intertext{For question 2:}
-[analysis] &= [result]
+[analysis for Q2] &= [result]
 \end{align*}
 
 Therefore, the correct option is (b).
@@ -191,8 +189,9 @@ Therefore, the correct option is (b).
 
 **Requirements:**
 - One `\begin{solution}...\end{solution}` per sub-question
+- Each solution ends with "Therefore, the correct option is (x)."
+- **DO NOT combine conclusions** like "in (Q1) is (a), in (Q2) is (b)" - each solution is independent
 - Keep each solution concise
-- State which question each solution addresses
 
 """ + SOLUTION_FORMATTING_RULES + r"""
 
