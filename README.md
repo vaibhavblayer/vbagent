@@ -2,6 +2,8 @@
 
 A multi-agent library and CLI for processing physics, chemistry, mathematics, and biology question images. Supports classification, LaTeX extraction, TikZ diagram generation, variant creation, format conversion, LaTeX compilation with auto-fix, and QA review.
 
+📚 **[Documentation](https://vaibhavblayer.github.io/vbagent/)** | 🐛 **[Issues](https://github.com/vaibhavblayer/vbagent/issues)** | 💬 **[Discussions](https://github.com/vaibhavblayer/vbagent/discussions)**
+
 ## Installation
 
 ### From PyPI
