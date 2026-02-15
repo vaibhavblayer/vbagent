@@ -3558,7 +3558,7 @@ Examples:
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">scan</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tex</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">question_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">do_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">verbose_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">assess_difficulty</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">analyze_diagram</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">scan</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tex</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">question_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">do_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">verbose_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">assess_difficulty</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">analyze_diagram</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">use_orchestrator</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3892,7 +3892,7 @@ generates paths: Problem_1.png, Problem_2.png, ..., Problem_5.png</p>
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">process</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">tex</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">item_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">variant_types_str</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">alternate</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">ideas</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">ref_dirs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">parallel</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">do_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">verbose_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">assess_difficulty</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">analyze_diagram</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">validate_tikz</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">merge_metadata</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">process</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">tex</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">item_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">variant_types_str</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">alternate</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">ideas</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">ref_dirs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">parallel</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">do_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">verbose_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">assess_difficulty</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">analyze_diagram</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">validate_tikz</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">use_orchestrator</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">merge_metadata</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">no_cache</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">clear_cache</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4055,7 +4055,7 @@ Examples:
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">process_image</span><span class="p">(</span><span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variant_types</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">generate_alternate</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">generate_ideas</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">use_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">assess_difficulty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">analyze_diagram</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">merge_metadata</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PipelineResult</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">process_image</span><span class="p">(</span><span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variant_types</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">generate_alternate</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">generate_ideas</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">use_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">assess_difficulty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">analyze_diagram</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">merge_metadata</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">use_orchestrator</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">use_cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">problem_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PipelineResult</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4066,6 +4066,53 @@ Examples:
 2. Scanning (Agent 3 + optional difficulty assessment)
 3. TikZ (parallel with scanning if has_diagram)
 4. Ideas, Alternates, Variants (sequential, optional)</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>use_cache</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True, use cached results from previous runs</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>problem_id</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Problem identifier for caching (auto-generated if None)</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
@@ -7103,7 +7150,7 @@ Examples:
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set</span><span class="p">(</span><span class="n">agent_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">reasoning</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">max_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">workspace</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">set</span><span class="p">(</span><span class="n">agent_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">reasoning</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">workspace</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
