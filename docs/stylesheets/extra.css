@@ -1,0 +1,40 @@
+/* Better code formatting */
+code {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* Function signatures */
+.doc-signature {
+  word-wrap: break-word;
+  white-space: pre-wrap !important;
+  overflow-wrap: break-word;
+  display: block;
+  padding: 1em;
+  background: var(--md-code-bg-color);
+  border-radius: 0.2rem;
+  font-family: var(--md-code-font-family);
+  line-height: 1.6;
+}
+
+/* Code blocks */
+.highlight pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* API documentation signatures */
+.doc .doc-heading code {
+  white-space: pre-wrap !important;
+  word-wrap: break-word;
+  display: block;
+  padding: 0.5em;
+}
+
+/* Inline code */
+p code, li code {
+  word-wrap: break-word;
+  white-space: normal;
+}
