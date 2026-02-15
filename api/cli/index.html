@@ -1,0 +1,6842 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Multi-agent physics question processing system with conversational interface">
+      
+      
+        <meta name="author" content="vaibhavblayer">
+      
+      
+      
+        <link rel="prev" href="../models/">
+      
+      
+        <link rel="next" href="../orchestrator/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>CLI - VBAgent Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Mono:300,300i,400,400i,700,700i%7CCourier+New:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto Mono";--md-code-font:"Courier New"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cli-api-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="VBAgent Documentation" class="md-header__button md-logo" aria-label="VBAgent Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            VBAgent Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              CLI
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/vaibhavblayer/vbagent" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    vaibhavblayer/vbagent
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../user-guide/cli-commands/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../agents/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../examples/basic/" class="md-tabs__link">
+          
+  
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../development/contributing/" class="md-tabs__link">
+          
+  
+  
+  Development
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="VBAgent Documentation" class="md-nav__button md-logo" aria-label="VBAgent Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    VBAgent Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/vaibhavblayer/vbagent" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    vaibhavblayer/vbagent
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/quick-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/cli-commands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/chat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chat Interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/problem-generation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Problem Generation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/image-processing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Image Processing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/batch-processing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Batch Processing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/database/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Management
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../classification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Classification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#main-entry-point" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Main Entry Point
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbagent.cli.main" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        main
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="main">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.main.main" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        main
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#classification-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classification Commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbagent.cli.classify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        classify
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="classify">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.classify.classify" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        classify
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.classify.format_result_table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        format_result_table
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scanning-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scanning Commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbagent.cli.scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scan
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="scan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.scan.display_scan_result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        display_scan_result
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.scan.scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        scan
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#processing-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Processing Commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbagent.cli.process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        process
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.convert_primary_to_classification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        convert_primary_to_classification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.extract_items_from_tex" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extract_items_from_tex
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.filter_items_by_range" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        filter_items_by_range
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.generate_alternate_solution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generate_alternate_solution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.generate_image_paths_from_range" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generate_image_paths_from_range
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.get_base_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_base_name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.insert_tikz_into_latex" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        insert_tikz_into_latex
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.merge_metadata_into_latex" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        merge_metadata_into_latex
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.parse_tex_file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_tex_file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        process
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.process_generated_problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        process_generated_problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.process_image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        process_image
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.process_tex_item" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        process_tex_item
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.save_pipeline_result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_pipeline_result
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.process.save_pipeline_result_organized" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_pipeline_result_organized
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tikz-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TikZ Commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbagent.cli.tikz" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tikz
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="tikz">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.tikz.tikz" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tikz
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#variant-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variant Commands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbagent.cli.variant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        variant
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="variant">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.variant.extract_items_from_tex" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extract_items_from_tex
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.variant.filter_items_by_range" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        filter_items_by_range
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.variant.load_ideas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        load_ideas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.variant.parse_tex_file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_tex_file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.variant.variant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        variant
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#batch-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch Processing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbagent.cli.batch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        batch
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="batch">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.batch.SleepInhibitor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SleepInhibitor
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SleepInhibitor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.batch.SleepInhibitor.start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        start
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.batch.SleepInhibitor.stop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stop
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.batch.batch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        batch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.batch.continue_batch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        continue_batch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.batch.discover_images" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        discover_images
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.batch.init" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        init
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.batch.process_single_image" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        process_single_image
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.batch.status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        status
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quality-assurance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality Assurance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbagent.cli.check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        check
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="check">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.apply" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        apply
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.apply_suggestion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        apply_suggestion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.check_alternate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        check_alternate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.check_clarity_cmd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        check_clarity_cmd
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.check_grammar_cmd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        check_grammar_cmd
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.check_idea" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        check_idea
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.check_solution_cmd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        check_solution_cmd
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.check_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        check_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.check_tikz_cmd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        check_tikz_cmd
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.continue_check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        continue_check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.default_command" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        default_command
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.display_suggestion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        display_suggestion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.format_diff_error" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        format_diff_error
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        history
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.init_check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        init_check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.prompt_review_action" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        prompt_review_action
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.recheck" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        recheck
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.resolve_file_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resolve_file_path
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.resume" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resume
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.run_check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.run_review_session" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_review_session
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.check.stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stats
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chat-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chat Interface
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbagent.cli.chat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        chat
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="chat">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.chat.ChatInterface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ChatInterface
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ChatInterface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.chat.ChatInterface.display_message" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        display_message
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.chat.ChatInterface.display_tool_execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        display_tool_execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.chat.ChatInterface.start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        start
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.chat.chat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        chat
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#database-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Database Management
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbagent.cli.db" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        db
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="db">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.db.db" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        db
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.db.delete" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        delete
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.db.init" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        init
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.db.insert" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        insert
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.db.query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        query
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.db.stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stats
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reference-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reference Management
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbagent.cli.ref" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ref
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ref">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.add" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        add
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.disable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        disable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.enable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        enable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.list_refs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        list_refs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.ref" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ref
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.remove" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        remove
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.set_max" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_max
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.show" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        show
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.tikz_group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tikz_group
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.tikz_import" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tikz_import
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.tikz_list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tikz_list
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.tikz_remove" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tikz_remove
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.tikz_show" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tikz_show
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.ref.tikz_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        tikz_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbagent.cli.config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        config
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="config">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.config.config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        config
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.config.debug" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        debug
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.config.init" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        init
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.config.model_group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        model_group
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.config.models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.config.provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        provider
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.config.reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reset
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.config.set" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.config.show" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        show
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.config.subject" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        subject
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Utilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbagent.cli.util" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        util
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="util">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.util.clean" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clean
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.util.count" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        count
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.util.list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        list
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.util.rename" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rename
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.cli.util.util" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        util
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Utilities
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vbagent.cli.common" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        common
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../orchestrator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orchestrator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/basic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Basic Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/advanced/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced Workflows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/custom/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../development/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="cli-api-reference">CLI API Reference</h1>
+<p>Auto-generated API documentation for VBAgent CLI modules.</p>
+<h2 id="main-entry-point">Main Entry Point</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="vbagent.cli.main" class="doc doc-heading">
+            <code>main</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Main CLI entry point for VBAgent.</p>
+<p>VBAgent - Physics question processing pipeline.</p>
+<p>Uses lazy loading to speed up CLI startup time by deferring
+heavy imports (openai, agents, mcp, etc.) until commands are actually invoked.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.main.main" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">main</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>VBAgent - Physics question processing pipeline.</p>
+<p>A multi-agent CLI system for processing physics question images.
+Supports classification, scanning, diagram generation, variant creation,
+and format conversion.</p>
+<p>
+Commands:
+    init      - Initialize workspace config (.vbagent.json)
+    chat      - Interactive conversational interface
+    mcp       - Start MCP server for external agents
+    metadata  - Manage question bank metadata
+    dpp       - Create Daily Practice Problem sets
+    export    - Export LaTeX files in different formats
+    extans    - Extract answers from LaTeX problem files
+    db        - Database management for question bank
+    process   - Full pipeline orchestration
+    classify  - Stage 1: Classify question image
+    scan      - Stage 2: Extract LaTeX from image
+    tikz      - Generate TikZ code for diagrams
+    fbd       - Generate Free Body Diagram TikZ code
+    idea      - Extract concepts and ideas
+    alternate - Generate alternative solutions
+    variant   - Generate problem variants
+    convert   - Convert between question formats
+    batch     - Batch processing with resume capability
+    check     - QA review with interactive approval
+    ref       - Manage reference context files
+    config    - Configure models and settings
+    util      - File utilities (rename, count, clean)</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="classification-commands">Classification Commands</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="vbagent.cli.classify" class="doc doc-heading">
+            <code>classify</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>CLI command for classifying physics question images.</p>
+<p>Stage 1: Classify physics question image to extract metadata.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.classify.classify" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">classify</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">as_json</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Stage 1: Classify physics question image.</p>
+<p>Analyzes a physics question image and extracts metadata including:
+question type, difficulty, topic, subtopic, diagram presence, etc.</p>
+<p>
+Examples:
+    vbagent classify -i question.png
+    vbagent classify --image images/q1.png --json
+    vbagent classify -i images/q1.png -o result.json</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.classify.format_result_table" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">format_result_table</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Table</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Format classification result as a rich table.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="scanning-commands">Scanning Commands</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="vbagent.cli.scan" class="doc doc-heading">
+            <code>scan</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>CLI command for scanning physics question images to extract LaTeX.</p>
+<p>Stage 2: Extract LaTeX from image using type-specific prompts.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.scan.display_scan_result" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">display_scan_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">console</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Display scan result with syntax highlighting.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.scan.scan" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">scan</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tex</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">question_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">do_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">verbose_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">assess_difficulty</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">analyze_diagram</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Stage 2: Extract LaTeX from physics question image.</p>
+<p>Runs classification first (unless --type provided), then extracts LaTeX
+using the appropriate type-specific prompt.</p>
+<p>
+Examples:
+    vbagent scan -i question.png
+    vbagent scan --image images/q1.png --output output.tex
+    vbagent scan -i images/q1.png --type mcq_sc
+    vbagent scan -i q.png -t existing.tex -o updated.tex</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="processing-commands">Processing Commands</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="vbagent.cli.process" class="doc doc-heading">
+            <code>process</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>CLI command for full pipeline processing.</p>
+<p>Orchestrates all agents for complete physics question processing:
+Classify → Scan → TikZ → Ideas → Variants.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.convert_primary_to_classification" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">convert_primary_to_classification</span><span class="p">(</span><span class="n">primary</span><span class="p">:</span> <span class="s1">&#39;PrimaryClassification&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;ClassificationResult&#39;</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Convert PrimaryClassification (v2) to ClassificationResult (v1) for compatibility.</p>
+<p>Used when calling legacy functions that expect ClassificationResult.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.extract_items_from_tex" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">extract_items_from_tex</span><span class="p">(</span><span class="n">content</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Extract individual items from a TeX file.</p>
+<p>Splits content by \item markers to get individual problems.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.filter_items_by_range" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">filter_items_by_range</span><span class="p">(</span><span class="n">items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">item_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter items by the specified range (1-based, inclusive).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.generate_alternate_solution" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">generate_alternate_solution</span><span class="p">(</span><span class="n">problem</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">solution</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ideas</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Generate an alternate solution using the alternate agent.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.generate_image_paths_from_range" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">generate_image_paths_from_range</span><span class="p">(</span><span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">item_range</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Generate image paths from a template and range.</p>
+<p>Given an image path like 'images/Problem_3.png' and range (1, 5),
+generates paths: Problem_1.png, Problem_2.png, ..., Problem_5.png</p>
+<p>Supports patterns:
+- Problem_3.png -&gt; Problem_1.png, Problem_2.png, ...
+- question3.png -&gt; question1.png, question2.png, ...
+- img_03.png -&gt; img_01.png, img_02.png, ...</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.get_base_name" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_base_name</span><span class="p">(</span><span class="n">source_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Extract base name from source path (without extension).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.insert_tikz_into_latex" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">insert_tikz_into_latex</span><span class="p">(</span><span class="n">latex</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tikz_code</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Replace diagram placeholders with actual TikZ code.</p>
+<p>Handles two types of placeholders:
+1. Main diagram: \begin{center}\input{diagram}\end{center}
+2. Option diagrams: \OptionA, \OptionB, etc. with \def definitions</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>latex</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The LaTeX content with placeholder(s)</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>tikz_code</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The generated TikZ code (may include \def\OptionX{...})</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>LaTeX with TikZ code inserted</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.merge_metadata_into_latex" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">merge_metadata_into_latex</span><span class="p">(</span><span class="n">latex</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">primary</span><span class="p">:</span> <span class="s1">&#39;PrimaryClassification&#39;</span><span class="p">,</span> <span class="n">diagram</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;DiagramAnalysis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">difficulty</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;DifficultyAssessment&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Prepend classification metadata as comments to LaTeX content.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.parse_tex_file" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">parse_tex_file</span><span class="p">(</span><span class="n">tex_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Read and return the content of a TeX file.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.process" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">process</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">tex</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">item_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">variant_types_str</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">alternate</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">ideas</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">ref_dirs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">parallel</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">do_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">verbose_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">assess_difficulty</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">analyze_diagram</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">validate_tikz</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">merge_metadata</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Full pipeline: Classify → Scan → TikZ → Ideas → Variants.</p>
+<p>Orchestrates all agents for complete physics question processing.
+Processes images or TeX files through the full pipeline.</p>
+<p>By default, only classification, scanning, and TikZ generation run.
+Use --ideas, --alternate, and --variants to enable additional stages.</p>
+<p>
+Pipeline Stages:
+    1. Classification - Extract metadata from image
+    2. Scanning - Extract LaTeX from image
+    3. TikZ - Generate diagram code (if has_diagram)
+    4. Ideas - Extract physics concepts (--ideas)
+    5. Alternates - Generate alternate solutions (--alternate)
+    6. Variants - Generate problem variants (--variants)</p>
+<p>
+Output Structure:
+    agentic/
+    ├── scans/problem_1.tex
+    ├── classifications/problem_1.json
+    ├── alternates/problem_1.tex      (if --alternate)
+    ├── variants/numerical/problem_1.tex  (if --variants)
+    ├── ideas/problem_1.json          (if --ideas)
+    └── tikz/problem_1.tex</p>
+<p>
+Examples:
+    vbagent process -i images/Problem_1.png
+    vbagent process -i images/Problem_1.png --ideas
+    vbagent process -i images/Problem_1.png --ideas --alternate
+    vbagent process -i images/Problem_1.png --variants numerical,context
+    vbagent process -i images/Problem_1.png -r 1 5
+    vbagent process -i images/Problem_1.png -r 1 10 --parallel 3
+    vbagent process -t problems.tex --range 1 5 --alternate --ideas</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.process_generated_problem" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">process_generated_problem</span><span class="p">(</span><span class="n">generated</span><span class="p">:</span> <span class="s1">&#39;GeneratedProblem&#39;</span><span class="p">,</span> <span class="n">problem_num</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">output_base_dir</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;agentic&#39;</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="nb">dict</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Process a generated problem through the full pipeline.</p>
+<p>Runs the complete workflow on a problem generated by Agent 5:
+1. Generate TikZ from diagram_description (if present)
+2. Run Agent 4 (LaTeX Classifier) on the problem
+3. Run Agent 2 (Diagram Analyzer) if has_diagram
+4. Run Agent 3 (Difficulty Assessor)
+5. Merge metadata into LaTeX
+6. Save everything in standard format</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>generated</code>
+            </td>
+            <td>
+                  <code>&#39;GeneratedProblem&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>GeneratedProblem from Agent 5</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>problem_num</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Problem number for file naming</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>output_base_dir</code>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Base directory for output (default: agentic/)</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="pathlib.Path">Path</span>(&#39;agentic&#39;)</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dictionary with paths and metadata</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.process_image" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">process_image</span><span class="p">(</span><span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variant_types</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">generate_alternate</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">generate_ideas</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">use_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">assess_difficulty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">analyze_diagram</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">merge_metadata</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PipelineResult</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Process an image through the full pipeline.</p>
+<p>Pipeline stages:
+1. Classification (Agent 1 + optional Agent 2)
+2. Scanning (Agent 3 + optional difficulty assessment)
+3. TikZ (parallel with scanning if has_diagram)
+4. Ideas, Alternates, Variants (sequential, optional)</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.process_tex_item" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">process_tex_item</span><span class="p">(</span><span class="n">tex_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">source_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variant_types</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">generate_alternate</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">generate_ideas</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">use_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PipelineResult</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Process a TeX item through the pipeline (skips classification/scanning).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.save_pipeline_result" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">save_pipeline_result</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">PipelineResult</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Save pipeline result to output directory (legacy flat structure).</p>
+<p>Returns dict mapping output type to file path.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.process.save_pipeline_result_organized" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">save_pipeline_result_organized</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">PipelineResult</span><span class="p">,</span> <span class="n">base_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">base_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Save pipeline result to organized directory structure.</p>
+
+
+<details class="structure" open>
+  <summary>Structure</summary>
+  <p>agentic/
+├── scans/{base_name}.tex
+├── classifications/{base_name}.json
+├── alternates/{base_name}.tex
+├── variants/
+│   ├── numerical/{base_name}.tex
+│   ├── context/{base_name}.tex
+│   └── ...
+├── ideas/{base_name}.json
+└── tikz/{base_name}.tex</p>
+</details>        <p>Returns dict mapping output type to file path.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="tikz-commands">TikZ Commands</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="vbagent.cli.tikz" class="doc doc-heading">
+            <code>tikz</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>CLI command for generating TikZ diagram code.</p>
+<p>Generates TikZ/PGF code for physics diagrams from images or descriptions.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.tikz.tikz" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">tikz</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tex</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ref_dirs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">do_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">verbose_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Generate TikZ code for physics diagrams.</p>
+<p>Can generate TikZ code from:
+- An image (-i/--image)
+- A text description (-d/--description)
+- A problem text file (-t/--tex)
+- Any combination of the above</p>
+<p>Optionally searches reference files (STY, TeX, PDF) for syntax examples.</p>
+<p>
+Examples:
+    vbagent tikz -d "Free body diagram with gravity and normal force"
+    vbagent tikz -i diagram.png -o diagram.tex
+    vbagent tikz -t problem.tex -o diagram.tex
+    vbagent tikz -t problem.tex -i reference.png -o diagram.tex
+    vbagent tikz -d "RC circuit" --ref refs/circuitikz/ -o circuit.tex</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="variant-commands">Variant Commands</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="vbagent.cli.variant" class="doc doc-heading">
+            <code>variant</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>CLI command for generating problem variants.</p>
+<p>Generates different types of physics problem variants:
+- numerical: Modify only numerical values
+- context: Modify only the scenario/context
+- conceptual: Modify the core physics concept
+- calculus: Add calculus-based modifications
+- multi: Combine multiple problems</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.variant.extract_items_from_tex" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">extract_items_from_tex</span><span class="p">(</span><span class="n">content</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Extract individual items from a TeX file.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.variant.filter_items_by_range" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">filter_items_by_range</span><span class="p">(</span><span class="n">items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">item_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Filter items by the specified range.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.variant.load_ideas" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">load_ideas</span><span class="p">(</span><span class="n">ideas_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">idea_result_cls</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Load ideas from a JSON file.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.variant.parse_tex_file" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">parse_tex_file</span><span class="p">(</span><span class="n">tex_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Read and return the content of a TeX file.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.variant.variant" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">variant</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">tex</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">variant_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">item_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">context_files</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">ideas</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">output</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">do_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">verbose_compile</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Generate problem variants.</p>
+<p>Creates variants of physics problems with controlled modifications.</p>
+<p>
+Variant Types:
+    numerical   - Change only numbers, keep context
+    context     - Change scenario, keep numbers
+    conceptual  - Change physics concept
+    calculus    - Add calculus elements
+    multi       - Combine multiple problems</p>
+<p>
+Examples:
+    vbagent variant -t problem.tex --type numerical
+    vbagent variant --tex problem.tex --type numerical --count 3
+    vbagent variant -t problem.tex --type context -o variants.tex
+    vbagent variant -t problems.tex --type numerical -r 1 5
+    vbagent variant --type multi --context p1.tex --context p2.tex -o combined.tex
+    vbagent variant -i image.png --type numerical --output variant.tex</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="batch-processing">Batch Processing</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="vbagent.cli.batch" class="doc doc-heading">
+            <code>batch</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>CLI commands for batch processing with resume capability.</p>
+<p>Provides <code>init</code> and <code>continue</code> commands for processing multiple images
+with SQLite-based state tracking and caffeinate support.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="vbagent.cli.batch.SleepInhibitor" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">SleepInhibitor</span><span class="p">(</span><span class="n">console</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>Cross-platform sleep prevention during batch processing.</p>
+<p>Supports:
+- macOS: caffeinate command
+- Windows: SetThreadExecutionState API
+- Linux: systemd-inhibit or falls back gracefully</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="vbagent.cli.batch.SleepInhibitor.start" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">start</span><span class="p">()</span></code>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Start sleep inhibition based on platform.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="vbagent.cli.batch.SleepInhibitor.stop" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">stop</span><span class="p">()</span></code>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Stop sleep inhibition.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.batch.batch" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">batch</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Batch processing commands with resume capability.</p>
+<p>Process multiple images through the full pipeline with SQLite-based
+state tracking and automatic resume on interruption.</p>
+<p>
+Commands:
+    init      - Initialize and start batch processing
+    continue  - Resume from where you left off
+    status    - Show current progress</p>
+<p>
+Examples:
+    vbagent batch init -i ./images
+    vbagent batch continue
+    vbagent batch status</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.batch.continue_batch" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">continue_batch</span><span class="p">(</span><span class="n">reset_failed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Continue batch processing from where it left off.</p>
+<p>Resumes processing using the existing SQLite database.
+Use --reset-failed to retry previously failed images.</p>
+<p>
+Examples:
+    vbagent batch continue
+    vbagent batch continue --reset-failed</p>
+<p>
+Tip: Run 'vbagent batch status' to see current progress.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.batch.discover_images" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">discover_images</span><span class="p">(</span><span class="n">images_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;*.png&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Discover all images in a directory matching the pattern.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>images_dir</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Directory to search</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>pattern</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Glob pattern for images (default: *.png)</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;*.png&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="list">list</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Sorted list of image paths</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.batch.init" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">init</span><span class="p">(</span><span class="n">images_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">variant_types_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alternate</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize batch processing for all images in a directory.</p>
+<p>Scans the images directory, creates a SQLite database to track progress,
+and starts processing all images through the full pipeline.</p>
+<p>
+Examples:
+    vbagent batch init
+    vbagent batch init -i ./my_images
+    vbagent batch init --images-dir ./images --output ./results
+    vbagent batch init --variants numerical,context --no-alternate
+    vbagent batch init -i ./images -o ./output --no-context</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.batch.process_single_image" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">process_single_image</span><span class="p">(</span><span class="n">db</span><span class="p">:</span> <span class="s1">&#39;BatchDatabase&#39;</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="s1">&#39;ImageRecord&#39;</span><span class="p">,</span> <span class="n">variant_types</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">generate_alternates</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">use_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Process a single image through the pipeline with state tracking.</p>
+<p>Returns True if successful, False if failed.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.batch.status" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">status</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Show batch processing status.</p>
+<p>Displays current progress, configuration, and any failed images.</p>
+<p>
+Examples:
+    vbagent batch status</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="quality-assurance">Quality Assurance</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="vbagent.cli.check" class="doc doc-heading">
+            <code>check</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>CLI commands for QA review with interactive approval workflow.</p>
+<p>Provides <code>check</code> command for random spot-checking of processed physics
+questions with AI-powered quality review and diff-based suggestions.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.apply" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">apply</span><span class="p">(</span><span class="n">version_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">edit</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Apply a previously rejected suggestion.</p>
+<p>Retrieves a stored suggestion by ID and applies its diff.
+Use --edit to review/modify the suggested content in your editor first.</p>
+<p>
+Examples:
+    vbagent check apply 42
+    vbagent check apply 42 -e
+    vbagent check apply 42 --edit</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.apply_suggestion" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">apply_suggestion</span><span class="p">(</span><span class="n">suggestion</span><span class="p">:</span> <span class="s1">&#39;Suggestion&#39;</span><span class="p">,</span> <span class="n">problem_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Apply an approved suggestion to the file.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>suggestion</code>
+            </td>
+            <td>
+                  <code>&#39;Suggestion&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The suggestion to apply</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>problem_id</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Problem ID for path resolution</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>DiffResult with success status and error details if failed</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.check" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">check</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>QA review commands for spot-checking processed problems.</p>
+<p>
+Commands:
+    run       - Start a random QA review session
+    init      - Initialize problem tracking database
+    continue  - Continue from where you left off
+    status    - Show check progress
+    recheck   - Reset problems for rechecking
+    alternate - Generate alternate solutions
+    idea      - Generate idea summaries
+    solution  - Check solution correctness
+    grammar   - Check grammar and spelling
+    clarity   - Check clarity and conciseness
+    tikz      - Check/generate TikZ diagrams
+    apply     - Apply a stored suggestion
+    history   - View suggestion history
+    resume    - Resume interrupted session
+    stats     - View review statistics</p>
+<p>
+Examples:
+    vbagent check run
+    vbagent check init -d ./agentic
+    vbagent check continue -c 10
+    vbagent check status
+    vbagent check alternate -d ./src_tex/
+    vbagent check idea -d ./src_tex/
+    vbagent check solution -d ./src_tex/
+    vbagent check grammar -d ./src_tex/
+    vbagent check clarity -d ./src_tex/
+    vbagent check tikz -d ./scans/           # Check/generate TikZ
+    vbagent check tikz --patch --ref-type circuit</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.check_alternate" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">check_alternate</span><span class="p">(</span><span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">min_alternates</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">problem_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">images_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Check and generate alternate solutions for problems.</p>
+<p>Scans all .tex files in the specified directory (or subdirectories),
+checks if they have alternate solutions, and generates new ones with
+interactive approval.</p>
+<p>The alternate solution is appended to the problem file using the
+\begin{alternatesolution}...\end{alternatesolution} environment.</p>
+<p>Images are matched by filename (e.g., problem_1.tex -&gt; problem_1.png).
+Use --prompt to add specific instructions for generating alternates.</p>
+<p>
+Supports:
+    - Direct directory with .tex files (e.g., ./src/src_tex/)
+    - Agentic folder structure (scans/, variants/)
+    - Single .tex file</p>
+<p>
+Examples:
+    vbagent check alternate
+    vbagent check alternate -d ./src/src_tex/
+    vbagent check alternate -d ./src/src_tex/ -i ./src/src_images/
+    vbagent check alternate --dir ./problem_1.tex
+    vbagent check alternate -c 10
+    vbagent check alternate --count 10 --min-alternates 2
+    vbagent check alternate -p Problem_1
+    vbagent check alternate --prompt "Use energy conservation method"
+    vbagent check alternate -d ./agentic/scans -p Problem_5</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.check_clarity_cmd" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">check_clarity_cmd</span><span class="p">(</span><span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">problem_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">reset</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Check content for clarity and conciseness.</p>
+<p>Reviews text for unclear statements, verbose explanations,
+and pedagogical improvements. Prompts for approval to apply changes.</p>
+<p>Use --prompt to add specific instructions for the checker.</p>
+<p>
+Examples:
+    vbagent check clarity
+    vbagent check clarity -d ./src/src_tex/
+    vbagent check clarity -c 10
+    vbagent check clarity -p Problem_1
+    vbagent check clarity --prompt "Keep explanations brief for JEE level"
+    vbagent check clarity --reset</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.check_grammar_cmd" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">check_grammar_cmd</span><span class="p">(</span><span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">problem_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">reset</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Check content for grammar and spelling errors.</p>
+<p>Reviews text for grammar, spelling, punctuation, and
+awkward phrasing issues. Prompts for approval to apply fixes.</p>
+<p>Use --prompt to add specific instructions for the checker.</p>
+<p>
+Examples:
+    vbagent check grammar
+    vbagent check grammar -d ./src/src_tex/
+    vbagent check grammar -c 10
+    vbagent check grammar -p Problem_1
+    vbagent check grammar --prompt "Use British English spelling"
+    vbagent check grammar --reset</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.check_idea" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">check_idea</span><span class="p">(</span><span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">problem_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Generate and append idea summaries to problems.</p>
+<p>Scans .tex files, extracts key concepts/formulas/techniques,
+and appends them in a <code>\begin{idea}...\end{idea}</code> environment.</p>
+<p>
+Supports:
+    - Direct directory with .tex files
+    - Agentic folder structure (scans/, variants/)
+    - Single .tex file</p>
+<p>
+Examples:
+    vbagent check idea
+    vbagent check idea -d ./src/src_tex/
+    vbagent check idea -c 10
+    vbagent check idea -p Problem_1</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.check_solution_cmd" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">check_solution_cmd</span><span class="p">(</span><span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">problem_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">images_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">reset</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Check or create solutions for physics problems.</p>
+<p>If a solution EXISTS: Verifies calculations, physics principles, and final answers.
+If a solution is MISSING: Creates a complete solution using the problem context.</p>
+<p>Prompts for approval before applying corrections or new solutions.
+Images are matched by filename (e.g., problem_1.tex -&gt; problem_1.png).
+Use --prompt to add specific instructions for the checker.</p>
+<p>
+Examples:
+    vbagent check solution
+    vbagent check solution -d ./src/src_tex/
+    vbagent check solution -d ./src/src_tex/ -i ./src/src_images/
+    vbagent check solution -c 10
+    vbagent check solution -p Problem_1
+    vbagent check solution --prompt "Focus on unit consistency"
+    vbagent check solution --reset</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.check_status" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">check_status</span><span class="p">(</span><span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">show_status</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Show check progress and status.</p>
+<p>Displays statistics for problem checking in the specified directory.</p>
+<p>
+Examples:
+    vbagent check status
+    vbagent check status -d ./my_output
+    vbagent check status -s pending
+    vbagent check status --show failed
+    vbagent check status --dir ./agentic --show all</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.check_tikz_cmd" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">check_tikz_cmd</span><span class="p">(</span><span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">problem_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">images_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">prompt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">only_tikz</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">reset</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">patch</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">use_context</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">ref_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Check and generate TikZ diagram code.</p>
+<p>This command has two modes:</p>
+<ol>
+<li>
+<p>CHECK MODE: Reviews existing TikZ/PGF code for syntax errors,
+   missing libraries, and physics diagram conventions.</p>
+</li>
+<li>
+<p>GENERATE MODE: If a file has \input{diagram} placeholder but no
+   TikZ code, automatically generates TikZ from the corresponding
+   image (auto-discovered in images/ directory).</p>
+</li>
+</ol>
+<p>Images are auto-discovered by filename (e.g., Problem_1.tex -&gt; images/Problem_1.png)
+or can be specified with --images-dir.</p>
+<p>Reference examples are matched by diagram type from classification metadata,
+or can be filtered manually with --ref-type.</p>
+<p>Use --patch to enable apply_patch mode for more precise edits.</p>
+<p>
+Examples:
+    vbagent check tikz                          # Check/generate in agentic/
+    vbagent check tikz -d ./scans/              # Check specific directory
+    vbagent check tikz -d ./scans/Problem_1.tex # Check single file
+    vbagent check tikz -c 10                    # Process 10 files
+    vbagent check tikz -p Problem_1             # Check specific problem
+    vbagent check tikz -i ./images/             # Explicit images directory
+    vbagent check tikz --only-tikz              # Skip files without TikZ
+    vbagent check tikz --reset                  # Re-check all files
+    vbagent check tikz --patch                  # Use apply_patch mode
+    vbagent check tikz --ref-type circuit       # Use only circuit references
+    vbagent check tikz --prompt "Use circuitikz" # Add instructions</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.continue_check" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">continue_check</span><span class="p">(</span><span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Continue checking from where you left off.</p>
+<p>Picks up pending problems from the tracking database and
+runs AI-powered quality review with interactive approval.</p>
+<p>
+Examples:
+    vbagent check continue
+    vbagent check continue -c 10
+    vbagent check continue --count 10 --dir ./my_output</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.default_command" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">default_command</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Default command - runs check with default options.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.display_suggestion" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">display_suggestion</span><span class="p">(</span><span class="n">suggestion</span><span class="p">:</span> <span class="s1">&#39;Suggestion&#39;</span><span class="p">,</span> <span class="n">console</span><span class="p">:</span> <span class="s1">&#39;Console&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Display a suggestion with all details.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>suggestion</code>
+            </td>
+            <td>
+                  <code>&#39;Suggestion&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The suggestion to display</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>console</code>
+            </td>
+            <td>
+                  <code>&#39;Console&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Rich console for output</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.format_diff_error" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">format_diff_error</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="s1">&#39;DiffResult&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Format a diff error for display.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>result</code>
+            </td>
+            <td>
+                  <code>&#39;DiffResult&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>DiffResult with error information</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Human-readable error message</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.history" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">history</span><span class="p">(</span><span class="n">problem_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">file_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Display rejected suggestion history.</p>
+<p>Shows previously rejected suggestions that can be applied later.</p>
+<p>
+Examples:
+    vbagent check history
+    vbagent check history -p Problem_42
+    vbagent check history --problem-id Problem_42 --limit 50
+    vbagent check history -f conceptual_variant.tex -n 10</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.init_check" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">init_check</span><span class="p">(</span><span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">item_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">reset</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize problem check tracking.</p>
+<p>Discovers all problems in the output directory and adds them
+to the tracking database. Use --range to limit to specific problems.</p>
+<p>
+Examples:
+    vbagent check init
+    vbagent check init -d ./my_output
+    vbagent check init --dir ./agentic --range 1 50
+    vbagent check init -r 1 50
+    vbagent check init --reset</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.prompt_review_action" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">prompt_review_action</span><span class="p">(</span><span class="n">suggestion</span><span class="p">:</span> <span class="s1">&#39;Suggestion&#39;</span><span class="p">,</span> <span class="n">console</span><span class="p">:</span> <span class="s1">&#39;Console&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ReviewAction</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Display suggestion and prompt user for action.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>suggestion</code>
+            </td>
+            <td>
+                  <code>&#39;Suggestion&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The suggestion to review</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>console</code>
+            </td>
+            <td>
+                  <code>&#39;Console&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Rich console for output</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="vbagent.cli.common.ReviewAction">ReviewAction</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The user's chosen action</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.recheck" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">recheck</span><span class="p">(</span><span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">failed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">problem_id</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Reset problems for rechecking.</p>
+<p>Resets the status of problems to pending so they can be checked again.</p>
+<p>
+Examples:
+    vbagent check recheck
+    vbagent check recheck --failed
+    vbagent check recheck -p Problem_1
+    vbagent check recheck -p Problem_1 -p Problem_2
+    vbagent check recheck --dir ./output --failed</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.resolve_file_path" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">resolve_file_path</span><span class="p">(</span><span class="n">stored_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">problem_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Resolve a stored file path to an actual file.</p>
+<p>Tries multiple strategies to find the file:
+1. Direct path (if absolute or exists relative to cwd)
+2. Look in common output directories (agentic/, output/)
+3. Search for problem_id directory and find file within</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>stored_path</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The path stored in the database</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>problem_id</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The problem ID associated with this file</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Resolved path if found, None otherwise</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.resume" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">resume</span><span class="p">(</span><span class="n">session_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Resume an interrupted review session.</p>
+<p>If no session ID is provided, shows a list of incomplete sessions.
+Session IDs can be shortened (prefix match).</p>
+<p>
+Examples:
+    vbagent check resume
+    vbagent check resume abc12345
+    vbagent check resume abc</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.run_check" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">run_check</span><span class="p">(</span><span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">problem_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Start a QA review session.</p>
+<p>Randomly selects problems from the output directory and runs
+AI-powered quality review with interactive approval.</p>
+<p>
+Examples:
+    vbagent check run
+    vbagent check run -c 10
+    vbagent check run --count 10 --dir ./output
+    vbagent check run -p Problem_42
+    vbagent check run --problem-id Problem_42 -d ./my_output</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.run_review_session" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">run_review_session</span><span class="p">(</span><span class="n">problems</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">store</span><span class="p">:</span> <span class="s1">&#39;VersionStore&#39;</span><span class="p">,</span> <span class="n">console</span><span class="p">:</span> <span class="s1">&#39;Console&#39;</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;agentic&#39;</span><span class="p">,</span> <span class="n">session_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Run an interactive review session.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>problems</code>
+            </td>
+            <td>
+                  <code><span title="list">list</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of problem contexts to review</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>store</code>
+            </td>
+            <td>
+                  <code>&#39;VersionStore&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Version store for saving rejected suggestions</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>console</code>
+            </td>
+            <td>
+                  <code>&#39;Console&#39;</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Rich console for output</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>output_dir</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Output directory being reviewed (for resume capability)</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;agentic&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>session_id</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional existing session ID (for resume)</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dictionary with session statistics</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.check.stats" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">stats</span><span class="p">(</span><span class="n">days</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Display review statistics.</p>
+<p>Shows aggregated statistics from review sessions.</p>
+<p>
+Examples:
+    vbagent check stats
+    vbagent check stats -d 7
+    vbagent check stats --days 30</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="chat-interface">Chat Interface</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="vbagent.cli.chat" class="doc doc-heading">
+            <code>chat</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Chat interface for conversational orchestrator.</p>
+<p>Provides an interactive terminal-based chat interface using the Rich library
+for formatted output and user interaction.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="vbagent.cli.chat.ChatInterface" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">ChatInterface</span><span class="p">(</span><span class="n">orchestrator</span><span class="p">:</span> <span class="n">Orchestrator</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>Terminal chat interface with rich formatting.</p>
+<p>Provides an interactive chat session with:
+- Formatted message display (user/assistant/system panels)
+- Tool execution progress indicators
+- Exit command handling
+- Conversation history maintenance</p>
+
+        <p>Initialize chat interface.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>orchestrator</code>
+            </td>
+            <td>
+                  <code><span title="vbagent.orchestrator.Orchestrator">Orchestrator</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Orchestrator instance for handling conversations</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="vbagent.cli.chat.ChatInterface.display_message" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">display_message</span><span class="p">(</span><span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Display a formatted message.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>role</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Message role (user, assistant, system)</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>content</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Message content</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="vbagent.cli.chat.ChatInterface.display_tool_execution" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">display_tool_execution</span><span class="p">(</span><span class="n">tool_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Display tool execution progress.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>tool_name</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Name of the tool being executed</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>status</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Status (executing, success, error)</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="vbagent.cli.chat.ChatInterface.start" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">start</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span></code>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Start interactive chat session.</p>
+<p>Displays welcome message, enters input loop, and handles exit commands.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.chat.chat" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">chat</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">history</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">],</span> <span class="n">save_history</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">])</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Start interactive chat session.</p>
+<p>Provides a conversational interface to vbagent functionality.
+The assistant can help with tasks like scanning questions,
+generating variants, creating DPPs, and more.</p>
+<p>Examples:</p>
+<div class="language-text highlight"><pre><span></span><code># Start a chat session
+vbagent chat
+
+# Use a specific model
+vbagent chat --model gpt-4
+
+# Load previous conversation
+vbagent chat --history conversation.json
+
+# Save conversation on exit
+vbagent chat --save-history conversation.json
+</code></pre></div>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="database-management">Database Management</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="vbagent.cli.db" class="doc doc-heading">
+            <code>db</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>CLI commands for database management.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.db.db" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">db</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Database management for question bank.</p>
+<p>
+Commands:
+    init     - Initialize database from directory
+    insert   - Insert problems into database
+    update   - Update existing question
+    query    - Query questions with filters
+    stats    - Show database statistics
+    export   - Export questions from database
+    delete   - Delete question by ID</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.db.delete" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">delete</span><span class="p">(</span><span class="n">question_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">db_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Delete question by ID (cascade deletes children).</p>
+<p>
+Examples:
+    vbagent db delete 42</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.db.init" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">init</span><span class="p">(</span><span class="n">db_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize empty database.</p>
+<p>Creates database schema without inserting any questions.
+Use 'vbagent db insert' to add questions later.</p>
+<p>
+Examples:
+    vbagent db init                      # Create default database
+    vbagent db init --db-path custom.db  # Create custom database
+    vbagent db init --force              # Recreate existing database</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.db.insert" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">insert</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">db_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">update_existing</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">classify</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Insert problems into database.</p>
+<p>
+Examples:
+    vbagent db insert ./new_questions
+    vbagent db insert ./questions --update-existing
+    vbagent db insert ./questions --classify</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.db.query" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">query</span><span class="p">(</span><span class="n">db_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">chapter</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">topic</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">difficulty</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">question_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">output_format</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Query questions with filters.</p>
+<p>
+Examples:
+    vbagent db query --topic Kinematics
+    vbagent db query --difficulty medium --subject physics
+    vbagent db query --type passage --format json</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.db.stats" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">stats</span><span class="p">(</span><span class="n">db_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Show database statistics.</p>
+<p>
+Examples:
+    vbagent db stats
+    vbagent db stats --subject physics</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="reference-management">Reference Management</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="vbagent.cli.ref" class="doc doc-heading">
+            <code>ref</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>CLI commands for managing reference context files.</p>
+<p>Provides commands to add, remove, list, and configure reference files
+stored in ~/.config/vbagent for use as context in LLM prompts.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.add" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">add</span><span class="p">(</span><span class="n">category</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Add a reference file to a category.</p>
+<p>
+Arguments:
+    CATEGORY  Category to add to (tikz, latex, variants, problems)
+    FILE      Path to the file to add</p>
+<p>
+Examples:
+    vbagent ref add tikz my_diagram.tex
+    vbagent ref add variants example.tex -n "numerical_example.tex"
+    vbagent ref add latex formatting.tex -d "Standard formatting template"</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.disable" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">disable</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Disable context usage in prompts.</p>
+<p>When disabled, reference files will not be included in prompts.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.enable" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">enable</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Enable context usage in prompts.</p>
+<p>When enabled, reference files will be included as examples
+in LLM prompts to improve output quality.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.list_refs" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">list_refs</span><span class="p">(</span><span class="n">category</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>List all reference files.</p>
+<p>
+Examples:
+    vbagent ref list
+    vbagent ref list -c tikz</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.ref" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ref</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Manage reference files for context.</p>
+<p>Reference files are stored in ~/.config/vbagent/references/
+and can be used as examples to improve LLM output quality.</p>
+<p>
+Categories:
+    tikz      - TikZ/PGF code examples
+    latex     - LaTeX formatting examples
+    variants  - Variant generation examples
+    problems  - Example physics problems</p>
+<p>
+Examples:
+    vbagent ref add tikz diagram.tex
+    vbagent ref add variants example.tex -d "Numerical variant"
+    vbagent ref list
+    vbagent ref list -c tikz
+    vbagent ref remove tikz diagram.tex
+    vbagent ref enable
+    vbagent ref disable
+    vbagent ref status</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.remove" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">remove</span><span class="p">(</span><span class="n">category</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Remove a reference file.</p>
+<p>
+Arguments:
+    CATEGORY  Category of the reference
+    NAME      Name of the reference file</p>
+<p>
+Examples:
+    vbagent ref remove tikz diagram.tex
+    vbagent ref remove variants example.tex</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.set_max" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_max</span><span class="p">(</span><span class="n">max_examples</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set maximum examples per category.</p>
+<p>Controls how many reference files from each category
+are included in prompts.</p>
+<p>
+Arguments:
+    MAX_EXAMPLES  Maximum number of examples (1-20)</p>
+<p>
+Examples:
+    vbagent ref set-max 3
+    vbagent ref set-max 10</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.show" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">show</span><span class="p">(</span><span class="n">category</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Show the content of a reference file.</p>
+<p>
+Arguments:
+    CATEGORY  Category of the reference
+    NAME      Name of the reference file</p>
+<p>
+Examples:
+    vbagent ref show tikz diagram.tex</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.status" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">status</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Show context configuration and statistics.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.tikz_group" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">tikz_group</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Manage TikZ references with metadata-based context.</p>
+<p>TikZ references are stored with classification metadata
+(diagram_type, topic, subtopic) for intelligent context matching.</p>
+<p>
+Commands:
+    import  - Import TikZ from processed problem
+    list    - List TikZ references
+    remove  - Remove a TikZ reference
+    show    - Show TikZ reference content
+    status  - Show TikZ reference statistics</p>
+<p>
+Examples:
+    vbagent ref tikz import agentic/scans/Problem_5.tex
+    vbagent ref tikz import -d agentic/scans -r 1 10
+    vbagent ref tikz list
+    vbagent ref tikz list --diagram-type pulley
+    vbagent ref tikz status</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.tikz_import" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">tikz_import</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">item_range</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">tikz_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">class_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Import TikZ references from processed problems.</p>
+<p>Extracts TikZ code and loads classification metadata automatically.
+Can import a single file or a range of problems from a directory.</p>
+<p>
+Arguments:
+    PATH  Path to scan file or scans directory</p>
+<p>
+Examples:
+    # Import single problem
+    vbagent ref tikz import agentic/scans/Problem_5.tex</p>
+<div class="language-text highlight"><pre><span></span><code># Import range from directory
+vbagent ref tikz import agentic/scans -r 1 10
+
+# Import with custom tikz/classification directories
+vbagent ref tikz import agentic/scans/Problem_5.tex -t agentic/tikz -c agentic/classifications
+</code></pre></div>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.tikz_list" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">tikz_list</span><span class="p">(</span><span class="n">diagram_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">topic</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>List TikZ references.</p>
+<p>
+Examples:
+    vbagent ref tikz list
+    vbagent ref tikz list --diagram-type pulley
+    vbagent ref tikz list -t mechanics</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.tikz_remove" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">tikz_remove</span><span class="p">(</span><span class="n">ref_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Remove a TikZ reference.</p>
+<p>
+Arguments:
+    REF_ID  ID of the reference to remove</p>
+<p>
+Examples:
+    vbagent ref tikz remove Problem_5</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.tikz_show" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">tikz_show</span><span class="p">(</span><span class="n">ref_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Show TikZ reference content.</p>
+<p>
+Arguments:
+    REF_ID  ID of the reference to show</p>
+<p>
+Examples:
+    vbagent ref tikz show Problem_5</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.ref.tikz_status" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">tikz_status</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Show TikZ reference statistics.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="configuration">Configuration</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="vbagent.cli.config" class="doc doc-heading">
+            <code>config</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>CLI commands for configuring vbagent models.</p>
+<p>Provides commands to view and set model configurations for different agents.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.config.config" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">config</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Configure vbagent models and settings.</p>
+<p>View and modify model configurations for different agent types.</p>
+<p>
+Agent Types:
+    classifier  - Image classification
+    scanner     - LaTeX extraction from images
+    tikz        - TikZ diagram generation
+    idea        - Concept extraction
+    alternate   - Alternate solution generation
+    variant     - Problem variant generation
+    converter   - Format conversion</p>
+<p>
+Examples:
+    vbagent config show
+    vbagent config models
+    vbagent config set scanner --model gpt-4o
+    vbagent config set scanner -m gpt-4o
+    vbagent config set variant --model o1-mini --reasoning medium
+    vbagent config reset</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.config.debug" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">debug</span><span class="p">(</span><span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">workspace</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Enable or disable debug mode.</p>
+<p>Debug mode prints detailed input/output for all agent calls.</p>
+<p>
+Examples:
+    vbagent config debug on          # Enable debug mode
+    vbagent config debug off         # Disable debug mode
+    vbagent config debug status      # Show current status
+    vbagent config debug on -w       # Enable in workspace config</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.config.init" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">init</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">quick</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">yes</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Initialize workspace config interactively.</p>
+<p>Creates .vbagent.json in current directory with customized settings.
+This is an alias for <code>vbagent init</code>.</p>
+<p>
+Examples:
+    vbagent config init              # Interactive setup
+    vbagent config init --quick      # Only ask for subject
+    vbagent config init --yes        # Use all defaults
+    vbagent config init --force      # Overwrite existing</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.config.model_group" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">model_group</span><span class="p">(</span><span class="n">group_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">workspace</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>View or apply a model group.</p>
+<p>Model groups are pre-configured sets of models for each agent,
+optimized per provider. Switching providers auto-applies the
+matching group, but you can also apply one manually.</p>
+<p>
+Examples:
+    vbagent config model-group              # List all groups
+    vbagent config model-group openai       # Apply OpenAI group
+    vbagent config model-group xai          # Apply xAI group
+    vbagent config model-group google -w    # Apply Google group to workspace</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.config.models" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">models</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>List available models.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.config.provider" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">provider</span><span class="p">(</span><span class="n">provider</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">no_models</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">workspace</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the API provider (openai, xai, google, or custom URL).</p>
+<p>Switching providers auto-applies the matching model group so every
+agent gets the right model. Use --no-models to skip this.</p>
+<p>
+Known Providers:
+    openai  - OpenAI (default, no base_url needed)
+    xai     - xAI Grok (https://api.x.ai/v1)
+    google  - Google Gemini (OpenAI-compatible endpoint)</p>
+<p>
+Examples:
+    vbagent config provider openai
+    vbagent config provider xai --api-key xai-xxx
+    vbagent config provider xai --workspace
+    vbagent config provider xai --no-models   # keep current models
+    vbagent config provider --base-url https://custom.api/v1</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.config.reset" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">reset</span><span class="p">(</span><span class="n">workspace</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Reset configuration to defaults.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.config.set" class="doc doc-heading">
+            <code class="highlight language-python"><span class="nb">set</span><span class="p">(</span><span class="n">agent_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">reasoning</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">max_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">workspace</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set model configuration for an agent type.</p>
+<p>
+Arguments:
+    AGENT_TYPE  Agent to configure (classifier, scanner, tikz, etc.)</p>
+<p>
+Examples:
+    vbagent config set scanner --model gpt-4o
+    vbagent config set variant --model o1-mini --reasoning medium
+    vbagent config set default --model gpt-4.1
+    vbagent config set scanner -m gpt-4o --workspace  # Save to .vbagent.json</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.config.show" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">show</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Show current model configuration for all agents.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.config.subject" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">subject</span><span class="p">(</span><span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">workspace</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the subject for prompts.</p>
+<p>
+Subjects:
+    physics      - Physics problems (default)
+    chemistry    - Chemistry problems
+    mathematics  - Mathematics problems
+    biology      - Biology problems</p>
+<p>
+Examples:
+    vbagent config subject chemistry
+    vbagent config subject physics --workspace</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="utilities">Utilities</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="vbagent.cli.util" class="doc doc-heading">
+            <code>util</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Utility commands for file management.</p>
+<p>Provides helper commands for organizing and managing question files.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.util.clean" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">clean</span><span class="p">(</span><span class="n">output</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">all_</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">yes</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Remove generated files and directories.</p>
+<p>
+Examples:
+    vbagent util clean --output     # Remove agentic/ directory
+    vbagent util clean --config     # Remove .vbagent.json
+    vbagent util clean --all        # Remove everything
+    vbagent util clean -a -y        # Remove all without confirmation</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.util.count" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">count</span><span class="p">(</span><span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">recursive</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Count files by type in a directory.</p>
+<p>
+Examples:
+    vbagent util count images/
+    vbagent util count . --recursive</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.util.list" class="doc doc-heading">
+            <code class="highlight language-python"><span class="nb">list</span><span class="p">(</span><span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ext</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>List files ready for processing.</p>
+<p>Shows files that can be processed with <code>vbagent process</code>.</p>
+<p>
+Examples:
+    vbagent util list images/
+    vbagent util list . --ext .tex</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.util.rename" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">rename</span><span class="p">(</span><span class="n">directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ext</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">yes</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">preserve_order</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">lowercase</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">uppercase</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">pad</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Rename files to serialized format.</p>
+<p>Renames files in a directory to a consistent format like:
+problem_1.png, problem_2.png, problem_3.png, etc.</p>
+<p>
+Examples:
+    vbagent util rename images/                    # Rename to problem_N.png
+    vbagent util rename . --prefix Q               # q_1.png, q_2.png, ...
+    vbagent util rename . --ext .tex               # Rename .tex files
+    vbagent util rename . --start 10               # Start from problem_10.png
+    vbagent util rename images/ --dry-run          # Preview changes
+    vbagent util rename . --preserve-order         # Keep existing numbers
+    vbagent util rename . --shuffle                # Randomize order
+    vbagent util rename . --uppercase              # Problem_1.png
+    vbagent util rename . --pad 3                  # problem_001.png</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.cli.util.util" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">util</span><span class="p">()</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Utility commands for file management.</p>
+<p>
+Commands:
+    rename   - Rename files to serialized format (Problem_1.png, etc.)
+    count    - Count files by type in a directory
+    clean    - Remove generated files (agentic/, .vbagent.json)</p>
+<p>
+Examples:
+    vbagent util rename images/
+    vbagent util rename . --prefix Question --ext .tex
+    vbagent util count images/
+    vbagent util clean</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="common-utilities">Common Utilities</h2>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="vbagent.cli.common" class="doc doc-heading">
+            <code>common</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+        <p>Common CLI utilities for interactive sessions.</p>
+<p>Provides shared functionality for:
+- Diff display with Rich color coding
+- Interactive action prompts
+- Session summary display
+- Signal handling for graceful shutdown
+- LaTeX formatting
+- Editor integration</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/vaibhavblayer/vbagent" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://pypi.org/project/vbagent/" target="_blank" rel="noopener" title="pypi.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 444.7a20.4 20.4 0 1 1 0-40.7 20.4 20.4 0 1 1 0 40.7M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.6-183.4a20.4 20.4 0 1 1 0 40.8 20.4 20.4 0 1 1 0-40.8"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "toc.integrate", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
