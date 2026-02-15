@@ -186,6 +186,22 @@ DIAGRAM_PLACEHOLDER = r"""
     *   Place the placeholder immediately after the `\item` line (before options/tasks).
 """
 
+# Passage diagram - generate actual TikZ inline (not placeholder)
+PASSAGE_DIAGRAM_INLINE = r"""
+    **Diagram Handling for Passage (IMPORTANT):**
+    *   If the passage contains a diagram, generate the ACTUAL TikZ code inline:
+        ```latex
+        \begin{center}
+        \begin{tikzpicture}
+            % Your TikZ code here
+        \end{tikzpicture}
+        \end{center}
+        ```
+    *   Do NOT use `\input{diagram}` placeholder for passage diagrams.
+    *   Generate complete, compilable TikZ code directly in the passage.
+    *   Place the diagram after the passage text, before the questions.
+"""
+
 # Options with diagrams - scanner outputs placeholders, TikZ agent generates definitions
 OPTIONS_WITH_DIAGRAMS = r"""
     **IMPORTANT - Options with Diagrams/Graphs:**
@@ -208,6 +224,8 @@ OPTIONS_WITH_DIAGRAMS = r"""
 
 __all__ = [
     "TIKZ_GUIDELINES",
+    "DIAGRAM_PLACEHOLDER",
+    "PASSAGE_DIAGRAM_INLINE",
     "TIKZ_GUIDELINES_SHORT",
     "LATEX_FORMATTING_RULES",
     "PGFPLOTS_EXAMPLE",

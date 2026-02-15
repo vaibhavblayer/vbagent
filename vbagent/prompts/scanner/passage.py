@@ -1,6 +1,6 @@
 """Passage/Comprehension question scanner prompt."""
 
-from vbagent.prompts.scanner.common import DIAGRAM_PLACEHOLDER
+from vbagent.prompts.scanner.common import PASSAGE_DIAGRAM_INLINE
 
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
@@ -56,8 +56,8 @@ SYSTEM_PROMPT = r"""
     - For multi-paragraph passages: separate paragraphs with a blank line
     - Use `\noindent` for the first paragraph after title to avoid indentation
 
-3.  **Optional Diagram** (if a diagram exists OR is essential):
-""" + DIAGRAM_PLACEHOLDER + r"""
+3.  **Diagram in Passage** (if a diagram exists):
+""" + PASSAGE_DIAGRAM_INLINE + r"""
 
 4.  **Each Question-Solution pair**
     *   Begin with `\item` followed by the question text.

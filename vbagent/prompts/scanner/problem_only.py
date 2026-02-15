@@ -11,6 +11,7 @@ from vbagent.prompts.scanner.formatting_rules import (
     PROBLEM_FORMATTING_RULES,
     TIKZ_GUIDELINES_SHORT,
 )
+from vbagent.prompts.scanner.common import PASSAGE_DIAGRAM_INLINE
 
 
 def get_problem_prompt(question_type: str) -> str:
@@ -172,7 +173,10 @@ Extract the passage and all sub-questions with their options.
    - Separate multiple paragraphs with blank lines
    - Use inline math for symbols
 
-3. **Sub-questions**
+3. **Diagram in Passage** (if present):
+""" + PASSAGE_DIAGRAM_INLINE + r"""
+
+4. **Sub-questions**
    - Each question: `\item [question text]`
    - Followed by `\begin{tasks}(2) ... \end{tasks}`
    - **CRITICAL:** Mark correct answers with ` \ans` after the option
