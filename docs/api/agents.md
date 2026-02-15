@@ -1,6 +1,49 @@
 # Agents API Reference
 
-Auto-generated API documentation for VBAgent's agent system.
+Complete API documentation for VBAgent's multi-agent system.
+
+## Quick Links
+
+- **[Classification System](classification.md)** - 7-agent pipeline for metadata extraction
+- **[Data Models](models.md)** - Pydantic models for all data structures
+- **[CLI Functions](cli.md)** - Command-line interface modules
+- **[Orchestrator](orchestrator.md)** - Tool wrappers and orchestration
+
+---
+
+## Agent Architecture
+
+VBAgent uses a multi-agent architecture with specialized agents for different tasks:
+
+### Classification Agents (v2)
+Advanced 7-agent system for comprehensive metadata extraction:
+
+1. **Image Classifier** - Classify questions from images
+2. **Diagram Analyzer** - Hierarchical diagram categorization
+3. **Difficulty Assessor** - Post-scan difficulty with detailed metadata
+4. **LaTeX Classifier** - Batch processing of LaTeX files
+5. **Idea Generator** - Generate problems from concepts
+6. **Problem Combiner** - Combine multiple problems
+7. **TikZ Checker** - Validate and fix TikZ code
+
+### Core Processing Agents
+Main workflow agents:
+
+- **Scanner** - Extract LaTeX from images
+- **TikZ Generator** - Generate TikZ diagrams
+- **Variant Generator** - Create problem variants
+- **Alternate Solutions** - Generate alternative solutions
+- **Idea Extraction** - Extract physics concepts
+
+### Quality Assurance Agents
+Review and validation:
+
+- **Reviewer** - Comprehensive QA review
+- **Solution Checker** - Verify solution correctness
+- **Grammar Checker** - Check grammar and style
+- **Clarity Checker** - Assess clarity and readability
+
+---
 
 ## Classification Agents (v2 Multi-Agent System)
 

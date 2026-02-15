@@ -1,6 +1,58 @@
 # Classification API Reference
 
-Auto-generated API documentation for VBAgent classification agents (v2 multi-agent system).
+The v2 multi-agent classification system provides comprehensive metadata extraction through 7 specialized agents.
+
+## System Overview
+
+The classification pipeline supports multiple input modalities:
+
+- **Image** → Agent 1 (Image Classifier)
+- **LaTeX** → Agent 4 (LaTeX Classifier)
+- **Idea/Concept** → Agent 5 (Idea Generator)
+- **Multiple Problems** → Agent 6 (Problem Combiner)
+
+Additional agents provide:
+- **Agent 2** - Diagram analysis (hierarchical categorization)
+- **Agent 3** - Difficulty assessment (post-scan, detailed metadata)
+- **Agent 7** - TikZ validation (automatic fixing)
+
+## Key Features
+
+- ✅ Multiple input modalities
+- ✅ Hierarchical diagram classification
+- ✅ Detailed difficulty assessment (reasoning, time, prerequisites, mistakes)
+- ✅ Automatic TikZ validation with error fixing
+- ✅ Specialized TikZ agent routing
+- ✅ Bloom's taxonomy cognitive levels
+- ✅ Cross-subject problem combination
+
+## Usage Example
+
+```python
+from vbagent.agents.classification import (
+    classify_from_image,
+    analyze_diagram,
+    assess_difficulty,
+    validate_tikz,
+)
+
+# Agent 1: Classify from image
+classification = classify_from_image("question.png")
+
+# Agent 2: Analyze diagram (if has_diagram)
+if classification.has_diagram:
+    diagram = analyze_diagram("question.png", classification)
+
+# Agent 3: Assess difficulty (after scanning)
+difficulty = assess_difficulty(latex_content, classification, diagram)
+
+# Agent 7: Validate TikZ
+validation = validate_tikz(tikz_code, auto_fix=True)
+```
+
+---
+
+## Auto-Generated API Documentation
 
 ## Pipeline Orchestrator
 

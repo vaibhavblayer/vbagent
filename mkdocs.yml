@@ -62,16 +62,30 @@ nav:
     - Configuration: getting-started/configuration.md
   - User Guide:
     - CLI Commands: user-guide/cli-commands.md
-    - Chat Interface: user-guide/chat.md
     - Problem Generation: user-guide/problem-generation.md
+    - Chat Interface: user-guide/chat.md
     - Image Processing: user-guide/image-processing.md
     - Batch Processing: user-guide/batch-processing.md
     - Database Management: user-guide/database.md
   - API Reference:
-    - Agents: api/agents.md
-    - Classification: api/classification.md
-    - Models: api/models.md
-    - CLI: api/cli.md
+    - Overview: api/agents.md
+    - Classification System:
+      - Multi-Agent Pipeline: api/classification.md
+      - Agent 1 - Image Classifier: api/classification.md#agent-1-image-classifier
+      - Agent 2 - Diagram Analyzer: api/classification.md#agent-2-diagram-analyzer
+      - Agent 3 - Difficulty Assessor: api/classification.md#agent-3-difficulty-assessor
+      - Agent 4 - LaTeX Classifier: api/classification.md#agent-4-latex-classifier
+      - Agent 5 - Idea Generator: api/classification.md#agent-5-idea-generator
+      - Agent 6 - Problem Combiner: api/classification.md#agent-6-problem-combiner
+      - Agent 7 - TikZ Checker: api/classification.md#agent-7-tikz-checker
+    - Core Agents:
+      - Scanner: api/agents.md#scanner-agent
+      - TikZ Generator: api/agents.md#tikz-agent
+      - Variant Generator: api/agents.md#variant-agent
+      - Alternate Solutions: api/agents.md#alternate-solution-agent
+      - Idea Extraction: api/agents.md#idea-extraction-agent
+    - Data Models: api/models.md
+    - CLI Functions: api/cli.md
     - Orchestrator: api/orchestrator.md
   - Examples:
     - Basic Usage: examples/basic.md
