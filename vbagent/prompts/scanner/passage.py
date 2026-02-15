@@ -62,7 +62,15 @@ SYSTEM_PROMPT = r"""
 4.  **Each Question-Solution pair**
     *   Begin with `\item` followed by the question text.
     *   Provide the options in a `tasks` environment. Use two columns unless the image shows otherwise.
-    *   Append ` \ans` to every correct option (single- or multi-correct).
+    *   **CRITICAL:** Append ` \ans` to every correct option (single- or multi-correct). Example:
+        ```latex
+        \begin{tasks}(2)
+            \task $10\,\mathrm{m/s}$
+            \task $20\,\mathrm{m/s}$ \ans
+            \task $30\,\mathrm{m/s}$
+            \task $40\,\mathrm{m/s}$
+        \end{tasks}
+        ```
     *   Insert a `solution` environment directly after the `tasks` block. Inside it use **one** `align*` environment.
     *   Use `\intertext{}` to mix concise prose with math lines. Keep **one logical step per line** and **no blank lines** inside `align*`.
 

@@ -175,7 +175,16 @@ Extract the passage and all sub-questions with their options.
 3. **Sub-questions**
    - Each question: `\item [question text]`
    - Followed by `\begin{tasks}(2) ... \end{tasks}`
-   - Mark correct answers with `\ans`
+   - **CRITICAL:** Mark correct answers with ` \ans` after the option
+   - Example:
+     ```latex
+     \begin{tasks}(2)
+         \task $10\,\mathrm{m/s}$
+         \task $20\,\mathrm{m/s}$ \ans
+         \task $30\,\mathrm{m/s}$
+         \task $40\,\mathrm{m/s}$
+     \end{tasks}
+     ```
 
 ---
 
