@@ -89,6 +89,8 @@ class PipelineCache:
         # Map stage names to file paths
         if stage == "classification":
             return problem_dir / "classification.json"
+        elif stage == "diagram":
+            return problem_dir / "diagram.json"
         elif stage == "scan":
             return problem_dir / "scan.tex"
         elif stage == "tikz":
@@ -132,6 +134,8 @@ class PipelineCache:
         stages = []
         if (problem_dir / "classification.json").exists():
             stages.append("classification")
+        if (problem_dir / "diagram.json").exists():
+            stages.append("diagram")
         if (problem_dir / "scan.tex").exists():
             stages.append("scan")
         if (problem_dir / "tikz.tex").exists():
