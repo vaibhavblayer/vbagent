@@ -7,41 +7,11 @@ Uses openai-agents SDK to generate different types of problem variants:
 - calculus: Add calculus-based modifications
 """
 
-import re
 from typing import Optional
 
 from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.references.context import get_context_prompt_section
-
-
-def clean_latex_output(latex: str) -> str:
-    """Clean up LaTeX output by removing markdown code block markers.
-    
-    Removes patterns like:
-    - ```latex ... ```
-    - ``` ... ```
-    - Leading/trailing whitespace
-    
-    Args:
-        latex: Raw LaTeX output from LLM
-        
-    Returns:
-        Cleaned LaTeX without markdown artifacts
-    """
-    if not latex:
-        return latex
-    
-    # Remove markdown code block markers with language specifier
-    # Matches: ```latex, ```tex, ```LaTeX, etc.
-    latex = re.sub(r'^```(?:latex|tex|LaTeX)?\s*\n?', '', latex, flags=re.IGNORECASE)
-    
-    # Remove closing code block marker
-    latex = re.sub(r'\n?```\s*$', '', latex)
-    
-    # Also handle case where ``` appears at the start without newline
-    latex = re.sub(r'^```\s*', '', latex)
-    
-    return latex.strip()
+from vbagent.utils.latex import clean_latex_output
 from vbagent.models.idea import IdeaResult
 from vbagent.prompts.variants.numerical import (
     SYSTEM_PROMPT as NUMERICAL_SYSTEM_PROMPT,

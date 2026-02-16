@@ -7,17 +7,7 @@ from pathlib import Path
 
 import click
 
-
-def _get_console():
-    """Lazy import of rich Console."""
-    from rich.console import Console
-    return Console()
-
-
-def _get_table(*args, **kwargs):
-    """Lazy import of rich Table."""
-    from rich.table import Table
-    return Table(*args, **kwargs)
+from .common import _get_console, _get_table
 
 
 def format_result_table(result) -> "Table":

@@ -5,10 +5,9 @@ and final answer accuracy in physics solutions.
 Also creates solutions when none exists.
 """
 
-import re
-
 from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.prompts.solution_checker import SYSTEM_PROMPT, USER_TEMPLATE
+from vbagent.utils.latex import clean_latex_output
 
 
 # Create the solution checker agent
@@ -17,26 +16,6 @@ solution_checker_agent = create_agent(
     instructions=SYSTEM_PROMPT,
     agent_type="reviewer",  # Uses reviewer model config
 )
-
-
-def clean_latex_output(latex: str) -> str:
-    """Clean up LaTeX output by removing markdown code block markers.
-    
-    Args:
-        latex: Raw LaTeX output from LLM
-        
-    Returns:
-        Cleaned LaTeX without markdown artifacts
-    """
-    if not latex:
-        return latex
-    
-    # Remove markdown code block markers
-    latex = re.sub(r'^```(?:latex|tex|LaTeX)?\s*\n?', '', latex, flags=re.IGNORECASE)
-    latex = re.sub(r'\n?```\s*$', '', latex)
-    latex = re.sub(r'^```\s*', '', latex)
-    
-    return latex.strip()
 
 
 def check_solution(full_content: str) -> tuple[bool, str, str]:

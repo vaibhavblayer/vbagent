@@ -7,23 +7,7 @@ from pathlib import Path
 
 import click
 
-
-def _get_console():
-    """Lazy import of rich Console."""
-    from rich.console import Console
-    return Console()
-
-
-def _get_panel(*args, **kwargs):
-    """Lazy import of rich Panel."""
-    from rich.panel import Panel
-    return Panel(*args, **kwargs)
-
-
-def _get_syntax(*args, **kwargs):
-    """Lazy import of rich Syntax."""
-    from rich.syntax import Syntax
-    return Syntax(*args, **kwargs)
+from .common import _get_console, _get_panel, _get_syntax
 
 
 VALID_QUESTION_TYPES = ["mcq_sc", "mcq_mc", "subjective", "assertion_reason", "passage", "match"]

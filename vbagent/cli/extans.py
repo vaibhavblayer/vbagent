@@ -6,11 +6,7 @@ import yaml
 from pathlib import Path
 from typing import Optional
 
-
-def _get_console():
-    """Lazy import of rich Console."""
-    from rich.console import Console
-    return Console()
+from .common import _get_console
 
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}

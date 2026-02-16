@@ -17,12 +17,7 @@ from vbagent.config import (
     WORKSPACE_CONFIG_FILE,
 )
 from pathlib import Path
-
-
-def _get_console():
-    """Lazy import of rich Console."""
-    from rich.console import Console
-    return Console()
+from .common import _get_console
 
 
 def _get_prompt():

@@ -14,26 +14,7 @@ from typing import TYPE_CHECKING, Optional
 
 import click
 
-if TYPE_CHECKING:
-    from vbagent.models.batch import BatchDatabase, ImageRecord
-
-
-def _get_console():
-    """Lazy import of rich Console."""
-    from rich.console import Console
-    return Console()
-
-
-def _get_panel(*args, **kwargs):
-    """Lazy import of rich Panel."""
-    from rich.panel import Panel
-    return Panel(*args, **kwargs)
-
-
-def _get_table(*args, **kwargs):
-    """Lazy import of rich Table."""
-    from rich.table import Table
-    return Table(*args, **kwargs)
+from .common import _get_console, _get_panel, _get_table
 
 
 class SleepInhibitor:

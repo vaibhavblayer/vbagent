@@ -9,35 +9,17 @@ Generates different types of physics problem variants:
 """
 
 import json
-import re
-from pathlib import Path
 from typing import Optional
 
 import click
 
-
-def _get_console():
-    """Lazy import of rich Console."""
-    from rich.console import Console
-    return Console()
-
-
-def _get_panel(*args, **kwargs):
-    """Lazy import of rich Panel."""
-    from rich.panel import Panel
-    return Panel(*args, **kwargs)
-
-
-def parse_tex_file(tex_path: str) -> str:
-    """Read and return the content of a TeX file."""
-    return Path(tex_path).read_text()
+from vbagent.utils.tex_parser import parse_tex_file, extract_items
+from .common import _get_console, _get_panel
 
 
 def extract_items_from_tex(content: str) -> list[str]:
     """Extract individual items from a TeX file."""
-    parts = re.split(r'(?=\\item\b)', content)
-    items = [p.strip() for p in parts if p.strip() and '\\item' in p]
-    return items
+    return extract_items(content)
 
 
 def filter_items_by_range(

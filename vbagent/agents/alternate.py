@@ -8,38 +8,7 @@ import re
 from typing import Optional
 
 from vbagent.agents.base import create_agent, run_agent_sync
-
-
-def clean_latex_output(latex: str) -> str:
-    """Clean up LaTeX output by removing markdown code block markers.
-    
-    Removes patterns like:
-    - ```latex ... ```
-    - ``` ... ```
-    - Leading/trailing whitespace
-    
-    Args:
-        latex: Raw LaTeX output from LLM
-        
-    Returns:
-        Cleaned LaTeX without markdown artifacts
-    """
-    if not latex:
-        return latex
-    
-    # Remove markdown code block markers with language specifier
-    # Matches: ```latex, ```tex, ```LaTeX, etc.
-    latex = re.sub(r'^```(?:latex|tex|LaTeX)?\s*\n?', '', latex, flags=re.IGNORECASE)
-    
-    # Remove closing code block marker
-    latex = re.sub(r'\n?```\s*$', '', latex)
-    
-    # Also handle case where ``` appears at the start without newline
-    latex = re.sub(r'^```\s*', '', latex)
-    
-    return latex.strip()
-
-
+from vbagent.utils.latex import clean_latex_output
 from vbagent.models.idea import IdeaResult
 from vbagent.prompts.alternate import (
     SYSTEM_PROMPT,

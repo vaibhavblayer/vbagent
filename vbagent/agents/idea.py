@@ -4,8 +4,6 @@ Uses openai-agents SDK to analyze physics problems and solutions,
 extracting core concepts, formulas, techniques, and difficulty factors.
 """
 
-import re
-
 from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.models.idea import IdeaResult
 from vbagent.prompts.idea import (
@@ -14,6 +12,7 @@ from vbagent.prompts.idea import (
     USER_TEMPLATE,
     USER_TEMPLATE_JSON,
 )
+from vbagent.utils.latex import clean_latex_output
 
 
 # Create the idea agent with structured output (for JSON output)
@@ -30,26 +29,6 @@ idea_agent_latex = create_agent(
     instructions=SYSTEM_PROMPT,
     agent_type="idea",
 )
-
-
-def clean_latex_output(latex: str) -> str:
-    """Clean up LaTeX output by removing markdown code block markers.
-    
-    Args:
-        latex: Raw LaTeX output from LLM
-        
-    Returns:
-        Cleaned LaTeX without markdown artifacts
-    """
-    if not latex:
-        return latex
-    
-    # Remove markdown code block markers
-    latex = re.sub(r'^```(?:latex|tex|LaTeX)?\s*\n?', '', latex, flags=re.IGNORECASE)
-    latex = re.sub(r'\n?```\s*$', '', latex)
-    latex = re.sub(r'^```\s*', '', latex)
-    
-    return latex.strip()
 
 
 def extract_ideas(problem_latex: str, solution_latex: str) -> IdeaResult:

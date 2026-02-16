@@ -4,10 +4,9 @@ Checks for grammar, spelling, and language errors
 in physics problems and solutions.
 """
 
-import re
-
 from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.prompts.grammar_checker import SYSTEM_PROMPT, USER_TEMPLATE
+from vbagent.utils.latex import clean_latex_output
 
 
 # Create the grammar checker agent
@@ -16,26 +15,6 @@ grammar_checker_agent = create_agent(
     instructions=SYSTEM_PROMPT,
     agent_type="reviewer",  # Uses reviewer model config
 )
-
-
-def clean_latex_output(latex: str) -> str:
-    """Clean up LaTeX output by removing markdown code block markers.
-    
-    Args:
-        latex: Raw LaTeX output from LLM
-        
-    Returns:
-        Cleaned LaTeX without markdown artifacts
-    """
-    if not latex:
-        return latex
-    
-    # Remove markdown code block markers
-    latex = re.sub(r'^```(?:latex|tex|LaTeX)?\s*\n?', '', latex, flags=re.IGNORECASE)
-    latex = re.sub(r'\n?```\s*$', '', latex)
-    latex = re.sub(r'^```\s*', '', latex)
-    
-    return latex.strip()
 
 
 def check_grammar(full_content: str) -> tuple[bool, str, str]:

@@ -4,7 +4,6 @@ Uses openai-agents SDK to analyze question images and extract
 LaTeX code using type-specific and subject-specific prompts.
 """
 
-import re
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -20,36 +19,7 @@ from vbagent.models.classification import ClassificationResult
 from vbagent.models.scan import ScanResult
 from vbagent.prompts.scanner import get_scanner_prompt, get_user_template
 from vbagent.references.context import get_context_prompt_section
-
-
-def clean_latex_output(latex: str) -> str:
-    """Clean up LaTeX output by removing markdown code block markers.
-    
-    Removes patterns like:
-    - ```latex ... ```
-    - ``` ... ```
-    - Leading/trailing whitespace
-    
-    Args:
-        latex: Raw LaTeX output from LLM
-        
-    Returns:
-        Cleaned LaTeX without markdown artifacts
-    """
-    if not latex:
-        return latex
-    
-    # Remove markdown code block markers with language specifier
-    # Matches: ```latex, ```tex, ```LaTeX, etc.
-    latex = re.sub(r'^```(?:latex|tex|LaTeX)?\s*\n?', '', latex, flags=re.IGNORECASE)
-    
-    # Remove closing code block marker
-    latex = re.sub(r'\n?```\s*$', '', latex)
-    
-    # Also handle case where ``` appears at the start without newline
-    latex = re.sub(r'^```\s*', '', latex)
-    
-    return latex.strip()
+from vbagent.utils.latex import clean_latex_output
 
 
 def create_scanner_agent(

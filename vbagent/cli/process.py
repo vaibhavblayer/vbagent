@@ -19,6 +19,7 @@ from vbagent.cli.common import (
     _get_console,
     _get_panel,
 )
+from vbagent.utils.tex_parser import parse_tex_file, extract_items
 
 if TYPE_CHECKING:
     from vbagent.models.pipeline import PipelineResult
@@ -92,11 +93,6 @@ def merge_metadata_into_latex(
     return f"{metadata_block}\n\n{latex}"
 
 
-def parse_tex_file(tex_path: str) -> str:
-    """Read and return the content of a TeX file."""
-    return Path(tex_path).read_text()
-
-
 def convert_primary_to_classification(primary: "PrimaryClassification") -> "ClassificationResult":
     """Convert PrimaryClassification (v2) to ClassificationResult (v1) for compatibility.
     
@@ -119,9 +115,7 @@ def extract_items_from_tex(content: str) -> list[str]:
     
     Splits content by \\item markers to get individual problems.
     """
-    parts = re.split(r'(?=\\item\b)', content)
-    items = [p.strip() for p in parts if p.strip() and '\\item' in p]
-    return items
+    return extract_items(content)
 
 
 def filter_items_by_range(

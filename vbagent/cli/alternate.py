@@ -5,55 +5,12 @@ while maintaining the same final answer.
 """
 
 import json
-import re
 from pathlib import Path
 
 import click
 
-
-def _get_console():
-    """Lazy import of rich Console."""
-    from rich.console import Console
-    return Console()
-
-
-def _get_panel(*args, **kwargs):
-    """Lazy import of rich Panel."""
-    from rich.panel import Panel
-    return Panel(*args, **kwargs)
-
-
-def parse_tex_file(tex_path: str) -> tuple[str, str]:
-    """Parse a TeX file to extract problem and solution.
-    
-    Expects the file to contain \\item for the problem and
-    \\begin{solution}...\\end{solution} for the solution.
-    
-    Args:
-        tex_path: Path to the TeX file
-        
-    Returns:
-        Tuple of (problem, solution)
-    """
-    content = Path(tex_path).read_text()
-    
-    # Extract problem (everything from \item to \begin{solution})
-    problem_match = re.search(
-        r'\\item\s*(.*?)(?=\\begin\{solution\})',
-        content,
-        re.DOTALL
-    )
-    problem = problem_match.group(1).strip() if problem_match else content
-    
-    # Extract solution
-    solution_match = re.search(
-        r'\\begin\{solution\}(.*?)\\end\{solution\}',
-        content,
-        re.DOTALL
-    )
-    solution = solution_match.group(1).strip() if solution_match else ""
-    
-    return problem, solution
+from vbagent.utils.tex_parser import parse_tex_file_with_sections
+from .common import _get_console, _get_panel
 
 
 def load_ideas(ideas_path: str, idea_result_cls):
@@ -124,7 +81,7 @@ def alternate(tex: str, ideas: str | None, count: int, output: str | None):
     
     try:
         # Parse the TeX file
-        problem, solution = parse_tex_file(tex)
+        problem, solution = parse_tex_file_with_sections(tex)
         
         if not problem:
             console.print("[red]Error:[/red] Could not extract problem from TeX file")

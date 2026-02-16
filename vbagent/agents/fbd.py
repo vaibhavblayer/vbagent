@@ -4,8 +4,6 @@ Uses openai-agents SDK to generate TikZ code specifically for physics FBDs,
 with specialized validation and reference context.
 """
 
-import re
-
 from vbagent.agents.base import (
     create_agent,
     create_image_message,
@@ -13,18 +11,7 @@ from vbagent.agents.base import (
 )
 from vbagent.prompts.fbd import SYSTEM_PROMPT, USER_TEMPLATE, USER_TEMPLATE_FROM_PROBLEM
 from vbagent.references.store import ReferenceStore
-
-
-def clean_latex_output(latex: str) -> str:
-    """Clean up LaTeX output by removing markdown code block markers."""
-    if not latex:
-        return latex
-    
-    latex = re.sub(r'^```(?:latex|tex|LaTeX)?\s*\n?', '', latex, flags=re.IGNORECASE)
-    latex = re.sub(r'\n?```\s*$', '', latex)
-    latex = re.sub(r'^```\s*', '', latex)
-    
-    return latex.strip()
+from vbagent.utils.latex import clean_latex_output
 
 
 _search_fbd_reference_tool = None
