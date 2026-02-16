@@ -265,7 +265,7 @@ def test_prompts_have_required_constants():
     
     Verify that tikz.py has both SYSTEM_PROMPT and USER_TEMPLATE.
     """
-    from vbagent.prompts import tikz
+    from vbagent.prompts.diagram import tikz
     
     assert hasattr(tikz, "SYSTEM_PROMPT"), "tikz.py must have SYSTEM_PROMPT"
     assert hasattr(tikz, "USER_TEMPLATE"), "tikz.py must have USER_TEMPLATE"
@@ -321,7 +321,7 @@ def test_tikz_checker_patch_result_with_errors():
 
 def test_tikz_checker_prompts_have_patch_constants():
     """Verify that tikz_checker.py has patch-related prompts."""
-    from vbagent.prompts import tikz_checker
+    from vbagent.prompts.diagram import tikz_checker
     
     assert hasattr(tikz_checker, "PATCH_SYSTEM_PROMPT"), (
         "tikz_checker.py must have PATCH_SYSTEM_PROMPT"

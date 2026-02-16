@@ -126,7 +126,7 @@ class TestChatInterface:
     
     def test_get_user_input(self, chat_interface):
         """Test getting user input."""
-        with patch('vbagent.cli.chat.Prompt.ask', return_value="User input"):
+        with patch('vbagent.cli.interfaces.chat.Prompt.ask', return_value="User input"):
             user_input = chat_interface._get_user_input()
             
             assert user_input == "User input"

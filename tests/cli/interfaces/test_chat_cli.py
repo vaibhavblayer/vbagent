@@ -45,7 +45,7 @@ class TestChatCLI:
     
     def test_chat_command_missing_api_key(self, runner):
         """Test that chat command fails gracefully without API key."""
-        with patch('vbagent.cli.chat.create_orchestrator_from_config') as mock_create:
+        with patch('vbagent.cli.interfaces.chat.create_orchestrator_from_config') as mock_create:
             mock_create.side_effect = ValueError("No API key found")
             
             result = runner.invoke(chat, [])
@@ -56,8 +56,8 @@ class TestChatCLI:
     
     def test_chat_command_with_model_override(self, runner, mock_orchestrator):
         """Test chat command with model override."""
-        with patch('vbagent.cli.chat.create_orchestrator_from_config', return_value=mock_orchestrator):
-            with patch('vbagent.cli.chat.ChatInterface') as mock_interface_class:
+        with patch('vbagent.cli.interfaces.chat.create_orchestrator_from_config', return_value=mock_orchestrator):
+            with patch('vbagent.cli.interfaces.chat.ChatInterface') as mock_interface_class:
                 mock_interface = MagicMock()
                 mock_interface_class.return_value = mock_interface
                 
@@ -75,8 +75,8 @@ class TestChatCLI:
         history_file = tmp_path / "history.json"
         history_file.write_text('{"max_tokens": 100000, "messages": []}')
         
-        with patch('vbagent.cli.chat.create_orchestrator_from_config', return_value=mock_orchestrator):
-            with patch('vbagent.cli.chat.ChatInterface') as mock_interface_class:
+        with patch('vbagent.cli.interfaces.chat.create_orchestrator_from_config', return_value=mock_orchestrator):
+            with patch('vbagent.cli.interfaces.chat.ChatInterface') as mock_interface_class:
                 mock_interface = MagicMock()
                 mock_interface_class.return_value = mock_interface
                 mock_interface.start = MagicMock()
@@ -90,8 +90,8 @@ class TestChatCLI:
         """Test chat command with history saving."""
         save_file = tmp_path / "save.json"
         
-        with patch('vbagent.cli.chat.create_orchestrator_from_config', return_value=mock_orchestrator):
-            with patch('vbagent.cli.chat.ChatInterface') as mock_interface_class:
+        with patch('vbagent.cli.interfaces.chat.create_orchestrator_from_config', return_value=mock_orchestrator):
+            with patch('vbagent.cli.interfaces.chat.ChatInterface') as mock_interface_class:
                 mock_interface = MagicMock()
                 mock_interface_class.return_value = mock_interface
                 mock_interface.start = MagicMock()
@@ -107,8 +107,8 @@ class TestChatCLI:
         history_file = tmp_path / "invalid.json"
         history_file.write_text('invalid json')
         
-        with patch('vbagent.cli.chat.create_orchestrator_from_config', return_value=mock_orchestrator):
-            with patch('vbagent.cli.chat.ChatInterface') as mock_interface_class:
+        with patch('vbagent.cli.interfaces.chat.create_orchestrator_from_config', return_value=mock_orchestrator):
+            with patch('vbagent.cli.interfaces.chat.ChatInterface') as mock_interface_class:
                 mock_interface = MagicMock()
                 mock_interface_class.return_value = mock_interface
                 mock_interface.start = MagicMock()
@@ -125,8 +125,8 @@ class TestChatCLI:
         """Test that chat command handles history save errors gracefully."""
         save_file = tmp_path / "readonly" / "save.json"
         
-        with patch('vbagent.cli.chat.create_orchestrator_from_config', return_value=mock_orchestrator):
-            with patch('vbagent.cli.chat.ChatInterface') as mock_interface_class:
+        with patch('vbagent.cli.interfaces.chat.create_orchestrator_from_config', return_value=mock_orchestrator):
+            with patch('vbagent.cli.interfaces.chat.ChatInterface') as mock_interface_class:
                 mock_interface = MagicMock()
                 mock_interface_class.return_value = mock_interface
                 mock_interface.start = MagicMock()
@@ -141,8 +141,8 @@ class TestChatCLI:
     
     def test_chat_command_creates_interface(self, runner, mock_orchestrator):
         """Test that chat command creates ChatInterface and starts it."""
-        with patch('vbagent.cli.chat.create_orchestrator_from_config', return_value=mock_orchestrator):
-            with patch('vbagent.cli.chat.ChatInterface') as mock_interface_class:
+        with patch('vbagent.cli.interfaces.chat.create_orchestrator_from_config', return_value=mock_orchestrator):
+            with patch('vbagent.cli.interfaces.chat.ChatInterface') as mock_interface_class:
                 mock_interface = MagicMock()
                 mock_interface_class.return_value = mock_interface
                 mock_interface.start = MagicMock()
