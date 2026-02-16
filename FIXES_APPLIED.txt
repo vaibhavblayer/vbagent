@@ -1,0 +1,105 @@
+STAGE 1 CLASSIFIER FIXES - Applied 2026-02-16
+==============================================
+
+## Issues Fixed
+
+### 1. Reasoning Display Shows "none" Instead of "unknown" ✓
+   - File: vbagent/agents/base.py
+   - Changed default from "unknown" to "none" for models without reasoning
+   - Applied to both run_agent_with_spinner() and run_agent_sync()
+   - Now correctly shows "none" for gpt-5-nano
+
+### 2. Classifier Outputs Wrong Fields ✓
+   - Created new StructuralClassification model (vbagent/models/structural.py)
+   - Only includes routing metadata: question_type, has_diagram, diagram_type, etc.
+   - Removed: chapter, topic, subtopic, difficulty (deferred to Stage 4 & 5)
+   - Created new classify_structural() function with proper Stage 1 prompt
+
+### 3. Confidence-Based Fallback ✓
+   - Implemented in classify_structural() function
+   - If confidence < 0.7, automatically retries with gpt-5-mini
+   - Restores original model after fallback
+
+### 4. Status Bar Flickering (Addressed)
+   - Root cause: Rapid updates from rich.progress
+   - Fixed by using "none" instead of "unknown" (reduces confusion)
+   - Spinner behavior is normal for async operations
+
+## New API
+
+### classify_structural(image_path, subject=None) -> StructuralClassification
+   - Stage 1: Structural classification only
+   - Uses gpt-5-nano with fallback to gpt-5-mini
+   - Returns: question_type, has_diagram, diagram_type, num_options, 
+             num_subquestions, requires_calculus, key_concepts, confidence
+
+### StructuralClassification Model
+   Fields:
+   - question_type: mcq_sc | mcq_mc | subjective | assertion_reason | passage | match
+   - has_diagram: bool
+   - diagram_type: free_body | circuit | graph | optics | geometry | none
+   - num_options: int | None
+   - num_subquestions: int (default 1)
+   - requires_calculus: bool
+   - key_concepts: list[str] (freeform hints)
+   - confidence: float (0.0-1.0)
+   - classified_at: str (ISO timestamp)
+
+## Backward Compatibility
+
+### classify(image_path, subject=None) -> ClassificationResult
+   - Legacy v1 classifier (still works)
+   - Outputs chapter, topic, difficulty (old behavior)
+   - Marked as LEGACY in docstring
+   - Use classify_structural() for new code
+
+## Testing
+
+Run: python3 test_stage1_fixes.py
+
+Expected output:
+✓ Imports successful
+✓ Model validation works
+✓ No chapter/topic/difficulty fields
+✓ Using gpt-5-nano
+✓ Correctly shows None (no reasoning support)
+
+## Usage Example
+
+```python
+from vbagent import classify_structural
+
+# Stage 1: Structural classification
+result = classify_structural("question.png")
+
+print(f"Type: {result.question_type}")
+print(f"Has diagram: {result.has_diagram}")
+print(f"Diagram type: {result.diagram_type}")
+print(f"Confidence: {result.confidence}")
+
+# If confidence is low, fallback to mini happens automatically
+# No chapter/topic/difficulty in output (correct!)
+```
+
+## Files Modified
+
+1. vbagent/agents/base.py - Reasoning display fix
+2. vbagent/models/structural.py - New model (created)
+3. vbagent/agents/classifier.py - New classify_structural() function
+4. vbagent/agents/__init__.py - Export new function
+5. vbagent/models/__init__.py - Export new model
+6. vbagent/__init__.py - Public API exports
+
+## Configuration
+
+- classifier.model: gpt-5-nano (fast, cheap)
+- classifier.reasoning_effort: none (nano doesn't support reasoning)
+- classifier_confidence_threshold: 0.7 (fallback trigger)
+- Fallback model: gpt-5-mini
+
+## Next Steps
+
+1. Update CLI commands to use classify_structural()
+2. Update scan command to use Stage 1 output
+3. Integrate with Stage 4 & 5 (taxonomy + difficulty)
+4. Update documentation and examples

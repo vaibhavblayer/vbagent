@@ -107,6 +107,8 @@ AGENT_TYPES = [
     "variant",
     "converter",
     "reviewer",
+    "taxonomy_classifier",
+    "difficulty_assessor",
 ]
 
 # Model groups: per-provider default models for each agent type.
@@ -115,7 +117,7 @@ AGENT_TYPES = [
 MODEL_GROUPS: dict[str, dict[str, str]] = {
     "openai": {
         "default_model": "gpt-5.2",
-        "classifier": "gpt-5-mini",
+        "classifier": "gpt-5-nano",
         "scanner": "gpt-5.2",
         "tikz": "gpt-5.1-codex",
         "fbd": "gpt-5.1-codex",
@@ -125,6 +127,8 @@ MODEL_GROUPS: dict[str, dict[str, str]] = {
         "variant": "gpt-5.2",
         "converter": "gpt-5-mini",
         "reviewer": "gpt-5.2",
+        "taxonomy_classifier": "gpt-5-nano",
+        "difficulty_assessor": "gpt-5.1",
     },
     "xai": {
         "default_model": "grok-4-1-fast-reasoning",
@@ -165,6 +169,7 @@ REASONING_SUPPORT: dict[str, Optional[set[str]]] = {
     "gpt-5.2": {"low", "medium", "high", "xhigh"},
     "gpt-5.1": {"none", "low", "medium", "high"},
     "gpt-5-mini": {"low", "medium", "high"},
+    "gpt-5-nano": None,  # nano doesn't support reasoning
     "gpt-5.1-codex": {"low", "medium", "high"},
     "gpt-5.1-codex-mini": {"low", "medium", "high"},
     "gpt-5.1-codex-max": {"low", "medium", "high"},
@@ -323,15 +328,45 @@ class VBAgentConfig:
     variant: AgentModelConfig = field(default_factory=AgentModelConfig)
     converter: AgentModelConfig = field(default_factory=AgentModelConfig)
     reviewer: AgentModelConfig = field(default_factory=AgentModelConfig)
+    taxonomy_classifier: AgentModelConfig = field(default_factory=AgentModelConfig)
+    difficulty_assessor: AgentModelConfig = field(default_factory=AgentModelConfig)
+    
+    # Pipeline settings
+    enable_taxonomy: bool = True
+    enable_difficulty: bool = True
+    run_metadata_parallel: bool = True
+    
+    # Confidence thresholds for fallback
+    classifier_confidence_threshold: float = 0.7
+    taxonomy_confidence_threshold: float = 0.8
 
     def __post_init__(self):
         """Set better defaults for specific agents."""
-        # Classifier doesn't need high reasoning - it's simple categorization
+        # Classifier uses nano with no reasoning
+        if self.classifier.model == "gpt-5.2":
+            self.classifier.model = "gpt-5-nano"
         if self.classifier.reasoning_effort == "high":
             self.classifier.reasoning_effort = "low"
-        # TikZ checker also doesn't need high reasoning
+            
+        # Scanner uses medium reasoning
+        if self.scanner.reasoning_effort == "high":
+            self.scanner.reasoning_effort = "medium"
+            
+        # TikZ checker doesn't need high reasoning
         if self.tikz_checker.reasoning_effort == "high":
             self.tikz_checker.reasoning_effort = "low"
+            
+        # Taxonomy classifier uses nano with no reasoning
+        if self.taxonomy_classifier.model == "gpt-5.2":
+            self.taxonomy_classifier.model = "gpt-5-nano"
+        if self.taxonomy_classifier.reasoning_effort == "high":
+            self.taxonomy_classifier.reasoning_effort = "low"
+            
+        # Difficulty assessor uses low reasoning
+        if self.difficulty_assessor.model == "gpt-5.2":
+            self.difficulty_assessor.model = "gpt-5.1"
+        if self.difficulty_assessor.reasoning_effort == "high":
+            self.difficulty_assessor.reasoning_effort = "low"
 
     def get_model(self, agent_type: str) -> str:
         """Get the model for a specific agent type."""
@@ -355,6 +390,11 @@ class VBAgentConfig:
             "default_reasoning_effort": self.default_reasoning_effort,
             "subject": self.subject,
             "debug": self.debug,
+            "enable_taxonomy": self.enable_taxonomy,
+            "enable_difficulty": self.enable_difficulty,
+            "run_metadata_parallel": self.run_metadata_parallel,
+            "classifier_confidence_threshold": self.classifier_confidence_threshold,
+            "taxonomy_confidence_threshold": self.taxonomy_confidence_threshold,
             "agents": {
                 agent_type: getattr(self, agent_type).to_dict()
                 for agent_type in AGENT_TYPES
@@ -376,6 +416,11 @@ class VBAgentConfig:
             debug=data.get("debug", False),
             base_url=data.get("base_url"),
             api_key=data.get("api_key"),
+            enable_taxonomy=data.get("enable_taxonomy", True),
+            enable_difficulty=data.get("enable_difficulty", True),
+            run_metadata_parallel=data.get("run_metadata_parallel", True),
+            classifier_confidence_threshold=data.get("classifier_confidence_threshold", 0.7),
+            taxonomy_confidence_threshold=data.get("taxonomy_confidence_threshold", 0.8),
         )
         agents_data = data.get("agents", {})
         for agent_type in AGENT_TYPES:

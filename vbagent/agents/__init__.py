@@ -23,8 +23,11 @@ if TYPE_CHECKING:
         run_agent,
         run_agent_sync,
     )
-    from .classifier import classifier_agent, classify
+    from .classifier import classifier_agent, classify, classify_structural
     from .scanner import scan, scan_with_type, create_scanner_agent
+    from .taxonomy_classifier import classify_taxonomy, create_taxonomy_classifier_agent
+    from .classification.difficulty_assessor import assess_difficulty, create_difficulty_assessor_agent
+    from .metadata_enricher import enrich_metadata, enrich_metadata_sync, enrich_metadata_parallel
     from .idea import idea_agent_json, idea_agent_latex, extract_ideas, generate_idea_latex
     from .alternate import alternate_agent, generate_alternate, extract_answer
     from .variant import (
@@ -96,10 +99,19 @@ __all__ = [
     # Classifier
     "classifier_agent",
     "classify",
+    "classify_structural",
     # Scanner
     "scan",
     "scan_with_type",
     "create_scanner_agent",
+    # Metadata Enrichment (NEW)
+    "classify_taxonomy",
+    "create_taxonomy_classifier_agent",
+    "assess_difficulty",
+    "create_difficulty_assessor_agent",
+    "enrich_metadata",
+    "enrich_metadata_sync",
+    "enrich_metadata_parallel",
     # Idea extraction
     "idea_agent_json",
     "idea_agent_latex",
@@ -166,13 +178,25 @@ def __getattr__(name: str):
         from . import base
         return getattr(base, name)
     
-    if name in ("classifier_agent", "classify"):
+    if name in ("classifier_agent", "classify", "classify_structural"):
         from . import classifier
         return getattr(classifier, name)
     
     if name in ("scan", "scan_with_type", "create_scanner_agent"):
         from . import scanner
         return getattr(scanner, name)
+    
+    if name in ("classify_taxonomy", "create_taxonomy_classifier_agent"):
+        from . import taxonomy_classifier
+        return getattr(taxonomy_classifier, name)
+    
+    if name in ("assess_difficulty", "create_difficulty_assessor_agent"):
+        from .classification import difficulty_assessor
+        return getattr(difficulty_assessor, name)
+    
+    if name in ("enrich_metadata", "enrich_metadata_sync", "enrich_metadata_parallel"):
+        from . import metadata_enricher
+        return getattr(metadata_enricher, name)
     
     if name in ("idea_agent_json", "idea_agent_latex", "extract_ideas", "generate_idea_latex"):
         from . import idea

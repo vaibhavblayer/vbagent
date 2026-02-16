@@ -48,9 +48,14 @@ if TYPE_CHECKING:
     from vbagent.agents import (
         # Classification
         classify,
+        classify_structural,
         # Scanning
         scan,
         scan_with_type,
+        # Metadata Enrichment (NEW)
+        classify_taxonomy,
+        assess_difficulty,
+        enrich_metadata,
         # Solution Orchestration
         create_solution_orchestrator,
         SolutionOrchestrator,
@@ -96,6 +101,7 @@ if TYPE_CHECKING:
     )
     from vbagent.models import (
         ClassificationResult,
+        StructuralClassification,
         ScanResult,
         IdeaResult,
         PipelineResult,
@@ -107,6 +113,11 @@ if TYPE_CHECKING:
         AgentCall,
         AgentOutput,
         SolutionResult,
+        # Metadata models (NEW)
+        TaxonomyClassification,
+        EnrichedMetadata,
+        # Difficulty from classification_v2
+        DifficultyAssessment,
     )
     from vbagent.config import (
         VBAgentConfig,
@@ -126,9 +137,14 @@ __all__ = [
     "__version__",
     # Classification
     "classify",
+    "classify_structural",
     # Scanning
     "scan",
     "scan_with_type",
+    # Metadata Enrichment (NEW)
+    "classify_taxonomy",
+    "assess_difficulty",
+    "enrich_metadata",
     # Solution Orchestration
     "create_solution_orchestrator",
     "SolutionOrchestrator",
@@ -173,6 +189,7 @@ __all__ = [
     "create_image_message",
     # Models
     "ClassificationResult",
+    "StructuralClassification",
     "ScanResult",
     "IdeaResult",
     "PipelineResult",
@@ -184,6 +201,10 @@ __all__ = [
     "AgentCall",
     "AgentOutput",
     "SolutionResult",
+    # Metadata models (NEW)
+    "TaxonomyClassification",
+    "EnrichedMetadata",
+    "DifficultyAssessment",  # From classification_v2
     # Configuration
     "VBAgentConfig",
     "AgentModelConfig",
@@ -203,7 +224,9 @@ def __getattr__(name: str):
     # Agent functions
     if name in (
         "classify",
+        "classify_structural",
         "scan", "scan_with_type",
+        "classify_taxonomy", "assess_difficulty", "enrich_metadata",
         "extract_ideas", "generate_idea_latex",
         "generate_alternate",
         "generate_variant", "generate_numerical_variant", "generate_context_variant",
@@ -231,9 +254,11 @@ def __getattr__(name: str):
     # Models
     if name in (
         "ClassificationResult", "ScanResult", "IdeaResult",
+        "StructuralClassification",
         "PipelineResult", "ReviewResult", "ReviewStats",
         "Suggestion", "ReviewIssueType",
         "SolutionPlan", "AgentCall", "AgentOutput", "SolutionResult",
+        "TaxonomyClassification", "DifficultyAssessment", "EnrichedMetadata",
     ):
         from vbagent import models
         return getattr(models, name)

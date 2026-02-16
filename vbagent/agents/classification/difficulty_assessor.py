@@ -95,7 +95,7 @@ def create_difficulty_assessor_agent(subject: Optional[str] = None):
         name=f"DifficultyAssessor-{subject}",
         instructions=prompt,
         output_type=DifficultyAssessment,
-        agent_type="classifier",
+        agent_type="difficulty_assessor",  # Use dedicated agent type
     )
 
 

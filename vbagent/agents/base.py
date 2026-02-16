@@ -2,6 +2,7 @@
 
 import base64
 import json
+import threading
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -10,6 +11,9 @@ if TYPE_CHECKING:
     from agents import Agent, ModelSettings
 
 from vbagent.config import get_model, get_model_settings, apply_provider_config
+
+# Global lock to prevent concurrent spinners
+_spinner_lock = threading.Lock()
 
 
 def _get_agent_class():
@@ -62,15 +66,15 @@ def _print_debug_input(agent: "Agent", input_text: Any) -> None:
     
     # Get agent info
     model = agent.model or "default"
-    reasoning = "unknown"
+    reasoning = "none"  # Default for models without reasoning support
     if agent.model_settings:
         settings = agent.model_settings
         if hasattr(settings, 'reasoning') and settings.reasoning:
             reasoning_obj = settings.reasoning
             if isinstance(reasoning_obj, dict):
-                reasoning = reasoning_obj.get('effort', 'unknown')
+                reasoning = reasoning_obj.get('effort', 'none')
             elif hasattr(reasoning_obj, 'effort'):
-                reasoning = reasoning_obj.effort or 'unknown'
+                reasoning = reasoning_obj.effort or 'none'
     
     # Extract input text
     if isinstance(input_text, str):
@@ -334,15 +338,15 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
     
     # Get agent info for display
     model = agent.model or "default"
-    reasoning = "unknown"
+    reasoning = "none"  # Default for models without reasoning support
     if agent.model_settings:
         settings = agent.model_settings
         if hasattr(settings, 'reasoning') and settings.reasoning:
             reasoning_obj = settings.reasoning
             if isinstance(reasoning_obj, dict):
-                reasoning = reasoning_obj.get('effort', 'unknown')
+                reasoning = reasoning_obj.get('effort', 'none')
             elif hasattr(reasoning_obj, 'effort'):
-                reasoning = reasoning_obj.effort or 'unknown'
+                reasoning = reasoning_obj.effort or 'none'
     
     console = Console()
     config = get_config()
@@ -364,31 +368,42 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
             result_holder["error"] = e
     
     if show_spinner:
-        progress = Progress(
-            SpinnerColumn(),
-            TextColumn("[bold cyan]{task.description}[/bold cyan]"),
-            TextColumn("│"),
-            TextColumn("[dim]{task.fields[model]}[/dim]"),
-            TextColumn("│"),
-            TextColumn("[dim]{task.fields[reasoning]} reasoning[/dim]"),
-            console=console,
-            transient=True
-        )
-        
-        with progress:
-            task = progress.add_task(
-                agent.name,
-                model=model,
-                reasoning=reasoning,
-                total=None
+        # Use global lock to prevent concurrent spinners
+        with _spinner_lock:
+            # Create progress with explicit refresh rate to prevent flickering
+            progress = Progress(
+                SpinnerColumn(),
+                TextColumn("[bold cyan]{task.description}[/bold cyan]"),
+                TextColumn("│"),
+                TextColumn("[dim]{task.fields[model]}[/dim]"),
+                TextColumn("│"),
+                TextColumn("[dim]{task.fields[reasoning]} reasoning[/dim]"),
+                console=console,
+                transient=True,  # Auto-clear when done
+                refresh_per_second=10  # Limit refresh rate to prevent flickering
             )
             
-            thread = threading.Thread(target=run_in_thread, daemon=True)
-            thread.start()
+            with progress:
+                task = progress.add_task(
+                    agent.name,
+                    model=model,
+                    reasoning=reasoning,
+                    total=None
+                )
+                
+                thread = threading.Thread(target=run_in_thread, daemon=True)
+                thread.start()
+                
+                # Wait for thread with small intervals to allow Ctrl+C handling
+                while thread.is_alive():
+                    thread.join(timeout=0.1)
+                
+                # Explicitly stop the progress to ensure clean exit
+                progress.stop()
             
-            # Wait for thread with small intervals to allow Ctrl+C handling
-            while thread.is_alive():
-                thread.join(timeout=0.1)
+            # Small delay to ensure terminal is clean
+            import time as time_module
+            time_module.sleep(0.05)
     else:
         # No spinner - just run in thread
         thread = threading.Thread(target=run_in_thread, daemon=True)
@@ -404,7 +419,7 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
     
     # Print completion (subtle) - only if spinner was shown
     if show_spinner:
-        console.print(f"[dim]│ {agent.name} │ {model} │ {duration:.1f}s[/dim]")
+        console.print(f"[dim]✓ {agent.name} completed in {duration:.1f}s[/dim]")
     
     # Debug mode: print output
     if config.debug:

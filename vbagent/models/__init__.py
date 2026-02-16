@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .classification import ClassificationResult, QuestionType, Difficulty, DiagramType
+    from .structural import StructuralClassification
     from .scan import ScanResult
     from .idea import IdeaResult
     from .pipeline import PipelineResult
@@ -24,6 +25,8 @@ if TYPE_CHECKING:
     from .batch import BatchDatabase, ImageRecord, ProcessingStatus
     from .diff import generate_unified_diff, apply_unified_diff, apply_diff, parse_diff
     from .orchestration import SolutionPlan, AgentCall, AgentOutput, SolutionResult
+    from .metadata import TaxonomyClassification, EnrichedMetadata
+    from .classification_v2 import DifficultyAssessment
 
 __all__ = [
     # Classification
@@ -31,6 +34,7 @@ __all__ = [
     "QuestionType",
     "Difficulty",
     "DiagramType",
+    "StructuralClassification",
     # Scan
     "ScanResult",
     # Idea
@@ -60,6 +64,10 @@ __all__ = [
     "AgentCall",
     "AgentOutput",
     "SolutionResult",
+    # Metadata (NEW)
+    "TaxonomyClassification",
+    "EnrichedMetadata",
+    "DifficultyAssessment",  # From classification_v2
 ]
 
 
@@ -68,6 +76,10 @@ def __getattr__(name: str):
     if name in ("ClassificationResult", "QuestionType", "Difficulty", "DiagramType"):
         from . import classification
         return getattr(classification, name)
+    
+    if name == "StructuralClassification":
+        from .structural import StructuralClassification
+        return StructuralClassification
     
     if name == "ScanResult":
         from .scan import ScanResult
@@ -100,5 +112,13 @@ def __getattr__(name: str):
     if name in ("SolutionPlan", "AgentCall", "AgentOutput", "SolutionResult"):
         from . import orchestration
         return getattr(orchestration, name)
+    
+    if name in ("TaxonomyClassification", "EnrichedMetadata"):
+        from . import metadata
+        return getattr(metadata, name)
+    
+    if name == "DifficultyAssessment":
+        from .classification_v2 import DifficultyAssessment
+        return DifficultyAssessment
     
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
