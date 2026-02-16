@@ -69,8 +69,9 @@ def show():
     else:
         console.print(f"[dim]Using global config: {CONFIG_FILE}[/dim]\n")
     
-    # Create table
-    table = _get_table(title="Agent Model Configuration")
+    # Create table for hierarchical view
+    table = _get_table(title="Agent Model Configuration (Hierarchical)")
+    table.add_column("Category", style="magenta", no_wrap=True)
     table.add_column("Agent", style="cyan")
     table.add_column("Model", style="green")
     table.add_column("Reasoning", style="yellow")
@@ -78,6 +79,7 @@ def show():
     
     # Add default row
     table.add_row(
+        "[bold]Global[/bold]",
         "[bold]default[/bold]",
         cfg.default_model,
         cfg.default_reasoning_effort,
@@ -85,15 +87,65 @@ def show():
         style="dim"
     )
     
-    # Add each agent
-    for agent_type in AGENT_TYPES:
-        agent_cfg = getattr(cfg, agent_type)
-        table.add_row(
-            agent_type,
-            agent_cfg.model,
-            agent_cfg.reasoning_effort,
-            str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
-        )
+    # Add classification agents
+    for agent_name in ["image_classifier", "diagram_analyzer", "difficulty_assessor", "latex_classifier", "taxonomy_classifier"]:
+        agent_cfg = getattr(cfg.classification, agent_name, None)
+        if agent_cfg:
+            table.add_row(
+                "Classification",
+                agent_name,
+                agent_cfg.model,
+                agent_cfg.reasoning_effort,
+                str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
+            )
+    
+    # Add content generation agents
+    for agent_name in ["scanner", "idea", "alternate", "converter"]:
+        agent_cfg = getattr(cfg.content_generation, agent_name, None)
+        if agent_cfg:
+            table.add_row(
+                "Content Generation",
+                agent_name,
+                agent_cfg.model,
+                agent_cfg.reasoning_effort,
+                str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
+            )
+    
+    # Add diagram agents
+    for agent_name in ["tikz", "fbd", "tikz_checker"]:
+        agent_cfg = getattr(cfg.diagram, agent_name, None)
+        if agent_cfg:
+            table.add_row(
+                "Diagram",
+                agent_name,
+                agent_cfg.model,
+                agent_cfg.reasoning_effort,
+                str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
+            )
+    
+    # Add variants agents
+    for agent_name in ["variant", "multi_context"]:
+        agent_cfg = getattr(cfg.variants, agent_name, None)
+        if agent_cfg:
+            table.add_row(
+                "Variants",
+                agent_name,
+                agent_cfg.model,
+                agent_cfg.reasoning_effort,
+                str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
+            )
+    
+    # Add quality agents
+    for agent_name in ["reviewer", "solution_checker", "grammar_checker", "clarity_checker", "latex_fixer"]:
+        agent_cfg = getattr(cfg.quality, agent_name, None)
+        if agent_cfg:
+            table.add_row(
+                "Quality",
+                agent_name,
+                agent_cfg.model,
+                agent_cfg.reasoning_effort,
+                str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
+            )
     
     console.print(table)
     
@@ -112,10 +164,11 @@ def show():
     console.print(f"[dim]Available subjects: {', '.join(SUBJECTS)}[/dim]")
     console.print(f"[dim]Known providers: {', '.join(PROVIDERS.keys())}[/dim]")
     console.print(f"[dim]Model groups: {', '.join(MODEL_GROUPS.keys())}[/dim]")
+    console.print(f"\n[dim]Tip: Use hierarchical paths like 'content_generation.scanner' or flat paths like 'scanner'[/dim]")
 
 
 @config.command()
-@click.argument("agent_type", type=click.Choice(AGENT_TYPES + ["default"]))
+@click.argument("agent_type")
 @click.option("--model", "-m", help="Model to use (e.g., gpt-4o, o1-mini)")
 @click.option(
     "--reasoning", "-r",
@@ -127,18 +180,23 @@ def show():
 def set(agent_type: str, model: str, reasoning: str, max_tokens: int, workspace: bool):
     """Set model configuration for an agent type.
     
+    Supports both flat and hierarchical paths:
+    - Flat: scanner, tikz, reviewer
+    - Hierarchical: content_generation.scanner, diagram.tikz, quality.reviewer
+    
     \b
     Arguments:
-        AGENT_TYPE  Agent to configure (classifier, scanner, tikz, etc.)
+        AGENT_TYPE  Agent to configure (supports hierarchical paths)
     
     \b
     Examples:
         vbagent config set scanner --model gpt-4o
-        vbagent config set variant --model o1-mini --reasoning medium
+        vbagent config set content_generation.scanner --model gpt-4o
+        vbagent config set diagram.tikz --model o1-mini --reasoning medium
         vbagent config set default --model gpt-4.1
         vbagent config set scanner -m gpt-4o --workspace  # Save to .vbagent.json
     """
-    from .ui import print_status
+    from vbagent.cli.interfaces.ui import print_status
     console = _get_console()
     cfg = get_config()
     
@@ -149,7 +207,27 @@ def set(agent_type: str, model: str, reasoning: str, max_tokens: int, workspace:
             cfg.default_reasoning_effort = reasoning
         print_status(console, "Updated default configuration", "success")
     else:
-        agent_cfg = getattr(cfg, agent_type)
+        # Support hierarchical paths (e.g., "content_generation.scanner")
+        if "." in agent_type:
+            category, agent_name = agent_type.split(".", 1)
+            category_config = getattr(cfg, category, None)
+            if not category_config:
+                console.print(f"[red]Error:[/red] Unknown category '{category}'")
+                console.print(f"[dim]Valid categories: classification, content_generation, diagram, variants, quality[/dim]")
+                return
+            agent_cfg = getattr(category_config, agent_name, None)
+            if not agent_cfg:
+                console.print(f"[red]Error:[/red] Unknown agent '{agent_name}' in category '{category}'")
+                return
+        else:
+            # Flat path (backward compatibility)
+            agent_cfg = getattr(cfg, agent_type, None)
+            if not agent_cfg or not isinstance(agent_cfg, type(cfg.scanner)):
+                console.print(f"[red]Error:[/red] Unknown agent type '{agent_type}'")
+                console.print(f"[dim]Valid flat paths: {', '.join(AGENT_TYPES)}[/dim]")
+                console.print(f"[dim]Or use hierarchical paths like 'content_generation.scanner'[/dim]")
+                return
+        
         if model:
             agent_cfg.model = model
         if reasoning:
@@ -166,7 +244,6 @@ def set(agent_type: str, model: str, reasoning: str, max_tokens: int, workspace:
         console.print(f"  Model: {cfg.default_model}")
         console.print(f"  Reasoning: {cfg.default_reasoning_effort}")
     else:
-        agent_cfg = getattr(cfg, agent_type)
         console.print(f"  Model: {agent_cfg.model}")
         console.print(f"  Reasoning: {agent_cfg.reasoning_effort}")
         if agent_cfg.max_tokens:
@@ -179,7 +256,7 @@ def set(agent_type: str, model: str, reasoning: str, max_tokens: int, workspace:
 @click.option("--workspace", "-w", is_flag=True, help="Reset workspace config instead of global")
 def reset(workspace: bool):
     """Reset configuration to defaults."""
-    from .ui import print_status
+    from vbagent.cli.interfaces.ui import print_status
     console = _get_console()
     reset_config(workspace=workspace)
     if workspace:
@@ -203,7 +280,7 @@ def debug(mode: str, workspace: bool):
         vbagent config debug status      # Show current status
         vbagent config debug on -w       # Enable in workspace config
     """
-    from .ui import print_status
+    from vbagent.cli.interfaces.ui import print_status
     console = _get_console()
     
     if mode == "status":

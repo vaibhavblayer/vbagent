@@ -248,6 +248,127 @@ def _get_model_settings_class():
     """Lazy import of ModelSettings to avoid heavy import at module load."""
     from agents import ModelSettings
     return ModelSettings
+def _migrate_flat_to_hierarchical(data: dict) -> dict:
+    """Migrate old flat config structure to new hierarchical structure.
+
+    Old format:
+        {
+            "agents": {
+                "scanner": {...},
+                "tikz": {...},
+                ...
+            }
+        }
+
+    New format:
+        {
+            "classification": {
+                "image_classifier": {...},
+                ...
+            },
+            "content_generation": {
+                "scanner": {...},
+                ...
+            },
+            ...
+        }
+
+    Args:
+        data: Config dictionary (may be old or new format)
+
+    Returns:
+        Config dictionary in new hierarchical format
+    """
+    # If already in new format (has hierarchical keys), return as-is
+    if any(key in data for key in ["classification", "content_generation", "diagram", "variants", "quality"]):
+        return data
+
+    # Check if we have old flat format with "agents" key
+    agents_data = data.get("agents", {})
+    if not agents_data:
+        return data
+
+    # Create new hierarchical structure
+    migrated = data.copy()
+
+    # Map old agent names to new hierarchical structure
+    classification_agents = {
+        "classifier": "image_classifier",
+        "taxonomy_classifier": "taxonomy_classifier",
+        "difficulty_assessor": "difficulty_assessor",
+    }
+
+    content_generation_agents = {
+        "scanner": "scanner",
+        "idea": "idea",
+        "alternate": "alternate",
+        "converter": "converter",
+    }
+
+    diagram_agents = {
+        "tikz": "tikz",
+        "fbd": "fbd",
+        "tikz_checker": "tikz_checker",
+    }
+
+    variants_agents = {
+        "variant": "variant",
+        "multi_variant": "multi_context",  # Handle old name
+    }
+
+    quality_agents = {
+        "reviewer": "reviewer",
+        "solution_checker": "solution_checker",
+        "grammar_checker": "grammar_checker",
+        "clarity_checker": "clarity_checker",
+        "compile_fixer": "latex_fixer",  # Handle old name
+    }
+
+    # Build hierarchical structure
+    classification_config = {}
+    for old_name, new_name in classification_agents.items():
+        if old_name in agents_data:
+            classification_config[new_name] = agents_data[old_name]
+
+    content_generation_config = {}
+    for old_name, new_name in content_generation_agents.items():
+        if old_name in agents_data:
+            content_generation_config[new_name] = agents_data[old_name]
+
+    diagram_config = {}
+    for old_name, new_name in diagram_agents.items():
+        if old_name in agents_data:
+            diagram_config[new_name] = agents_data[old_name]
+
+    variants_config = {}
+    for old_name, new_name in variants_agents.items():
+        if old_name in agents_data:
+            variants_config[new_name] = agents_data[old_name]
+
+    quality_config = {}
+    for old_name, new_name in quality_agents.items():
+        if old_name in agents_data:
+            quality_config[new_name] = agents_data[old_name]
+
+    # Add hierarchical configs to migrated data
+    if classification_config:
+        migrated["classification"] = classification_config
+    if content_generation_config:
+        migrated["content_generation"] = content_generation_config
+    if diagram_config:
+        migrated["diagram"] = diagram_config
+    if variants_config:
+        migrated["variants"] = variants_config
+    if quality_config:
+        migrated["quality"] = quality_config
+
+    # Keep old "agents" key for backward compatibility during transition
+    # It will be ignored by the new from_dict() but allows old code to still work
+
+    return migrated
+
+
+
 
 
 @dataclass
@@ -300,6 +421,53 @@ class AgentModelConfig:
 
 
 @dataclass
+class ClassificationConfig:
+    """Configuration for classification agents."""
+    image_classifier: AgentModelConfig = field(default_factory=AgentModelConfig)
+    diagram_analyzer: AgentModelConfig = field(default_factory=AgentModelConfig)
+    difficulty_assessor: AgentModelConfig = field(default_factory=AgentModelConfig)
+    latex_classifier: AgentModelConfig = field(default_factory=AgentModelConfig)
+    taxonomy_classifier: AgentModelConfig = field(default_factory=AgentModelConfig)
+
+
+@dataclass
+class ContentGenerationConfig:
+    """Configuration for content generation agents."""
+    scanner: AgentModelConfig = field(default_factory=AgentModelConfig)
+    idea: AgentModelConfig = field(default_factory=AgentModelConfig)
+    alternate: AgentModelConfig = field(default_factory=AgentModelConfig)
+    converter: AgentModelConfig = field(default_factory=AgentModelConfig)
+
+
+@dataclass
+class DiagramConfig:
+    """Configuration for diagram agents."""
+    tikz: AgentModelConfig = field(default_factory=AgentModelConfig)
+    fbd: AgentModelConfig = field(default_factory=AgentModelConfig)
+    tikz_checker: AgentModelConfig = field(default_factory=AgentModelConfig)
+
+
+@dataclass
+class VariantsConfig:
+    """Configuration for variant agents."""
+    variant: AgentModelConfig = field(default_factory=AgentModelConfig)
+    multi_context: AgentModelConfig = field(default_factory=AgentModelConfig)
+
+
+@dataclass
+class QualityConfig:
+    """Configuration for quality agents."""
+    reviewer: AgentModelConfig = field(default_factory=AgentModelConfig)
+    solution_checker: AgentModelConfig = field(default_factory=AgentModelConfig)
+    grammar_checker: AgentModelConfig = field(default_factory=AgentModelConfig)
+    clarity_checker: AgentModelConfig = field(default_factory=AgentModelConfig)
+    latex_fixer: AgentModelConfig = field(default_factory=AgentModelConfig)
+
+
+
+
+
+@dataclass
 class VBAgentConfig:
     """Main configuration for all vbagent agents."""
 
@@ -317,7 +485,7 @@ class VBAgentConfig:
     base_url: Optional[str] = None  # None = OpenAI default
     api_key: Optional[str] = None   # None = use OPENAI_API_KEY env var
 
-    # Per-agent model overrides
+    # Per-agent model overrides (DEPRECATED - use hierarchical config below)
     classifier: AgentModelConfig = field(default_factory=AgentModelConfig)
     scanner: AgentModelConfig = field(default_factory=AgentModelConfig)
     tikz: AgentModelConfig = field(default_factory=AgentModelConfig)
@@ -330,6 +498,13 @@ class VBAgentConfig:
     reviewer: AgentModelConfig = field(default_factory=AgentModelConfig)
     taxonomy_classifier: AgentModelConfig = field(default_factory=AgentModelConfig)
     difficulty_assessor: AgentModelConfig = field(default_factory=AgentModelConfig)
+    
+    # Hierarchical agent configs (NEW - preferred)
+    classification: ClassificationConfig = field(default_factory=ClassificationConfig)
+    content_generation: ContentGenerationConfig = field(default_factory=ContentGenerationConfig)
+    diagram: DiagramConfig = field(default_factory=DiagramConfig)
+    variants: VariantsConfig = field(default_factory=VariantsConfig)
+    quality: QualityConfig = field(default_factory=QualityConfig)
     
     # Pipeline settings
     enable_taxonomy: bool = True
@@ -369,17 +544,61 @@ class VBAgentConfig:
             self.difficulty_assessor.reasoning_effort = "low"
 
     def get_model(self, agent_type: str) -> str:
-        """Get the model for a specific agent type."""
+        """Get the model for a specific agent type.
+        
+        Supports both flat and hierarchical paths:
+        - Flat: "scanner", "tikz", "reviewer"
+        - Hierarchical: "content_generation.scanner", "diagram.tikz", "quality.reviewer"
+        
+        Args:
+            agent_type: Agent type (flat or hierarchical path)
+            
+        Returns:
+            Model name for the agent
+        """
+        # Try hierarchical path first (e.g., "content_generation.scanner")
+        if "." in agent_type:
+            category, agent_name = agent_type.split(".", 1)
+            category_config = getattr(self, category, None)
+            if category_config:
+                agent_config = getattr(category_config, agent_name, None)
+                if agent_config and agent_config.model:
+                    return agent_config.model
+        
+        # Try flat path (backward compatibility)
         config = getattr(self, agent_type, None)
-        if config and config.model:
+        if config and isinstance(config, AgentModelConfig) and config.model:
             return config.model
+        
         return self.default_model
 
     def get_model_settings(self, agent_type: str) -> "ModelSettings":
-        """Get ModelSettings for a specific agent type."""
+        """Get ModelSettings for a specific agent type.
+        
+        Supports both flat and hierarchical paths:
+        - Flat: "scanner", "tikz", "reviewer"
+        - Hierarchical: "content_generation.scanner", "diagram.tikz", "quality.reviewer"
+        
+        Args:
+            agent_type: Agent type (flat or hierarchical path)
+            
+        Returns:
+            ModelSettings for the agent
+        """
+        # Try hierarchical path first (e.g., "content_generation.scanner")
+        if "." in agent_type:
+            category, agent_name = agent_type.split(".", 1)
+            category_config = getattr(self, category, None)
+            if category_config:
+                agent_config = getattr(category_config, agent_name, None)
+                if agent_config:
+                    return agent_config.to_model_settings()
+        
+        # Try flat path (backward compatibility)
         config = getattr(self, agent_type, None)
-        if config:
+        if config and isinstance(config, AgentModelConfig):
             return config.to_model_settings()
+        
         ModelSettings = _get_model_settings_class()
         return ModelSettings(reasoning={"effort": self.default_reasoning_effort})
 
@@ -408,7 +627,13 @@ class VBAgentConfig:
 
     @classmethod
     def from_dict(cls, data: dict) -> "VBAgentConfig":
-        """Create from dictionary."""
+        """Create from dictionary.
+        
+        Automatically migrates old flat config to new hierarchical format.
+        """
+        # Migrate old flat config to hierarchical if needed
+        data = _migrate_flat_to_hierarchical(data)
+        
         config = cls(
             default_model=data.get("default_model", "gpt-5.2"),
             default_reasoning_effort=data.get("default_reasoning_effort", "high"),
@@ -422,6 +647,59 @@ class VBAgentConfig:
             classifier_confidence_threshold=data.get("classifier_confidence_threshold", 0.7),
             taxonomy_confidence_threshold=data.get("taxonomy_confidence_threshold", 0.8),
         )
+        
+        # Load hierarchical configs (NEW format)
+        if "classification" in data:
+            classification_data = data["classification"]
+            for agent_name in ["image_classifier", "diagram_analyzer", "difficulty_assessor", "latex_classifier", "taxonomy_classifier"]:
+                if agent_name in classification_data:
+                    setattr(
+                        config.classification,
+                        agent_name,
+                        AgentModelConfig.from_dict(classification_data[agent_name]),
+                    )
+        
+        if "content_generation" in data:
+            content_gen_data = data["content_generation"]
+            for agent_name in ["scanner", "idea", "alternate", "converter"]:
+                if agent_name in content_gen_data:
+                    setattr(
+                        config.content_generation,
+                        agent_name,
+                        AgentModelConfig.from_dict(content_gen_data[agent_name]),
+                    )
+        
+        if "diagram" in data:
+            diagram_data = data["diagram"]
+            for agent_name in ["tikz", "fbd", "tikz_checker"]:
+                if agent_name in diagram_data:
+                    setattr(
+                        config.diagram,
+                        agent_name,
+                        AgentModelConfig.from_dict(diagram_data[agent_name]),
+                    )
+        
+        if "variants" in data:
+            variants_data = data["variants"]
+            for agent_name in ["variant", "multi_context"]:
+                if agent_name in variants_data:
+                    setattr(
+                        config.variants,
+                        agent_name,
+                        AgentModelConfig.from_dict(variants_data[agent_name]),
+                    )
+        
+        if "quality" in data:
+            quality_data = data["quality"]
+            for agent_name in ["reviewer", "solution_checker", "grammar_checker", "clarity_checker", "latex_fixer"]:
+                if agent_name in quality_data:
+                    setattr(
+                        config.quality,
+                        agent_name,
+                        AgentModelConfig.from_dict(quality_data[agent_name]),
+                    )
+        
+        # Load flat configs for backward compatibility (OLD format)
         agents_data = data.get("agents", {})
         for agent_type in AGENT_TYPES:
             if agent_type in agents_data:
@@ -430,6 +708,7 @@ class VBAgentConfig:
                     agent_type,
                     AgentModelConfig.from_dict(agents_data[agent_type]),
                 )
+        
         return config
     
     def merge_with(self, other: "VBAgentConfig") -> "VBAgentConfig":
