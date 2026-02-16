@@ -8,12 +8,12 @@ import pytest
 from hypothesis import given, settings, assume
 from hypothesis import strategies as st
 
-from vbagent.agents.tikz import (
+from vbagent.agents.diagram.tikz import (
     create_tikz_agent,
     search_tikz_reference,
     validate_tikz_output,
 )
-from vbagent.prompts.tikz import SYSTEM_PROMPT, USER_TEMPLATE
+from vbagent.prompts.diagram.tikz import SYSTEM_PROMPT, USER_TEMPLATE
 from vbagent.models.classification import ClassificationResult
 from vbagent.references.store import ReferenceStore
 
@@ -40,12 +40,14 @@ diagram_description_strategy = st.sampled_from([
 def classification_with_diagram_strategy(draw):
     """Generate ClassificationResult instances where has_diagram is True."""
     return ClassificationResult(
+        subject="physics",
         question_type=draw(st.sampled_from(["mcq_sc", "mcq_mc", "subjective"])),
         difficulty=draw(st.sampled_from(["easy", "medium", "hard"])),
+        chapter=draw(st.sampled_from(["Mechanics", "Electrostatics", "Optics", "Thermodynamics"])),
         topic=draw(st.sampled_from(["mechanics", "electrostatics", "optics", "thermodynamics"])),
         subtopic=draw(st.text(min_size=3, max_size=20).filter(lambda x: x.strip())),
         has_diagram=True,  # Always True for this strategy
-        diagram_type=draw(st.sampled_from(["graph", "circuit", "free_body", "geometry"])),
+        diagram_category=draw(st.sampled_from(["mechanics", "circuits", "optics", "geometry"])),
         num_options=draw(st.none() | st.integers(min_value=2, max_value=6)),
         key_concepts=draw(st.lists(st.text(min_size=2, max_size=20).filter(lambda x: x.strip()), min_size=1, max_size=3)),
         requires_calculus=draw(st.booleans()),
@@ -282,7 +284,7 @@ def test_prompts_have_required_constants():
 
 def test_tikz_checker_patch_result_dataclass():
     """Test that PatchResult dataclass is properly defined."""
-    from vbagent.agents.tikz_checker import PatchResult
+    from vbagent.agents.diagram.tikz_checker import PatchResult
     
     # Create a PatchResult instance
     result = PatchResult(
@@ -302,7 +304,7 @@ def test_tikz_checker_patch_result_dataclass():
 
 def test_tikz_checker_patch_result_with_errors():
     """Test PatchResult with patch errors."""
-    from vbagent.agents.tikz_checker import PatchResult
+    from vbagent.agents.diagram.tikz_checker import PatchResult
     
     result = PatchResult(
         passed=False,
@@ -342,7 +344,7 @@ def test_tikz_checker_prompts_have_patch_constants():
 
 def test_tikz_checker_has_patch_function():
     """Verify that check_tikz_with_patch function exists."""
-    from vbagent.agents.tikz_checker import check_tikz_with_patch
+    from vbagent.agents.diagram.tikz_checker import check_tikz_with_patch
     
     assert callable(check_tikz_with_patch), (
         "check_tikz_with_patch must be callable"
@@ -351,7 +353,7 @@ def test_tikz_checker_has_patch_function():
 
 def test_tikz_checker_has_reference_context_function():
     """Verify that _get_tikz_reference_context function exists."""
-    from vbagent.agents.tikz_checker import _get_tikz_reference_context
+    from vbagent.agents.diagram.tikz_checker import _get_tikz_reference_context
     
     assert callable(_get_tikz_reference_context), (
         "_get_tikz_reference_context must be callable"
@@ -364,7 +366,7 @@ def test_tikz_checker_has_reference_context_function():
 
 def test_tikz_checker_create_patch_agent():
     """Verify that create_tikz_patch_agent creates an agent with apply_patch tool."""
-    from vbagent.agents.tikz_checker import create_tikz_patch_agent
+    from vbagent.agents.diagram.tikz_checker import create_tikz_patch_agent
     
     agent = create_tikz_patch_agent(use_context=False)
     
@@ -382,7 +384,7 @@ def test_tikz_checker_create_patch_agent():
 
 def test_tikz_checker_legacy_function_still_works():
     """Verify that legacy check_tikz function still exists and is callable."""
-    from vbagent.agents.tikz_checker import check_tikz
+    from vbagent.agents.diagram.tikz_checker import check_tikz
     
     assert callable(check_tikz), "check_tikz must be callable"
 

@@ -8,7 +8,7 @@ from typing import Optional
 
 from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.config import get_config
-from vbagent.models.classification_v2 import (
+from vbagent.models.classification import (
     DifficultyAssessment,
     PrimaryClassification,
     DiagramAnalysis,

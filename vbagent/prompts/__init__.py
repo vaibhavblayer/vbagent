@@ -29,16 +29,16 @@ Available prompt modules:
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .scanner import get_scanner_prompt, SCANNER_PROMPTS
-    from .classifier import SYSTEM_PROMPT as CLASSIFIER_PROMPT
-    from .idea import SYSTEM_PROMPT as IDEA_PROMPT
-    from .alternate import SYSTEM_PROMPT as ALTERNATE_PROMPT
-    from .reviewer import SYSTEM_PROMPT as REVIEWER_PROMPT
-    from .tikz import SYSTEM_PROMPT as TIKZ_PROMPT
-    from .solution_checker import SYSTEM_PROMPT as SOLUTION_CHECKER_PROMPT
-    from .grammar_checker import SYSTEM_PROMPT as GRAMMAR_CHECKER_PROMPT
-    from .clarity_checker import SYSTEM_PROMPT as CLARITY_CHECKER_PROMPT
-    from .tikz_checker import SYSTEM_PROMPT as TIKZ_CHECKER_PROMPT
+    from .content_generation.scanner import get_scanner_prompt, SCANNER_PROMPTS
+    from .classification.classifier import SYSTEM_PROMPT as CLASSIFIER_PROMPT
+    from .content_generation.idea import SYSTEM_PROMPT as IDEA_PROMPT
+    from .content_generation.alternate import SYSTEM_PROMPT as ALTERNATE_PROMPT
+    from .quality.reviewer import SYSTEM_PROMPT as REVIEWER_PROMPT
+    from .diagram.tikz import SYSTEM_PROMPT as TIKZ_PROMPT
+    from .quality.solution_checker import SYSTEM_PROMPT as SOLUTION_CHECKER_PROMPT
+    from .quality.grammar_checker import SYSTEM_PROMPT as GRAMMAR_CHECKER_PROMPT
+    from .quality.clarity_checker import SYSTEM_PROMPT as CLARITY_CHECKER_PROMPT
+    from .diagram.tikz_checker import SYSTEM_PROMPT as TIKZ_CHECKER_PROMPT
 
 __all__ = [
     # Scanner
@@ -71,50 +71,50 @@ def get_variant_prompt(variant_type: str) -> tuple[str, str]:
     Raises:
         ValueError: If variant_type is not valid
     """
-    from vbagent.agents.variant import get_variant_prompt as _get_variant_prompt
+    from vbagent.agents.variants.variant import get_variant_prompt as _get_variant_prompt
     return _get_variant_prompt(variant_type)
 
 
 def __getattr__(name: str):
     """Lazy import of prompt modules."""
     if name in ("get_scanner_prompt", "SCANNER_PROMPTS"):
-        from . import scanner
+        from .content_generation import scanner
         return getattr(scanner, name)
     
     if name == "CLASSIFIER_PROMPT":
-        from .classifier import SYSTEM_PROMPT
+        from .classification.classifier import SYSTEM_PROMPT
         return SYSTEM_PROMPT
     
     if name == "IDEA_PROMPT":
-        from .idea import SYSTEM_PROMPT
+        from .content_generation.idea import SYSTEM_PROMPT
         return SYSTEM_PROMPT
     
     if name == "ALTERNATE_PROMPT":
-        from .alternate import SYSTEM_PROMPT
+        from .content_generation.alternate import SYSTEM_PROMPT
         return SYSTEM_PROMPT
     
     if name == "REVIEWER_PROMPT":
-        from .reviewer import SYSTEM_PROMPT
+        from .quality.reviewer import SYSTEM_PROMPT
         return SYSTEM_PROMPT
     
     if name == "TIKZ_PROMPT":
-        from .tikz import SYSTEM_PROMPT
+        from .diagram.tikz import SYSTEM_PROMPT
         return SYSTEM_PROMPT
     
     if name == "SOLUTION_CHECKER_PROMPT":
-        from .solution_checker import SYSTEM_PROMPT
+        from .quality.solution_checker import SYSTEM_PROMPT
         return SYSTEM_PROMPT
     
     if name == "GRAMMAR_CHECKER_PROMPT":
-        from .grammar_checker import SYSTEM_PROMPT
+        from .quality.grammar_checker import SYSTEM_PROMPT
         return SYSTEM_PROMPT
     
     if name == "CLARITY_CHECKER_PROMPT":
-        from .clarity_checker import SYSTEM_PROMPT
+        from .quality.clarity_checker import SYSTEM_PROMPT
         return SYSTEM_PROMPT
     
     if name == "TIKZ_CHECKER_PROMPT":
-        from .tikz_checker import SYSTEM_PROMPT
+        from .diagram.tikz_checker import SYSTEM_PROMPT
         return SYSTEM_PROMPT
     
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

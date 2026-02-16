@@ -8,7 +8,7 @@ from typing import Optional
 
 from vbagent.agents.base import create_agent, create_image_message, run_agent_sync
 from vbagent.config import get_config
-from vbagent.models.classification_v2 import DiagramAnalysis, PrimaryClassification
+from vbagent.models.classification import DiagramAnalysis, PrimaryClassification
 
 
 def get_diagram_analyzer_prompt(subject: str = "physics") -> str:

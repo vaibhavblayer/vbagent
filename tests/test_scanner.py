@@ -9,12 +9,12 @@ import pytest
 from hypothesis import given, settings, assume
 from hypothesis import strategies as st
 
-from vbagent.prompts.scanner import (
+from vbagent.prompts.content_generation.scanner import (
     SCANNER_PROMPTS,
     get_scanner_prompt,
     get_user_template,
 )
-from vbagent.agents.scanner import create_scanner_agent
+from vbagent.agents.content_generation.scanner import create_scanner_agent
 
 
 # Valid question types

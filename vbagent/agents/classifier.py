@@ -17,8 +17,8 @@ from vbagent.agents.base import (
 from vbagent.config import get_config
 from vbagent.models.classification import ClassificationResult  # Legacy v1
 from vbagent.models.structural import StructuralClassification  # New Stage 1
-from vbagent.prompts.classifier import get_classifier_prompt, get_user_template
-from vbagent.prompts.subjects.taxonomy import get_chapter_for_topic
+from vbagent.prompts.classification.classifier import get_classifier_prompt, get_user_template
+from vbagent.prompts.classification.taxonomy import get_chapter_for_topic
 
 
 def get_structural_classifier_prompt(subject: str = "physics") -> str:

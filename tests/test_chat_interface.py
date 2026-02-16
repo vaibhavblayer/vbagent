@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from vbagent.orchestrator import Orchestrator, ToolRegistry
-from vbagent.cli.chat import ChatInterface
+from vbagent.cli.interfaces.chat import ChatInterface
 
 
 @pytest.fixture

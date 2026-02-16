@@ -1,7 +1,7 @@
 """Tests for classification models v2."""
 
 import pytest
-from vbagent.models.classification_v2 import (
+from vbagent.models.classification import (
     PrimaryClassification,
     DiagramAnalysis,
     DifficultyAssessment,

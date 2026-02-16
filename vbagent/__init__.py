@@ -116,7 +116,7 @@ if TYPE_CHECKING:
         # Metadata models (NEW)
         TaxonomyClassification,
         EnrichedMetadata,
-        # Difficulty from classification_v2
+        # Difficulty from classification
         DifficultyAssessment,
     )
     from vbagent.config import (
@@ -204,7 +204,7 @@ __all__ = [
     # Metadata models (NEW)
     "TaxonomyClassification",
     "EnrichedMetadata",
-    "DifficultyAssessment",  # From classification_v2
+    "DifficultyAssessment",
     # Configuration
     "VBAgentConfig",
     "AgentModelConfig",
@@ -245,7 +245,7 @@ def __getattr__(name: str):
     
     # Orchestrator
     if name in ("create_solution_orchestrator", "SolutionOrchestrator"):
-        from vbagent.agents.solution_orchestrator import (
+        from vbagent.agents.orchestration.solution_orchestrator import (
             create_solution_orchestrator,
             SolutionOrchestrator,
         )

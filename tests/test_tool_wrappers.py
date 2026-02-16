@@ -18,7 +18,7 @@ class TestScanTool:
     """Tests for scan_tool wrapper."""
     
     @patch('vbagent.agents.classifier.classify')
-    @patch('vbagent.agents.scanner.scan')
+    @patch('vbagent.agents.content_generation.scanner.scan')
     @patch('vbagent.orchestrator.tool_wrappers.Path')
     def test_scan_tool_basic(self, mock_path, mock_scan, mock_classify):
         """Test basic scan tool execution."""
@@ -48,7 +48,7 @@ class TestScanTool:
         mock_classify.assert_called_once_with("test.png")
         mock_scan.assert_called_once()
     
-    @patch('vbagent.agents.scanner.scan_with_type')
+    @patch('vbagent.agents.content_generation.scanner.scan_with_type')
     @patch('vbagent.orchestrator.tool_wrappers.Path')
     def test_scan_tool_with_question_type(self, mock_path, mock_scan_with_type):
         """Test scan tool with explicit question type."""
@@ -132,7 +132,7 @@ class TestClassifyTool:
 class TestTikzTool:
     """Tests for tikz_tool wrapper."""
     
-    @patch('vbagent.agents.tikz.generate_tikz')
+    @patch('vbagent.agents.diagram.tikz.generate_tikz')
     def test_tikz_tool_with_description(self, mock_generate):
         """Test tikz tool with description."""
         mock_generate.return_value = "\\begin{tikzpicture}...\\end{tikzpicture}"
@@ -149,7 +149,7 @@ class TestTikzTool:
         with pytest.raises(ValueError, match="At least one of"):
             tikz_tool()
     
-    @patch('vbagent.agents.tikz.generate_tikz')
+    @patch('vbagent.agents.diagram.tikz.generate_tikz')
     @patch('vbagent.orchestrator.tool_wrappers.Path')
     def test_tikz_tool_with_image(self, mock_path, mock_generate):
         """Test tikz tool with image."""
@@ -168,7 +168,7 @@ class TestTikzTool:
 class TestVariantTool:
     """Tests for variant_tool wrapper."""
     
-    @patch('vbagent.agents.variant.generate_variant')
+    @patch('vbagent.agents.variants.variant.generate_variant')
     @patch('vbagent.orchestrator.tool_wrappers.Path')
     def test_variant_tool_basic(self, mock_path, mock_gen_variant):
         """Test basic variant tool execution."""
@@ -201,7 +201,7 @@ class TestVariantTool:
         with pytest.raises(ValueError, match="Either 'image' or 'tex'"):
             variant_tool(variant_type="numerical")
     
-    @patch('vbagent.agents.variant.generate_variant')
+    @patch('vbagent.agents.variants.variant.generate_variant')
     @patch('vbagent.orchestrator.tool_wrappers.Path')
     def test_variant_tool_multiple_variants(self, mock_path, mock_gen_variant):
         """Test generating multiple variants."""
@@ -226,7 +226,7 @@ class TestVariantTool:
 class TestConvertTool:
     """Tests for convert_tool wrapper."""
     
-    @patch('vbagent.agents.converter.convert_format')
+    @patch('vbagent.agents.content_generation.converter.convert_format')
     @patch('vbagent.orchestrator.tool_wrappers.Path')
     def test_convert_tool_basic(self, mock_path, mock_convert):
         """Test basic convert tool execution."""
@@ -259,7 +259,7 @@ class TestConvertTool:
         with pytest.raises(ValueError, match="Either 'image' or 'tex'"):
             convert_tool(target_format="subjective")
     
-    @patch('vbagent.agents.converter.convert_format')
+    @patch('vbagent.agents.content_generation.converter.convert_format')
     @patch('vbagent.orchestrator.tool_wrappers.Path')
     def test_convert_tool_auto_detect_format(self, mock_path, mock_convert):
         """Test convert tool with auto-detected source format."""

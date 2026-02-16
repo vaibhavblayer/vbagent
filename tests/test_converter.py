@@ -10,8 +10,8 @@ import pytest
 from hypothesis import given, settings, assume
 from hypothesis import strategies as st
 
-from vbagent.agents.converter import VALID_FORMATS
-from vbagent.prompts.converter import get_format_instructions, FORMAT_INSTRUCTIONS
+from vbagent.agents.content_generation.converter import VALID_FORMATS
+from vbagent.prompts.content_generation.converter import get_format_instructions, FORMAT_INSTRUCTIONS
 
 
 # Strategy for generating format types

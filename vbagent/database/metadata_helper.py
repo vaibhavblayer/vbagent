@@ -1,7 +1,7 @@
 """Helper functions for populating database records with agent metadata."""
 
 from typing import Optional
-from vbagent.models.classification_v2 import (
+from vbagent.models.classification import (
     DiagramAnalysis,
     DifficultyAssessment,
     ClassificationResult,

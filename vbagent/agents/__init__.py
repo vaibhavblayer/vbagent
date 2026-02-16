@@ -24,13 +24,13 @@ if TYPE_CHECKING:
         run_agent_sync,
     )
     from .classifier import classifier_agent, classify, classify_structural
-    from .scanner import scan, scan_with_type, create_scanner_agent
-    from .taxonomy_classifier import classify_taxonomy, create_taxonomy_classifier_agent
+    from .content_generation.scanner import scan, scan_with_type, create_scanner_agent
+    from .classification.taxonomy_classifier import classify_taxonomy, create_taxonomy_classifier_agent
     from .classification.difficulty_assessor import assess_difficulty, create_difficulty_assessor_agent
-    from .metadata_enricher import enrich_metadata, enrich_metadata_sync, enrich_metadata_parallel
-    from .idea import idea_agent_json, idea_agent_latex, extract_ideas, generate_idea_latex
-    from .alternate import alternate_agent, generate_alternate, extract_answer
-    from .variant import (
+    from .metadata.enricher import enrich_metadata, enrich_metadata_sync, enrich_metadata_parallel
+    from .content_generation.idea import idea_agent_json, idea_agent_latex, extract_ideas, generate_idea_latex
+    from .content_generation.alternate import alternate_agent, generate_alternate, extract_answer
+    from .variants.variant import (
         generate_variant,
         generate_numerical_variant,
         generate_context_variant,
@@ -39,28 +39,28 @@ if TYPE_CHECKING:
         get_variant_prompt,
         VALID_VARIANT_TYPES,
     )
-    from .selector import (
+    from .selection.selector import (
         ProblemContext,
         discover_problems,
         select_random,
         load_problem_context,
     )
-    from .solution_checker import (
+    from .quality.solution_checker import (
         solution_checker_agent,
         check_solution,
         has_solution_passed,
     )
-    from .grammar_checker import (
+    from .quality.grammar_checker import (
         grammar_checker_agent,
         check_grammar,
         has_grammar_passed,
     )
-    from .clarity_checker import (
+    from .quality.clarity_checker import (
         clarity_checker_agent,
         check_clarity,
         has_clarity_passed,
     )
-    from .tikz_checker import (
+    from .diagram.tikz_checker import (
         tikz_checker_agent,
         check_tikz,
         check_tikz_with_patch,
@@ -68,19 +68,19 @@ if TYPE_CHECKING:
         has_tikz_environment,
         PatchResult,
     )
-    from .tikz import (
+    from .diagram.tikz import (
         generate_tikz,
         create_tikz_agent,
         validate_tikz_output,
         search_tikz_reference,
     )
-    from .fbd import (
+    from .diagram.fbd import (
         generate_fbd,
         create_fbd_agent,
         validate_fbd_output,
         search_fbd_reference,
     )
-    from .reviewer import (
+    from .quality.reviewer import (
         review_problem,
         review_problem_sync,
         ReviewAgentError,
@@ -183,11 +183,11 @@ def __getattr__(name: str):
         return getattr(classifier, name)
     
     if name in ("scan", "scan_with_type", "create_scanner_agent"):
-        from . import scanner
+        from .content_generation import scanner
         return getattr(scanner, name)
     
     if name in ("classify_taxonomy", "create_taxonomy_classifier_agent"):
-        from . import taxonomy_classifier
+        from .classification import taxonomy_classifier
         return getattr(taxonomy_classifier, name)
     
     if name in ("assess_difficulty", "create_difficulty_assessor_agent"):
@@ -195,15 +195,15 @@ def __getattr__(name: str):
         return getattr(difficulty_assessor, name)
     
     if name in ("enrich_metadata", "enrich_metadata_sync", "enrich_metadata_parallel"):
-        from . import metadata_enricher
-        return getattr(metadata_enricher, name)
+        from .metadata import enricher
+        return getattr(enricher, name)
     
     if name in ("idea_agent_json", "idea_agent_latex", "extract_ideas", "generate_idea_latex"):
-        from . import idea
+        from .content_generation import idea
         return getattr(idea, name)
     
     if name in ("alternate_agent", "generate_alternate", "extract_answer"):
-        from . import alternate
+        from .content_generation import alternate
         return getattr(alternate, name)
     
     if name in (
@@ -211,39 +211,39 @@ def __getattr__(name: str):
         "generate_conceptual_variant", "generate_calculus_variant",
         "get_variant_prompt", "VALID_VARIANT_TYPES",
     ):
-        from . import variant
+        from .variants import variant
         return getattr(variant, name)
     
     if name in ("ProblemContext", "discover_problems", "select_random", "load_problem_context"):
-        from . import selector
+        from .selection import selector
         return getattr(selector, name)
     
     if name in ("solution_checker_agent", "check_solution", "has_solution_passed"):
-        from . import solution_checker
+        from .quality import solution_checker
         return getattr(solution_checker, name)
     
     if name in ("grammar_checker_agent", "check_grammar", "has_grammar_passed"):
-        from . import grammar_checker
+        from .quality import grammar_checker
         return getattr(grammar_checker, name)
     
     if name in ("clarity_checker_agent", "check_clarity", "has_clarity_passed"):
-        from . import clarity_checker
+        from .quality import clarity_checker
         return getattr(clarity_checker, name)
     
     if name in ("tikz_checker_agent", "check_tikz", "check_tikz_with_patch", "has_tikz_passed", "has_tikz_environment", "PatchResult"):
-        from . import tikz_checker
+        from .diagram import tikz_checker
         return getattr(tikz_checker, name)
     
     if name in ("generate_tikz", "create_tikz_agent", "validate_tikz_output", "search_tikz_reference"):
-        from . import tikz
+        from .diagram import tikz
         return getattr(tikz, name)
     
     if name in ("generate_fbd", "create_fbd_agent", "validate_fbd_output", "search_fbd_reference"):
-        from . import fbd
+        from .diagram import fbd
         return getattr(fbd, name)
     
     if name in ("review_problem", "review_problem_sync", "ReviewAgentError", "ReviewError", "ReviewErrorType"):
-        from . import reviewer
+        from .quality import reviewer
         return getattr(reviewer, name)
     
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

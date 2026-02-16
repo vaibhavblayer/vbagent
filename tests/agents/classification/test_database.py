@@ -10,7 +10,7 @@ from vbagent.database.metadata_helper import (
     populate_diagram_metadata,
     populate_difficulty_metadata,
 )
-from vbagent.models.classification_v2 import (
+from vbagent.models.classification import (
     ClassificationResult,
     DiagramAnalysis,
     DifficultyAssessment,

@@ -5,7 +5,7 @@ from typing import Union
 
 from vbagent.agents.base import create_agent, run_agent_sync, create_image_message
 from vbagent.models.orchestration import SolutionPlan
-from vbagent.prompts.solution_orchestrator import get_planner_prompt
+from vbagent.prompts.diagram.solution_orchestrator import get_planner_prompt
 
 
 class SolutionPlanner:

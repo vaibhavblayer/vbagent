@@ -7,7 +7,7 @@ Ensures compilation success and best practices.
 from typing import Optional, Tuple
 
 from vbagent.agents.base import create_agent, run_agent_sync
-from vbagent.models.classification_v2 import TikZValidation
+from vbagent.models.diagram import TikZValidation
 from vbagent.compile import compile_latex
 
 
@@ -152,7 +152,7 @@ Analyze the code, identify errors, and provide fixes."""
             
             # Add compilation error to errors list
             if compile_result.error:
-                from vbagent.models.classification_v2 import TikZError
+                from vbagent.models.diagram import TikZError
                 result.errors_found.append(
                     TikZError(
                         type="compilation",

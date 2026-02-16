@@ -8,7 +8,7 @@ from typing import Type, get_args
 from pydantic import BaseModel, Field, create_model
 from functools import lru_cache
 
-from vbagent.prompts.subjects.taxonomy import get_chapters, get_all_topics
+from vbagent.prompts.classification.taxonomy import get_chapters, get_all_topics
 
 
 @lru_cache(maxsize=4)  # Cache for each subject

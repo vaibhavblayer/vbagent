@@ -6,7 +6,7 @@ Coordinates multiple specialized agents for comprehensive classification.
 from pathlib import Path
 from typing import Optional, Literal
 
-from vbagent.models.classification_v2 import (
+from vbagent.models.classification import (
     ClassificationResult,
     PrimaryClassification,
     DiagramAnalysis,

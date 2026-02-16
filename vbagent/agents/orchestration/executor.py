@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import Union
 
 from vbagent.agents.base import create_agent, run_agent_sync, create_image_message
-from vbagent.agents.fbd import create_fbd_agent
-from vbagent.agents.tikz import create_tikz_agent
-from vbagent.agents.scanner import create_scanner_agent
+from vbagent.agents.diagram.fbd import create_fbd_agent
+from vbagent.agents.diagram.tikz import create_tikz_agent
+from vbagent.agents.content_generation.scanner import create_scanner_agent
 from vbagent.models.orchestration import SolutionPlan, AgentCall, AgentOutput
 
 

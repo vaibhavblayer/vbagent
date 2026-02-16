@@ -9,40 +9,10 @@ import hashlib
 import os
 import shutil
 import tempfile
-from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-
-class DiffError(Exception):
-    """Base exception for diff-related errors."""
-    pass
-
-
-class DiffErrorType(str, Enum):
-    """Types of errors that can occur during diff operations."""
-    FILE_NOT_FOUND = "file_not_found"
-    PERMISSION_DENIED = "permission_denied"
-    DIFF_CONFLICT = "diff_conflict"
-    IO_ERROR = "io_error"
-    INVALID_DIFF = "invalid_diff"
-
-
-@dataclass
-class DiffResult:
-    """Result of a diff application operation.
-    
-    Attributes:
-        success: Whether the operation succeeded
-        error_type: Type of error if failed, None if successful
-        error_message: Human-readable error message if failed
-        original_preserved: Whether the original file was preserved on failure
-    """
-    success: bool
-    error_type: Optional[DiffErrorType] = None
-    error_message: Optional[str] = None
-    original_preserved: bool = True
+from .quality import DiffError, DiffErrorType, DiffResult
 
 
 def generate_unified_diff(

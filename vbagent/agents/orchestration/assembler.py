@@ -3,7 +3,7 @@
 import re
 from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.models.orchestration import SolutionPlan, AgentOutput, SolutionResult
-from vbagent.prompts.solution_orchestrator import get_assembler_prompt
+from vbagent.prompts.diagram.solution_orchestrator import get_assembler_prompt
 
 
 def clean_latex_fences(latex: str) -> str:

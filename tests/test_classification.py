@@ -13,20 +13,23 @@ from vbagent.models.classification import (
     ClassificationResult,
     QuestionType,
     Difficulty,
-    DiagramType,
+    DiagramCategory,
 )
 
 
 # Valid values for enums
 VALID_QUESTION_TYPES = ["mcq_sc", "mcq_mc", "subjective", "assertion_reason", "passage", "match"]
 VALID_DIFFICULTIES = ["easy", "medium", "hard"]
-VALID_DIAGRAM_TYPES = ["graph", "circuit", "free_body", "geometry", "none", None]
+VALID_DIAGRAM_CATEGORIES = [
+    "mechanics", "kinematics", "circuits", "optics", "waves",
+    "thermodynamics", "organic", "inorganic", "graphs", "geometry", "none"
+]
 
 
 # Strategies for generating valid classification data
 question_type_strategy = st.sampled_from(VALID_QUESTION_TYPES)
 difficulty_strategy = st.sampled_from(VALID_DIFFICULTIES)
-diagram_type_strategy = st.sampled_from(VALID_DIAGRAM_TYPES)
+diagram_category_strategy = st.sampled_from(VALID_DIAGRAM_CATEGORIES)
 topic_strategy = st.text(min_size=1, max_size=50).filter(lambda x: x.strip())
 confidence_strategy = st.floats(min_value=0.0, max_value=1.0, allow_nan=False)
 
@@ -43,14 +46,16 @@ def classification_result_strategy(draw):
     else:
         num_options = draw(st.none() | st.integers(min_value=2, max_value=6))
     
+    # V2 model requires subject field
     return {
+        "subject": "physics",
         "question_type": question_type,
-        "difficulty": draw(difficulty_strategy),
+        "difficulty": draw(st.none() | difficulty_strategy),  # Optional in V2
         "chapter": draw(topic_strategy),
         "topic": draw(topic_strategy),
         "subtopic": draw(topic_strategy),
         "has_diagram": has_diagram,
-        "diagram_type": draw(diagram_type_strategy) if has_diagram else None,
+        "diagram_category": draw(st.none() | diagram_category_strategy) if has_diagram else None,
         "num_options": num_options,
         "key_concepts": draw(st.lists(st.text(min_size=1, max_size=30).filter(lambda x: x.strip()), max_size=5)),
         "requires_calculus": draw(st.booleans()),
@@ -77,10 +82,11 @@ def test_property_classification_output_validity(data: dict):
         f"question_type '{result.question_type}' not in valid set"
     )
     
-    # Property 2: difficulty must be from valid set
-    assert result.difficulty in VALID_DIFFICULTIES, (
-        f"difficulty '{result.difficulty}' not in valid set"
-    )
+    # Property 2: difficulty must be from valid set (if present)
+    if result.difficulty is not None:
+        assert result.difficulty in VALID_DIFFICULTIES, (
+            f"difficulty '{result.difficulty}' not in valid set"
+        )
     
     # Property 3: confidence must be between 0 and 1
     assert 0.0 <= result.confidence <= 1.0, (
@@ -102,6 +108,7 @@ def test_property_invalid_question_type_rejected(question_type: str):
     
     with pytest.raises(ValidationError):
         ClassificationResult(
+            subject="physics",
             question_type=question_type,
             difficulty="easy",
             chapter="Mechanics",
@@ -125,6 +132,7 @@ def test_property_invalid_difficulty_rejected(difficulty: str):
     
     with pytest.raises(ValidationError):
         ClassificationResult(
+            subject="physics",
             question_type="mcq_sc",
             difficulty=difficulty,
             chapter="Mechanics",
@@ -148,6 +156,7 @@ def test_property_invalid_confidence_rejected(confidence: float):
     
     with pytest.raises(ValidationError):
         ClassificationResult(
+            subject="physics",
             question_type="mcq_sc",
             difficulty="easy",
             chapter="Mechanics",
@@ -161,13 +170,14 @@ def test_property_invalid_confidence_rejected(confidence: float):
 def test_classification_result_json_serialization():
     """Test that ClassificationResult can be serialized to JSON and back."""
     result = ClassificationResult(
+        subject="physics",
         question_type="mcq_sc",
         difficulty="medium",
         chapter="Kinematics",
         topic="kinematics",
         subtopic="projectile motion",
         has_diagram=True,
-        diagram_type="graph",
+        diagram_category="kinematics",
         num_options=4,
         key_concepts=["velocity", "acceleration"],
         requires_calculus=False,

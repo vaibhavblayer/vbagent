@@ -7,9 +7,9 @@ from typing import Optional
 
 from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.config import get_config
-from vbagent.models.classification_v2 import PrimaryClassification
+from vbagent.models.classification import PrimaryClassification
 from vbagent.prompts.subjects import get_subject_config
-from vbagent.prompts.subjects.taxonomy import get_chapters, get_all_topics
+from vbagent.prompts.classification.taxonomy import get_chapters, get_all_topics
 
 
 def get_latex_classifier_prompt(subject: str = "physics") -> str:

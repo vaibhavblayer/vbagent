@@ -51,28 +51,33 @@ class LazyGroup(click.Group):
 
 # Define lazy subcommands: command_name -> module_path
 LAZY_SUBCOMMANDS = {
-    "classify": "vbagent.cli.classify",
-    "scan": "vbagent.cli.scan",
-    "tikz": "vbagent.cli.tikz",
-    "fbd": "vbagent.cli.fbd",
-    "idea": "vbagent.cli.idea",
-    "alternate": "vbagent.cli.alternate",
-    "variant": "vbagent.cli.variant",
-    "convert": "vbagent.cli.convert",
-    "process": "vbagent.cli.process",
-    "batch": "vbagent.cli.batch",
-    "ref": "vbagent.cli.ref",
-    "config": "vbagent.cli.config",
-    "check": "vbagent.cli.check",
-    "init": "vbagent.cli.init",
-    "util": "vbagent.cli.util",
-    "chat": "vbagent.cli.chat",
-    "metadata": "vbagent.cli.metadata",
-    "dpp": "vbagent.cli.dpp",
-    "export": "vbagent.cli.export",
-    "mcp": "vbagent.cli.mcp",
-    "extans": "vbagent.cli.extans",
-    "db": "vbagent.cli.db",
+    # Core commands
+    "classify": "vbagent.cli.core.classify",
+    "scan": "vbagent.cli.core.scan",
+    "process": "vbagent.cli.core.process",
+    "batch": "vbagent.cli.core.batch",
+    "init": "vbagent.cli.core.init",
+    # Generation commands
+    "tikz": "vbagent.cli.generation.tikz",
+    "fbd": "vbagent.cli.generation.fbd",
+    "idea": "vbagent.cli.generation.idea",
+    "alternate": "vbagent.cli.generation.alternate",
+    "variant": "vbagent.cli.generation.variant",
+    "convert": "vbagent.cli.generation.convert",
+    # Quality commands
+    "check": "vbagent.cli.quality.check",
+    # Management commands
+    "ref": "vbagent.cli.management.ref",
+    "config": "vbagent.cli.management.config",
+    "util": "vbagent.cli.management.util",
+    "metadata": "vbagent.cli.management.metadata",
+    "dpp": "vbagent.cli.management.dpp",
+    "export": "vbagent.cli.management.export",
+    "extans": "vbagent.cli.management.extans",
+    "db": "vbagent.cli.management.db",
+    # Interface commands
+    "chat": "vbagent.cli.interfaces.chat",
+    "mcp": "vbagent.cli.interfaces.mcp",
 }
 
 

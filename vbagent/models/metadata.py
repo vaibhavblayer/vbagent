@@ -1,13 +1,13 @@
 """Models for Stage 4 (Taxonomy) and combined metadata.
 
-Stage 5 (Difficulty) uses the comprehensive DifficultyAssessment from classification_v2.
+Stage 5 (Difficulty) uses the comprehensive DifficultyAssessment from classification.
 """
 
 from typing import Literal, Optional
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 
-from vbagent.models.classification_v2 import DifficultyAssessment
+from vbagent.models.classification import DifficultyAssessment
 
 
 # Stage 4: Taxonomy Classification
@@ -51,12 +51,12 @@ class TaxonomyClassification(BaseModel):
 class EnrichedMetadata(BaseModel):
     """Combined output from Stage 4 and Stage 5.
     
-    Uses the comprehensive DifficultyAssessment from classification_v2.
+    Uses the comprehensive DifficultyAssessment from classification.
     """
     model_config = ConfigDict(extra='forbid')
     
     taxonomy: TaxonomyClassification
-    difficulty: DifficultyAssessment  # From classification_v2
+    difficulty: DifficultyAssessment
     
     def to_dict(self) -> dict:
         """Convert to flat dictionary for database storage"""

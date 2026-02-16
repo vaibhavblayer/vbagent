@@ -34,9 +34,9 @@ def scan_tool(
             - output_path: Path where output was saved (if output specified)
     """
     from vbagent.agents.classifier import classify as classify_image
-    from vbagent.agents.scanner import scan as scan_image, scan_with_type
+    from vbagent.agents.content_generation.scanner import scan as scan_image, scan_with_type
     from vbagent.compile import compile_and_retry
-    from vbagent.agents.compile_fixer import fix_latex
+    from vbagent.agents.quality.latex_fixer import fix_latex
     from vbagent.config import get_config
     
     # Validate image path
@@ -159,9 +159,9 @@ def tikz_tool(
             - tikz_code: Generated TikZ/PGF code
             - output_path: Path where output was saved (if output specified)
     """
-    from vbagent.agents.tikz import generate_tikz
+    from vbagent.agents.diagram.tikz import generate_tikz
     from vbagent.compile import compile_and_retry
-    from vbagent.agents.compile_fixer import fix_latex
+    from vbagent.agents.quality.latex_fixer import fix_latex
     from vbagent.config import get_config
     
     # Validate that at least one input is provided
@@ -245,11 +245,11 @@ def variant_tool(
             - count: Number of variants generated
             - output_path: Path where output was saved (if output specified)
     """
-    from vbagent.agents.variant import generate_variant as gen_variant
+    from vbagent.agents.variants.variant import generate_variant as gen_variant
     from vbagent.agents.classifier import classify
-    from vbagent.agents.scanner import scan
+    from vbagent.agents.content_generation.scanner import scan
     from vbagent.compile import compile_and_retry
-    from vbagent.agents.compile_fixer import fix_latex
+    from vbagent.agents.quality.latex_fixer import fix_latex
     from vbagent.config import get_config
     
     # Validate variant type
@@ -336,9 +336,9 @@ def convert_tool(
             - target_format: Target format
             - output_path: Path where output was saved (if output specified)
     """
-    from vbagent.agents.converter import convert_format
+    from vbagent.agents.content_generation.converter import convert_format
     from vbagent.agents.classifier import classify as classify_image
-    from vbagent.agents.scanner import scan as scan_image
+    from vbagent.agents.content_generation.scanner import scan as scan_image
     import re
     
     # Validate formats

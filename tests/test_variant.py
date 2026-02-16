@@ -11,7 +11,7 @@ import pytest
 from hypothesis import given, settings, assume
 from hypothesis import strategies as st
 
-from vbagent.agents.variant import (
+from vbagent.agents.variants.variant import (
     VALID_VARIANT_TYPES,
     VARIANT_PROMPTS,
     get_variant_prompt,
@@ -457,7 +457,7 @@ def test_has_complete_solution_helper():
 # Property 10: Multi-Context Output Coherence
 # =============================================================================
 
-from vbagent.agents.multi_variant import multi_context_agent, generate_multi_context_variant
+from vbagent.agents.variants.multi_context_variant import multi_context_agent, generate_multi_context_variant
 from vbagent.prompts.variants.multi_context import SYSTEM_PROMPT as MULTI_CONTEXT_SYSTEM_PROMPT
 
 
@@ -567,7 +567,7 @@ def test_property_multi_context_formats_problems(problem1: str, problem2: str):
 # Property 13: CLI Range Filtering
 # =============================================================================
 
-from vbagent.cli.variant import filter_items_by_range, extract_items_from_tex
+from vbagent.cli.generation.variant import filter_items_by_range, extract_items_from_tex
 
 
 @given(

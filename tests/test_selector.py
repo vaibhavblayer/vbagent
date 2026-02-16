@@ -10,7 +10,7 @@ import pytest
 from hypothesis import given, settings, assume
 from hypothesis import strategies as st
 
-from vbagent.agents.selector import (
+from vbagent.agents.selection.selector import (
     ProblemContext,
     discover_problems,
     select_random,

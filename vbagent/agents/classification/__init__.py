@@ -11,6 +11,7 @@ from .difficulty_assessor import assess_difficulty
 from .idea_generator import generate_from_idea
 from .problem_combiner import combine_problems
 from .tikz_checker import validate_tikz, check_and_fix_tikz
+from .taxonomy_classifier import classify_taxonomy, create_taxonomy_classifier_agent, get_taxonomy_classifier_prompt
 
 __all__ = [
     # Pipeline
@@ -25,4 +26,8 @@ __all__ = [
     "combine_problems",
     "validate_tikz",
     "check_and_fix_tikz",
+    # Taxonomy
+    "classify_taxonomy",
+    "create_taxonomy_classifier_agent",
+    "get_taxonomy_classifier_prompt",
 ]

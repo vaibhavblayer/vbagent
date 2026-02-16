@@ -12,7 +12,7 @@ import pytest
 from hypothesis import given, settings, assume
 from hypothesis import strategies as st
 
-from vbagent.cli.process import (
+from vbagent.cli.core.process import (
     filter_items_by_range,
     extract_items_from_tex,
     extract_problem_solution,
@@ -20,7 +20,7 @@ from vbagent.cli.process import (
 )
 from vbagent.models.pipeline import PipelineResult
 from vbagent.models.classification import ClassificationResult
-from vbagent.models.idea import IdeaResult
+from vbagent.models.content import IdeaResult
 
 
 # =============================================================================
@@ -52,8 +52,10 @@ latex_content_strategy = st.text(
 def create_test_classification() -> ClassificationResult:
     """Create a test classification result."""
     return ClassificationResult(
+        subject="physics",
         question_type="mcq_sc",
         difficulty="medium",
+        chapter="Mechanics",
         topic="mechanics",
         subtopic="kinematics",
         has_diagram=False,
@@ -469,7 +471,7 @@ def test_save_pipeline_result_nested_directory():
 # Tests for Organized Directory Structure
 # =============================================================================
 
-from vbagent.cli.process import save_pipeline_result_organized, get_base_name
+from vbagent.cli.core.process import save_pipeline_result_organized, get_base_name
 
 
 def test_get_base_name_from_image():
@@ -630,7 +632,7 @@ def test_save_organized_full_structure():
 # Tests for Image Range Generation
 # =============================================================================
 
-from vbagent.cli.process import generate_image_paths_from_range
+from vbagent.cli.core.process import generate_image_paths_from_range
 
 
 def test_generate_image_paths_underscore_pattern():
@@ -705,7 +707,7 @@ def test_generate_image_paths_no_number():
 # Tests for LaTeX Formatting
 # =============================================================================
 
-from vbagent.cli.process import format_latex, insert_tikz_into_latex
+from vbagent.cli.core.process import format_latex, insert_tikz_into_latex
 
 
 def test_insert_tikz_into_latex_basic():

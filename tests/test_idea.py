@@ -8,7 +8,7 @@ import pytest
 from hypothesis import given, settings, assume
 from hypothesis import strategies as st
 
-from vbagent.models.idea import IdeaResult
+from vbagent.models.content import IdeaResult
 
 
 # Strategies for generating valid idea data

@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from vbagent.cli.chat import chat
+from vbagent.cli.interfaces.chat import chat
 
 
 @pytest.fixture

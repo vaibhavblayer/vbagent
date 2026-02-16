@@ -8,7 +8,7 @@ import pytest
 from hypothesis import given, settings, assume
 from hypothesis import strategies as st
 
-from vbagent.agents.alternate import extract_answer
+from vbagent.agents.content_generation.alternate import extract_answer
 
 
 # Strategies for generating numerical answers

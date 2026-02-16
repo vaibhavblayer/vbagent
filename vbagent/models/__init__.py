@@ -15,65 +15,68 @@ Available models:
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .classification import ClassificationResult, QuestionType, Difficulty, DiagramType
+    from .classification import ClassificationResult, QuestionType, Difficulty, DifficultyAssessment, DiagramCategory
     from .structural import StructuralClassification
-    from .scan import ScanResult
-    from .idea import IdeaResult
-    from .pipeline import PipelineResult
-    from .review import ReviewIssueType, Suggestion, ReviewResult, ReviewStats
+    from .content import ScanResult, IdeaResult
+    from .diagram import TikZRequirements, TikZError, TikZFix, TikZValidation
+    from .quality import ReviewIssueType, Suggestion, ReviewResult, ReviewStats, DiffError, DiffErrorType, DiffResult
+    from .workflow import PipelineResult, ProcessingStatus, ImageRecord, BatchDatabase, AgentCall, SolutionPlan, AgentOutput, SolutionResult
     from .version_store import SuggestionStatus, StoredSuggestion, VersionStore
-    from .batch import BatchDatabase, ImageRecord, ProcessingStatus
     from .diff import generate_unified_diff, apply_unified_diff, apply_diff, parse_diff
-    from .orchestration import SolutionPlan, AgentCall, AgentOutput, SolutionResult
     from .metadata import TaxonomyClassification, EnrichedMetadata
-    from .classification_v2 import DifficultyAssessment
 
 __all__ = [
     # Classification
     "ClassificationResult",
     "QuestionType",
     "Difficulty",
-    "DiagramType",
+    "DiagramCategory",
     "StructuralClassification",
     # Scan
     "ScanResult",
     # Idea
     "IdeaResult",
-    # Pipeline
-    "PipelineResult",
-    # Review
+    # Diagram
+    "TikZRequirements",
+    "TikZError",
+    "TikZFix",
+    "TikZValidation",
+    # Quality
     "ReviewIssueType",
     "Suggestion",
     "ReviewResult",
     "ReviewStats",
+    "DiffError",
+    "DiffErrorType",
+    "DiffResult",
+    # Workflow
+    "PipelineResult",
+    "ProcessingStatus",
+    "ImageRecord",
+    "BatchDatabase",
+    "AgentCall",
+    "SolutionPlan",
+    "AgentOutput",
+    "SolutionResult",
     # Version store
     "SuggestionStatus",
     "StoredSuggestion",
     "VersionStore",
-    # Batch
-    "BatchDatabase",
-    "ImageRecord",
-    "ProcessingStatus",
     # Diff utilities
     "generate_unified_diff",
     "apply_unified_diff",
     "apply_diff",
     "parse_diff",
-    # Orchestration
-    "SolutionPlan",
-    "AgentCall",
-    "AgentOutput",
-    "SolutionResult",
     # Metadata (NEW)
     "TaxonomyClassification",
     "EnrichedMetadata",
-    "DifficultyAssessment",  # From classification_v2
+    "DifficultyAssessment",
 ]
 
 
 def __getattr__(name: str):
     """Lazy import of model classes to speed up CLI startup."""
-    if name in ("ClassificationResult", "QuestionType", "Difficulty", "DiagramType"):
+    if name in ("ClassificationResult", "QuestionType", "Difficulty", "DiagramCategory"):
         from . import classification
         return getattr(classification, name)
     
@@ -81,44 +84,36 @@ def __getattr__(name: str):
         from .structural import StructuralClassification
         return StructuralClassification
     
-    if name == "ScanResult":
-        from .scan import ScanResult
-        return ScanResult
+    if name in ("ScanResult", "IdeaResult"):
+        from . import content
+        return getattr(content, name)
     
-    if name == "IdeaResult":
-        from .idea import IdeaResult
-        return IdeaResult
+    if name in ("TikZRequirements", "TikZError", "TikZFix", "TikZValidation"):
+        from . import diagram
+        return getattr(diagram, name)
     
-    if name == "PipelineResult":
-        from .pipeline import PipelineResult
-        return PipelineResult
+    if name in ("PipelineResult", "ProcessingStatus", "ImageRecord", "BatchDatabase", "AgentCall", "SolutionPlan", "AgentOutput", "SolutionResult"):
+        from . import workflow
+        return getattr(workflow, name)
     
-    if name in ("ReviewIssueType", "Suggestion", "ReviewResult", "ReviewStats"):
-        from . import review
-        return getattr(review, name)
+    if name in ("ReviewIssueType", "Suggestion", "ReviewResult", "ReviewStats", "DiffError", "DiffErrorType", "DiffResult"):
+        from . import quality
+        return getattr(quality, name)
     
     if name in ("SuggestionStatus", "StoredSuggestion", "VersionStore"):
         from . import version_store
         return getattr(version_store, name)
     
-    if name in ("BatchDatabase", "ImageRecord", "ProcessingStatus"):
-        from . import batch
-        return getattr(batch, name)
-    
     if name in ("generate_unified_diff", "apply_unified_diff", "apply_diff", "parse_diff"):
         from . import diff
         return getattr(diff, name)
-    
-    if name in ("SolutionPlan", "AgentCall", "AgentOutput", "SolutionResult"):
-        from . import orchestration
-        return getattr(orchestration, name)
     
     if name in ("TaxonomyClassification", "EnrichedMetadata"):
         from . import metadata
         return getattr(metadata, name)
     
     if name == "DifficultyAssessment":
-        from .classification_v2 import DifficultyAssessment
+        from .classification import DifficultyAssessment
         return DifficultyAssessment
     
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

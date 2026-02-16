@@ -7,7 +7,7 @@ from typing import Optional, List
 
 from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.config import get_config
-from vbagent.models.classification_v2 import GeneratedProblem
+from vbagent.models.classification import GeneratedProblem
 
 
 def get_idea_generator_prompt(subject: str = "physics") -> str:

@@ -1,11 +1,11 @@
 """Tests for TikZ router."""
 
 import pytest
-from vbagent.agents.tikz_router import (
+from vbagent.agents.diagram.tikz_router import (
     route_tikz_agent,
     get_agent_capabilities,
 )
-from vbagent.models.classification_v2 import (
+from vbagent.models.classification import (
     DiagramAnalysis,
     PrimaryClassification,
 )
