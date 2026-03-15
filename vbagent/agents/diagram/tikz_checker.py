@@ -8,6 +8,7 @@ Supports two modes:
 2. Patch mode: Uses apply_patch tool for structured diffs (check_tikz_with_patch)
 """
 
+import re
 from dataclasses import dataclass
 from typing import Optional
 

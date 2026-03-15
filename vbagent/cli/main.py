@@ -1,6 +1,6 @@
 """Main CLI entry point for VBAgent.
 
-VBAgent - Physics question processing pipeline.
+VBAgent - Multi-subject question processing pipeline.
 
 Uses lazy loading to speed up CLI startup time by deferring
 heavy imports (openai, agents, mcp, etc.) until commands are actually invoked.
@@ -64,6 +64,8 @@ LAZY_SUBCOMMANDS = {
     "alternate": "vbagent.cli.generation.alternate",
     "variant": "vbagent.cli.generation.variant",
     "convert": "vbagent.cli.generation.convert",
+    # Compilation commands
+    "compile": "vbagent.cli.compilation.compile_main",
     # Quality commands
     "check": "vbagent.cli.quality.check",
     # Management commands
@@ -75,6 +77,8 @@ LAZY_SUBCOMMANDS = {
     "export": "vbagent.cli.management.export",
     "extans": "vbagent.cli.management.extans",
     "db": "vbagent.cli.management.db",
+    "screenshot": "vbagent.cli.management.screenshot",
+    "cache": "vbagent.cli.cache.cache_commands",
     # Interface commands
     "chat": "vbagent.cli.interfaces.chat",
     "mcp": "vbagent.cli.interfaces.mcp",
@@ -87,36 +91,39 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 @click.group(cls=LazyGroup, lazy_subcommands=LAZY_SUBCOMMANDS, context_settings=CONTEXT_SETTINGS)
 @click.version_option(version=_get_version(), prog_name="vbagent")
 def main():
-    """VBAgent - Physics question processing pipeline.
+    """VBAgent - Multi-subject question processing pipeline.
     
-    A multi-agent CLI system for processing physics question images.
-    Supports classification, scanning, diagram generation, variant creation,
-    and format conversion.
+    A multi-agent CLI system for processing question images across physics,
+    chemistry, and mathematics. Supports classification, scanning, diagram
+    generation, variant creation, and format conversion.
     
     \b
     Commands:
-        init      - Initialize workspace config (.vbagent.json)
-        chat      - Interactive conversational interface
-        mcp       - Start MCP server for external agents
-        metadata  - Manage question bank metadata
-        dpp       - Create Daily Practice Problem sets
-        export    - Export LaTeX files in different formats
-        extans    - Extract answers from LaTeX problem files
-        db        - Database management for question bank
-        process   - Full pipeline orchestration
-        classify  - Stage 1: Classify question image
-        scan      - Stage 2: Extract LaTeX from image
-        tikz      - Generate TikZ code for diagrams
-        fbd       - Generate Free Body Diagram TikZ code
-        idea      - Extract concepts and ideas
-        alternate - Generate alternative solutions
-        variant   - Generate problem variants
-        convert   - Convert between question formats
-        batch     - Batch processing with resume capability
-        check     - QA review with interactive approval
-        ref       - Manage reference context files
-        config    - Configure models and settings
-        util      - File utilities (rename, count, clean)
+        init       - Initialize workspace config (.vbagent.json)
+        chat       - Interactive conversational interface
+        mcp        - Start MCP server for external agents
+        metadata   - Manage question bank metadata
+        dpp        - Create Daily Practice Problem sets
+        export     - Export LaTeX files in different formats
+        extans     - Extract answers from LaTeX problem files
+        db         - Database management for question bank
+        screenshot - Manage screenshot save location
+        cache      - Manage pipeline cache and metadata
+        process    - Full pipeline orchestration
+        classify   - Stage 1: Classify question image and detect subject
+        scan       - Stage 2: Extract LaTeX from image
+        tikz       - Generate TikZ code for diagrams
+        fbd        - Generate Free Body Diagram TikZ code (physics)
+        idea       - Extract concepts and ideas
+        alternate  - Generate alternative solutions
+        variant    - Generate problem variants
+        convert    - Convert between question formats
+        compile    - Generate main LaTeX file for compilation
+        batch      - Batch processing with resume capability
+        check      - QA review with interactive approval
+        ref        - Manage reference context files
+        config     - Configure models and settings
+        util       - File utilities (rename, count, clean)
     """
     # Disable tracing early (before agents SDK import) for non-OpenAI providers.
     # The SDK initializes tracing at import time, so the env var must be set first.

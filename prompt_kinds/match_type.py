@@ -1,7 +1,13 @@
 """Matching-type question extraction and formatting (embedded)."""
 
 PROMPT = r"""
-Please analyze the image provided and extract the texts. Format these texts in LaTeX format like this, first put question in \item command, then diagram in tikz env nested within center env if there is any diagram present, then make the table for list/column/anything, then after put the options in a tasks environment. Use this below code as reference:
+Please analyze the image provided and extract the texts. Format these texts in LaTeX format like this, first put question in \item command, then diagram in tikz env nested within center env if there is any diagram present, then make the table for list/column/anything, then after put the options in a tasks environment.
+
+**IMPORTANT:**
+- Do **not** include exam or year metadata (e.g., `NEET[2022]`, `JEE 2019`, `IIT-JEE 2020`, `(2023)`, `[2021]`).
+- Do **not** include example/exercise numbering prefixes (e.g., `Example 25.4`, `Ex. 3.2`, `Problem 12`, `Q.5`). Start `\item` directly with the actual problem text.
+
+Use this below code as reference:
 
 \item This is a sample question for matching type questions. There are two columns. Match column I with coulmn II. 
 

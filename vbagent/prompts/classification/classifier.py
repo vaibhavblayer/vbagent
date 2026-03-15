@@ -1,7 +1,6 @@
 """Classifier agent prompts."""
 
 from vbagent.prompts.subjects import get_subject_config, SUBJECTS
-from vbagent.prompts.classification.taxonomy import get_chapters, get_all_topics
 
 
 def get_classifier_prompt(subject: str = "physics") -> str:
@@ -18,20 +17,6 @@ def get_classifier_prompt(subject: str = "physics") -> str:
     
     config = get_subject_config(subject)
     
-    # Get chapters and topics from taxonomy
-    chapters = get_chapters(subject)
-    all_topics = get_all_topics(subject)
-    
-    # Format chapters list (first 10 as examples)
-    chapters_str = ", ".join(f'"{c}"' for c in chapters[:10])
-    if len(chapters) > 10:
-        chapters_str += f", ... ({len(chapters)} total)"
-    
-    # Format topics list (first 15 as examples)
-    topics_str = ", ".join(f'"{t}"' for t in all_topics[:15])
-    if len(all_topics) > 15:
-        topics_str += f", ... ({len(all_topics)} total)"
-    
     diagram_types_str = ", ".join(config.diagram_types)
     
     return f"""You are an expert {config.display_name.lower()} question classifier. Analyze the provided image of a {config.display_name.lower()} problem and extract structured metadata.
@@ -39,31 +24,11 @@ def get_classifier_prompt(subject: str = "physics") -> str:
 You MUST respond with ONLY a valid JSON object (no markdown, no explanation) with these fields:
 
 {{
+    "subject": "physics" | "chemistry" | "mathematics" | "biology",
     "question_type": "mcq_sc" | "mcq_mc" | "subjective" | "assertion_reason" | "passage" | "match",
-    "difficulty": "easy" | "medium" | "hard",
-    "chapter": "<chapter name from the list below>",
-    "topic": "<topic name from the list below>",
-    "subtopic": "<specific subtopic>",
     "has_diagram": true | false,
-    "diagram_type": "<type if present: {diagram_types_str}, none>",
-    "num_options": <number of options if MCQ, else null>,
-    "key_concepts": ["<concept1>", "<concept2>"],
-    "requires_calculus": true | false,
     "confidence": <0.0 to 1.0>
 }}
-
-**IMPORTANT: You MUST choose chapter and topic from these predefined lists:**
-
-**Available Chapters:** {chapters_str}
-
-**Available Topics:** {topics_str}
-
-**Rules for chapter and topic selection:**
-1. Choose the MOST APPROPRIATE chapter from the list above
-2. Choose the MOST APPROPRIATE topic from the list above
-3. If unsure, choose the closest matching chapter/topic
-4. The topic should be related to the chosen chapter
-5. Use exact names from the lists (case-insensitive matching is acceptable)
 
 Question type definitions:
 - mcq_sc: Multiple choice with single correct answer (standalone question)
@@ -78,6 +43,15 @@ Question type definitions:
 - match: Match the following type (two columns to be matched)
 
 CRITICAL: If the image contains MULTIPLE questions (e.g., items 42, 43, 44) all referring to the SAME passage/graph/scenario, classify as "passage", NOT mcq_sc.
+
+**Subject Detection:**
+- If the image clearly shows a subject different from "{config.display_name}", update the "subject" field accordingly
+- Default to "{config.display_name.lower()}" if unclear
+
+**Diagram Detection:**
+- Look for diagrams, graphs, charts, or visual representations
+- Set "has_diagram" to true if ANY visual element is present
+- Set to false for pure text/questions without visuals
 
 Respond with ONLY the JSON object."""
 

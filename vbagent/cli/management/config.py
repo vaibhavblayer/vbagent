@@ -61,110 +61,68 @@ def show():
     """Show current model configuration for all agents."""
     console = _get_console()
     cfg = get_config()
-    
+
     # Show config source
     workspace_path = get_workspace_config_path()
     if workspace_path:
-        console.print(f"[dim]Using workspace config: {workspace_path}[/dim]\n")
+        console.print(f"[#6b7280]Using workspace config: {workspace_path}[/]\n")
     else:
-        console.print(f"[dim]Using global config: {CONFIG_FILE}[/dim]\n")
-    
-    # Create table for hierarchical view
-    table = _get_table(title="Agent Model Configuration (Hierarchical)")
-    table.add_column("Category", style="magenta", no_wrap=True)
-    table.add_column("Agent", style="cyan")
-    table.add_column("Model", style="green")
-    table.add_column("Reasoning", style="yellow")
-    table.add_column("Max Tokens")
-    
-    # Add default row
-    table.add_row(
-        "[bold]Global[/bold]",
-        "[bold]default[/bold]",
+        console.print(f"[#6b7280]Using global config: {CONFIG_FILE}[/]\n")
+
+    # Create table using new category table helper
+    from vbagent.ui.tables import create_category_table, add_category_row
+
+    table = create_category_table(
+        title="Agent Model Configuration",
+        columns=["Category", "Agent", "Model", "Reasoning", "Max Tokens"],
+        caption=f"subject={cfg.subject}  provider={get_provider_name()}  debug={'on' if cfg.debug else 'off'}",
+    )
+
+    # Global default
+    add_category_row(table, "global", [
+        "[bold]default[/]",
         cfg.default_model,
         cfg.default_reasoning_effort,
         "-",
-        style="dim"
-    )
-    
-    # Add classification agents
-    for agent_name in ["image_classifier", "diagram_analyzer", "difficulty_assessor", "latex_classifier", "taxonomy_classifier"]:
-        agent_cfg = getattr(cfg.classification, agent_name, None)
-        if agent_cfg:
-            table.add_row(
-                "Classification",
-                agent_name,
-                agent_cfg.model,
-                agent_cfg.reasoning_effort,
-                str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
-            )
-    
-    # Add content generation agents
-    for agent_name in ["scanner", "idea", "alternate", "converter"]:
-        agent_cfg = getattr(cfg.content_generation, agent_name, None)
-        if agent_cfg:
-            table.add_row(
-                "Content Generation",
-                agent_name,
-                agent_cfg.model,
-                agent_cfg.reasoning_effort,
-                str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
-            )
-    
-    # Add diagram agents
-    for agent_name in ["tikz", "fbd", "tikz_checker"]:
-        agent_cfg = getattr(cfg.diagram, agent_name, None)
-        if agent_cfg:
-            table.add_row(
-                "Diagram",
-                agent_name,
-                agent_cfg.model,
-                agent_cfg.reasoning_effort,
-                str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
-            )
-    
-    # Add variants agents
-    for agent_name in ["variant", "multi_context"]:
-        agent_cfg = getattr(cfg.variants, agent_name, None)
-        if agent_cfg:
-            table.add_row(
-                "Variants",
-                agent_name,
-                agent_cfg.model,
-                agent_cfg.reasoning_effort,
-                str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
-            )
-    
-    # Add quality agents
-    for agent_name in ["reviewer", "solution_checker", "grammar_checker", "clarity_checker", "latex_fixer"]:
-        agent_cfg = getattr(cfg.quality, agent_name, None)
-        if agent_cfg:
-            table.add_row(
-                "Quality",
-                agent_name,
-                agent_cfg.model,
-                agent_cfg.reasoning_effort,
-                str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
-            )
-    
+    ], is_header=True)
+
+    # Agent categories
+    categories = [
+        ("classification", ["image_classifier", "diagram_analyzer", "difficulty_assessor", "latex_classifier", "taxonomy_classifier"]),
+        ("content_generation", ["scanner", "idea", "alternate", "converter"]),
+        ("diagram", ["tikz", "fbd", "tikz_checker"]),
+        ("variants", ["variant", "multi_context"]),
+        ("quality", ["reviewer", "solution_checker", "grammar_checker", "clarity_checker", "latex_fixer"]),
+    ]
+
+    for cat_key, agent_names in categories:
+        cat_cfg = getattr(cfg, cat_key, None)
+        if not cat_cfg:
+            continue
+        first = True
+        for agent_name in agent_names:
+            agent_cfg = getattr(cat_cfg, agent_name, None)
+            if agent_cfg:
+                add_category_row(table, cat_key, [
+                    agent_name,
+                    agent_cfg.model,
+                    agent_cfg.reasoning_effort,
+                    str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
+                ], is_header=first)
+                first = False
+
     console.print(table)
-    
-    # Show subject and provider
-    console.print(f"\n[bold]Subject:[/bold] {cfg.subject}")
-    console.print(f"[bold]Provider:[/bold] {get_provider_name()}")
+
+    # Extra info
     if cfg.base_url:
-        console.print(f"[bold]Base URL:[/bold] {cfg.base_url}")
+        console.print(f"\n[bold #5eead4]Base URL:[/] {cfg.base_url}")
     if cfg.api_key:
-        # Mask the API key
         masked = cfg.api_key[:8] + "..." + cfg.api_key[-4:] if len(cfg.api_key) > 12 else "***"
-        console.print(f"[bold]API Key:[/bold] {masked}")
-    
-    # Show available models
-    console.print(f"\n[dim]Available models: {', '.join(MODELS.keys())}[/dim]")
-    console.print(f"[dim]Available subjects: {', '.join(SUBJECTS)}[/dim]")
-    console.print(f"[dim]Known providers: {', '.join(PROVIDERS.keys())}[/dim]")
-    console.print(f"[dim]Model groups: {', '.join(MODEL_GROUPS.keys())}[/dim]")
-    console.print(f"\n[dim]Tip: Use hierarchical paths like 'content_generation.scanner' or flat paths like 'scanner'[/dim]")
+        console.print(f"[bold #5eead4]API Key:[/] {masked}")
+
+    console.print(f"\n[#6b7280]Models: {', '.join(MODELS.keys())}[/]")
+    console.print(f"[#6b7280]Subjects: {', '.join(SUBJECTS)}  |  Providers: {', '.join(PROVIDERS.keys())}  |  Groups: {', '.join(MODEL_GROUPS.keys())}[/]")
+    console.print(f"[#6b7280]Tip: Use paths like 'content_generation.scanner' or flat 'scanner'[/]")
 
 
 @config.command()
@@ -227,14 +185,63 @@ def set(agent_type: str, model: str, reasoning: str, max_tokens: int, workspace:
                 console.print(f"[dim]Valid flat paths: {', '.join(AGENT_TYPES)}[/dim]")
                 console.print(f"[dim]Or use hierarchical paths like 'content_generation.scanner'[/dim]")
                 return
+            
+            # Also update hierarchical config for consistency
+            # Map flat names to hierarchical paths
+            hierarchical_map = {
+                # Classification
+                "classifier": ("classification", "image_classifier"),
+                "taxonomy_classifier": ("classification", "taxonomy_classifier"),
+                "difficulty_assessor": ("classification", "difficulty_assessor"),
+                # Content Generation
+                "scanner": ("content_generation", "scanner"),
+                "idea": ("content_generation", "idea"),
+                "alternate": ("content_generation", "alternate"),
+                "converter": ("content_generation", "converter"),
+                # Diagram
+                "tikz": ("diagram", "tikz"),
+                "fbd": ("diagram", "fbd"),
+                "tikz_checker": ("diagram", "tikz_checker"),
+                # Variants
+                "variant": ("variants", "variant"),
+                # Quality
+                "reviewer": ("quality", "reviewer"),
+                "solution_checker": ("quality", "solution_checker"),
+                "grammar_checker": ("quality", "grammar_checker"),
+                "clarity_checker": ("quality", "clarity_checker"),
+                "latex_fixer": ("quality", "latex_fixer"),
+                "format_checker": ("quality", "format_checker"),
+            }
+            
+            if agent_type in hierarchical_map:
+                category, agent_name = hierarchical_map[agent_type]
+                category_config = getattr(cfg, category, None)
+                if category_config:
+                    hierarchical_agent_cfg = getattr(category_config, agent_name, None)
+                    if hierarchical_agent_cfg:
+                        # Update both flat and hierarchical configs
+                        if model:
+                            agent_cfg.model = model
+                            hierarchical_agent_cfg.model = model
+                        if reasoning:
+                            agent_cfg.reasoning_effort = reasoning
+                            hierarchical_agent_cfg.reasoning_effort = reasoning
+                        if max_tokens is not None:
+                            agent_cfg.max_tokens = max_tokens
+                            hierarchical_agent_cfg.max_tokens = max_tokens
+                        print_status(console, f"Updated {agent_type} configuration", "success")
+                        # Skip the normal update below
+                        agent_cfg = None
         
-        if model:
-            agent_cfg.model = model
-        if reasoning:
-            agent_cfg.reasoning_effort = reasoning
-        if max_tokens is not None:
-            agent_cfg.max_tokens = max_tokens
-        print_status(console, f"Updated {agent_type} configuration", "success")
+        # Normal update (for hierarchical paths or if flat path didn't match)
+        if agent_cfg:
+            if model:
+                agent_cfg.model = model
+            if reasoning:
+                agent_cfg.reasoning_effort = reasoning
+            if max_tokens is not None:
+                agent_cfg.max_tokens = max_tokens
+            print_status(console, f"Updated {agent_type} configuration", "success")
     
     # Save to file
     config_path = save_config(workspace=workspace)
@@ -244,10 +251,40 @@ def set(agent_type: str, model: str, reasoning: str, max_tokens: int, workspace:
         console.print(f"  Model: {cfg.default_model}")
         console.print(f"  Reasoning: {cfg.default_reasoning_effort}")
     else:
-        console.print(f"  Model: {agent_cfg.model}")
-        console.print(f"  Reasoning: {agent_cfg.reasoning_effort}")
-        if agent_cfg.max_tokens:
-            console.print(f"  Max Tokens: {agent_cfg.max_tokens}")
+        # Get the config to display (prefer hierarchical if available)
+        display_cfg = agent_cfg
+        if not display_cfg and "." not in agent_type:
+            # For flat paths that were synced, get from hierarchical
+            hierarchical_map = {
+                "classifier": ("classification", "image_classifier"),
+                "taxonomy_classifier": ("classification", "taxonomy_classifier"),
+                "difficulty_assessor": ("classification", "difficulty_assessor"),
+                "scanner": ("content_generation", "scanner"),
+                "idea": ("content_generation", "idea"),
+                "alternate": ("content_generation", "alternate"),
+                "converter": ("content_generation", "converter"),
+                "tikz": ("diagram", "tikz"),
+                "fbd": ("diagram", "fbd"),
+                "tikz_checker": ("diagram", "tikz_checker"),
+                "variant": ("variants", "variant"),
+                "reviewer": ("quality", "reviewer"),
+                "solution_checker": ("quality", "solution_checker"),
+                "grammar_checker": ("quality", "grammar_checker"),
+                "clarity_checker": ("quality", "clarity_checker"),
+                "latex_fixer": ("quality", "latex_fixer"),
+                "format_checker": ("quality", "format_checker"),
+            }
+            if agent_type in hierarchical_map:
+                category, agent_name = hierarchical_map[agent_type]
+                category_config = getattr(cfg, category, None)
+                if category_config:
+                    display_cfg = getattr(category_config, agent_name, None)
+        
+        if display_cfg:
+            console.print(f"  Model: {display_cfg.model}")
+            console.print(f"  Reasoning: {display_cfg.reasoning_effort}")
+            if display_cfg.max_tokens:
+                console.print(f"  Max Tokens: {display_cfg.max_tokens}")
     
     console.print(f"\n[dim]Saved to: {config_path}[/dim]")
 
@@ -297,6 +334,46 @@ def debug(mode: str, workspace: bool):
     status = "enabled" if cfg.debug else "disabled"
     config_type = "workspace" if workspace else "global"
     print_status(console, f"Debug mode {status} ({config_type} config)", "success")
+
+
+@config.command("log-level")
+@click.argument("level", type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "status"], case_sensitive=False))
+@click.option("-w", "--workspace", is_flag=True, help="Save to workspace config")
+def log_level(level: str, workspace: bool):
+    """Set logging level for agent operations.
+    
+    Controls the verbosity of logging output.
+    
+    \b
+    Levels:
+        DEBUG    - Detailed debug information
+        INFO     - General informational messages (default)
+        WARNING  - Warning messages only
+        ERROR    - Error messages only
+        CRITICAL - Critical errors only
+    
+    \b
+    Examples:
+        vbagent config log-level DEBUG       # Enable debug logging
+        vbagent config log-level INFO        # Set to info level
+        vbagent config log-level status      # Show current level
+        vbagent config log-level DEBUG -w    # Set in workspace config
+    """
+    from vbagent.cli.interfaces.ui import print_status
+    console = _get_console()
+    
+    if level.lower() == "status":
+        cfg = get_config()
+        config_type = "workspace" if has_workspace_config() else "global"
+        console.print(f"Log level: [cyan]{cfg.log_level}[/] ({config_type} config)")
+        return
+    
+    cfg = get_config()
+    cfg.log_level = level.upper()
+    save_config(workspace=workspace)
+    
+    config_type = "workspace" if workspace else "global"
+    print_status(console, f"Log level set to {level.upper()} ({config_type} config)", "success")
 
 
 @config.command()

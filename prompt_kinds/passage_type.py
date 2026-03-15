@@ -52,7 +52,9 @@ PROMPT = r"""
     ```
 
 4.  **Each Question-Solution pair**
-    *   Begin with `\item` followed by the question text.
+    *   Begin with `\item` followed by the actual question text.
+    *   Do **not** include exam or year metadata (e.g., `NEET[2022]`, `JEE 2019`, `IIT-JEE 2020`, `(2023)`, `[2021]`).
+    *   Do **not** include example/exercise numbering prefixes (e.g., `Example 25.4`, `Ex. 3.2`, `Problem 12`, `Q.5`). Start directly with the actual problem text.
     *   Provide the options in a `tasks` environment.  Use two columns unless the image shows otherwise.
     *   Append ` \ans` to every correct option (single- or multi-correct).
     *   Insert a `solution` environment directly after the `tasks` block.  Inside it use **one** `align*` environment.

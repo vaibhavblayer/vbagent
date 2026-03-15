@@ -14,7 +14,7 @@ from hypothesis import strategies as st
 
 # List of all agent types that should have prompt files
 AGENT_PROMPT_MODULES = [
-    "vbagent.prompts.classifier",
+    "vbagent.prompts.classification.classifier",
 ]
 
 

@@ -95,7 +95,7 @@ def scan(
     return ScanResult(
         latex=latex,
         has_diagram=classification.has_diagram,
-        raw_diagram_description=classification.diagram_type,
+        raw_diagram_description=getattr(classification, 'diagram_type', None),
     )
 
 
@@ -167,7 +167,7 @@ def scan_problem(
     Returns:
         LaTeX string with problem statement only
     """
-    from vbagent.prompts.scanner.problem_only import get_problem_prompt, USER_TEMPLATE
+    from vbagent.prompts.content_generation.scanner.problem_only import get_problem_prompt, USER_TEMPLATE
     
     if subject is None:
         subject = get_config().subject
@@ -220,7 +220,7 @@ def scan_solution(
     Returns:
         LaTeX string with solution block only
     """
-    from vbagent.prompts.scanner.solution_only import get_solution_prompt, USER_TEMPLATE
+    from vbagent.prompts.content_generation.scanner.solution_only import get_solution_prompt, USER_TEMPLATE
     
     if subject is None:
         subject = get_config().subject

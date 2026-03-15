@@ -7,7 +7,7 @@ Uses openai-agents SDK to generate different types of problem variants:
 - calculus: Add calculus-based modifications
 """
 
-from typing import Optional
+from typing import Any, Optional
 
 from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.references.context import get_context_prompt_section
@@ -51,12 +51,15 @@ VARIANT_PROMPTS = {
     },
 }
 
-# Valid variant types
-VALID_VARIANT_TYPES = list(VARIANT_PROMPTS.keys())
+# Standard variant types (single-agent, use VARIANT_PROMPTS)
+STANDARD_VARIANT_TYPES = list(VARIANT_PROMPTS.keys())
+
+# All valid variant types (includes multi-stage pipelines)
+VALID_VARIANT_TYPES = STANDARD_VARIANT_TYPES + ["cross_topic"]
 
 
 def get_variant_prompt(variant_type: str) -> tuple[str, str]:
-    """Get the system and user prompts for a variant type.
+    """Get the system and user prompts for a standard variant type.
     
     Args:
         variant_type: Type of variant (numerical, context, conceptual, calculus)
@@ -65,12 +68,12 @@ def get_variant_prompt(variant_type: str) -> tuple[str, str]:
         Tuple of (system_prompt, user_template)
         
     Raises:
-        ValueError: If variant_type is not valid
+        ValueError: If variant_type is not a standard prompt-based type
     """
     if variant_type not in VARIANT_PROMPTS:
         raise ValueError(
             f"Invalid variant type: {variant_type}. "
-            f"Valid types are: {VALID_VARIANT_TYPES}"
+            f"Valid types are: {STANDARD_VARIANT_TYPES}"
         )
     
     prompts = VARIANT_PROMPTS[variant_type]
@@ -109,6 +112,7 @@ def generate_variant(
     variant_type: str,
     ideas: Optional[IdeaResult] = None,
     use_context: bool = True,
+    classification: Optional[Any] = None,
 ) -> str:
     """Generate a variant of the source problem.
     
@@ -117,12 +121,14 @@ def generate_variant(
     - context: Changes only the scenario/context
     - conceptual: Changes the core physics concept
     - calculus: Adds calculus-based modifications
+    - cross_topic: Integrates a complementary physics topic (multi-stage)
     
     Args:
         source_latex: The source problem in LaTeX format
         variant_type: Type of variant to generate
         ideas: Optional IdeaResult with extracted concepts (used for context)
         use_context: Whether to include reference context in prompt
+        classification: Optional ClassificationResult for cross_topic variants
         
     Returns:
         The generated variant in LaTeX format
@@ -133,6 +139,46 @@ def generate_variant(
     if not source_latex.strip():
         raise ValueError("Source LaTeX cannot be empty")
     
+    # Cross-topic uses its own multi-stage pipeline
+    if variant_type == "cross_topic":
+        from .cross_topic import analyze_cross_topic, generate_cross_topic_variant
+        
+        # Extract classification info if available
+        subject = "physics"
+        topic = None
+        question_type = "subjective"
+        has_diagram = False
+        key_concepts = None
+        
+        if classification:
+            subject = getattr(classification, 'subject', 'physics')
+            topic = getattr(classification, 'topic', None)
+            question_type = getattr(classification, 'question_type', 'subjective')
+            has_diagram = getattr(classification, 'has_diagram', False)
+            key_concepts = getattr(classification, 'key_concepts', None)
+        
+        if ideas and ideas.concepts:
+            key_concepts = key_concepts or []
+            key_concepts = list(set(key_concepts + ideas.concepts))
+        
+        # Stage 1: Analyze and pick integration topic
+        analysis = analyze_cross_topic(
+            source_latex=source_latex,
+            subject=subject,
+            topic=topic,
+            question_type=question_type,
+            has_diagram=has_diagram,
+            key_concepts=key_concepts,
+        )
+        
+        # Stage 2: Generate the cross-topic variant
+        return generate_cross_topic_variant(
+            source_latex=source_latex,
+            analysis=analysis,
+            use_context=use_context,
+        )
+    
+    # Standard single-agent variant types
     # Get prompts for this variant type
     system_prompt, user_template = get_variant_prompt(variant_type)
     

@@ -180,7 +180,7 @@ def convert(
             console.print(f"[cyan]Detected type:[/cyan] {classification.question_type}")
             
             with console.status("[bold green]Scanning image..."):
-                scan_result = scan_image(image, classification)
+                scan_result = scan_image(image, classification, subject=classification.subject)
             
             source_latex = scan_result.latex
             detected_format = classification.question_type

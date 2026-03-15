@@ -51,18 +51,15 @@ def test_route_with_optics_suggestion():
 
 
 def test_route_from_primary():
-    """Test routing from primary classification."""
+    """Test routing from primary classification (simplified)."""
     primary = PrimaryClassification(
         subject="physics",
         question_type="mcq_sc",
-        chapter="Mechanics",
-        topic="Forces and Motion",
-        subtopic="FBD",
         has_diagram=True
     )
     
     agent = route_tikz_agent(primary=primary)
-    assert agent == "fbd"
+    assert agent == "generic"
 
 
 def test_route_default():

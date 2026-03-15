@@ -16,7 +16,8 @@ Analyze the provided image and extract an Assertion–Reason style question. Pro
     * Use this exact pattern (two bold labels inside the same item):
       `\item \textbf{Assertion}: <extracted assertion text>\\\n      \textbf{Reason}: <extracted reason text>`
     * Extract the assertion and reason exactly as shown in the image (no additions/omissions).
-    * Do not include exam/year metadata (e.g., `NEET[2022]`).
+    * Do not include exam/year metadata (e.g., `NEET[2022]`, `JEE 2019`, `IIT-JEE 2020`, `(2023)`, `[2021]`).
+    * Do **not** include example/exercise numbering prefixes (e.g., `Example 25.4`, `Ex. 3.2`, `Problem 12`, `Q.5`). Start directly with the assertion text.
 
 2.  Assertion and Reason Options (`\begin{tasks}(c) ... \end{tasks}`)**
     *   Column rule: choose columns by option style.

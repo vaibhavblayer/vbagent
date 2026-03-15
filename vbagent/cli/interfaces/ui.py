@@ -100,16 +100,10 @@ def print_agent_result(console: Console, agent_name: str, duration: float, statu
 def print_classification(console: Console, data: dict):
     """Print classification results in structured format."""
     content = {
+        "Subject": data.get("subject", "unknown").title(),
         "Type": data.get("question_type", "unknown"),
-        "Confidence": f"{data.get('confidence', 0) * 100:.1f}%",
-        "Chapter": data.get("chapter", "N/A"),
-        "Topic": data.get("topic", "N/A"),
+        "Diagram": "Yes" if data.get("has_diagram") else "No",
     }
-    
-    if data.get("has_diagram"):
-        content["Diagram"] = f"Yes ({data.get('diagram_type', 'unknown')})"
-    else:
-        content["Diagram"] = "No"
     
     print_section(console, "Classification", content, style="cyan")
 

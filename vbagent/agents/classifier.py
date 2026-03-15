@@ -15,7 +15,7 @@ from vbagent.agents.base import (
     run_agent_sync,
 )
 from vbagent.config import get_config
-from vbagent.models.classification import ClassificationResult  # Legacy v1
+from vbagent.models.classification import ClassificationResult, PrimaryClassification
 from vbagent.models.structural import StructuralClassification  # New Stage 1
 from vbagent.prompts.classification.classifier import get_classifier_prompt, get_user_template
 from vbagent.prompts.classification.taxonomy import get_chapter_for_topic
@@ -105,7 +105,7 @@ def create_classifier_agent(subject: Optional[str] = None) -> "Agent":
     return create_agent(
         name=f"Classifier-{subject}",
         instructions=prompt,
-        output_type=ClassificationResult,
+        output_type=PrimaryClassification,
         agent_type="classifier",
     )
 
@@ -138,7 +138,7 @@ def classify_structural(
     # Try with nano first
     agent = create_structural_classifier_agent(subject)
     message = create_image_message(image_path, "Analyze this question image.")
-    result = run_agent_sync(agent, message)
+    result = run_agent_sync(agent, message, timeout=60)
     
     # Fallback to mini if confidence is low
     if result.confidence < config.classifier_confidence_threshold:
@@ -146,13 +146,13 @@ def classify_structural(
         original_model = config.classifier.model
         config.classifier.model = "gpt-5-mini"
         agent = create_structural_classifier_agent(subject)
-        result = run_agent_sync(agent, message)
+        result = run_agent_sync(agent, message, timeout=60)
         config.classifier.model = original_model  # Restore
     
     return result
 
 
-def classify(image_path: str, subject: Optional[str] = None) -> ClassificationResult:
+def classify(image_path: str, subject: Optional[str] = None) -> PrimaryClassification:
     """Analyze a question image and return structured metadata (LEGACY v1).
     
     For new code, use classify_structural() for Stage 1 classification.
@@ -162,7 +162,7 @@ def classify(image_path: str, subject: Optional[str] = None) -> ClassificationRe
         subject: Subject override (uses config if not provided)
         
     Returns:
-        ClassificationResult with extracted metadata (chapter auto-determined)
+        PrimaryClassification with extracted metadata
         
     Raises:
         FileNotFoundError: If the image file doesn't exist
@@ -173,10 +173,6 @@ def classify(image_path: str, subject: Optional[str] = None) -> ClassificationRe
     agent = create_classifier_agent(subject)
     user_template = get_user_template(subject)
     message = create_image_message(image_path, user_template)
-    result = run_agent_sync(agent, message)
-    
-    # Auto-determine chapter from topic
-    if result.topic and not result.chapter:
-        result.chapter = get_chapter_for_topic(subject, result.topic)
+    result = run_agent_sync(agent, message, timeout=60)
     
     return result

@@ -4,6 +4,8 @@ Checks for grammar, spelling, and language errors
 in physics problems and solutions.
 """
 
+import re
+
 from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.prompts.quality.grammar_checker import SYSTEM_PROMPT, USER_TEMPLATE
 from vbagent.utils.latex import clean_latex_output
@@ -13,7 +15,7 @@ from vbagent.utils.latex import clean_latex_output
 grammar_checker_agent = create_agent(
     name="GrammarChecker",
     instructions=SYSTEM_PROMPT,
-    agent_type="reviewer",  # Uses reviewer model config
+    agent_type="quality.grammar_checker",  # Uses grammar_checker model config
 )
 
 

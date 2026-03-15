@@ -82,42 +82,44 @@ def populate_from_classification_result(
     Returns:
         Updated QuestionRecord
     """
-    # Basic classification
-    record.subject = classification.subject if hasattr(classification, 'subject') else record.subject
+    # Basic classification (Agent 1/4)
+    record.subject = classification.subject
     record.question_type = classification.question_type
+    record.has_diagram = classification.has_diagram
+    record.confidence = classification.confidence
     record.chapter = classification.chapter
     record.topic = classification.topic
     record.subtopic = classification.subtopic
-    record.has_diagram = classification.has_diagram
     record.num_options = classification.num_options
-    record.key_concepts = classification.key_concepts
+    record.key_concepts = classification.key_concepts or []
     record.requires_calculus = classification.requires_calculus
-    record.confidence = classification.confidence
     
     # Agent 2 metadata (if available)
     if classification.diagram_category:
         record.diagram_category = classification.diagram_category
         record.diagram_complexity = classification.diagram_complexity
-        record.diagram_elements = classification.diagram_elements
+        record.diagram_elements = classification.diagram_elements or []
         record.suggested_tikz_agent = classification.suggested_tikz_agent
+        record.diagram_type = classification.diagram_type
         
         if classification.tikz_requirements:
-            record.tikz_libraries = classification.tikz_requirements.libraries
+            record.tikz_libraries = classification.tikz_requirements.libraries or []
     
-    # Agent 3 metadata (if available)
-    if classification.difficulty:
+    # Agent 3 metadata (if available — check difficulty_score as primary indicator
+    # since difficulty string could be None even when assessment was done)
+    if classification.difficulty or classification.difficulty_score is not None:
         record.difficulty = classification.difficulty
         record.difficulty_score = classification.difficulty_score
         record.difficulty_reasoning = classification.difficulty_reasoning
         record.expected_solve_time_minutes = classification.expected_solve_time_minutes
         record.expected_error_rate = classification.expected_error_rate
-        record.prerequisite_concepts = classification.prerequisite_concepts
-        record.common_mistakes = classification.common_mistakes
+        record.prerequisite_concepts = classification.prerequisite_concepts or []
+        record.common_mistakes = classification.common_mistakes or []
         record.cognitive_level = classification.cognitive_level
-        record.solution_approach = classification.solution_approach
-        record.required_formulas = classification.required_formulas
-        record.learning_objectives = classification.learning_objectives
-        record.tags_auto = classification.tags_auto
+        record.solution_approach = classification.solution_approach or []
+        record.required_formulas = classification.required_formulas or []
+        record.learning_objectives = classification.learning_objectives or []
+        record.tags_auto = classification.tags_auto or []
         
         if classification.exam_relevance:
             record.exam_relevance = {

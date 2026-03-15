@@ -50,7 +50,7 @@ def scan_tool(
         detected_type = question_type
     else:
         classification = classify_image(image)
-        result = scan_image(image, classification)
+        result = scan_image(image, classification, subject=classification.subject)
         detected_type = classification.question_type
     
     latex_content = result.latex
@@ -362,7 +362,7 @@ def convert_tool(
             raise FileNotFoundError(f"Image file not found: {image}")
         
         classification = classify_image(image)
-        scan_result = scan_image(image, classification)
+        scan_result = scan_image(image, classification, subject=classification.subject)
         source_latex = scan_result.latex
         
         # Map classification type to format
@@ -1785,7 +1785,7 @@ def generate_problem_tool(
             - metadata: Classification and difficulty metadata (if run_pipeline=True)
     """
     from vbagent.agents.classification.idea_generator import generate_from_idea
-    from vbagent.cli.process import process_generated_problem
+    from vbagent.cli.core.process import process_generated_problem
     from pathlib import Path
     
     # Prepare concepts list

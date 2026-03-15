@@ -129,15 +129,11 @@ def assess_difficulty(
     context = f"""Assess the difficulty of this {subject} problem.
 
 **Question Type:** {primary.question_type}
-**Topic:** {primary.topic}
-**Subtopic:** {primary.subtopic}
-**Key Concepts:** {', '.join(primary.key_concepts)}
-**Requires Calculus:** {primary.requires_calculus}
+**Has Diagram:** {primary.has_diagram}
 """
     
     if diagram:
         context += f"""
-**Has Diagram:** Yes
 **Diagram Type:** {diagram.diagram_type}
 **Diagram Complexity:** {diagram.diagram_complexity}
 **Diagram Elements:** {', '.join(diagram.diagram_elements)}

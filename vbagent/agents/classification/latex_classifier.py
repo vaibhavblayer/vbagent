@@ -9,45 +9,26 @@ from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.config import get_config
 from vbagent.models.classification import PrimaryClassification
 from vbagent.prompts.subjects import get_subject_config
-from vbagent.prompts.classification.taxonomy import get_chapters, get_all_topics
+from vbagent.prompts.classification.question_types import get_question_type_guidance
+from vbagent.agents.classification.subject_detector import detect_subject_from_latex
 
 
 def get_latex_classifier_prompt(subject: str = "physics") -> str:
-    """Get LaTeX classifier prompt."""
+    """Get simplified LaTeX classifier prompt (3 fields only)."""
     config = get_subject_config(subject)
-    chapters = get_chapters(subject)
-    all_topics = get_all_topics(subject)
-    
-    chapters_str = ", ".join(f'"{c}"' for c in chapters[:10])
-    if len(chapters) > 10:
-        chapters_str += f", ... ({len(chapters)} total)"
-    
-    topics_str = ", ".join(f'"{t}"' for t in all_topics[:15])
-    if len(all_topics) > 15:
-        topics_str += f", ... ({len(all_topics)} total)"
+    question_type_guidance = get_question_type_guidance()
     
     return f"""You are an expert {config.display_name.lower()} question classifier. Analyze the provided LaTeX content and extract structured metadata.
 
 You MUST respond with ONLY a valid JSON object:
 
 {{
-    "subject": "{subject}",
+    "subject": "physics" | "chemistry" | "mathematics" | "biology",
     "question_type": "mcq_sc" | "mcq_mc" | "subjective" | "assertion_reason" | "passage" | "match",
-    "chapter": "<from list below>",
-    "topic": "<from list below>",
-    "subtopic": "<specific subtopic>",
     "has_diagram": true | false,
-    "num_options": <number if MCQ, else null>,
-    "key_concepts": ["<concept1>", "<concept2>"],
-    "requires_calculus": true | false,
-    "estimated_marks": <typical marks: 1-10>,
-    "time_estimate_minutes": <typical solve time: 1-30>,
     "confidence": <0.0 to 1.0>,
     "classified_from": "latex"
 }}
-
-**Available Chapters:** {chapters_str}
-**Available Topics:** {topics_str}
 
 Question types:
 - mcq_sc: Single correct MCQ (look for \\ans marker)
@@ -57,14 +38,15 @@ Question types:
 - passage: Multiple questions sharing context
 - match: Match the following
 
+Detailed detection cues:
+{question_type_guidance}
+
 Diagram detection:
 - has_diagram: true if contains \\includegraphics, \\begin{{tikzpicture}}, \\begin{{circuitikz}}, etc.
 
 Rules:
-1. Choose chapter and topic from lists above
-2. Analyze LaTeX structure and content
-3. Detect question type from LaTeX markers
-4. Do NOT assess difficulty - that happens later
+1. classified_from: always "latex"
+2. has_diagram: true if ANY visual element is present in LaTeX
 
 Respond with ONLY the JSON object."""
 
@@ -95,7 +77,10 @@ def classify_from_latex(latex_content: str, subject: Optional[str] = None) -> Pr
         PrimaryClassification without difficulty
     """
     if subject is None:
-        subject = get_config().subject
+        try:
+            subject = detect_subject_from_latex(latex_content)
+        except (ValueError, TimeoutError):
+            subject = get_config().subject
     
     agent = create_latex_classifier_agent(subject)
     
@@ -108,5 +93,5 @@ def classify_from_latex(latex_content: str, subject: Optional[str] = None) -> Pr
 
 Analyze the content and provide classification."""
     
-    result = run_agent_sync(agent, context)
+    result = run_agent_sync(agent, context, timeout=30)
     return result

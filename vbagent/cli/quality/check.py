@@ -467,7 +467,7 @@ def display_session_summary(stats: dict, console: "Console") -> None:
     """
     console.print("\n[bold]═══ Session Summary ═══[/bold]")
     
-    table = _get_table(show_header=False, box=None)
+    table = _get_table(show_header=False, style="minimal")
     table.add_column("Metric", style="dim")
     table.add_column("Value", justify="right")
     
@@ -502,6 +502,7 @@ def check():
         solution  - Check solution correctness
         grammar   - Check grammar and spelling
         clarity   - Check clarity and conciseness
+        format    - Check formatting and structure
         tikz      - Check/generate TikZ diagrams
         apply     - Apply a stored suggestion
         history   - View suggestion history
@@ -1007,7 +1008,7 @@ def stats(days: Optional[int]):
         console.print(_get_panel(title, style="bold cyan"))
         
         # Main stats table
-        table = _get_table(show_header=False, box=None)
+        table = _get_table(show_header=False, style="minimal")
         table.add_column("Metric", style="dim")
         table.add_column("Value", justify="right")
         
@@ -1027,7 +1028,7 @@ def stats(days: Optional[int]):
         # Issues by type
         if review_stats["issues_by_type"]:
             console.print("\n[bold]Issues by Type:[/bold]")
-            type_table = _get_table(show_header=False, box=None)
+            type_table = _get_table(show_header=False, style="minimal")
             type_table.add_column("Type", style="yellow")
             type_table.add_column("Count", justify="right")
             
@@ -1053,28 +1054,48 @@ def stats(days: Optional[int]):
     help="Output directory to check (default: agentic)"
 )
 @click.option(
+    "--from", "from_index",
+    type=int,
+    default=None,
+    help="Start index (1-based, inclusive)"
+)
+@click.option(
+    "--to", "to_index",
+    type=int,
+    default=None,
+    help="End index (1-based, inclusive)"
+)
+@click.option(
+    "--item",
+    type=int,
+    default=None,
+    help="Initialize single item (shorthand for --from N --to N)"
+)
+@click.option(
     "-r", "--range", "item_range",
     nargs=2,
     type=int,
-    help="Range of problems to initialize (1-based inclusive, e.g., -r 1 10)"
+    default=None,
+    help="[DEPRECATED] Use --from and --to instead. Range of problems to initialize (1-based inclusive)"
 )
 @click.option(
     "--reset",
     is_flag=True,
     help="Reset existing entries to pending status"
 )
-def init_check(output_dir: str, item_range: Optional[tuple[int, int]], reset: bool):
+def init_check(output_dir: str, from_index: Optional[int], to_index: Optional[int], item: Optional[int], item_range: Optional[tuple[int, int]], reset: bool):
     """Initialize problem check tracking.
     
     Discovers all problems in the output directory and adds them
-    to the tracking database. Use --range to limit to specific problems.
+    to the tracking database. Use --from and --to to limit to specific problems.
     
     \b
     Examples:
         vbagent check init
         vbagent check init -d ./my_output
-        vbagent check init --dir ./agentic --range 1 50
-        vbagent check init -r 1 50
+        vbagent check init --dir ./agentic --from 1 --to 50
+        vbagent check init --from 1 --to 50
+        vbagent check init --item 5
         vbagent check init --reset
     """
     # Lazy imports
@@ -1082,6 +1103,24 @@ def init_check(output_dir: str, item_range: Optional[tuple[int, int]], reset: bo
     from vbagent.models.version_store import VersionStore
     
     console = _get_console()
+    
+    # Show deprecation warning
+    import sys
+    if '--range' in sys.argv or '-r' in sys.argv:
+        console.print("[yellow]Note:[/yellow] --range is deprecated, use --from and --to", style="dim")
+    
+    # Handle backward compatibility for range
+    if item_range:
+        from_index, to_index = item_range
+    
+    # Handle --item shorthand
+    if item:
+        from_index = to_index = item
+    
+    # Validate range
+    if from_index and to_index and from_index > to_index:
+        console.print("[red]Error:[/red] --from must be <= --to")
+        raise SystemExit(1)
     
     # Discover available problems
     all_problems = discover_problems(output_dir)
@@ -1098,8 +1137,9 @@ def init_check(output_dir: str, item_range: Optional[tuple[int, int]], reset: bo
     sorted_problems = sorted(all_problems, key=natural_sort_key)
     
     # Apply range filter if specified
-    if item_range:
-        start, end = item_range
+    if from_index or to_index:
+        start = from_index or 1
+        end = to_index or len(sorted_problems)
         start_idx = max(0, start - 1)
         end_idx = min(len(sorted_problems), end)
         sorted_problems = sorted_problems[start_idx:end_idx]
@@ -1402,7 +1442,7 @@ def continue_check(count: int, output_dir: str):
         
         # Display summary
         console.print("\n[bold]═══ Session Summary ═══[/bold]")
-        table = _get_table(show_header=False, box=None)
+        table = _get_table(show_header=False, style="minimal")
         table.add_column("Metric", style="dim")
         table.add_column("Value", justify="right")
         
@@ -1481,7 +1521,7 @@ def check_status(output_dir: str, show_status: Optional[str]):
         
         # Stats table
         console.print(f"\n[bold]Status Breakdown:[/bold]")
-        table = _get_table(show_header=False, box=None)
+        table = _get_table(show_header=False, style="minimal")
         table.add_column("Status", style="dim")
         table.add_column("Count", justify="right")
         
@@ -1949,7 +1989,7 @@ def check_alternate(
     
     # Summary
     console.print("\n[bold]═══ Session Summary ═══[/bold]")
-    table = _get_table(show_header=False, box=None)
+    table = _get_table(show_header=False, style="minimal")
     table.add_column("Metric", style="dim")
     table.add_column("Value", justify="right")
     
@@ -2278,7 +2318,7 @@ def check_idea(
     
     # Summary
     console.print("\n[bold]═══ Session Summary ═══[/bold]")
-    table = _get_table(show_header=False, box=None)
+    table = _get_table(show_header=False, style="minimal")
     table.add_column("Metric", style="dim")
     table.add_column("Value", justify="right")
     
@@ -2367,7 +2407,7 @@ def check_solution_cmd(
         count=count,
         problem_id=problem_id,
         checker_name="solution",
-        check_func_module="vbagent.agents.solution_checker",
+        check_func_module="vbagent.agents.quality.solution_checker",
         check_func_name="check_solution",
         require_solution=False,  # Solution checker can create solutions if missing
         reset=reset,
@@ -2435,7 +2475,7 @@ def check_grammar_cmd(
         count=count,
         problem_id=problem_id,
         checker_name="grammar",
-        check_func_module="vbagent.agents.grammar_checker",
+        check_func_module="vbagent.agents.quality.grammar_checker",
         check_func_name="check_grammar",
         require_solution=False,
         reset=reset,
@@ -2502,8 +2542,78 @@ def check_clarity_cmd(
         count=count,
         problem_id=problem_id,
         checker_name="clarity",
-        check_func_module="vbagent.agents.clarity_checker",
+        check_func_module="vbagent.agents.quality.clarity_checker",
         check_func_name="check_clarity",
+        require_solution=False,
+        reset=reset,
+        extra_prompt=prompt,
+    )
+
+
+@check.command(name="format")
+@click.option(
+    "-d", "--dir",
+    "output_dir",
+    type=click.Path(exists=True),
+    default="agentic",
+    help="Directory containing .tex files, or a single .tex file (default: agentic)"
+)
+@click.option(
+    "-c", "--count",
+    type=int,
+    default=5,
+    help="Number of problems to check in this session (default: 5)"
+)
+@click.option(
+    "-p", "--problem-id",
+    type=str,
+    default=None,
+    help="Check a specific problem by ID"
+)
+@click.option(
+    "--prompt",
+    type=str,
+    default=None,
+    help="Additional instructions or context for the checker"
+)
+@click.option(
+    "--reset",
+    is_flag=True,
+    help="Reset progress and re-check all files"
+)
+def check_format_cmd(
+    output_dir: str,
+    count: int,
+    problem_id: Optional[str],
+    prompt: Optional[str],
+    reset: bool,
+):
+    """Check and fix formatting issues specific to problem types.
+    
+    Reviews content for:
+    - Metadata cleanup (example numbers, exam years)
+    - LaTeX structure issues
+    - Problem-type specific formatting (MCQ, subjective, etc.)
+    - Common OCR errors and truncated words
+    
+    Use --prompt to add specific instructions for the checker.
+    
+    \b
+    Examples:
+        vbagent check format
+        vbagent check format -d ./src/src_tex/
+        vbagent check format -c 10
+        vbagent check format -p Problem_1
+        vbagent check format --prompt "Focus on MCQ option formatting"
+        vbagent check format --reset
+    """
+    _run_checker_session(
+        output_dir=output_dir,
+        count=count,
+        problem_id=problem_id,
+        checker_name="format",
+        check_func_module="vbagent.agents.quality.format_checker",
+        check_func_name="check_format",
         require_solution=False,
         reset=reset,
         extra_prompt=prompt,
@@ -2633,7 +2743,7 @@ def check_tikz_cmd(
             count=count,
             problem_id=problem_id,
             checker_name="tikz",
-            check_func_module="vbagent.agents.tikz_checker",
+            check_func_module="vbagent.agents.diagram.tikz_checker",
             check_func_name="check_tikz",
             require_solution=False,
             require_tikz=only_tikz,
@@ -3190,7 +3300,7 @@ def _run_tikz_patch_session(
     
     # Summary
     console.print("\n[bold]═══ Session Summary (apply_patch mode) ═══[/bold]")
-    table = _get_table(show_header=False, box=None)
+    table = _get_table(show_header=False, style="minimal")
     table.add_column("Metric", style="dim")
     table.add_column("Value", justify="right")
     
@@ -3467,6 +3577,18 @@ def _run_checker_session(
                 stats["skipped"] += 1
                 continue
             
+            # For tikz checker: skip files without TikZ content (unless it needs generation)
+            if checker_name == "tikz" and has_tikz_environment:
+                has_tikz = has_tikz_environment(content)
+                has_placeholder = has_diagram_placeholder(content)
+                
+                if not has_tikz and not has_placeholder:
+                    console.print("[dim]No TikZ content found, skipping[/dim]")
+                    stats["skipped"] += 1
+                    # Mark as checked/passed since there's nothing to check
+                    store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=True)
+                    continue
+            
             # Prepare content with extra prompt if provided
             check_content = content
             if extra_prompt:
@@ -3641,7 +3763,7 @@ def _run_checker_session(
     
     # Summary
     console.print("\n[bold]═══ Session Summary ═══[/bold]")
-    table = _get_table(show_header=False, box=None)
+    table = _get_table(show_header=False, style="minimal")
     table.add_column("Metric", style="dim")
     table.add_column("Value", justify="right")
     

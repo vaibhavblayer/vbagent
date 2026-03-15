@@ -11,22 +11,18 @@ from vbagent.models.classification import (
 
 
 def test_primary_classification_creation():
-    """Test PrimaryClassification model creation."""
+    """Test PrimaryClassification model creation (simplified to 3 fields)."""
     primary = PrimaryClassification(
         subject="physics",
         question_type="mcq_sc",
-        chapter="Mechanics",
-        topic="Forces",
-        subtopic="Free Body Diagrams",
         has_diagram=True,
-        key_concepts=["Newton's laws", "vectors"],
-        classified_from="image"
     )
     
     assert primary.subject == "physics"
     assert primary.question_type == "mcq_sc"
     assert primary.has_diagram is True
-    assert len(primary.key_concepts) == 2
+    assert primary.confidence == 1.0
+    assert primary.classified_from == "image"
 
 
 def test_diagram_analysis_creation():
@@ -62,13 +58,10 @@ def test_difficulty_assessment_creation():
 
 
 def test_classification_result_from_primary():
-    """Test ClassificationResult creation from primary."""
+    """Test ClassificationResult creation from primary (simplified)."""
     primary = PrimaryClassification(
         subject="physics",
         question_type="mcq_sc",
-        chapter="Mechanics",
-        topic="Forces",
-        subtopic="FBD",
         has_diagram=True
     )
     
@@ -81,13 +74,10 @@ def test_classification_result_from_primary():
 
 
 def test_classification_result_from_agents():
-    """Test ClassificationResult combining all agents."""
+    """Test ClassificationResult combining all agents (simplified)."""
     primary = PrimaryClassification(
         subject="physics",
         question_type="mcq_sc",
-        chapter="Mechanics",
-        topic="Forces",
-        subtopic="FBD",
         has_diagram=True
     )
     
@@ -128,13 +118,10 @@ def test_tikz_validation_creation():
 
 
 def test_model_serialization():
-    """Test model JSON serialization."""
+    """Test model JSON serialization (simplified)."""
     primary = PrimaryClassification(
         subject="physics",
         question_type="mcq_sc",
-        chapter="Mechanics",
-        topic="Forces",
-        subtopic="FBD",
         has_diagram=True
     )
     

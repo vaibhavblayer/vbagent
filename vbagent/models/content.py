@@ -28,3 +28,19 @@ class IdeaResult(BaseModel):
     formulas: list[str] = Field(default_factory=list, description="Key formulas used")
     techniques: list[str] = Field(default_factory=list, description="Problem-solving techniques")
     difficulty_factors: list[str] = Field(default_factory=list, description="What makes this problem difficult")
+
+
+class CrossTopicAnalysis(BaseModel):
+    """Result from the Cross-Topic Analyzer Agent.
+    
+    Identifies the best complementary topic to integrate into a problem.
+    """
+    source_topic: str = Field(description="Detected primary topic of the source problem")
+    integration_topic: str = Field(description="The topic to integrate")
+    integration_reasoning: str = Field(description="Why this integration is natural and valuable")
+    integration_approach: str = Field(description="How the topics connect physically")
+    difficulty_delta: str = Field(
+        default="harder",
+        description="Expected difficulty change: easier, same, or harder"
+    )
+    example_twist: str = Field(description="One-sentence preview of the variant")

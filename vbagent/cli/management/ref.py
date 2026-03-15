@@ -5,6 +5,7 @@ stored in ~/.config/vbagent for use as context in LLM prompts.
 """
 
 from pathlib import Path
+from typing import Optional
 
 import click
 
@@ -321,13 +322,19 @@ def tikz_group():
 
 @tikz_group.command(name="import")
 @click.argument("path", type=click.Path(exists=True))
-@click.option("-r", "--range", "item_range", nargs=2, type=int,
-              help="Range of problems to import (1-based inclusive)")
+@click.option("--from", "from_index", type=int, default=None,
+              help="Start index (1-based, inclusive)")
+@click.option("--to", "to_index", type=int, default=None,
+              help="End index (1-based, inclusive)")
+@click.option("--item", type=int, default=None,
+              help="Import single item (shorthand for --from N --to N)")
+@click.option("-r", "--range", "item_range", nargs=2, type=int, default=None,
+              help="[DEPRECATED] Use --from and --to instead. Range of problems to import (1-based inclusive)")
 @click.option("-t", "--tikz-dir", type=click.Path(exists=True),
               help="Directory containing separate TikZ files")
 @click.option("-c", "--class-dir", type=click.Path(exists=True),
               help="Directory containing classification JSON files")
-def tikz_import(path: str, item_range: tuple, tikz_dir: str, class_dir: str):
+def tikz_import(path: str, from_index: Optional[int], to_index: Optional[int], item: Optional[int], item_range: tuple, tikz_dir: str, class_dir: str):
     """Import TikZ references from processed problems.
     
     Extracts TikZ code and loads classification metadata automatically.
@@ -343,13 +350,34 @@ def tikz_import(path: str, item_range: tuple, tikz_dir: str, class_dir: str):
         vbagent ref tikz import agentic/scans/Problem_5.tex
         
         # Import range from directory
-        vbagent ref tikz import agentic/scans -r 1 10
+        vbagent ref tikz import agentic/scans --from 1 --to 10
+        
+        # Import single item
+        vbagent ref tikz import agentic/scans --item 5
         
         # Import with custom tikz/classification directories
         vbagent ref tikz import agentic/scans/Problem_5.tex -t agentic/tikz -c agentic/classifications
     """
     _ensure_imports()
     from vbagent.references.tikz_store import TikZReferenceStore
+    
+    # Show deprecation warning
+    import sys
+    if '--range' in sys.argv or '-r' in sys.argv:
+        console.print("[yellow]Note:[/yellow] --range is deprecated, use --from and --to", style="dim")
+    
+    # Handle backward compatibility for range
+    if item_range:
+        from_index, to_index = item_range
+    
+    # Handle --item shorthand
+    if item:
+        from_index = to_index = item
+    
+    # Validate range
+    if from_index and to_index and from_index > to_index:
+        console.print("[red]Error:[/red] --from must be <= --to")
+        raise SystemExit(1)
     
     store = TikZReferenceStore.get_instance()
     path_obj = Path(path)
@@ -390,8 +418,9 @@ def tikz_import(path: str, item_range: tuple, tikz_dir: str, class_dir: str):
         # Directory import
         tex_files = sorted(path_obj.glob("*.tex"))
         
-        if item_range:
-            start, end = item_range
+        if from_index or to_index:
+            start = from_index or 1
+            end = to_index or 999999
             # Filter by range (assuming Problem_N.tex naming)
             import re
             filtered = []

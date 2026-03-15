@@ -47,11 +47,11 @@ class TikZMetadata:
     def from_classification(cls, classification) -> "TikZMetadata":
         """Create metadata from a ClassificationResult."""
         return cls(
-            diagram_type=classification.diagram_type,
-            topic=classification.topic,
-            subtopic=classification.subtopic,
+            diagram_type=getattr(classification, 'diagram_type', None),
+            topic=getattr(classification, 'topic', None),
+            subtopic=getattr(classification, 'subtopic', None),
             question_type=classification.question_type,
-            key_concepts=classification.key_concepts,
+            key_concepts=getattr(classification, 'key_concepts', []),
         )
     
     def match_score(self, other: "TikZMetadata") -> int:

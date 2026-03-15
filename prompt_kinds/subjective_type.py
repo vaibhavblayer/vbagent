@@ -14,9 +14,19 @@ PROMPT = r"""
 Follow this exact structure for your output:
 
 1.  **Problem Statement (`\item ...`)**
-    *   Begin the output *immediately* with `\item`.
+    *   Begin the output *immediately* with `\item` followed by the actual problem text.
     *   Extract the **exact** physics question text from the image **without any modifications or additions**.
     *   Use inline math mode `$ ... $` for all mathematical symbols and variables as they appear in the image.
+    *   Do **not** include exam or year metadata (e.g., `NEET[2022]`, `JEE 2019`, `IIT-JEE 2020`, `(2023)`, `[2021]`).
+    *   Do **not** include example/exercise numbering prefixes (e.g., `Example 25.4`, `Ex. 3.2`, `Problem 12`, `Q.5`). Start directly with the actual problem text.
+    *   **Multi-part sub-questions:** If the problem has sub-parts like (a), (b), (c), use `\begin{enumerate}[(a)]` with `\item` for each sub-part instead of manual `(a) ...\\` formatting. Example:
+        ```latex
+        \item In the circuit shown, find
+        \begin{enumerate}[(a)]
+            \item the current through the resistor.
+            \item the voltage across the capacitor.
+        \end{enumerate}
+        ```
 
 2.  **TZPlot Diagram (Optional, place immediately after `\item` line if used)**
     *   Include *only* if the image contains a diagram **or** if a diagram is essential for understanding the extracted text.

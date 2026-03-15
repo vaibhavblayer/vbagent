@@ -105,6 +105,8 @@ print(f"Agents used: {[o.agent for o in result.agent_outputs]}")
 
 VBAgent includes a comprehensive 7-agent classification pipeline for advanced metadata extraction:
 
+Subject inference now runs automatically before classification, so the pipeline picks the appropriate subject (physics, chemistry, mathematics, biology) from the image/LaTeX input instead of depending on manual config overrides. The prompts also include richer question-type cues so mcq_sc, mcq_mc, subjective, assertion_reason, passage, and match formats are detected with better evidence.
+
 ```python
 from vbagent.agents.classification import (
     get_pipeline,
@@ -549,7 +551,7 @@ vbagent variant [-i <image>] [-t <tex>] --type <type> [-r <start> <end>] [-n <co
 
 | Option | Description |
 |--------|-------------|
-| `--type` | `numerical`, `context`, `conceptual`, `calculus`, `multi` (required) |
+| `--type` | `numerical`, `context`, `conceptual`, `calculus`, `cross_topic`, `multi` (required) |
 | `-r, --range` | Range of items to process (1-based inclusive) |
 | `-n, --count` | Number of variants per problem (default: 1) |
 | `--context` | Additional context files for multi variant |
@@ -565,6 +567,7 @@ vbagent variant [-i <image>] [-t <tex>] --type <type> [-r <start> <end>] [-n <co
 | `context` | Change scenario, keep numbers |
 | `conceptual` | Change physics concept |
 | `calculus` | Add calculus elements |
+| `cross_topic` | Integrate a complementary physics topic (multi-stage) |
 | `multi` | Combine multiple problems |
 
 ### convert
@@ -588,7 +591,7 @@ vbagent process [-i <image>] [-t <tex>] [-r <start> <end>] [--variants <types>] 
 | `-i, --image` | Image file to process |
 | `-t, --tex` | TeX file containing problems |
 | `-r, --range` | Range to process (1-based inclusive) |
-| `--variants` | Variant types (comma-separated: numerical,context,conceptual,calculus) |
+| `--variants` | Variant types (comma-separated: numerical,context,conceptual,calculus,cross_topic) |
 | `--alternate` | Generate alternate solutions |
 | `--ideas` | Extract physics concepts |
 | `--ref` | Reference directories for TikZ |
@@ -614,6 +617,9 @@ vbagent process -i question.png --orchestrate
 # Full pipeline with new agents
 vbagent process -i question.png --ideas --alternate --variants numerical,context \
   --assess-difficulty --analyze-diagram --validate-tikz
+
+# Cross-topic variant (integrates complementary physics topics)
+vbagent process -i question.png --variants cross_topic
 
 # Orchestrator with compilation
 vbagent process -i question.png --orchestrate -c
@@ -643,7 +649,8 @@ agentic/
 ├── variants/
 │   ├── numerical/problem_1.tex
 │   ├── context/problem_1.tex
-│   └── conceptual/problem_1.tex
+│   ├── conceptual/problem_1.tex
+│   └── cross_topic/problem_1.tex
 └── CONTEXT.md
 ```
 

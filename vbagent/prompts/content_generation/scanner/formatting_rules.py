@@ -84,12 +84,15 @@ Therefore, the correct option is (c).
 PROBLEM_FORMATTING_RULES = r"""
 ## Problem Formatting Rules
 
-1. **Start with `\item`** - Begin output immediately with `\item`
+1. **Start with `\item`** - Begin output immediately with `\item` followed by the actual problem text
 2. **Extract exact text** - Do not modify or add to the problem statement
 3. **Use inline math** - `$ ... $` for all mathematical symbols
 4. **Diagram placeholder** - Use `\input{diagram}` if diagram present
 5. **MCQ options** - Use `\begin{tasks}(2)...\end{tasks}` environment
 6. **Mark correct answer** - Add `\ans` after correct option text
+7. **No exam/year metadata** - Do not include exam names or years (e.g., `NEET[2022]`, `JEE 2019`, `IIT-JEE 2020`, `(2023)`, `[2021]`)
+8. **No example/exercise prefixes** - Do not include numbering like `Example 25.4`, `Ex. 3.2`, `Problem 12`, `Q.5`. Start directly with the actual problem text
+9. **Multi-part sub-questions** - When a problem has sub-parts like (a), (b), (c), use `\begin{enumerate}` with `\item` for each part. Add `\renewcommand{\labelenumi}{(\alph{enumi})}` before enumerate if (a), (b), (c) labels are needed. Do NOT use `\begin{enumerate}[(a)]` syntax.
 """
 
 __all__ = [

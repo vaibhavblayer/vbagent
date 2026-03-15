@@ -183,6 +183,7 @@ def process_single_image(
     generate_alternates: bool,
     output_dir: str,
     use_context: bool = True,
+    max_retries: int = 2,
 ) -> bool:
     """Process a single image through the pipeline with state tracking.
     
@@ -198,7 +199,7 @@ def process_single_image(
     from vbagent.models.batch import ProcessingStatus
     from vbagent.models.classification import ClassificationResult
     from vbagent.models.content import IdeaResult
-    from vbagent.cli.process import (
+    from vbagent.cli.core.process import (
         format_latex,
         extract_problem_solution,
         save_pipeline_result_organized,
@@ -211,6 +212,30 @@ def process_single_image(
     image_id = record.id
     image_path = record.image_path
     
+    def _run_with_retry(fn, stage_name, retries=max_retries):
+        """Run a function with retry logic for transient API failures."""
+        import time
+        last_error = None
+        for attempt in range(retries + 1):
+            try:
+                return fn()
+            except Exception as e:
+                last_error = e
+                error_str = str(e).lower()
+                # Retry on transient errors (rate limits, timeouts, connection issues)
+                is_transient = any(kw in error_str for kw in [
+                    "rate limit", "timeout", "timed out", "connection",
+                    "429", "500", "502", "503", "504", "overloaded",
+                    "server error", "retry", "capacity",
+                ]) or isinstance(e, TimeoutError)
+                if is_transient and attempt < retries:
+                    wait = 2 ** attempt * 3  # 3s, 6s
+                    console.print(f"  [yellow]⟳ {stage_name} failed (attempt {attempt + 1}), retrying in {wait}s...[/yellow]")
+                    time.sleep(wait)
+                else:
+                    raise last_error
+        raise last_error  # Should not reach here
+    
     try:
         # Determine which stage to resume from
         status = record.status
@@ -219,7 +244,10 @@ def process_single_image(
         if status in [ProcessingStatus.PENDING, ProcessingStatus.CLASSIFYING]:
             db.update_status(image_id, ProcessingStatus.CLASSIFYING, "classifying")
             
-            classification = classify_image(image_path)
+            classification = _run_with_retry(
+                lambda: classify_image(image_path),
+                "Classification"
+            )
             db.save_classification(image_id, classification.model_dump_json())
             
             console.print(f"  [cyan]Type:[/cyan] {classification.question_type}")
@@ -233,7 +261,10 @@ def process_single_image(
         if status in [ProcessingStatus.PENDING, ProcessingStatus.CLASSIFYING, ProcessingStatus.SCANNING]:
             db.update_status(image_id, ProcessingStatus.SCANNING, "scanning")
             
-            scan_result = scan_image(image_path, classification, use_context=use_context)
+            scan_result = _run_with_retry(
+                lambda: scan_image(image_path, classification, use_context=use_context, subject=classification.subject),
+                "Scanning"
+            )
             latex = scan_result.latex
             db.save_latex(image_id, latex)
         else:
@@ -248,10 +279,14 @@ def process_single_image(
             ]:
                 db.update_status(image_id, ProcessingStatus.TIKZ, "tikz")
                 
-                tikz_code = generate_tikz(
-                    description=f"Generate TikZ for {classification.diagram_type or 'diagram'}",
-                    image_path=image_path,
-                    use_context=use_context,
+                diagram_type = getattr(classification, 'diagram_type', None)
+                tikz_code = _run_with_retry(
+                    lambda: generate_tikz(
+                        description=f"Generate TikZ for {diagram_type or 'diagram'}",
+                        image_path=image_path,
+                        use_context=use_context,
+                    ),
+                    "TikZ"
                 )
                 db.save_tikz(image_id, tikz_code)
         
@@ -267,7 +302,10 @@ def process_single_image(
             ]:
                 db.update_status(image_id, ProcessingStatus.IDEAS, "ideas")
                 
-                ideas = extract_ideas(problem, solution)
+                ideas = _run_with_retry(
+                    lambda: extract_ideas(problem, solution),
+                    "Ideas"
+                )
                 db.save_ideas(image_id, ideas.model_dump_json())
             elif record.ideas_json:
                 ideas = IdeaResult.model_validate_json(record.ideas_json)
@@ -277,7 +315,10 @@ def process_single_image(
         if generate_alternates and problem and solution and not alternate_solutions:
             db.update_status(image_id, ProcessingStatus.ALTERNATES, "alternates")
             
-            alt = generate_alternate(problem, solution, ideas)
+            alt = _run_with_retry(
+                lambda: generate_alternate(problem, solution, ideas),
+                "Alternates"
+            )
             db.save_alternate(image_id, alt)
             alternate_solutions = [alt]
         
@@ -290,7 +331,13 @@ def process_single_image(
             db.update_status(image_id, ProcessingStatus.VARIANTS, "variants")
             
             for vtype in remaining_variants:
-                variant_latex = generate_variant(latex, vtype, ideas, use_context=use_context)
+                variant_latex = _run_with_retry(
+                    lambda v=vtype: generate_variant(
+                        latex, v, ideas, use_context=use_context,
+                        classification=classification,
+                    ),
+                    f"Variant-{vtype}"
+                )
                 db.save_variant(image_id, vtype, variant_latex)
                 variants[vtype] = variant_latex
         
@@ -364,7 +411,7 @@ def batch():
     "--variants", "variant_types_str",
     type=str,
     default="numerical,context,conceptual,calculus",
-    help="Variant types (comma-separated, default: all)"
+    help="Variant types (comma-separated: numerical,context,conceptual,calculus,cross_topic). Default: numerical,context,conceptual,calculus"
 )
 @click.option(
     "--alternate/--no-alternate",
@@ -394,6 +441,7 @@ def init(
         vbagent batch init -i ./my_images
         vbagent batch init --images-dir ./images --output ./results
         vbagent batch init --variants numerical,context --no-alternate
+        vbagent batch init --variants numerical,cross_topic
         vbagent batch init -i ./images -o ./output --no-context
     """
     # Lazy imports

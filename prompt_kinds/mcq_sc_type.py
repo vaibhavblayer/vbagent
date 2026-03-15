@@ -17,7 +17,8 @@ Follow this exact structure for your output:
     *   Begin the output immediately with `\item`.
     *   Extract the exact physics question text from the image without any modifications or additions.
     *   Use inline math mode `$ ... $` for all mathematical symbols and variables as they appear in the image.
-    *   Do not include exam or year metadata (e.g., `NEET[2022]`, `JEE 2019`).
+    *   Do not include exam or year metadata (e.g., `NEET[2022]`, `JEE 2019`, `IIT-JEE 2020`, `(2023)`, `[2021]`).
+    *   Do **not** include example/exercise numbering prefixes (e.g., `Example 25.4`, `Ex. 3.2`, `Problem 12`, `Q.5`). Start directly with the actual problem text.
 
 2.  **Diagram (Optional, place immediately after `\item` line if used)**
     *   Include only if the image contains a diagram OR if a diagram is essential for clarity.

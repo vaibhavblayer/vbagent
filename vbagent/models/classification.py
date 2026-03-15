@@ -21,6 +21,8 @@ QuestionType = Literal[
     "assertion_reason", "passage", "match"
 ]
 
+Subject = Literal["physics", "chemistry", "mathematics", "biology"]
+
 Difficulty = Literal["easy", "medium", "hard"]
 
 DiagramCategory = Literal[
@@ -40,23 +42,18 @@ CombinationStrategy = Literal["sequential", "parallel", "nested"]
 
 # Agent 1: Primary Classification (Image or LaTeX)
 class PrimaryClassification(BaseModel):
-    """Output from Agent 1 (Image Classifier) or Agent 4 (LaTeX Classifier)"""
+    """Output from Agent 1 (Image Classifier) or Agent 4 (LaTeX Classifier)
+    
+    Simplified to 3 core fields for classification.
+    """
     model_config = ConfigDict(extra='forbid')
     
-    subject: str
+    subject: Subject
     question_type: QuestionType
-    chapter: str
-    topic: str
-    subtopic: str
     has_diagram: bool
-    num_options: Optional[int] = None
-    key_concepts: list[str] = Field(default_factory=list)
-    requires_calculus: bool = False
-    estimated_marks: int = 4
-    time_estimate_minutes: int = 3
-    confidence: float = Field(ge=0.0, le=1.0, default=1.0)
     
     # Metadata
+    confidence: float = Field(ge=0.0, le=1.0, default=1.0)
     classified_from: Literal["image", "latex"] = "image"
     classified_at: str = Field(default_factory=lambda: datetime.now().isoformat())
     
@@ -196,11 +193,11 @@ class ClassificationResult(BaseModel):
     """
     
     # From Agent 1/4: Primary Classification
-    subject: str
+    subject: Subject
     question_type: QuestionType
-    chapter: str
-    topic: str
-    subtopic: str
+    chapter: Optional[str] = None  # No longer extracted by classifier
+    topic: Optional[str] = None    # No longer extracted by classifier
+    subtopic: Optional[str] = None # No longer extracted by classifier
     has_diagram: bool
     num_options: Optional[int] = None
     key_concepts: list[str] = Field(default_factory=list)
@@ -254,15 +251,7 @@ class ClassificationResult(BaseModel):
         return cls(
             subject=primary.subject,
             question_type=primary.question_type,
-            chapter=primary.chapter,
-            topic=primary.topic,
-            subtopic=primary.subtopic,
             has_diagram=primary.has_diagram,
-            num_options=primary.num_options,
-            key_concepts=primary.key_concepts,
-            requires_calculus=primary.requires_calculus,
-            estimated_marks=primary.estimated_marks,
-            time_estimate_minutes=primary.time_estimate_minutes,
             confidence=primary.confidence,
             classified_from=primary.classified_from,
         )

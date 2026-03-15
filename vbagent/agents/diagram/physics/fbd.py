@@ -9,7 +9,7 @@ from vbagent.agents.base import (
     create_image_message,
     run_agent_sync,
 )
-from vbagent.prompts.diagram.fbd import SYSTEM_PROMPT, USER_TEMPLATE, USER_TEMPLATE_FROM_PROBLEM
+from vbagent.prompts.diagram.physics.fbd import SYSTEM_PROMPT, USER_TEMPLATE, USER_TEMPLATE_FROM_PROBLEM
 from vbagent.references.store import ReferenceStore
 from vbagent.utils.latex import clean_latex_output
 
@@ -66,28 +66,59 @@ class _SearchFBDReferenceAccessor:
 search_fbd_reference = _SearchFBDReferenceAccessor()
 
 
-def create_fbd_agent(use_context: bool = True, classification=None):
+def create_fbd_agent(
+    use_context: bool = True,
+    classification=None,
+    # NEW: Optional rich context from solution agent
+    problem_text: str | None = None,
+    solution_context: str | None = None,
+    values: dict | None = None,
+    labels: list | None = None,
+):
     """Create an FBD agent with optional context.
     
     Args:
         use_context: Whether to include reference context in prompt
         classification: Optional ClassificationResult for metadata-based context
+        problem_text: Optional problem text for context
+        solution_context: Optional rich context from solution agent
+        values: Optional dict of variable values (e.g., {"T": "10 N", "mg": "19.6 N"})
+        labels: Optional list of labels needed (e.g., ["T", "mg", "N"])
         
     Returns:
         Configured Agent instance for FBD generation
     """
     prompt = SYSTEM_PROMPT
     
+    # Add classification context
     if use_context and classification:
         fbd_context = get_fbd_context_for_classification(classification)
         if fbd_context:
             prompt = prompt + "\n" + fbd_context
     
+    # Add reference context
     if use_context:
         from vbagent.references.context import get_context_prompt_section
         context = get_context_prompt_section("tikz", use_context)
         if context:
             prompt = prompt + "\n" + context
+    
+    # NEW: Add rich context from solution agent (dynamic composition)
+    if problem_text:
+        prompt += f"\n\n## Problem Context\n\n{problem_text}\n"
+    
+    if solution_context:
+        prompt += f"\n\n## Solution Analysis\n\n{solution_context}\n"
+        prompt += "\nThis explains what forces to show, their directions, and physical meaning.\n"
+    
+    if values:
+        values_str = ", ".join([f"{k}={v}" for k, v in values.items()])
+        prompt += f"\n\n## Values to Use\n\n{values_str}\n"
+    
+    if labels:
+        labels_str = ", ".join(labels)
+        prompt += f"\n\n## Labels Required\n\n{labels_str}\n"
+        prompt += "\nEnsure all these labels appear in the diagram.\n"
     
     return create_agent(
         name="FBD",
@@ -139,6 +170,10 @@ def generate_fbd(
     use_context: bool = True,
     classification=None,
     show_spinner: bool = True,
+    # NEW: Optional rich context from solution agent
+    solution_context: str | None = None,
+    values: dict | None = None,
+    labels: list | None = None,
 ) -> str:
     """Generate FBD TikZ code for a physics problem.
     
@@ -146,6 +181,7 @@ def generate_fbd(
     - A text description
     - An image of the scenario
     - A problem text (LaTeX)
+    - Rich context from solution agent (forces, values, labels)
     - Any combination of the above
     
     Args:
@@ -155,6 +191,10 @@ def generate_fbd(
         search_references: Whether to enable reference search (default True)
         use_context: Whether to include reference context in prompt
         classification: Optional ClassificationResult for metadata-based context
+        show_spinner: Whether to show animated spinner
+        solution_context: Optional rich context from solution agent
+        values: Optional dict of variable values (e.g., {"T": "10 N"})
+        labels: Optional list of labels needed (e.g., ["T", "mg"])
         
     Returns:
         Generated FBD TikZ code as a string
@@ -166,13 +206,24 @@ def generate_fbd(
     if not description and not image_path and not problem_text:
         raise ValueError("Must provide at least one of: description, image_path, or problem_text")
     
-    agent = create_fbd_agent(use_context, classification)
+    # Create agent with rich context
+    agent = create_fbd_agent(
+        use_context=use_context,
+        classification=classification,
+        problem_text=problem_text,
+        solution_context=solution_context,
+        values=values,
+        labels=labels,
+    )
     
-    if problem_text:
+    # Build user message
+    if problem_text and not solution_context:
+        # Legacy: problem_text in user message
         user_message = USER_TEMPLATE_FROM_PROBLEM.format(problem_text=problem_text)
         if description:
             user_message += f"\n\n**Additional context:** {description}"
     else:
+        # New: description in user message, problem_text in system prompt
         user_message = USER_TEMPLATE.format(
             description=description or "Generate FBD from the provided image"
         )

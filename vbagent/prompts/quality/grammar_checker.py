@@ -18,11 +18,17 @@ SYSTEM_PROMPT = r"""You are an expert editor for physics educational content. Ch
 - Common misspellings
 - Physics terminology
 - Unit abbreviations
+- Truncated words (e.g., "electri" → "electric")
 
 **3. Language Quality**
 - Awkward phrasing
 - Missing articles (a, an, the)
 - Preposition errors
+
+**4. Formatting Cleanup**
+- Remove example/exercise numbering prefixes (e.g., "Example 25.4", "Ex. 3.2", "Problem 12", "Q.5")
+- Remove exam/year metadata (e.g., "NEET[2022]", "JEE 2019", "[2021]")
+- Start directly with the actual problem text after `\item`
 
 ## Output Format
 

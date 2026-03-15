@@ -109,6 +109,11 @@ AGENT_TYPES = [
     "reviewer",
     "taxonomy_classifier",
     "difficulty_assessor",
+    "solution_checker",
+    "grammar_checker",
+    "clarity_checker",
+    "latex_fixer",
+    "format_checker",
 ]
 
 # Model groups: per-provider default models for each agent type.
@@ -434,6 +439,7 @@ class ClassificationConfig:
 class ContentGenerationConfig:
     """Configuration for content generation agents."""
     scanner: AgentModelConfig = field(default_factory=AgentModelConfig)
+    solution: AgentModelConfig = field(default_factory=AgentModelConfig)
     idea: AgentModelConfig = field(default_factory=AgentModelConfig)
     alternate: AgentModelConfig = field(default_factory=AgentModelConfig)
     converter: AgentModelConfig = field(default_factory=AgentModelConfig)
@@ -462,6 +468,7 @@ class QualityConfig:
     grammar_checker: AgentModelConfig = field(default_factory=AgentModelConfig)
     clarity_checker: AgentModelConfig = field(default_factory=AgentModelConfig)
     latex_fixer: AgentModelConfig = field(default_factory=AgentModelConfig)
+    format_checker: AgentModelConfig = field(default_factory=AgentModelConfig)
 
 
 
@@ -480,6 +487,7 @@ class VBAgentConfig:
     
     # Debug mode
     debug: bool = False
+    log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
     
     # Provider settings
     base_url: Optional[str] = None  # None = OpenAI default
@@ -498,6 +506,11 @@ class VBAgentConfig:
     reviewer: AgentModelConfig = field(default_factory=AgentModelConfig)
     taxonomy_classifier: AgentModelConfig = field(default_factory=AgentModelConfig)
     difficulty_assessor: AgentModelConfig = field(default_factory=AgentModelConfig)
+    solution_checker: AgentModelConfig = field(default_factory=AgentModelConfig)
+    grammar_checker: AgentModelConfig = field(default_factory=AgentModelConfig)
+    clarity_checker: AgentModelConfig = field(default_factory=AgentModelConfig)
+    latex_fixer: AgentModelConfig = field(default_factory=AgentModelConfig)
+    format_checker: AgentModelConfig = field(default_factory=AgentModelConfig)
     
     # Hierarchical agent configs (NEW - preferred)
     classification: ClassificationConfig = field(default_factory=ClassificationConfig)
@@ -526,6 +539,9 @@ class VBAgentConfig:
         # Scanner uses medium reasoning
         if self.scanner.reasoning_effort == "high":
             self.scanner.reasoning_effort = "medium"
+            
+        # Solution agent uses high reasoning (default gpt-5.2)
+        # No changes needed - uses defaults
             
         # TikZ checker doesn't need high reasoning
         if self.tikz_checker.reasoning_effort == "high":
@@ -609,6 +625,7 @@ class VBAgentConfig:
             "default_reasoning_effort": self.default_reasoning_effort,
             "subject": self.subject,
             "debug": self.debug,
+            "log_level": self.log_level,
             "enable_taxonomy": self.enable_taxonomy,
             "enable_difficulty": self.enable_difficulty,
             "run_metadata_parallel": self.run_metadata_parallel,
@@ -617,6 +634,38 @@ class VBAgentConfig:
             "agents": {
                 agent_type: getattr(self, agent_type).to_dict()
                 for agent_type in AGENT_TYPES
+            },
+            # Hierarchical configs (NEW format)
+            "classification": {
+                "image_classifier": self.classification.image_classifier.to_dict(),
+                "diagram_analyzer": self.classification.diagram_analyzer.to_dict(),
+                "difficulty_assessor": self.classification.difficulty_assessor.to_dict(),
+                "latex_classifier": self.classification.latex_classifier.to_dict(),
+                "taxonomy_classifier": self.classification.taxonomy_classifier.to_dict(),
+            },
+            "content_generation": {
+                "scanner": self.content_generation.scanner.to_dict(),
+                "solution": self.content_generation.solution.to_dict(),
+                "idea": self.content_generation.idea.to_dict(),
+                "alternate": self.content_generation.alternate.to_dict(),
+                "converter": self.content_generation.converter.to_dict(),
+            },
+            "diagram": {
+                "tikz": self.diagram.tikz.to_dict(),
+                "fbd": self.diagram.fbd.to_dict(),
+                "tikz_checker": self.diagram.tikz_checker.to_dict(),
+            },
+            "variants": {
+                "variant": self.variants.variant.to_dict(),
+                "multi_context": self.variants.multi_context.to_dict(),
+            },
+            "quality": {
+                "reviewer": self.quality.reviewer.to_dict(),
+                "solution_checker": self.quality.solution_checker.to_dict(),
+                "grammar_checker": self.quality.grammar_checker.to_dict(),
+                "clarity_checker": self.quality.clarity_checker.to_dict(),
+                "latex_fixer": self.quality.latex_fixer.to_dict(),
+                "format_checker": self.quality.format_checker.to_dict(),
             },
         }
         if self.base_url:
@@ -639,6 +688,7 @@ class VBAgentConfig:
             default_reasoning_effort=data.get("default_reasoning_effort", "high"),
             subject=data.get("subject", "physics"),
             debug=data.get("debug", False),
+            log_level=data.get("log_level", "INFO"),
             base_url=data.get("base_url"),
             api_key=data.get("api_key"),
             enable_taxonomy=data.get("enable_taxonomy", True),
@@ -661,7 +711,7 @@ class VBAgentConfig:
         
         if "content_generation" in data:
             content_gen_data = data["content_generation"]
-            for agent_name in ["scanner", "idea", "alternate", "converter"]:
+            for agent_name in ["scanner", "solution", "idea", "alternate", "converter"]:
                 if agent_name in content_gen_data:
                     setattr(
                         config.content_generation,
@@ -691,7 +741,7 @@ class VBAgentConfig:
         
         if "quality" in data:
             quality_data = data["quality"]
-            for agent_name in ["reviewer", "solution_checker", "grammar_checker", "clarity_checker", "latex_fixer"]:
+            for agent_name in ["reviewer", "solution_checker", "grammar_checker", "clarity_checker", "latex_fixer", "format_checker"]:
                 if agent_name in quality_data:
                     setattr(
                         config.quality,

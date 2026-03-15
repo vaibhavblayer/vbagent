@@ -9,6 +9,7 @@ Generates different types of physics problem variants:
 """
 
 import json
+from pathlib import Path
 from typing import Optional
 
 import click
@@ -62,14 +63,33 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 @click.option(
     "--type", "variant_type",
     required=True,
-    type=click.Choice(["numerical", "context", "conceptual", "calculus", "multi"]),
+    type=click.Choice(["numerical", "context", "conceptual", "calculus", "cross_topic", "multi"]),
     help="Type of variant to generate"
+)
+@click.option(
+    "--from", "from_index",
+    type=int,
+    default=None,
+    help="Start index (1-based, inclusive)"
+)
+@click.option(
+    "--to", "to_index",
+    type=int,
+    default=None,
+    help="End index (1-based, inclusive)"
+)
+@click.option(
+    "--item",
+    type=int,
+    default=None,
+    help="Process single item (shorthand for --from N --to N)"
 )
 @click.option(
     "-r", "--range", "item_range",
     nargs=2,
     type=int,
-    help="Range of items to process (start end, 1-based inclusive)"
+    default=None,
+    help="[DEPRECATED] Use --from and --to instead. Range of items to process (1-based inclusive)"
 )
 @click.option(
     "-n", "--count",
@@ -107,6 +127,9 @@ def variant(
     image: Optional[str],
     tex: Optional[str],
     variant_type: str,
+    from_index: Optional[int],
+    to_index: Optional[int],
+    item: Optional[int],
     item_range: Optional[tuple[int, int]],
     count: int,
     context_files: tuple[str, ...],
@@ -121,18 +144,21 @@ def variant(
     
     \b
     Variant Types:
-        numerical   - Change only numbers, keep context
-        context     - Change scenario, keep numbers
-        conceptual  - Change physics concept
-        calculus    - Add calculus elements
-        multi       - Combine multiple problems
+        numerical    - Change only numbers, keep context
+        context      - Change scenario, keep numbers
+        conceptual   - Change physics concept
+        calculus     - Add calculus elements
+        cross_topic  - Integrate a complementary physics topic (multi-stage)
+        multi        - Combine multiple problems
     
     \b
     Examples:
         vbagent variant -t problem.tex --type numerical
         vbagent variant --tex problem.tex --type numerical --count 3
         vbagent variant -t problem.tex --type context -o variants.tex
-        vbagent variant -t problems.tex --type numerical -r 1 5
+        vbagent variant -t problem.tex --type cross_topic
+        vbagent variant -t problems.tex --type numerical --from 1 --to 5
+        vbagent variant -t problems.tex --type numerical --item 3
         vbagent variant --type multi --context p1.tex --context p2.tex -o combined.tex
         vbagent variant -i image.png --type numerical --output variant.tex
     """
@@ -156,6 +182,28 @@ def variant(
         return fixed
     
     console = _get_console()
+    
+    # Show deprecation warning
+    import sys
+    if '--range' in sys.argv or '-r' in sys.argv:
+        console.print("[yellow]Note:[/yellow] --range is deprecated, use --from and --to", style="dim")
+    
+    # Handle backward compatibility for range
+    if item_range:
+        from_index, to_index = item_range
+    
+    # Handle --item shorthand
+    if item:
+        from_index = to_index = item
+    
+    # Validate range
+    if from_index and to_index and from_index > to_index:
+        console.print("[red]Error:[/red] --from must be <= --to")
+        raise SystemExit(1)
+    
+    # Convert to tuple for internal use
+    if from_index or to_index:
+        item_range = (from_index or 1, to_index or 999999)
     
     try:
         # Validate input
@@ -213,12 +261,14 @@ def variant(
         else:
             # Handle single-problem variants
             source_latex = ""
+            classification_result = None
             
             if image:
                 with console.status("[bold green]Scanning image..."):
                     classification = classify(image)
                     scan_result = scan(image, classification)
                     source_latex = scan_result.latex
+                    classification_result = classification
                 console.print(f"[cyan]Scanned image: {classification.question_type}[/cyan]")
             elif tex:
                 content = parse_tex_file(tex)
@@ -248,7 +298,7 @@ def variant(
             if source_latex:
                 for i in range(count):
                     with console.status(f"[bold green]Generating {variant_type} variant {i + 1}/{count}..."):
-                        result = gen_variant(source_latex, variant_type, ideas_result)
+                        result = gen_variant(source_latex, variant_type, ideas_result, classification=classification_result)
                         result = maybe_compile(result)
                         all_variants.append(result)
                     

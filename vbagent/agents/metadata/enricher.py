@@ -7,7 +7,7 @@ Uses the existing comprehensive difficulty assessor from classification pipeline
 import asyncio
 from typing import Optional
 
-from vbagent.agents.taxonomy_classifier import classify_taxonomy
+from vbagent.agents.classification.taxonomy_classifier import classify_taxonomy
 from vbagent.agents.classification.difficulty_assessor import assess_difficulty
 from vbagent.models.classification import (
     DifficultyAssessment,

@@ -13,6 +13,7 @@ from hypothesis import strategies as st
 
 from vbagent.agents.variants.variant import (
     VALID_VARIANT_TYPES,
+    STANDARD_VARIANT_TYPES,
     VARIANT_PROMPTS,
     get_variant_prompt,
     create_variant_agent,
@@ -294,7 +295,7 @@ def test_context_variant_prompt_content():
 # Property 9: Variant Solution Completeness
 # =============================================================================
 
-@given(variant_type=st.sampled_from(VALID_VARIANT_TYPES))
+@given(variant_type=st.sampled_from(STANDARD_VARIANT_TYPES))
 @settings(max_examples=100)
 def test_property_variant_solution_completeness_prompt(variant_type: str):
     """
@@ -317,7 +318,7 @@ def test_property_variant_solution_completeness_prompt(variant_type: str):
     )
 
 
-@given(variant_type=st.sampled_from(VALID_VARIANT_TYPES))
+@given(variant_type=st.sampled_from(STANDARD_VARIANT_TYPES))
 @settings(max_examples=100)
 def test_property_variant_prompts_exist(variant_type: str):
     """
@@ -343,7 +344,7 @@ def test_all_variant_types_have_solution_instructions():
     
     Test that all variant prompts instruct to include complete solutions.
     """
-    for variant_type in VALID_VARIANT_TYPES:
+    for variant_type in STANDARD_VARIANT_TYPES:
         system_prompt, _ = get_variant_prompt(variant_type)
         
         # Must mention solution
@@ -387,7 +388,7 @@ def test_create_variant_agent_invalid_type():
 
 def test_valid_variant_types_list():
     """Test that VALID_VARIANT_TYPES contains expected types."""
-    expected_types = ["numerical", "context", "conceptual", "calculus"]
+    expected_types = ["numerical", "context", "conceptual", "calculus", "cross_topic"]
     
     for expected in expected_types:
         assert expected in VALID_VARIANT_TYPES, (

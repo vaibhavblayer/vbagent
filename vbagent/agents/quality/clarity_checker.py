@@ -4,6 +4,8 @@ Checks for language clarity, conciseness, and
 pedagogical quality in physics problems and solutions.
 """
 
+import re
+
 from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.prompts.quality.clarity_checker import SYSTEM_PROMPT, USER_TEMPLATE
 from vbagent.utils.latex import clean_latex_output
@@ -13,7 +15,7 @@ from vbagent.utils.latex import clean_latex_output
 clarity_checker_agent = create_agent(
     name="ClarityChecker",
     instructions=SYSTEM_PROMPT,
-    agent_type="reviewer",  # Uses reviewer model config
+    agent_type="quality.clarity_checker",  # Uses clarity_checker model config
 )
 
 

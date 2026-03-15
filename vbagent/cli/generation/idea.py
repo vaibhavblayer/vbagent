@@ -7,12 +7,13 @@ formulas, techniques, and difficulty factors.
 import click
 
 from vbagent.utils.tex_parser import parse_tex_file_with_sections
-from ..common import _get_console, _get_table
+from ..common import _get_console
+from vbagent.ui.tables import create_table
 
 
 def format_result_table(result) -> "Table":
     """Format idea extraction result as a rich table."""
-    table = _get_table(title="Extracted Ideas", show_header=True)
+    table = create_table(title="Extracted Ideas", show_header=True)
     table.add_column("Category", style="cyan", width=20)
     table.add_column("Items", style="green")
     

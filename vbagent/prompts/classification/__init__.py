@@ -1,9 +1,7 @@
 """Classification prompts."""
 
-from vbagent.prompts.classification.classifier import SYSTEM_PROMPT as CLASSIFIER_PROMPT
-from vbagent.prompts.classification.taxonomy import SYSTEM_PROMPT as TAXONOMY_PROMPT
+from vbagent.prompts.classification.classifier import get_classifier_prompt
 
 __all__ = [
-    "CLASSIFIER_PROMPT",
-    "TAXONOMY_PROMPT",
+    "get_classifier_prompt",
 ]

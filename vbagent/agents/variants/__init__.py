@@ -13,8 +13,11 @@ from .variant import (
     generate_context_variant,
     generate_conceptual_variant,
     generate_calculus_variant,
+    VALID_VARIANT_TYPES,
+    STANDARD_VARIANT_TYPES,
 )
 from .multi_context_variant import generate_multi_context_variant
+from .cross_topic import analyze_cross_topic, generate_cross_topic_variant
 
 __all__ = [
     # Variant
@@ -25,6 +28,11 @@ __all__ = [
     "generate_context_variant",
     "generate_conceptual_variant",
     "generate_calculus_variant",
+    "VALID_VARIANT_TYPES",
+    "STANDARD_VARIANT_TYPES",
     # Multi-context
     "generate_multi_context_variant",
+    # Cross-topic
+    "analyze_cross_topic",
+    "generate_cross_topic_variant",
 ]

@@ -34,155 +34,6 @@ def _get_model_settings_class():
     return ModelSettings
 
 
-def _truncate_text(text: str, max_chars: int = 500) -> str:
-    """Truncate text intelligently: first 200, middle 100, last 200 chars."""
-    if len(text) <= max_chars:
-        return text
-    
-    first = 200
-    middle = 100
-    last = 200
-    
-    if len(text) <= first + last:
-        return text
-    
-    start = text[:first]
-    end = text[-last:]
-    
-    # Try to get middle section
-    mid_start = (len(text) - middle) // 2
-    mid_section = text[mid_start:mid_start + middle]
-    
-    return f"{start}\n\n... [truncated {len(text) - first - middle - last} chars] ...\n\n{mid_section}\n\n... [truncated] ...\n\n{end}"
-
-
-def _print_debug_input(agent: "Agent", input_text: Any) -> None:
-    """Print debug information about agent input."""
-    from rich.console import Console
-    from rich.panel import Panel
-    from rich.syntax import Syntax
-    
-    console = Console()
-    
-    # Get agent info
-    model = agent.model or "default"
-    reasoning = "none"  # Default for models without reasoning support
-    if agent.model_settings:
-        settings = agent.model_settings
-        if hasattr(settings, 'reasoning') and settings.reasoning:
-            reasoning_obj = settings.reasoning
-            if isinstance(reasoning_obj, dict):
-                reasoning = reasoning_obj.get('effort', 'none')
-            elif hasattr(reasoning_obj, 'effort'):
-                reasoning = reasoning_obj.effort or 'none'
-    
-    # Extract input text
-    if isinstance(input_text, str):
-        display_text = _truncate_text(input_text)
-    elif isinstance(input_text, list):
-        # Handle image messages
-        has_image = any(
-            isinstance(item, dict) and 
-            item.get("type") == "message" and
-            any(c.get("type") == "input_image" for c in item.get("content", []))
-            for item in input_text
-        )
-        text_parts = []
-        for item in input_text:
-            if isinstance(item, dict) and item.get("type") == "message":
-                for content in item.get("content", []):
-                    if content.get("type") == "input_text":
-                        text_parts.append(content.get("text", ""))
-        
-        display_text = "\n".join(text_parts)
-        if has_image:
-            display_text = "[Image attached]\n\n" + display_text
-        display_text = _truncate_text(display_text)
-    else:
-        display_text = str(input_text)
-    
-    content = [
-        f"Agent      : {agent.name}",
-        f"Model      : {model}",
-        f"Reasoning  : {reasoning}",
-        "",
-        display_text,
-    ]
-    
-    console.print(Panel(
-        "\n".join(content),
-        title="[bold]DEBUG - INPUT[/bold]",
-        border_style="yellow",
-        padding=(0, 1)
-    ))
-
-
-def _print_debug_output(agent: "Agent", output: Any, duration: float) -> None:
-    """Print debug information about agent output."""
-    from rich.console import Console
-    from rich.panel import Panel
-    from rich.syntax import Syntax
-    from pydantic import BaseModel
-    
-    console = Console()
-    
-    # Format output
-    if isinstance(output, BaseModel):
-        # Pydantic model - convert to JSON
-        output_str = json.dumps(output.model_dump(), indent=2)
-        syntax = Syntax(output_str, "json", theme="monokai", line_numbers=False)
-        
-        content = [
-            f"Agent      : {agent.name}",
-            f"Duration   : {duration:.2f}s",
-            f"Status     : Success",
-            "",
-        ]
-        
-        console.print(Panel(
-            "\n".join(content),
-            title="[bold]DEBUG - OUTPUT[/bold]",
-            border_style="green",
-            padding=(0, 1)
-        ))
-        console.print(syntax)
-        console.print()
-    elif isinstance(output, (dict, list)):
-        output_str = json.dumps(output, indent=2)
-        syntax = Syntax(output_str, "json", theme="monokai", line_numbers=False)
-        
-        content = [
-            f"Agent      : {agent.name}",
-            f"Duration   : {duration:.2f}s",
-            f"Status     : Success",
-            "",
-        ]
-        
-        console.print(Panel(
-            "\n".join(content),
-            title="[bold]DEBUG - OUTPUT[/bold]",
-            border_style="green",
-            padding=(0, 1)
-        ))
-        console.print(syntax)
-        console.print()
-    else:
-        content = [
-            f"Agent      : {agent.name}",
-            f"Duration   : {duration:.2f}s",
-            f"Status     : Success",
-            "",
-            str(output),
-        ]
-        
-        console.print(Panel(
-            "\n".join(content),
-            title="[bold]DEBUG - OUTPUT[/bold]",
-            border_style="green",
-            padding=(0, 1)
-        ))
-
-
 def encode_image(image_path: str) -> tuple[str, str]:
     """Encode an image file to base64.
     
@@ -304,13 +155,32 @@ async def run_agent(agent: "Agent", input_text: str | list) -> Any:
     Returns:
         The agent's final output (string or structured type)
     """
+    import time
+    from ..ui.logging import log_agent_input, log_agent_output, log_agent_error
+    
     Runner = _get_runner_class()
     _print_agent_info(agent)
-    result = await Runner.run(agent, input=input_text)
-    return result.final_output
+    
+    # Log input in debug mode
+    model = agent.model or "default"
+    log_agent_input(agent.name, input_text, model)
+    
+    start_time = time.time()
+    try:
+        result = await Runner.run(agent, input=input_text)
+        duration = time.time() - start_time
+        
+        # Log output in debug mode
+        log_agent_output(agent.name, result.final_output, duration)
+        
+        return result.final_output
+    except Exception as e:
+        # Log error in debug mode
+        log_agent_error(agent.name, e)
+        raise
 
 
-def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = True) -> Any:
+def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = True, timeout: float | None = None) -> Any:
     """Run an agent synchronously and return the final output.
     
     Uses a thread to allow immediate Ctrl+C interruption.
@@ -319,19 +189,22 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
         agent: The Agent instance to run
         input_text: The input text or message (can be string or list for images)
         show_spinner: Whether to show animated spinner (default: True)
+        timeout: Maximum seconds to wait for the agent (default: None = no limit).
+                 If exceeded, raises TimeoutError.
         
     Returns:
         The agent's final output (string or structured type)
         
     Raises:
         KeyboardInterrupt: If user presses Ctrl+C
+        TimeoutError: If timeout is exceeded
     """
     import concurrent.futures
     import threading
     import time
     import json
     from ..config import get_config
-    from rich.console import Console
+    from ..ui.logging import log_agent_input, log_agent_output, log_agent_error, console, _log_lock
     from rich.progress import Progress, SpinnerColumn, TextColumn
     
     Runner = _get_runner_class()
@@ -348,12 +221,14 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
             elif hasattr(reasoning_obj, 'effort'):
                 reasoning = reasoning_obj.effort or 'none'
     
-    console = Console()
     config = get_config()
+    is_debug = config.debug
     
-    # Debug mode: print input
-    if config.debug:
-        _print_debug_input(agent, input_text)
+    # Debug mode: log input using UI module (before spinner starts)
+    # Flush to ensure debug panel is fully rendered before spinner
+    log_agent_input(agent.name, input_text, model)
+    if is_debug:
+        console.file.flush()
     
     # Show spinner during execution (if enabled)
     start_time = time.time()
@@ -367,10 +242,12 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
         except Exception as e:
             result_holder["error"] = e
     
-    if show_spinner:
+    # In debug mode, skip the spinner entirely to prevent overlap with debug Panels
+    use_spinner = show_spinner and not is_debug
+    
+    if use_spinner:
         # Use global lock to prevent concurrent spinners
         with _spinner_lock:
-            # Create progress with explicit refresh rate to prevent flickering
             progress = Progress(
                 SpinnerColumn(),
                 TextColumn("[bold cyan]{task.description}[/bold cyan]"),
@@ -379,8 +256,8 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
                 TextColumn("│"),
                 TextColumn("[dim]{task.fields[reasoning]} reasoning[/dim]"),
                 console=console,
-                transient=True,  # Auto-clear when done
-                refresh_per_second=10  # Limit refresh rate to prevent flickering
+                transient=True,
+                refresh_per_second=10
             )
             
             with progress:
@@ -394,35 +271,43 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
                 thread = threading.Thread(target=run_in_thread, daemon=True)
                 thread.start()
                 
-                # Wait for thread with small intervals to allow Ctrl+C handling
                 while thread.is_alive():
                     thread.join(timeout=0.1)
-                
-                # Explicitly stop the progress to ensure clean exit
-                progress.stop()
-            
-            # Small delay to ensure terminal is clean
-            import time as time_module
-            time_module.sleep(0.05)
+                    if timeout and (time.time() - start_time) > timeout:
+                        progress.stop()
+                        raise TimeoutError(
+                            f"{agent.name} timed out after {timeout:.0f}s (model: {model})"
+                        )
     else:
-        # No spinner - just run in thread
+        # No spinner — debug mode or show_spinner=False
+        # Always log model and reasoning info when spinner is disabled
+        if show_spinner:
+            console.print(f"[dim]⏳ {agent.name} running ({model}, {reasoning} reasoning)...[/dim]")
         thread = threading.Thread(target=run_in_thread, daemon=True)
         thread.start()
         while thread.is_alive():
             thread.join(timeout=0.1)
+            if timeout and (time.time() - start_time) > timeout:
+                raise TimeoutError(
+                    f"{agent.name} timed out after {timeout:.0f}s (model: {model})"
+                )
     
     if result_holder["error"]:
+        # Debug mode: log error using UI module
+        log_agent_error(agent.name, result_holder["error"])
         raise result_holder["error"]
     
     duration = time.time() - start_time
     final_output = result_holder["result"].final_output
     
-    # Print completion (subtle) - only if spinner was shown
-    if show_spinner:
-        console.print(f"[dim]✓ {agent.name} completed in {duration:.1f}s[/dim]")
+    # Print completion (subtle) - show model and reasoning info
+    if use_spinner:
+        console.print(f"[dim]✓ {agent.name} completed in {duration:.1f}s ({model}, {reasoning} reasoning)[/dim]")
+    elif show_spinner:
+        # No spinner but show_spinner=True (debug mode) - show completion
+        console.print(f"[dim]✓ {agent.name} completed in {duration:.1f}s ({model}, {reasoning} reasoning)[/dim]")
     
-    # Debug mode: print output
-    if config.debug:
-        _print_debug_output(agent, final_output, duration)
+    # Debug mode: log output using UI module
+    log_agent_output(agent.name, final_output, duration)
     
     return final_output

@@ -51,18 +51,53 @@ def parse_tex_file_with_sections(tex_path: str) -> tuple[str, str]:
 
 
 def extract_items(content: str) -> list[str]:
-    """Extract all \\item blocks from content.
-    
-    Splits content by \\item markers to get individual problems.
-    
+    """Extract all top-level \\item blocks from content.
+
+    Splits content by \\item markers to get individual problems,
+    skipping \\item markers inside nested environments like itemize/enumerate.
+
     Args:
         content: TeX content containing \\item markers
-        
+
     Returns:
         List of item strings (each starting with \\item)
     """
-    parts = re.split(r'(?=\\item\b)', content)
-    items = [p.strip() for p in parts if p.strip() and '\\item' in p]
+    # Track nesting depth of itemize/enumerate environments
+    lines = content.split('\n')
+    items = []
+    current_item = []
+    depth = 0
+    in_item = False
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Check for environment boundaries (before processing \item)
+        if re.search(r'\\begin\{(itemize|enumerate)\}', stripped):
+            depth += 1
+            if in_item:
+                current_item.append(line)
+            continue
+
+        if re.search(r'\\end\{(itemize|enumerate)\}', stripped):
+            depth -= 1
+            if in_item:
+                current_item.append(line)
+            continue
+
+        # Only treat \item as a top-level split point when depth == 0
+        if depth == 0 and re.match(r'\s*\\item\b', line):
+            if in_item and current_item:
+                items.append('\n'.join(current_item).strip())
+            current_item = [line]
+            in_item = True
+        elif in_item:
+            current_item.append(line)
+
+    # Don't forget the last item
+    if in_item and current_item:
+        items.append('\n'.join(current_item).strip())
+
     return items
 
 

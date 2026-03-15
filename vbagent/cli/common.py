@@ -36,15 +36,15 @@ def _get_console():
 
 
 def _get_panel(*args, **kwargs):
-    """Lazy import of rich Panel."""
-    from rich.panel import Panel
-    return Panel(*args, **kwargs)
+    """Lazy import of UI panel component."""
+    from vbagent.ui.components import create_panel
+    return create_panel(*args, **kwargs)
 
 
 def _get_table(*args, **kwargs):
-    """Lazy import of rich Table."""
-    from rich.table import Table
-    return Table(*args, **kwargs)
+    """Lazy import of UI table component."""
+    from vbagent.ui.tables import create_table
+    return create_table(*args, **kwargs)
 
 
 def _get_syntax(*args, **kwargs):
@@ -292,11 +292,9 @@ def display_session_summary(
         console: Rich console for output
         title: Summary title
     """
-    console.print(f"\n[bold]═══ {title} ═══[/bold]")
+    from vbagent.ui.tables import create_result_table
     
-    table = _get_table(show_header=False, box=None)
-    table.add_column("Metric", style="dim")
-    table.add_column("Value", justify="right")
+    console.print(f"\n[bold]═══ {title} ═══[/bold]")
     
     # Convert to dict if SessionStats
     if isinstance(stats, SessionStats):
@@ -329,6 +327,8 @@ def display_session_summary(
         "suggestions_made": ("Suggestions made", None),
     }
     
+    # Build data dict for result table
+    display_data = {}
     for key, value in data.items():
         if value == 0 and key not in ["processed", "problems_reviewed"]:
             continue  # Skip zero values except main counts
@@ -336,14 +336,15 @@ def display_session_summary(
         if key in metric_styles:
             label, color = metric_styles[key]
             if color:
-                table.add_row(label, f"[{color}]{value}[/{color}]")
+                display_data[label] = f"[{color}]{value}[/{color}]"
             else:
-                table.add_row(label, str(value))
+                display_data[label] = str(value)
         elif key not in ["session_id", "interrupted", "extra"]:
             # Custom metrics
             label = key.replace("_", " ").title()
-            table.add_row(label, str(value))
+            display_data[label] = str(value)
     
+    table = create_result_table(display_data)
     console.print(table)
 
 

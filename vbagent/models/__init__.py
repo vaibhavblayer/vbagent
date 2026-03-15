@@ -23,7 +23,11 @@ if TYPE_CHECKING:
     from .workflow import PipelineResult, ProcessingStatus, ImageRecord, BatchDatabase, AgentCall, SolutionPlan, AgentOutput, SolutionResult
     from .version_store import SuggestionStatus, StoredSuggestion, VersionStore
     from .diff import generate_unified_diff, apply_unified_diff, apply_diff, parse_diff
-    from .metadata import TaxonomyClassification, EnrichedMetadata
+    from .metadata import (
+        StageStatus, SourceInfo, StageMetadata, ClassificationMetadata,
+        PipelineMetadata, CacheIndex, CacheEntry,
+        TaxonomyClassification, EnrichedMetadata
+    )
 
 __all__ = [
     # Classification
@@ -68,6 +72,13 @@ __all__ = [
     "apply_diff",
     "parse_diff",
     # Metadata (NEW)
+    "StageStatus",
+    "SourceInfo",
+    "StageMetadata",
+    "ClassificationMetadata",
+    "PipelineMetadata",
+    "CacheIndex",
+    "CacheEntry",
     "TaxonomyClassification",
     "EnrichedMetadata",
     "DifficultyAssessment",
@@ -108,7 +119,7 @@ def __getattr__(name: str):
         from . import diff
         return getattr(diff, name)
     
-    if name in ("TaxonomyClassification", "EnrichedMetadata"):
+    if name in ("TaxonomyClassification", "EnrichedMetadata", "StageStatus", "SourceInfo", "StageMetadata", "ClassificationMetadata", "PipelineMetadata", "CacheIndex", "CacheEntry"):
         from . import metadata
         return getattr(metadata, name)
     

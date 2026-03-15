@@ -1,6 +1,6 @@
 """CLI command for full pipeline processing.
 
-Orchestrates all agents for complete physics question processing:
+Orchestrates all agents for complete question processing across multiple subjects:
 Classify → Scan → TikZ → Ideas → Variants.
 """
 
@@ -48,21 +48,16 @@ def merge_metadata_into_latex(
     comments = []
     
     # Basic metadata from Agent 1
-    if primary.chapter:
-        comments.append(f"% chapter: {primary.chapter}")
-    if primary.topic:
-        comments.append(f"% topic: {primary.topic}")
-    if primary.subtopic:
-        comments.append(f"% subtopic: {primary.subtopic}")
+    comments.append(f"% subject: {primary.subject}")
+    comments.append(f"% type: {primary.question_type}")
+    comments.append(f"% has_diagram: {primary.has_diagram}")
     
     # Use difficulty from Agent 3 if available
     if difficulty:
         comments.append(f"% difficulty: {difficulty.difficulty}")
     
-    comments.append(f"% type: {primary.question_type}")
-    
-    # Tags and concepts
-    if primary.key_concepts:
+    # Tags and concepts (from ClassificationResult, not PrimaryClassification)
+    if hasattr(primary, 'key_concepts') and primary.key_concepts:
         comments.append(f"% key_concepts: {', '.join(primary.key_concepts)}")
     if difficulty and difficulty.tags_auto:
         comments.append(f"% tags: {', '.join(difficulty.tags_auto)}")
@@ -84,29 +79,23 @@ def merge_metadata_into_latex(
             comments.append(f"% cognitive_level: {difficulty.cognitive_level}")
         comments.append(f"% estimated_time: {difficulty.expected_solve_time_minutes} min")
     
-    # Other metadata
-    if primary.requires_calculus:
-        comments.append(f"% requires_calculus: true")
-    
     # Join and prepend
     metadata_block = "\n".join(comments)
     return f"{metadata_block}\n\n{latex}"
 
 
 def convert_primary_to_classification(primary: "PrimaryClassification") -> "ClassificationResult":
-    """Convert PrimaryClassification (v2) to ClassificationResult (v1) for compatibility.
+    """Convert PrimaryClassification to ClassificationResult for compatibility.
     
     Used when calling legacy functions that expect ClassificationResult.
     """
     from vbagent.models.classification import ClassificationResult
     return ClassificationResult(
+        subject=primary.subject,
         question_type=primary.question_type,
-        difficulty="medium",  # Default, will be overridden by Agent 3 if available
-        chapter=primary.chapter,
-        topic=primary.topic,
         has_diagram=primary.has_diagram,
-        diagram_type=None,  # Comes from DiagramAnalysis (Agent 2), not PrimaryClassification
         confidence=primary.confidence,
+        classified_from=primary.classified_from,
     )
 
 
@@ -409,6 +398,12 @@ def _process_images_parallel(
     output_dir: str,
     num_workers: int,
     console,
+    assess_difficulty: bool,
+    analyze_diagram: bool,
+    merge_metadata: bool,
+    use_orchestrator: bool,
+    use_cache: bool,
+    generate_solution: bool,
 ) -> tuple[list, int]:
     """Process multiple images in parallel using ThreadPoolExecutor.
     
@@ -421,6 +416,12 @@ def _process_images_parallel(
         output_dir: Output directory for results
         num_workers: Number of parallel workers
         console: Rich console for output
+        assess_difficulty: Whether to assess difficulty
+        analyze_diagram: Whether to analyze diagram
+        merge_metadata: Whether to merge metadata
+        use_orchestrator: Whether to use orchestrator
+        use_cache: Whether to use cache
+        generate_solution: Whether to use new solution generation pipeline
         
     Returns:
         Tuple of (results list, failed count)
@@ -451,6 +452,7 @@ def _process_images_parallel(
                 merge_metadata=merge_metadata,
                 use_orchestrator=use_orchestrator,
                 use_cache=use_cache,
+                generate_solution=generate_solution,
             )
             
             # Save immediately (thread-safe - each file is unique)
@@ -517,26 +519,41 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option(
-    "-i", "--image",
+    "-i", "--input", "--image", "--tex",
+    "input_path",
     type=click.Path(exists=True),
-    help="Image file path to process"
+    help="Input file path (image or tex file)"
 )
 @click.option(
-    "-t", "--tex",
-    type=click.Path(exists=True),
-    help="TeX file path containing problem(s)"
+    "--from", "from_index",
+    type=int,
+    default=None,
+    help="Start index (1-based, inclusive)"
+)
+@click.option(
+    "--to", "to_index",
+    type=int,
+    default=None,
+    help="End index (1-based, inclusive)"
+)
+@click.option(
+    "--item",
+    type=int,
+    default=None,
+    help="Process single item (shorthand for --from N --to N)"
 )
 @click.option(
     "-r", "--range", "item_range",
     nargs=2,
     type=int,
-    help="Range to process (1-based inclusive). For images: Problem_X.png where X is in range. For TeX: items 1-N."
+    default=None,
+    help="[DEPRECATED] Use --from and --to instead. Range to process (1-based inclusive)"
 )
 @click.option(
     "--variants", "variant_types_str",
     type=str,
     default=None,
-    help="Variant types to generate (comma-separated: numerical,context,conceptual,calculus). Disabled by default."
+    help="Variant types to generate (comma-separated: numerical,context,conceptual,calculus,cross_topic). Disabled by default."
 )
 @click.option(
     "--alternate/--no-alternate",
@@ -546,7 +563,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 @click.option(
     "--ideas/--no-ideas",
     default=False,
-    help="Extract physics concepts and ideas (default: disabled)"
+    help="Extract key concepts and problem-solving ideas (default: disabled)"
 )
 @click.option(
     "--ref", "ref_dirs",
@@ -558,7 +575,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     "-o", "--output",
     type=click.Path(),
     default="agentic",
-    help="Output directory for saving results (default: agentic)"
+    help="Output directory (default: agentic)"
 )
 @click.option(
     "--context/--no-context",
@@ -569,37 +586,37 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     "-p", "--parallel",
     type=int,
     default=1,
-    help="Number of images to process in parallel (default: 1, max recommended: 5)"
+    help="Number of images to process in parallel (default: 1, max: 5)"
 )
 @click.option(
     "-c", "--compile", "do_compile",
     is_flag=True,
-    help="Compile generated LaTeX to validate; retry with agent on failure"
+    help="Compile generated LaTeX to validate"
 )
 @click.option(
     "--verbose-compile", "verbose_compile",
     is_flag=True,
-    help="Show full LaTeX document + preamble before each compile and prompt to continue/skip/quit"
+    help="Show full LaTeX document before each compile"
 )
 @click.option(
     "--assess-difficulty/--no-assess-difficulty", "assess_difficulty",
-    default=True,
-    help="Assess difficulty after scanning (uses Agent 3) [default: on]"
+    default=False,
+    help="Assess difficulty after scanning [default: off]"
 )
 @click.option(
     "--analyze-diagram/--no-analyze-diagram", "analyze_diagram",
     default=True,
-    help="Analyze diagram in detail (uses Agent 2) [default: on]"
+    help="Analyze diagram in detail [default: on]"
 )
 @click.option(
     "--validate-tikz", "validate_tikz",
     is_flag=True,
-    help="Validate and fix TikZ code (uses Agent 7)"
+    help="Validate and fix TikZ code"
 )
 @click.option(
     "--orchestrate", "use_orchestrator",
     is_flag=True,
-    help="Use solution orchestrator for complex solutions with automatic specialist agent coordination"
+    help="Use solution orchestrator for complex solutions"
 )
 @click.option(
     "--merge-metadata/--no-merge-metadata", "merge_metadata",
@@ -616,9 +633,21 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     is_flag=True,
     help="Clear pipeline cache before processing"
 )
+@click.option(
+    "-v", "--verbose",
+    is_flag=True,
+    help="Verbose output with additional details"
+)
+@click.option(
+    "--generate-solution",
+    is_flag=True,
+    help="[EXPERIMENTAL] Use new solution generation pipeline with rich diagram context"
+)
 def process(
-    image: Optional[str],
-    tex: Optional[str],
+    input_path: Optional[str],
+    from_index: Optional[int],
+    to_index: Optional[int],
+    item: Optional[int],
     item_range: Optional[tuple[int, int]],
     variant_types_str: Optional[str],
     alternate: bool,
@@ -636,43 +665,86 @@ def process(
     merge_metadata: bool,
     no_cache: bool,
     clear_cache: bool,
+    verbose: bool,
+    generate_solution: bool,
 ):
     """Full pipeline: Classify → Scan → TikZ → Ideas → Variants.
     
-    Orchestrates all agents for complete physics question processing.
-    Processes images or TeX files through the full pipeline.
+    Orchestrates all agents for complete question processing across multiple subjects.
+    Automatically detects subject (physics/chemistry/mathematics) and applies
+    appropriate processing for each stage.
     
     By default, only classification, scanning, and TikZ generation run.
     Use --ideas, --alternate, and --variants to enable additional stages.
     
     \b
     Pipeline Stages:
-        1. Classification - Extract metadata from image
-        2. Scanning - Extract LaTeX from image
+        1. Classification - Detect subject and extract metadata
+        2. Scanning - Extract LaTeX with subject-specific formatting
         3. TikZ - Generate diagram code (if has_diagram)
-        4. Ideas - Extract physics concepts (--ideas)
+        4. Ideas - Extract key concepts (--ideas)
         5. Alternates - Generate alternate solutions (--alternate)
         6. Variants - Generate problem variants (--variants)
+    
+    \b
+    Variant Types:
+        numerical    - Change numerical values only
+        context      - Change scenario/context only
+        conceptual   - Change core concept
+        calculus     - Add calculus-based modifications
+        cross_topic  - Integrate a complementary topic (multi-stage)
     
     \b
     Output Structure:
         agentic/
         ├── scans/problem_1.tex
         ├── classifications/problem_1.json
-        ├── alternates/problem_1.tex      (if --alternate)
-        ├── variants/numerical/problem_1.tex  (if --variants)
-        ├── ideas/problem_1.json          (if --ideas)
+        ├── alternates/problem_1.tex           (if --alternate)
+        ├── variants/numerical/problem_1.tex   (if --variants)
+        ├── variants/cross_topic/problem_1.tex (if --variants cross_topic)
+        ├── ideas/problem_1.json               (if --ideas)
         └── tikz/problem_1.tex
     
     \b
     Examples:
+        # Basic processing
         vbagent process -i images/Problem_1.png
-        vbagent process -i images/Problem_1.png --ideas
+        
+        # With ideas and alternates
         vbagent process -i images/Problem_1.png --ideas --alternate
+        
+        # Generate variants
         vbagent process -i images/Problem_1.png --variants numerical,context
-        vbagent process -i images/Problem_1.png -r 1 5
+        
+        # Chemistry question
+        vbagent process -i chemistry/thermodynamics.png --ideas
+        
+        # Mathematics problem with variants
+        vbagent process -i math/calculus.png --variants numerical,conceptual
+        
+        # Process range of images
+        vbagent process -i images/Problem_1.png --from 1 --to 5
+        
+        # Parallel processing
         vbagent process -i images/Problem_1.png -r 1 10 --parallel 3
-        vbagent process -t problems.tex --range 1 5 --alternate --ideas
+        
+        # Process single item
+        vbagent process -i images/Problem_1.png --item 3
+        
+        # Process TeX file
+        vbagent process -i problems.tex --from 1 --to 5 --alternate --ideas
+    
+    \b
+    Subject-Specific Processing:
+        Physics: Vector notation, SI units, circuitikz, kinematikz
+        Chemistry: \\ce{} notation, chemfig, mhchem, energy diagrams
+        Mathematics: Proof structure, set notation, function graphs
+    
+    \b
+    See Also:
+        vbagent classify --help    # For classification options
+        vbagent scan --help        # For scanning options
+        vbagent batch --help       # For batch processing
     """
     # Lazy imports - only load heavy dependencies when command runs
     from vbagent.agents.classifier import classify as classify_image
@@ -687,17 +759,57 @@ def process(
     
     console = _get_console()
     
+    # Show deprecation warnings
+    import sys
+    if '--image' in sys.argv:
+        console.print("[yellow]Note:[/yellow] --image is deprecated, use --input or -i", style="dim")
+    if '--tex' in sys.argv:
+        console.print("[yellow]Note:[/yellow] --tex is deprecated, use --input or -i", style="dim")
+    if '--range' in sys.argv or '-r' in sys.argv:
+        console.print("[yellow]Note:[/yellow] --range is deprecated, use --from and --to", style="dim")
+    
+    # Handle backward compatibility for range
+    if item_range:
+        from_index, to_index = item_range
+    
+    # Handle --item shorthand
+    if item:
+        from_index = to_index = item
+    
+    # Validate range
+    if from_index and to_index and from_index > to_index:
+        console.print("[red]Error:[/red] --from must be <= --to")
+        raise SystemExit(1)
+    
+    # Convert to tuple for internal use (maintain compatibility with existing code)
+    if from_index or to_index:
+        item_range = (from_index or 1, to_index or 999999)  # Will be clamped later
+    
+    # Determine input type
+    image = None
+    tex = None
+    if input_path:
+        input_file = Path(input_path)
+        if input_file.suffix.lower() in ['.tex', '.txt']:
+            tex = input_path
+        else:
+            image = input_path
+        
+        if verbose:
+            console.print(f"[dim]Input: {input_path}[/dim]")
+            console.print(f"[dim]Type: {'TeX file' if tex else 'Image file'}[/dim]")
+    
     # Handle cache flags
     use_cache = not no_cache
     if clear_cache:
         cache = PipelineCache()
         cache.clear()
         console.print("[yellow]✓[/yellow] Pipeline cache cleared")
-        if not image and not tex:
+        if not input_path:
             return  # Just clear cache and exit
     
     # Parse variant types from comma-separated string
-    valid_variants = {"numerical", "context", "conceptual", "calculus"}
+    valid_variants = {"numerical", "context", "conceptual", "calculus", "cross_topic"}
     variant_types: list[str] = []
     if variant_types_str:
         for v in variant_types_str.replace(" ", "").split(","):
@@ -707,9 +819,14 @@ def process(
                 console.print(f"[yellow]Warning:[/yellow] Unknown variant type '{v}', skipping")
     
     # Validate input
-    if not image and not tex:
-        console.print("[red]Error:[/red] Either --image or --tex must be provided")
+    if not input_path:
+        console.print("[red]Error:[/red] --input is required")
         raise SystemExit(1)
+    
+    if verbose:
+        console.print(f"[dim]Variants: {', '.join(variant_types) if variant_types else 'None'}[/dim]")
+        console.print(f"[dim]Ideas: {'Yes' if ideas else 'No'}[/dim]")
+        console.print(f"[dim]Alternates: {'Yes' if alternate else 'No'}[/dim]")
     
     try:
         # Initialize reference store if directories provided
@@ -748,6 +865,12 @@ def process(
                     output_dir=output,
                     num_workers=num_workers,
                     console=console,
+                    assess_difficulty=assess_difficulty,
+                    analyze_diagram=analyze_diagram,
+                    merge_metadata=merge_metadata,
+                    use_orchestrator=use_orchestrator,
+                    use_cache=use_cache,
+                    generate_solution=generate_solution,
                 )
             else:
                 # Sequential processing (single image or parallel=1)
@@ -768,6 +891,7 @@ def process(
                             merge_metadata=merge_metadata,
                             use_orchestrator=use_orchestrator,
                             use_cache=use_cache,
+                            generate_solution=generate_solution,
                         )
                         
                         # Compile validation if -c flag
@@ -884,6 +1008,7 @@ def process_image(
     use_orchestrator: bool = False,
     use_cache: bool = True,
     problem_id: Optional[str] = None,
+    generate_solution: bool = False,
 ) -> PipelineResult:
     """Process an image through the full pipeline.
     
@@ -966,9 +1091,7 @@ def process_image(
         
         orchestrator = create_solution_orchestrator()
         
-        problem_context = f"Question type: {primary.question_type}, Topic: {primary.topic}"
-        if primary.subtopic:
-            problem_context += f", Subtopic: {primary.subtopic}"
+        problem_context = f"Question type: {primary.question_type}, Subject: {primary.subject}"
         
         orchestrator_result = orchestrator.generate_solution(
             image_path=image_path,
@@ -1016,7 +1139,7 @@ def process_image(
                 try:
                     classification = convert_primary_to_classification(primary)
                     scan_result_holder["result"] = scan_image(
-                        image_path, classification, use_context=use_context, show_spinner=False
+                        image_path, classification, use_context=use_context, subject=primary.subject, show_spinner=False
                     )
                 except Exception as e:
                     scan_result_holder["error"] = e
@@ -1050,48 +1173,48 @@ def process_image(
                         )
                 except Exception as e:
                     tikz_result_holder["error"] = e
-        
-        # Start both threads with combined spinner
-        progress = Progress(
-            SpinnerColumn(),
-            TextColumn("[bold cyan]{task.description}[/bold cyan]"),
-            console=console,
-            transient=True
-        )
-        
-        with progress:
-            task = progress.add_task("Processing Scanner + TikZ...", total=None)
             
-            scan_thread = threading.Thread(target=run_scan, daemon=True)
-            tikz_thread = threading.Thread(target=run_tikz, daemon=True)
+            # Start both threads with combined spinner
+            progress = Progress(
+                SpinnerColumn(),
+                TextColumn("[bold cyan]{task.description}[/bold cyan]"),
+                console=console,
+                transient=True
+            )
             
-            scan_thread.start()
-            tikz_thread.start()
+            with progress:
+                task = progress.add_task("Processing Scanner + TikZ...", total=None)
+                
+                scan_thread = threading.Thread(target=run_scan, daemon=True)
+                tikz_thread = threading.Thread(target=run_tikz, daemon=True)
+                
+                scan_thread.start()
+                tikz_thread.start()
+                
+                # Wait for both
+                while scan_thread.is_alive() or tikz_thread.is_alive():
+                    scan_thread.join(timeout=0.1)
+                    tikz_thread.join(timeout=0.1)
             
-            # Wait for both
-            while scan_thread.is_alive() or tikz_thread.is_alive():
-                scan_thread.join(timeout=0.1)
-                tikz_thread.join(timeout=0.1)
-        
-        # Check for errors
-        if scan_result_holder["error"]:
-            raise scan_result_holder["error"]
-        
-        latex = scan_result_holder["result"].latex
-        if cache and not latex_cached:
-            cache.set(problem_id, "scan", latex)
-        console.print("[green]✓[/green] Scanning complete")
-        
-        # TikZ errors are recoverable
-        if tikz_result_holder["error"]:
-            console.print(f"[yellow]![/yellow] TikZ generation failed: {tikz_result_holder['error']}")
-            tikz_code = None
-        else:
-            tikz_code = tikz_result_holder["result"]
-            if cache and not tikz_cached:
-                cache.set(problem_id, "tikz", tikz_code)
-            agent_used = tikz_result_holder.get("agent", "generic")
-            console.print(f"[green]✓[/green] TikZ complete (agent: {agent_used})")
+            # Check for errors
+            if scan_result_holder["error"]:
+                raise scan_result_holder["error"]
+            
+            latex = scan_result_holder["result"].latex
+            if cache and not latex_cached:
+                cache.set(problem_id, "scan", latex)
+            console.print("[green]✓[/green] Scanning complete")
+            
+            # TikZ errors are recoverable
+            if tikz_result_holder["error"]:
+                console.print(f"[yellow]![/yellow] TikZ generation failed: {tikz_result_holder['error']}")
+                tikz_code = None
+            else:
+                tikz_code = tikz_result_holder["result"]
+                if cache and not tikz_cached:
+                    cache.set(problem_id, "tikz", tikz_code)
+                agent_used = tikz_result_holder.get("agent", "generic")
+                console.print(f"[green]✓[/green] TikZ complete (agent: {agent_used})")
             
             # Insert TikZ if needed
             if r'\input{diagram}' in latex:
@@ -1109,11 +1232,13 @@ def process_image(
                 tikz_description = "Generate TikZ diagrams for MCQ options (\\OptionA, \\OptionB, \\OptionC, \\OptionD)"
             
             console.print("[dim]  → Generating option diagrams...[/dim]")
+            # Use primary directly since classification may not be defined when cache is loaded
+            classification_for_tikz = convert_primary_to_classification(primary)
             tikz_code = generate_tikz(
                 description=tikz_description,
                 image_path=image_path,
                 use_context=use_context,
-                classification=classification,
+                classification=classification_for_tikz,
             )
             console.print("[green]  ✓ Option diagrams complete[/green]")
             console.print(_get_panel(tikz_code, title="Option Diagrams TikZ", border_style="cyan"))
@@ -1130,12 +1255,45 @@ def process_image(
             console.print("[yellow]  ⚠ Diagram placeholder kept - TikZ generation failed[/yellow]")
     else:
         # No diagram - just run scanning
-        console.print("[bold green]Stage 2: Scanning image...[/bold green]")
-        classification = convert_primary_to_classification(primary)
-        scan_result = scan_image(image_path, classification, use_context=use_context)
-        
-        latex = scan_result.latex
-        console.print("[green]✓[/green] Scanning complete")
+        # NEW: Check if using solution generation pipeline
+        if generate_solution:
+            console.print("[bold green]Stage 2: NEW Solution Pipeline...[/bold green]")
+            console.print("[dim]  → Scanning problem only[/dim]")
+            from vbagent.agents.content_generation.scanner import scan_problem
+            
+            classification = convert_primary_to_classification(primary)
+            problem_latex = scan_problem(
+                image_path=image_path,
+                question_type=classification.question_type,
+                use_context=use_context,
+                subject=primary.subject,
+                show_spinner=True,
+            )
+            console.print("[green]  ✓ Problem scanned[/green]")
+            
+            console.print("[dim]  → Generating solution with rich context[/dim]")
+            from vbagent.agents.content_generation.solution import generate_complete_solution
+            
+            solution_latex = generate_complete_solution(
+                image_path=image_path,
+                classification=classification,
+                problem_text=problem_latex,
+                subject=primary.subject,
+                show_spinner=True,
+            )
+            console.print("[green]  ✓ Solution generated[/green]")
+            
+            # Combine
+            latex = problem_latex + "\n\n" + solution_latex
+            console.print("[green]✓[/green] Complete LaTeX generated using new solution pipeline")
+        else:
+            # Default: existing scanner
+            console.print("[bold green]Stage 2: Scanning image...[/bold green]")
+            classification = convert_primary_to_classification(primary)
+            scan_result = scan_image(image_path, classification, use_context=use_context, subject=primary.subject)
+            
+            latex = scan_result.latex
+            console.print("[green]✓[/green] Scanning complete")
         
         # Check for option diagrams even if has_diagram is False
         has_option_diagrams = r'\OptionA' in latex or r'\OptionB' in latex
@@ -1212,6 +1370,15 @@ def process_image(
                 cache.set(problem_id, "alternate", alt)
         console.print(_get_panel(alt, title="Alternate Solution", border_style="magenta"))
     
+    # Build classification result early so variants (especially cross_topic) can use it
+    final_classification = ClassificationResult(
+        subject=primary.subject,
+        question_type=primary.question_type,
+        has_diagram=primary.has_diagram,
+        confidence=primary.confidence,
+        classified_from=primary.classified_from,
+    )
+    
     # Stage 6: Variants (optional)
     variants = {}
     for vtype in variant_types:
@@ -1222,7 +1389,10 @@ def process_image(
             variants[vtype] = variant_latex
         else:
             with console.status(f"[bold green]Stage 6: Generating {vtype} variant..."):
-                variant_latex = generate_variant(latex, vtype, ideas, use_context=use_context)
+                variant_latex = generate_variant(
+                    latex, vtype, ideas, use_context=use_context,
+                    classification=final_classification,
+                )
                 variants[vtype] = variant_latex
             if cache:
                 cache.set(problem_id, cache_key, variant_latex)
@@ -1241,17 +1411,6 @@ def process_image(
             "none": "none",
         }
         v1_diagram_type = diagram_map.get(diagram_analysis.diagram_type, "geometry")
-    
-    # Convert primary back to old ClassificationResult for PipelineResult
-    final_classification = ClassificationResult(
-        question_type=primary.question_type,
-        difficulty=difficulty_result.difficulty if difficulty_result else "medium",
-        chapter=primary.chapter,
-        topic=primary.topic,
-        has_diagram=primary.has_diagram,
-        diagram_type=v1_diagram_type,
-        confidence=primary.confidence,
-    )
     
     return PipelineResult(
         source_path=image_path,
@@ -1283,16 +1442,19 @@ def process_tex_item(
     
     # Create a minimal classification for TeX input
     classification = ClassificationResult(
+        subject=get_config().subject,
         question_type="subjective",
-        difficulty="medium",
+        chapter="General",
         topic="physics",
         subtopic="general",
         has_diagram=False,
-        diagram_type=None,
         num_options=None,
         key_concepts=[],
         requires_calculus=False,
+        estimated_marks=4,
+        time_estimate_minutes=3,
         confidence=1.0,
+        classified_from="latex",
     )
     
     latex = tex_content

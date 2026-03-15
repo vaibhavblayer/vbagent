@@ -111,13 +111,31 @@ def tikz(
         else:
             desc = ""  # Will use problem_text instead
         
-        # Generate TikZ code
-        with console.status("[bold green]Generating TikZ code..."):
-            tikz_code = generate_tikz(
-                description=desc,
-                image_path=image,
-                problem_text=problem_text,
-            )
+        # Check for cached TikZ if image is provided
+        from vbagent.cache import PipelineCache
+        cache = PipelineCache()
+        
+        tikz_code = None
+        if image:
+            image_path = Path(image)
+            problem_id = image_path.stem
+            if cache.has(problem_id, "tikz"):
+                console.print("[dim]Loading cached TikZ...[/dim]")
+                tikz_code = cache.get(problem_id, "tikz")
+                console.print(f"[green]✓ Loaded cached TikZ[/green]")
+        
+        # Generate TikZ code if not cached
+        if tikz_code is None:
+            with console.status("[bold green]Generating TikZ code..."):
+                tikz_code = generate_tikz(
+                    description=desc,
+                    image_path=image,
+                    problem_text=problem_text,
+                )
+            
+            # Save to cache if image is provided
+            if image and tikz_code:
+                cache.set(problem_id, "tikz", tikz_code)
         
         # Validate output
         if not validate_tikz_output(tikz_code):
