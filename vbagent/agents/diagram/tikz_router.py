@@ -298,8 +298,17 @@ def generate_tikz_with_routing(
     Returns:
         Tuple of (tikz_code, agent_type_used)
     """
+    # Check if this is MCQ with option diagrams
+    is_mcq_options = diagram and diagram.has_option_diagrams
+    
+    # For MCQ options, use the option_diagram_type for routing
+    if is_mcq_options and diagram.option_diagram_type:
+        routing_diagram_type = diagram.option_diagram_type
+    else:
+        routing_diagram_type = diagram_type
+    
     # Route to appropriate agent
-    agent_type = route_tikz_agent(diagram, primary, diagram_type=diagram_type, subject=subject)
+    agent_type = route_tikz_agent(diagram, primary, diagram_type=routing_diagram_type, subject=subject)
     
     # Generate with specialized agent
     # Physics agents
@@ -353,13 +362,71 @@ def generate_tikz_with_routing(
         )
     # Chemistry agents
     elif agent_type == "organic_structure":
-        from vbagent.agents.diagram.chemistry import generate_organic_structure
-        tikz_code = generate_organic_structure(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner
-        )
+        # NEW: Option to use orchestrator for better quality
+        # Check if orchestrator should be used (can be controlled by flag)
+        use_orchestrator = True  # Default to orchestrator for better quality
+        
+        if use_orchestrator:
+            from vbagent.agents.diagram.chemistry import generate_organic_orchestrated
+            
+            # Extract chemistry_context from solution_context if available
+            chemistry_context = None
+            if solution_context:
+                # Parse solution_context string to extract chemistry-specific info
+                chemistry_context = {}
+                if "show_lone_pairs" in solution_context:
+                    chemistry_context["show_lone_pairs"] = "yes"
+                if "show_charges" in solution_context:
+                    chemistry_context["show_charges"] = "yes"
+                if "mechanism_step" in solution_context:
+                    # Extract mechanism step description
+                    parts = solution_context.split("|")
+                    for part in parts:
+                        if "mechanism_step" in part:
+                            chemistry_context["mechanism_step"] = part.split(":")[-1].strip()
+                if "stereochemistry" in solution_context:
+                    # Extract stereochemistry info
+                    parts = solution_context.split("|")
+                    for part in parts:
+                        if "stereochemistry" in part:
+                            chemistry_context["stereochemistry"] = part.split(":")[-1].strip()
+                if "reaction_conditions" in solution_context:
+                    parts = solution_context.split("|")
+                    for part in parts:
+                        if "reaction_conditions" in part:
+                            chemistry_context["reaction_conditions"] = part.split(":")[-1].strip()
+                if "key_functional_groups" in solution_context:
+                    parts = solution_context.split("|")
+                    for part in parts:
+                        if "key_functional_groups" in part:
+                            chemistry_context["key_functional_groups"] = part.split(":")[-1].strip()
+            
+            # IMPORTANT: Main diagram generation should NOT generate MCQ options
+            # MCQ options are generated separately by generate_mcq_options()
+            # This function only generates the MAIN diagram in the problem
+            mcq_options = False
+            
+            tikz_code = generate_organic_orchestrated(
+                image_path=image_path,
+                description=description,
+                chemistry_context=chemistry_context,
+                problem_text=problem_text,
+                use_context=use_context,
+                show_spinner=show_spinner,
+                mcq_options=mcq_options,
+            )
+        else:
+            # Fallback to original organic structure agent
+            from vbagent.agents.diagram.chemistry import generate_organic_structure
+            # IMPORTANT: Main diagram generation should NOT generate MCQ options
+            mcq_options = False
+            tikz_code = generate_organic_structure(
+                image_path=image_path,
+                description=description,
+                use_context=use_context,
+                show_spinner=show_spinner,
+                mcq_options=mcq_options
+            )
     elif agent_type == "reaction_mechanism":
         from vbagent.agents.diagram.chemistry import generate_reaction_mechanism
         tikz_code = generate_reaction_mechanism(

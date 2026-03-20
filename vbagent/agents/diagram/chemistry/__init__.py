@@ -1,7 +1,14 @@
 """Chemistry-specific diagram agents.
 
 Specialized agents for chemistry diagrams:
-- Organic Structure: Molecular structures using chemfig
+- Organic Structure: Molecular structures using chemfig (general)
+- Organic Orchestrator: Intelligent routing for organic diagrams
+- Organic Simple: Simple molecules specialist
+- Organic Mechanism: Reaction mechanisms specialist
+- Organic Stereo: Stereochemistry specialist
+- Organic Complex: Complex molecules specialist
+- Organic Functional: Functional group transformations specialist
+- Organic MultiStep: Multi-step syntheses specialist
 - Reaction Mechanism: Reaction mechanisms with arrow-pushing
 - Orbital: Atomic and molecular orbital diagrams
 - Lewis Structure: Lewis structures with lone pairs
@@ -15,6 +22,16 @@ from .organic_structure import (
     validate_organic_structure_output,
     get_organic_structure_context_for_classification,
 )
+from .organic_orchestrator import (
+    generate_organic_orchestrated,
+    OrganicChemistryOrchestrator,
+)
+from .organic_simple import generate_simple_molecule
+from .organic_mechanism import generate_mechanism
+from .organic_stereo import generate_stereochemistry
+from .organic_complex import generate_complex_molecule
+from .organic_functional import generate_functional_group_transformation
+from .organic_multistep import generate_multi_step_synthesis
 from .reaction_mechanism import (
     generate_reaction_mechanism,
     create_reaction_mechanism_agent,
@@ -52,6 +69,16 @@ __all__ = [
     "create_organic_structure_agent",
     "validate_organic_structure_output",
     "get_organic_structure_context_for_classification",
+    # Organic Orchestrator
+    "generate_organic_orchestrated",
+    "OrganicChemistryOrchestrator",
+    # Organic Specialists
+    "generate_simple_molecule",
+    "generate_mechanism",
+    "generate_stereochemistry",
+    "generate_complex_molecule",
+    "generate_functional_group_transformation",
+    "generate_multi_step_synthesis",
     # Reaction Mechanism
     "generate_reaction_mechanism",
     "create_reaction_mechanism_agent",

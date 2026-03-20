@@ -13,6 +13,7 @@ from vbagent.agents.base import (
 from vbagent.prompts.diagram.chemistry.organic_structure import (
     SYSTEM_PROMPT,
     USER_TEMPLATE,
+    USER_TEMPLATE_MCQ_OPTIONS,
     USER_TEMPLATE_FROM_PROBLEM,
 )
 from vbagent.references.store import ReferenceStore
@@ -48,6 +49,7 @@ def generate_organic_structure(
     description: Optional[str] = None,
     use_context: bool = True,
     show_spinner: bool = True,
+    mcq_options: bool = False,
 ) -> str:
     """Generate chemfig code for an organic structure.
     
@@ -56,9 +58,10 @@ def generate_organic_structure(
         description: Text description of structure (optional)
         use_context: Whether to include reference context
         show_spinner: Whether to show animated spinner
+        mcq_options: Whether to generate all 4 MCQ options (A, B, C, D)
         
     Returns:
-        chemfig code as string
+        chemfig code as string (or \\def\\OptionA{...} blocks if mcq_options=True)
         
     Raises:
         ValueError: If neither image_path nor description provided
@@ -69,7 +72,9 @@ def generate_organic_structure(
     agent = create_organic_structure_agent(use_context)
     
     if image_path:
-        message = create_image_message(image_path, USER_TEMPLATE)
+        # Choose template based on mcq_options flag
+        template = USER_TEMPLATE_MCQ_OPTIONS if mcq_options else USER_TEMPLATE
+        message = create_image_message(image_path, template)
     else:
         # For text-only description, create a simple text message
         message = [{"role": "user", "content": USER_TEMPLATE_FROM_PROBLEM.format(problem=description)}]

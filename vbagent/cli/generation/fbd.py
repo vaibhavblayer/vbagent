@@ -89,7 +89,7 @@ def fbd(
     # Generate FBD
     console.print("[cyan]Generating Free Body Diagram...[/cyan]")
     
-    from vbagent.agents.diagram.fbd import generate_fbd
+    from vbagent.agents.diagram.physics import generate_fbd
     
     try:
         tikz_code = generate_fbd(

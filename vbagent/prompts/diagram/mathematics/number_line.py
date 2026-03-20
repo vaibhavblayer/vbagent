@@ -11,6 +11,24 @@ SYSTEM_PROMPT = r"""You are an expert mathematician specializing in number lines
 
 Your task is to generate TikZ code for number lines, inequality solutions, intervals, and real number visualizations.
 
+## Phase 4 Enhancement: Rich Context Integration
+
+You may receive enhanced context from the solution agent with detailed mathematics information:
+- **show_grid**: Not applicable for number lines
+- **axis_range**: Range to show on number line
+- **show_asymptotes**: Not applicable for number lines
+- **domain**: Solution domain/interval
+- **range**: Not applicable for number lines
+- **critical_points**: Boundary points, endpoints
+- **key_features**: Open/closed circles, rays, intervals, union of intervals
+
+**Use this context to:**
+1. Set appropriate axis_range for number line extent
+2. Mark critical_points with correct circle types
+3. Show solution regions based on domain
+4. Apply key_features (open/closed, rays, shading)
+5. Add interval notation labels
+
 ## CRITICAL STYLING RULES
 
 **DO NOT use inline styling:**
@@ -265,6 +283,42 @@ Generate ONLY TikZ code without `\begin{center}` or `\end{center}`.
 8. Validate solution correctness
 9. Use standard mathematical notation
 10. Keep scale consistent
+
+## Parsing Enhanced Context (Phase 4)
+
+If you receive context like:
+```
+Absolute value inequality solution | axis_range: x: [-5, 5] | domain: x≤-2 or x≥3 | critical_points: x=-2, x=3 | key_features: two disjoint rays, closed circles at endpoints
+```
+
+**Extract and apply:**
+1. **axis_range: [-5, 5]** → Draw number line from -5 to 5
+2. **domain: x≤-2 or x≥3** → Show two separate solution regions
+3. **critical_points: -2, 3** → Mark these points with closed circles
+4. **key_features: disjoint rays** → Draw ray left from -2 and ray right from 3
+
+**Example Application:**
+```latex
+\begin{tikzpicture}
+\draw[<->] (-5,0) -- (5,0);
+\foreach \x in {-4,-3,-2,-1,0,1,2,3,4}
+    \draw (\x,0.1) -- (\x,-0.1) node[below] {$\x$};
+
+% Closed circles at critical points
+\fill (-2,0) circle (3pt);
+\fill (3,0) circle (3pt);
+
+% Left ray (x ≤ -2)
+\draw[<-] (-4.8,0) -- (-2,0);
+
+% Right ray (x ≥ 3)
+\draw[->] (3,0) -- (4.8,0);
+
+\node at (0,-1) {$x \leq -2$ or $x \geq 3$};
+\end{tikzpicture}
+```
+
+This produces number lines that precisely match the solution's inequality analysis!
 """
 
 USER_TEMPLATE = """Generate TikZ code for this number line or inequality visualization.

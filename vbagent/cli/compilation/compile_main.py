@@ -68,7 +68,9 @@ def generate_preamble(subject: str = "physics", title: str = "Problems", include
 \ctikzset{resistors/scale=0.75,capacitors/scale=0.75,inductors/scale=0.75}""",
         
         "chemistry": r"""
-\usepackage{chemfig, mhchem}
+\usepackage{chemfig}
+\usepackage[version=4]{mhchem}
+\usepackage[modules=all]{chemmacros}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}""",
         
@@ -83,7 +85,9 @@ def generate_preamble(subject: str = "physics", title: str = "Problems", include
 \usepackage{tzplot, pgfplots, kinematikz}
 \usepackage{circuitikz}
 \ctikzset{resistors/scale=0.75,capacitors/scale=0.75,inductors/scale=0.75}
-\usepackage{chemfig, mhchem}
+\usepackage{chemfig}
+\usepackage[version=4]{mhchem}
+\usepackage[modules=all]{chemmacros}
 \usepackage{tkz-euclide}
 \usepackage{venndiagram}
 \pgfplotsset{compat=1.18}"""

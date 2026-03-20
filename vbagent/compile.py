@@ -121,6 +121,14 @@ def _build_document(latex_snippet: str, subject: str = "physics") -> str:
     content = latex_snippet.strip()
     if content.startswith("\\item"):
         content = f"\\begin{{enumerate}}\n{content}\n\\end{{enumerate}}"
+    
+    # Replace \input{diagram} with a placeholder that compiles
+    # This allows compilation before TikZ is generated
+    if "\\input{diagram}" in content:
+        content = content.replace(
+            "\\input{diagram}",
+            "\\fbox{\\texttt{[DIAGRAM PLACEHOLDER - TikZ will be inserted here]}}"
+        )
 
     return PREAMBLE_TEMPLATE.format(
         chemistry_packages=chemistry_packages,

@@ -10,7 +10,7 @@ Your task is to generate chemfig code for reaction mechanisms with proper arrow-
 
 ## Reaction Schemes with chemfig
 
-Use `\schemestart` and `\schemestop` for reaction schemes:
+Use `\\schemestart` and `\\schemestop` for reaction schemes:
 
 ```latex
 \schemestart
@@ -115,6 +115,151 @@ Use TikZ overlay with chemfig for curved arrows:
 \chemfig{R-C(=[2]O)-Nu}
 \+
 \chemfig{X^{-}}
+\schemestop
+```
+
+## Multi-Step Mechanisms
+
+```latex
+\schemestart
+\chemfig{A}
+\arrow{->[\text{Step 1}]}
+\chemfig{B}
+\arrow{->[\text{Step 2}]}
+\chemfig{C}
+\schemestop
+```
+
+**With Intermediates:**
+```latex
+\schemestart
+\chemfig{Reactant}
+\arrow{->}[,2]
+\chemfig{Intermediate}
+\arrow{0}[,0]\+{,,0}
+\chemfig{Reagent}
+\arrow{->}
+\chemfig{Product}
+\schemestop
+```
+
+## Advanced Mechanism Examples
+
+### Intramolecular Cyclization with Electron Flow
+
+```latex
+\schemestart
+\chemfig{H_3@{cc}C-[:30](=[:90]\charge{[circle]45=\:, 135=\:}{O})-[:-30](=[-90]\charge{[circle]-45=\:, -135=\:}{O})-[:30]**6(------)} 
+\+ 
+\chemfig{@{o1}\charge{[circle]130:4pt=$\ominus$, 90=\:,180=\:, -90=\: }{O}-H}
+\arrow{->[-\ce{H_2O}]}[-90,1]
+\chemfig{H_2@{cn}\charge{[circle]-90=\:, 90:4pt=$\ominus$}{C}-[:30](=[:90]\charge{[circle]45=\:, 135=\:}{O})-[:-30]@{cnn}(=[@{db}-90]@{ox}\charge{[circle]-45=\:, -135=\:}{O})-[:30]**6(------)} 
+\schemestop
+\chemmove{
+    \draw[->,>=latex,shorten <=1mm,shorten >=1mm,thick](o1).. controls +(-90:15mm) and +(-90:15mm) .. (cc);
+    \draw[->,>=latex,shorten <=1mm,shorten >=1mm,thick](cn).. controls +(-90:15mm) and +(180:10mm) .. (cnn);
+    \draw[->,>=latex,shorten <=1mm,shorten >=1mm,thick](db).. controls +(0:5mm) and +(0:5mm) .. (ox);
+}
+```
+
+### Carbocation Resonance with Multiple Structures
+
+```latex
+\scalebox{0.7}{
+\schemestart
+% First structure
+\chemfig{*6(-=*6(-=[@{d1}]-[@{s1}]\charge{30[circle,anchor=180+\chargeangle]=$\oplus$}{}--)-=-=)}
+\arrow{<->}
+\chemfig{*6(-=[@{d2}]*6(-[@{s2}]\charge{-30[circle,anchor=180+\chargeangle]=$\oplus$}{}-=--)-=-=)}
+% Branching arrows
+\arrow{<->}[-90]
+\chemfig{*6(-[@{s3}]\charge{-30[circle,anchor=180+\chargeangle]=$\oplus$}{}-*6(=-=--)-=-=[@{d3}])}
+\arrow{<->}[180]
+\chemfig{*6(=-*6(=-=--)-=[@{d4}]-[@{s4}]\charge{330[circle,anchor=180+\chargeangle]=$\oplus$}{}-)}
+% More resonance structures
+\arrow{<->}[-90]
+\chemfig{*6(=-*6(=[@{d5}]-=--)-[@{s5}]\charge{330[circle,anchor=180+\chargeangle]=$\oplus$}{}-=-)}
+\arrow{<->}[0]
+\chemfig{*6(=-*6(-\charge{330[circle,anchor=180+\chargeangle]=$\oplus$}{}-[@{s6}]=[@{d6}]--)=-=-)}
+\arrow{<->}[-90]
+\chemfig{*6(=-*6(-=-\charge{330[circle,anchor=180+\chargeangle]=$\oplus$}{}--)=-=-)}
+\schemestop
+\chemmove{
+    \draw[->,>=latex,shorten <=1mm,shorten >=1mm,thick](d1).. controls +(120:5mm) and +(120:5mm) .. (s1);
+    \draw[->,>=latex,shorten <=1mm,shorten >=1mm,thick](d2).. controls +(90:10mm) and +(30:10mm) .. (s2);
+    \draw[->,>=latex,shorten <=1mm,shorten >=1mm,thick](d3).. controls +(60:5mm) and +(60:5mm) .. (s3);
+    \draw[->,>=latex,shorten <=1mm,shorten >=1mm,thick](d4).. controls +(-90:5mm) and +(-90:5mm) .. (s4);
+    \draw[->,>=latex,shorten <=1mm,shorten >=1mm,thick](d5).. controls +(0:5mm) and +(90:5mm) .. (s5);
+    \draw[->,>=latex,shorten <=1mm,shorten >=1mm,thick](d6).. controls +(120:5mm) and +(120:5mm) .. (s6);
+}
+}
+```
+
+### Electrophilic Addition with Carbocation Intermediates
+
+```latex
+\scalebox{0.7}{
+\schemestart
+\chemfig{*6(@{c141}=[@{db1}]@{c14}{C}_{14}-[@{sbb}]=[@{db2}]@{c12}---)}
+\arrow(aa--){->[\ce{H^+}][\textcircled{1}]}[-90,1] 
+\chemleft[
+\subscheme{ 
+    \chemfig{*6(={C}_{14}-\charge{[circle]-30=$\oplus$}{}----)}
+    \arrow(bb--dd){<->}[0,1]
+    \chemfig{*6(\charge{[circle]210=$\oplus$}{}-{C}_{14}=----)}
+}
+\chemright]
+\arrow(@aa--){->[\ce{H^+}][\textcircled{2}]}[90,1]
+\chemleft[
+\subscheme{
+    \chemfig{*6(-\charge{[circle]-90=$\oplus$}{C_{14}}-=---)}
+    \arrow(cc--ee){<->}[180,1]
+    \chemfig{*6(-{C}_{14}=-\charge{[circle]30=$\oplus$}{}---)}
+}
+\chemright]
+\arrow(@ee--){->[\ce{Br^-}]}[90,1]
+\chemfig{*6(-{C}_{14}=-(-[:30]Br)---)}
+\arrow(@cc--){->[\ce{Br^-}]}[90,1]
+\chemfig{*6(-{C}_{14}(-[:-90]Br)-=---)}
+\arrow(@bb--){->[\ce{Br^-}]}[-90,1]
+\chemfig{*6(={C}_{14}-(-[:-30]Br)----)}
+\arrow(@dd--){->[\ce{Br^-}]}[-90,1]
+\chemfig{*6((-[:-150]Br)-{C}_{14}=----)}
+\schemestop
+\chemmove{
+    \draw[->,>=latex,shorten <=1mm,shorten >=1mm,thick] (db1) .. controls +(-90:10mm) and +(180:10mm) .. node[midway, left]{\textcircled{2}}(c141);
+    \draw[->,>=latex,shorten <=1mm,shorten >=1mm,thick] (db2) .. controls +(0:10mm) and +(20:10mm) .. node[midway, right]{\textcircled{1}}(c12);
+}
+}
+```
+
+### Using \subscheme for Bracketed Intermediates
+
+```latex
+\schemestart
+\chemfig{Reactant}
+\arrow{->}
+\chemleft[
+\subscheme{
+    \chemfig{Intermediate_1}
+    \arrow{<->}
+    \chemfig{Intermediate_2}
+}
+\chemright]
+\arrow{->}
+\chemfig{Product}
+\schemestop
+```
+
+### Branching Reaction Pathways
+
+```latex
+\schemestart
+\chemfig{Starting Material}
+\arrow(aa--bb){->[\text{Path A}]}[-90,1]
+\chemfig{Product A}
+\arrow(@aa--cc){->[\text{Path B}]}[90,1]
+\chemfig{Product B}
 \schemestop
 ```
 

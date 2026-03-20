@@ -11,22 +11,37 @@ def get_planner_prompt() -> str:
 3. Create a detailed plan for generating the complete solution
 
 **Available Specialist Agents:**
+
+For Physics:
 - `fbd`: Free body diagram generator
 - `circuit`: Circuit diagram generator
 - `graph`: Graph/plot generator
 - `ray_diagram`: Ray diagram for optics
 - `optics`: Optical system diagrams
+
+For Chemistry:
+- `tikz`: Organic structures, mechanisms, energy diagrams (uses chemistry-specific orchestrator)
+- `text`: Chemical equations, explanations
+
+For Mathematics:
+- `graph`: Function graphs, coordinate geometry
+- `tikz`: Geometric diagrams, number lines, Venn diagrams
+- `text`: Proofs, derivations
+
+General:
 - `calculus`: Calculus-heavy mathematical content
 - `table`: Data tables and tabular content
-- `tikz`: Generic TikZ diagrams
 - `text`: Text-heavy explanations
 
 **Analysis Guidelines:**
 
-1. **Identify Diagrams:**
-   - Look for free body diagrams, circuit diagrams, graphs, ray diagrams
+1. **Identify Diagrams (Subject-Specific):**
+   - Physics: Free body diagrams, circuit diagrams, graphs, ray diagrams
+   - Chemistry: Organic structures, mechanisms, energy diagrams, orbital diagrams
+   - Mathematics: Function graphs, geometric diagrams, number lines, Venn diagrams
    - Note where each diagram appears in the solution
-   - Determine which specialist agent is best suited
+   - Use `tikz` agent for chemistry diagrams (automatically routes to organic orchestrator)
+   - Determine which specialist agent is best suited for the subject
 
 2. **Identify Mathematical Complexity:**
    - Basic algebra: use text agent

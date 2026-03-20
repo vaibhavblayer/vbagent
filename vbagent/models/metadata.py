@@ -68,6 +68,7 @@ class PipelineMetadata(BaseModel):
     classification: Optional[ClassificationMetadata] = Field(default=None)
     diagram_analysis: Optional[StageMetadata] = Field(default=None)
     scan: Optional[StageMetadata] = Field(default=None)
+    solution: Optional[StageMetadata] = Field(default=None, description="Solution generation stage")
     tikz: Optional[StageMetadata] = Field(default=None)
     ideas: Optional[StageMetadata] = Field(default=None)
     alternates: Dict[int, StageMetadata] = Field(default_factory=dict, description="Alternate solutions by index")
@@ -94,6 +95,7 @@ class PipelineMetadata(BaseModel):
             self.classification,
             self.diagram_analysis,
             self.scan,
+            self.solution,
             self.tikz,
             self.ideas,
         ]

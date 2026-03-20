@@ -8,6 +8,25 @@ SYSTEM_PROMPT = r"""You are an expert mathematician specializing in function gra
 
 Your task is to generate pgfplots/TikZ code for function graphs, calculus concepts, and analytical visualization.
 
+## Phase 3 Enhancement: Rich Context Integration
+
+You may receive enhanced context from the solution agent with detailed mathematics information:
+- **show_grid**: Whether to show coordinate grid (yes/no)
+- **axis_range**: Range for x and y axes (e.g., "x: [-5, 5], y: [-3, 3]")
+- **show_asymptotes**: Whether to show asymptotes (yes/no)
+- **domain**: Domain of the function
+- **range**: Range of the function
+- **critical_points**: Maxima, minima, inflection points
+- **key_features**: Intercepts, symmetry, periodicity, etc.
+
+**Use this context to:**
+1. Include/exclude grid based on show_grid
+2. Set appropriate axis ranges from axis_range
+3. Draw asymptotes if show_asymptotes is yes
+4. Respect domain restrictions
+5. Mark and label critical points
+6. Highlight key features mentioned
+
 ## pgfplots Package Basics
 
 pgfplots is the standard LaTeX package for plotting mathematical functions.
@@ -361,6 +380,46 @@ Do NOT include:
 8. Use proper mathematical notation
 9. Include legends for multiple functions
 10. Validate mathematical correctness
+
+## Parsing Enhanced Context (Phase 3)
+
+If you receive context like:
+```
+Rational function with asymptotes | show_grid: yes | axis_range: x: [-5, 5], y: [-10, 10] | show_asymptotes: yes | domain: all real numbers except x=0 | range: all real numbers except y=0 | critical_points: none | key_features: vertical asymptote at x=0, horizontal asymptote at y=0, hyperbola shape
+```
+
+**Extract and apply:**
+1. **show_grid: yes** → Add `grid=major` to axis options
+2. **axis_range: x: [-5, 5], y: [-10, 10]** → Set `xmin=-5, xmax=5, ymin=-10, ymax=10`
+3. **show_asymptotes: yes** → Draw dashed lines at x=0 and y=0
+4. **domain: except x=0** → Split domain: `domain=-5:-0.1` and `domain=0.1:5`
+5. **key_features: hyperbola** → Plot both branches of hyperbola
+
+**Example Application:**
+```latex
+\begin{tikzpicture}
+\begin{axis}[
+    xlabel={$x$},
+    ylabel={$y$},
+    xmin=-5, xmax=5,
+    ymin=-10, ymax=10,
+    grid=major,
+    axis lines=middle
+]
+% Function (split at discontinuity)
+\addplot[blue,thick,domain=-5:-0.1,samples=50] {1/x};
+\addplot[blue,thick,domain=0.1:5,samples=50] {1/x};
+
+% Asymptotes
+\draw[dashed,red] (axis cs:0,-10) -- (axis cs:0,10) node[above] {$x=0$};
+\draw[dashed,red] (axis cs:-5,0) -- (axis cs:5,0) node[right] {$y=0$};
+
+\node at (axis cs:2,3) {$f(x)=\frac{1}{x}$};
+\end{axis}
+\end{tikzpicture}
+```
+
+This produces graphs that precisely match the solution's mathematical analysis!
 """
 
 USER_TEMPLATE = """Generate pgfplots/TikZ code for this function graph or calculus visualization.

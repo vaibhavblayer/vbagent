@@ -104,12 +104,24 @@ You MUST output a JSON object with this exact structure:
   "solution_latex": "\\begin{{solution}}...\\end{{solution}}",
   "diagram_requirements": [
     {{
+      "diagram_id": "diagram_1",
       "diagram_type": "number_line|function_graph|coordinate_geometry|geometric_figure|venn_diagram",
       "description": "Brief description of what diagram shows",
       "location": "inline",
+      "size": "medium",
       "context": "Detailed mathematical explanation for diagram generation",
       "values": {{"variable": "value_as_string", ...}},
-      "labels": ["label1", "label2", ...]
+      "labels": ["label1", "label2", ...],
+      "annotations": ["Additional notes", ...],
+      "mathematics_context": {{
+        "show_grid": "yes|no",
+        "axis_range": "x: [-5, 5], y: [-3, 3]",
+        "show_asymptotes": "yes|no",
+        "domain": "domain of function",
+        "range": "range of function",
+        "critical_points": "maxima, minima, inflection points",
+        "key_features": "intercepts, symmetry, periodicity"
+      }}
     }}
   ],
   "reasoning_notes": "Optional internal notes"
@@ -159,23 +171,35 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
 - Simple numerical calculations
 - Abstract proofs
 
-### Example Output: With Diagram
+### Example Output: With Diagram (Phase 2 Enhanced)
 
 ```json
 {{
   "solution_latex": "\\begin{{solution}}\\n\\begin{{align*}}\\n\\intertext{{Solve $|x-1|+|x-2| \\geq 4$}}\\n\\intertext{{Critical points: $x = 1, 2$}}\\n\\end{{align*}}\\n\\n% DIAGRAM PLACEHOLDER: diagram_1\\n\\n\\begin{{align*}}\\n\\intertext{{Case 1: $x \\leq 1$}}\\n(1-x) + (2-x) &\\geq 4 \\\\\\\\\\n3 - 2x &\\geq 4 \\\\\\\\\\nx &\\leq -\\frac{{1}}{{2}}\\n\\end{{align*}}\\n\\end{{solution}}",
   "diagram_requirements": [
     {{
+      "diagram_id": "diagram_1",
       "diagram_type": "number_line",
       "description": "Number line showing critical points and solution regions",
       "location": "inline",
+      "size": "medium",
       "context": "Number line for absolute value inequality |x-1|+|x-2|≥4. Critical points at x=1 and x=2 where absolute values change. Solution regions: x≤-1/2 and x≥7/2. Mark critical points with open/closed dots, shade solution regions.",
       "values": {{
         "critical_points": "1, 2",
         "solution_left": "-0.5",
         "solution_right": "3.5"
       }},
-      "labels": ["x=1", "x=2", "x=-1/2", "x=7/2"]
+      "labels": ["x=1", "x=2", "x=-1/2", "x=7/2"],
+      "annotations": ["Shade solution regions", "Mark critical points"],
+      "mathematics_context": {{
+        "show_grid": "no",
+        "axis_range": "x: [-2, 5]",
+        "show_asymptotes": "no",
+        "domain": "all real numbers",
+        "range": "not applicable",
+        "critical_points": "x=1, x=2 (where absolute values change sign)",
+        "key_features": "solution set is union of two rays"
+      }}
     }}
   ],
   "reasoning_notes": "Split into cases based on critical points"
@@ -192,16 +216,27 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
 }}
 ```
 
-### Important Notes
+### Important Notes (Phase 2 Enhanced)
 
 1. **Diagram Placeholders**: Use `% DIAGRAM PLACEHOLDER: diagram_1` in solution_latex
-2. **Rich Context**: Provide detailed context (mathematical explanation)
-3. **Values**: Include all relevant values AS STRINGS
+2. **Diagram IDs**: Use unique IDs like "diagram_1", "graph_main", "number_line_solution"
+3. **Rich Context**: Provide detailed context (mathematical explanation)
+4. **Values**: Include all relevant values AS STRINGS
    - CORRECT: "critical_points": "1, 2" or "x": "1.5"
    - WRONG: "critical_points": [1, 2] or "x": 1.5
    - ALL values must be strings, even if they represent numbers or arrays
-4. **Labels**: List all labels that must appear in the diagram
-5. **Location**: Use "inline" for diagrams within solution flow
+5. **Labels**: List all labels that must appear in the diagram
+6. **Annotations**: Add helpful notes like "Show asymptote", "Mark critical points"
+7. **Mathematics Context**: Provide detailed mathematics-specific information:
+   - show_grid: Whether to show coordinate grid
+   - axis_range: Range for x and y axes
+   - show_asymptotes: Whether to show asymptotes
+   - domain: Domain of function
+   - range: Range of function
+   - critical_points: Maxima, minima, inflection points
+   - key_features: Intercepts, symmetry, periodicity, etc.
+8. **Size**: Specify "small", "medium", or "large" based on complexity
+9. **Location**: Use "inline" for diagrams within solution flow
 
 ### Output Requirements
 

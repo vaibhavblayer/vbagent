@@ -135,7 +135,7 @@ def insert_tikz_into_latex(latex: str, tikz_code: str) -> str:
     
     Handles two types of placeholders:
     1. Main diagram: \\begin{center}\\input{diagram}\\end{center}
-    2. Option diagrams: \\OptionA, \\OptionB, etc. with \\def definitions
+    2. MCQ option diagrams: \\def\\OptionA{...} through \\def\\OptionD{...}
     
     Args:
         latex: The LaTeX content with placeholder(s)
@@ -144,25 +144,33 @@ def insert_tikz_into_latex(latex: str, tikz_code: str) -> str:
     Returns:
         LaTeX with TikZ code inserted
     """
+    # Handle None tikz_code
+    if tikz_code is None:
+        return latex
+    
     result = latex
     
     # Check if tikz_code contains option definitions (\def\OptionA, etc.)
     has_option_defs = r'\def\Option' in tikz_code or r'\\def\\Option' in tikz_code
     
     if has_option_defs:
-        # Insert option definitions before \begin{tasks}
-        tasks_pattern = r'(% OPTIONS_DIAGRAMS:[^\n]*\n)?(\s*\\begin\{tasks\})'
+        # MCQ Option Diagram Replacement
+        # Replace old \def\OptionA{...} through \def\OptionD{...} with new ones
         
-        # Clean up the tikz_code - ensure proper escaping
-        tikz_to_insert = tikz_code.strip()
+        # Remove old definitions (A through D)
+        for option in ['A', 'B', 'C', 'D']:
+            # Pattern matches \def\OptionX{...} with balanced braces
+            pattern = rf'\\def\\Option{option}\{{[^{{}}]*(?:\{{[^{{}}]*\}}[^{{}}]*)*\}}'
+            result = re.sub(pattern, '', result)
         
-        def replace_tasks(match):
-            return f"{tikz_to_insert}\n{match.group(2)}"
+        # Insert new definitions before \begin{tasks}
+        tasks_pattern = r'(\s*\\begin\{tasks\})'
         
-        result = re.sub(tasks_pattern, replace_tasks, result)
+        def insert_before_tasks(match):
+            return f"\n{tikz_code.strip()}\n{match.group(1)}"
         
-        # Remove the OPTIONS_DIAGRAMS comment if present
-        result = re.sub(r'% OPTIONS_DIAGRAMS:[^\n]*\n', '', result)
+        result = re.sub(tasks_pattern, insert_before_tasks, result)
+        
     else:
         # Handle main diagram placeholder
         # Pattern to match the placeholder (with flexible whitespace)
@@ -404,6 +412,8 @@ def _process_images_parallel(
     use_orchestrator: bool,
     use_cache: bool,
     generate_solution: bool,
+    do_compile: bool,
+    verbose_compile: bool,
 ) -> tuple[list, int]:
     """Process multiple images in parallel using ThreadPoolExecutor.
     
@@ -422,6 +432,8 @@ def _process_images_parallel(
         use_orchestrator: Whether to use orchestrator
         use_cache: Whether to use cache
         generate_solution: Whether to use new solution generation pipeline
+        do_compile: Whether to compile and validate LaTeX
+        verbose_compile: Whether to show full compile output
         
     Returns:
         Tuple of (results list, failed count)
@@ -454,6 +466,25 @@ def _process_images_parallel(
                 use_cache=use_cache,
                 generate_solution=generate_solution,
             )
+            
+            # Compile validation if -c flag
+            if do_compile:
+                from vbagent.compile import compile_and_retry
+                from vbagent.agents.quality.latex_fixer import fix_latex
+                from vbagent.config import get_config as _get_cfg
+                _subj = _get_cfg().subject
+                
+                result.latex, _ = compile_and_retry(
+                    result.latex, retry_fn=fix_latex,
+                    subject=_subj, console=None,  # No console in parallel mode
+                    verbose=verbose_compile,
+                )
+                if result.tikz_code:
+                    result.tikz_code, _ = compile_and_retry(
+                        result.tikz_code, retry_fn=fix_latex,
+                        subject=_subj, console=None,
+                        verbose=verbose_compile,
+                    )
             
             # Save immediately (thread-safe - each file is unique)
             base_name = get_base_name(result.source_path)
@@ -871,6 +902,8 @@ def process(
                     use_orchestrator=use_orchestrator,
                     use_cache=use_cache,
                     generate_solution=generate_solution,
+                    do_compile=do_compile,
+                    verbose_compile=verbose_compile,
                 )
             else:
                 # Sequential processing (single image or parallel=1)
@@ -947,6 +980,28 @@ def process(
                         generate_ideas=ideas,
                         use_context=context,
                     )
+                    
+                    # Compile validation if -c flag
+                    if do_compile:
+                        from vbagent.compile import compile_and_retry
+                        from vbagent.agents.quality.latex_fixer import fix_latex
+                        from vbagent.config import get_config as _get_cfg
+                        _subj = _get_cfg().subject
+                        
+                        console.print("[dim]  → Compiling scanned LaTeX...[/dim]")
+                        result.latex, _ = compile_and_retry(
+                            result.latex, retry_fn=fix_latex,
+                            subject=_subj, console=console,
+                            verbose=verbose_compile,
+                        )
+                        if result.tikz_code:
+                            console.print("[dim]  → Compiling TikZ...[/dim]")
+                            result.tikz_code, _ = compile_and_retry(
+                                result.tikz_code, retry_fn=fix_latex,
+                                subject=_subj, console=console,
+                                verbose=verbose_compile,
+                            )
+                    
                     results.append(result)
             else:
                 # Process entire content as single item
@@ -958,6 +1013,28 @@ def process(
                     generate_ideas=ideas,
                     use_context=context,
                 )
+                
+                # Compile validation if -c flag
+                if do_compile:
+                    from vbagent.compile import compile_and_retry
+                    from vbagent.agents.quality.latex_fixer import fix_latex
+                    from vbagent.config import get_config as _get_cfg
+                    _subj = _get_cfg().subject
+                    
+                    console.print("[dim]  → Compiling scanned LaTeX...[/dim]")
+                    result.latex, _ = compile_and_retry(
+                        result.latex, retry_fn=fix_latex,
+                        subject=_subj, console=console,
+                        verbose=verbose_compile,
+                    )
+                    if result.tikz_code:
+                        console.print("[dim]  → Compiling TikZ...[/dim]")
+                        result.tikz_code, _ = compile_and_retry(
+                            result.tikz_code, retry_fn=fix_latex,
+                            subject=_subj, console=console,
+                            verbose=verbose_compile,
+                        )
+                
                 results.append(result)
         
         # For TeX processing, save results (images are saved immediately above)
@@ -1087,6 +1164,51 @@ def process_image(
     # Use orchestrator if requested
     if use_orchestrator:
         console.print("[bold green]Stage 2: Solution Orchestrator...[/bold green]")
+        
+        # First, generate problem diagrams if needed (main diagram + MCQ options)
+        problem_tikz = None
+        if primary.has_diagram:
+            console.print("[dim]  → Generating problem diagrams...[/dim]")
+            from vbagent.agents.diagram.tikz_router import generate_tikz_with_routing
+            
+            # Generate main diagram
+            tikz_description = f"Generate diagrams for {diagram_analysis.diagram_type if diagram_analysis else 'problem'}"
+            
+            try:
+                problem_tikz, agent_used = generate_tikz_with_routing(
+                    image_path=image_path,
+                    description=tikz_description,
+                    diagram=diagram_analysis,
+                    primary=primary,
+                    use_context=use_context,
+                    show_spinner=False
+                )
+                console.print(f"[green]  ✓ Main diagram generated (agent: {agent_used})[/green]")
+                
+                # If MCQ with option diagrams, generate those separately
+                if diagram_analysis and diagram_analysis.has_option_diagrams:
+                    console.print("[dim]  → Generating MCQ option diagrams...[/dim]")
+                    
+                    from vbagent.agents.diagram import generate_mcq_options
+                    
+                    option_tikz = generate_mcq_options(
+                        image_path=image_path,
+                        subject=primary.subject,
+                        option_diagram_type=diagram_analysis.option_diagram_type or "organic_structure",
+                        option_descriptions=diagram_analysis.option_diagram_descriptions,
+                        diagram_analysis=diagram_analysis.model_dump() if hasattr(diagram_analysis, 'model_dump') else diagram_analysis,
+                        use_context=use_context,
+                        show_spinner=False,
+                    )
+                    
+                    # Combine main diagram + option diagrams
+                    problem_tikz = problem_tikz + "\n\n" + option_tikz
+                    console.print(f"[green]  ✓ Option diagrams generated (coordinator)[/green]")
+                    
+            except Exception as e:
+                console.print(f"[yellow]  ⚠ Problem diagram generation failed: {e}[/yellow]")
+        
+        # Now generate solution
         from vbagent.agents.orchestration.solution_orchestrator import create_solution_orchestrator
         
         orchestrator = create_solution_orchestrator()
@@ -1097,19 +1219,32 @@ def process_image(
             image_path=image_path,
             problem_context=problem_context,
             question_type=primary.question_type,
+            subject=primary.subject,
             verbose=False,
         )
         
         latex = orchestrator_result.latex
         console.print(f"[green]✓ Solution generated using {len(orchestrator_result.agent_outputs)} specialist agents[/green]")
         
-        # Extract TikZ if any agent generated it
+        # Insert problem diagrams into the problem section
+        if problem_tikz and (r'\input{diagram}' in latex or r'\OptionA' in latex):
+            console.print("[dim]  → Inserting problem diagrams...[/dim]")
+            latex = insert_tikz_into_latex(latex, problem_tikz)
+            console.print("[green]  ✓ Problem diagrams inserted[/green]")
+        
+        # Extract solution TikZ if any agent generated it (for solution diagrams, not problem)
         for output in orchestrator_result.agent_outputs:
             if output.agent in ["fbd", "circuit", "graph", "tikz", "ray_diagram", "optics"]:
                 if tikz_code is None:
                     tikz_code = output.content
                 else:
                     tikz_code += "\n\n" + output.content
+        
+        # Insert solution diagrams if any
+        if tikz_code:
+            # Solution diagrams go inside \begin{solution}...\end{solution}
+            # They should already be in the correct place from the assembler
+            pass
     
     elif primary.has_diagram:
         # Check cache first
@@ -1223,25 +1358,34 @@ def process_image(
         # Check if we need to handle option diagrams (detected after scanning)
         has_option_diagrams = r'\OptionA' in latex or r'\OptionB' in latex
         if has_option_diagrams:
-            # Need to regenerate TikZ for option diagrams
+            console.print("[dim]  → Generating option diagrams...[/dim]")
+            
+            # Use MCQ Option Coordinator for better quality
+            from vbagent.agents.diagram import generate_mcq_options
+            
+            # Extract option descriptions from comment
             import re
+            option_descriptions = None
             options_match = re.search(r'% OPTIONS_DIAGRAMS:\s*(.+?)(?:\n|$)', latex)
             if options_match:
-                tikz_description = f"Generate option diagrams: {options_match.group(1)}"
-            else:
-                tikz_description = "Generate TikZ diagrams for MCQ options (\\OptionA, \\OptionB, \\OptionC, \\OptionD)"
+                desc_text = options_match.group(1)
+                # Try to parse individual option descriptions
+                # Format: "(a) desc1, (b) desc2, (c) desc3, (d) desc4"
+                option_parts = re.findall(r'\([a-d]\)\s*([^,]+(?:,(?!\s*\([a-d]\))[^,]+)*)', desc_text)
+                if option_parts:
+                    option_descriptions = [part.strip() for part in option_parts]
             
-            console.print("[dim]  → Generating option diagrams...[/dim]")
-            # Use primary directly since classification may not be defined when cache is loaded
-            classification_for_tikz = convert_primary_to_classification(primary)
-            tikz_code = generate_tikz(
-                description=tikz_description,
+            tikz_code = generate_mcq_options(
                 image_path=image_path,
+                subject=primary.subject,
+                option_diagram_type=diagram_analysis.option_diagram_type if diagram_analysis else "organic_structure",
+                option_descriptions=option_descriptions,
+                diagram_analysis=diagram_analysis.model_dump() if diagram_analysis else None,
                 use_context=use_context,
-                classification=classification_for_tikz,
+                show_spinner=False,
             )
-            console.print("[green]  ✓ Option diagrams complete[/green]")
-            console.print(_get_panel(tikz_code, title="Option Diagrams TikZ", border_style="cyan"))
+            console.print("[green]  ✓ Option diagrams complete (coordinator)[/green]")
+            console.print(_get_panel(tikz_code, title="Option Diagrams", border_style="cyan"))
         
         # Replace placeholders with actual TikZ code and show combined result
         if tikz_code and (r'\input{diagram}' in latex or has_option_diagrams):
@@ -1257,35 +1401,75 @@ def process_image(
         # No diagram - just run scanning
         # NEW: Check if using solution generation pipeline
         if generate_solution:
-            console.print("[bold green]Stage 2: NEW Solution Pipeline...[/bold green]")
-            console.print("[dim]  → Scanning problem only[/dim]")
-            from vbagent.agents.content_generation.scanner import scan_problem
+            console.print("[bold green]Stage 2: Orchestrated Solution Pipeline...[/bold green]")
             
-            classification = convert_primary_to_classification(primary)
-            problem_latex = scan_problem(
-                image_path=image_path,
-                question_type=classification.question_type,
-                use_context=use_context,
-                subject=primary.subject,
-                show_spinner=True,
-            )
-            console.print("[green]  ✓ Problem scanned[/green]")
+            # Check cache for solution
+            solution_cached = cache and cache.has(problem_id, "solution")
             
-            console.print("[dim]  → Generating solution with rich context[/dim]")
-            from vbagent.agents.content_generation.solution import generate_complete_solution
-            
-            solution_latex = generate_complete_solution(
-                image_path=image_path,
-                classification=classification,
-                problem_text=problem_latex,
-                subject=primary.subject,
-                show_spinner=True,
-            )
-            console.print("[green]  ✓ Solution generated[/green]")
-            
-            # Combine
-            latex = problem_latex + "\n\n" + solution_latex
-            console.print("[green]✓[/green] Complete LaTeX generated using new solution pipeline")
+            if solution_cached:
+                console.print("[dim]Loading cached solution...[/dim]")
+                solution_latex = cache.get(problem_id, "solution")
+                # Also need problem latex - check scan cache
+                if cache.has(problem_id, "scan"):
+                    problem_latex = cache.get(problem_id, "scan")
+                    latex = problem_latex + "\n\n" + solution_latex
+                    console.print("[green]✓[/green] Loaded from cache")
+                else:
+                    # Need to scan problem
+                    console.print("[dim]  → Scanning problem only[/dim]")
+                    from vbagent.agents.content_generation.scanner import scan_problem
+                    
+                    classification = convert_primary_to_classification(primary)
+                    problem_latex = scan_problem(
+                        image_path=image_path,
+                        question_type=classification.question_type,
+                        use_context=use_context,
+                        subject=primary.subject,
+                        show_spinner=True,
+                    )
+                    console.print("[green]  ✓ Problem scanned[/green]")
+                    
+                    if cache:
+                        cache.set(problem_id, "scan", problem_latex)
+                    
+                    latex = problem_latex + "\n\n" + solution_latex
+                    console.print("[green]✓[/green] Solution loaded from cache")
+            else:
+                console.print("[dim]  → Scanning problem only[/dim]")
+                from vbagent.agents.content_generation.scanner import scan_problem
+                
+                classification = convert_primary_to_classification(primary)
+                problem_latex = scan_problem(
+                    image_path=image_path,
+                    question_type=classification.question_type,
+                    use_context=use_context,
+                    subject=primary.subject,
+                    show_spinner=True,
+                )
+                console.print("[green]  ✓ Problem scanned[/green]")
+                
+                if cache:
+                    cache.set(problem_id, "scan", problem_latex)
+                
+                console.print("[dim]  → Orchestrating solution generation[/dim]")
+                from vbagent.agents.content_generation.solution import generate_solution_orchestrated
+                
+                solution_latex = generate_solution_orchestrated(
+                    problem_text=problem_latex,
+                    classification=classification,
+                    subject=primary.subject,
+                    image_path=image_path,
+                    use_context=use_context,
+                    show_spinner=True,
+                )
+                console.print("[green]  ✓ Solution orchestrated[/green]")
+                
+                if cache:
+                    cache.set(problem_id, "solution", solution_latex)
+                
+                # Combine
+                latex = problem_latex + "\n\n" + solution_latex
+                console.print("[green]✓[/green] Complete LaTeX generated using orchestrated solution pipeline")
         else:
             # Default: existing scanner
             console.print("[bold green]Stage 2: Scanning image...[/bold green]")

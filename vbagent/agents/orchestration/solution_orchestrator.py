@@ -38,6 +38,7 @@ class SolutionOrchestrator:
         image_path: Union[str, Path],
         problem_context: str = "",
         question_type: str = "subjective",
+        subject: str = None,
         verbose: bool = False,
     ) -> SolutionResult:
         """Generate complete solution using orchestration.
@@ -52,6 +53,7 @@ class SolutionOrchestrator:
             image_path: Path to solution image
             problem_context: Context about the problem
             question_type: Type of question
+            subject: Subject for routing (physics, chemistry, mathematics)
             verbose: Print progress information
             
         Returns:
@@ -81,6 +83,7 @@ class SolutionOrchestrator:
             image_path=image_path,
             problem_context=problem_context,
             question_type=question_type,
+            subject=subject,
         )
         
         if verbose:
@@ -97,6 +100,7 @@ class SolutionOrchestrator:
         agent_outputs = self.executor.execute(
             plan=plan,
             image_path=image_path,
+            subject=subject,
         )
         
         if verbose:

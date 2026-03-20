@@ -38,6 +38,7 @@ from .mathematics import (
 )
 
 from .tikz_router import route_tikz_agent, generate_tikz_with_routing, get_agent_capabilities
+from .mcq_option_coordinator import generate_mcq_options
 from .tikz_checker import (
     check_tikz,
     check_tikz_with_patch,
@@ -133,6 +134,8 @@ __all__ = [
     "route_tikz_agent",
     "generate_tikz_with_routing",
     "get_agent_capabilities",
+    # MCQ Option Coordinator
+    "generate_mcq_options",
     # Checker
     "check_tikz",
     "check_tikz_with_patch",

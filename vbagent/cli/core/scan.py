@@ -275,6 +275,7 @@ def scan(
                 orchestrator_result = orchestrator.generate_solution(
                     image_path=image,
                     problem_context=problem_context,
+                    subject=classification.subject,
                     question_type=classification.question_type,
                     verbose=True,
                 )

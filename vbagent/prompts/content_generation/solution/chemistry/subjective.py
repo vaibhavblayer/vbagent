@@ -122,12 +122,23 @@ You MUST output a JSON object with this exact structure:
   "solution_latex": "\\begin{{solution}}...\\end{{solution}}",
   "diagram_requirements": [
     {{
+      "diagram_id": "diagram_1",
       "diagram_type": "organic_structure|reaction_mechanism|chemical_equation|energy_diagram|orbital|lewis_structure",
       "description": "Brief description of what diagram shows",
       "location": "inline",
+      "size": "medium",
       "context": "Detailed chemical explanation for diagram generation",
       "values": {{"variable": "value_as_string", ...}},
-      "labels": ["label1", "label2", ...]
+      "labels": ["label1", "label2", ...],
+      "annotations": ["Additional notes", ...],
+      "chemistry_context": {{
+        "show_lone_pairs": "yes|no",
+        "show_charges": "yes|no",
+        "mechanism_step": "step description",
+        "stereochemistry": "R|S|E|Z|cis|trans|...",
+        "reaction_conditions": "temperature, solvent, catalyst",
+        "key_functional_groups": "list of functional groups"
+      }}
     }}
   ],
   "reasoning_notes": "Optional internal notes"
@@ -149,6 +160,7 @@ You MUST output a JSON object with this exact structure:
 - CRITICAL: All values in the "values" dict MUST be strings, not numbers or arrays
   - Example: "energy": "50 kJ/mol" NOT "energy": 50
   - Example: "atoms": "C, H, O" NOT "atoms": ["C", "H", "O"]
+- **Phase 2 Enhancement**: Include detailed chemistry_context for intelligent diagram generation
 
 **reasoning_notes** (optional, string):
 - Internal notes about solution approach
@@ -179,16 +191,18 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
 - Pure numerical problems
 - Conceptual questions without visual component
 
-### Example Output: With Diagram
+### Example Output: With Diagram (Phase 2 Enhanced)
 
 ```json
 {{
   "solution_latex": "\\begin{{solution}}\\n\\begin{{align*}}\\n\\intertext{{Identify the product of \\ce{{CH3CH=CH2}} + \\ce{{HBr}}}}\\n\\intertext{{This is electrophilic addition following Markovnikov's rule}}\\n\\end{{align*}}\\n\\n% DIAGRAM PLACEHOLDER: diagram_1\\n\\n\\begin{{align*}}\\n\\intertext{{Product: 2-bromopropane}}\\n\\end{{align*}}\\n\\end{{solution}}",
   "diagram_requirements": [
     {{
+      "diagram_id": "diagram_1",
       "diagram_type": "organic_structure",
       "description": "Reaction showing propene reacting with HBr to form 2-bromopropane",
       "location": "inline",
+      "size": "medium",
       "context": "Show the electrophilic addition mechanism. Reactant: propene (CH3-CH=CH2) with double bond between C2 and C3. Reagent: HBr. Product: 2-bromopropane (CH3-CHBr-CH3) with Br on the more substituted carbon (C2). Include arrow showing HBr addition and Markovnikov regioselectivity.",
       "values": {{
         "reactant": "CH3CH=CH2",
@@ -196,7 +210,16 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
         "product": "CH3CHBrCH3",
         "mechanism": "electrophilic addition"
       }},
-      "labels": ["Propene", "HBr", "2-Bromopropane", "Markovnikov product"]
+      "labels": ["Propene", "HBr", "2-Bromopropane", "Markovnikov product"],
+      "annotations": ["Show Markovnikov regioselectivity", "Indicate more substituted carbon"],
+      "chemistry_context": {{
+        "show_lone_pairs": "no",
+        "show_charges": "no",
+        "mechanism_step": "electrophilic addition of HBr to alkene",
+        "stereochemistry": "none",
+        "reaction_conditions": "room temperature",
+        "key_functional_groups": "alkene (C=C), alkyl halide (C-Br)"
+      }}
     }}
   ],
   "reasoning_notes": "Markovnikov addition - Br goes to more substituted carbon"
@@ -213,17 +236,27 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
 }}
 ```
 
-### Important Notes
+### Important Notes (Phase 2 Enhanced)
 
 1. **Diagram Placeholders**: Use `% DIAGRAM PLACEHOLDER: diagram_1` in solution_latex
-2. **Rich Context**: Provide detailed context (chemical explanation)
-3. **Values**: Include all relevant values AS STRINGS
+2. **Diagram IDs**: Use unique IDs like "diagram_1", "mechanism_step1", "structure_product"
+3. **Rich Context**: Provide detailed context (chemical explanation)
+4. **Values**: Include all relevant values AS STRINGS
    - CORRECT: "energy": "50 kJ/mol" or "atoms": "C, H, O"
    - WRONG: "energy": 50 or "atoms": ["C", "H", "O"]
    - ALL values must be strings, even if they represent numbers or arrays
-4. **Labels**: List all labels that must appear in the diagram
-5. **Chemical Formulas**: Use \\ce{{}} notation in LaTeX strings
-6. **Location**: Use "inline" for diagrams within solution flow
+5. **Labels**: List all labels that must appear in the diagram
+6. **Annotations**: Add helpful notes like "Show electron movement", "Highlight stereocenter"
+7. **Chemistry Context**: Provide detailed chemistry-specific information:
+   - show_lone_pairs: Whether to show lone pairs on heteroatoms
+   - show_charges: Whether to show formal charges
+   - mechanism_step: Description of mechanism step
+   - stereochemistry: Stereochemical configuration (R/S, E/Z, cis/trans)
+   - reaction_conditions: Temperature, solvent, catalyst
+   - key_functional_groups: Important functional groups to highlight
+8. **Size**: Specify "small", "medium", or "large" based on complexity
+9. **Chemical Formulas**: Use \\ce{{}} notation in LaTeX strings
+10. **Location**: Use "inline" for diagrams within solution flow
 
 ### Output Requirements
 

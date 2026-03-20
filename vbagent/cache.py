@@ -47,7 +47,7 @@ class PipelineCache:
         
         Args:
             problem_id: Problem identifier (e.g., "problem_1")
-            stage: Stage name (classification, scan, tikz, ideas, alternate, variant_numerical)
+            stage: Stage name (classification, scan, solution, tikz, ideas, alternate, variant_numerical)
         
         Returns:
             True if cached result exists
@@ -63,6 +63,8 @@ class PipelineCache:
             return metadata.diagram_analysis is not None and metadata.diagram_analysis.status == StageStatus.COMPLETED
         elif stage == "scan":
             return metadata.scan is not None and metadata.scan.status == StageStatus.COMPLETED
+        elif stage == "solution":
+            return metadata.solution is not None and metadata.solution.status == StageStatus.COMPLETED
         elif stage == "tikz":
             return metadata.tikz is not None and metadata.tikz.status == StageStatus.COMPLETED
         elif stage == "ideas":
@@ -97,6 +99,8 @@ class PipelineCache:
             stage_meta = metadata.diagram_analysis
         elif stage == "scan":
             stage_meta = metadata.scan
+        elif stage == "solution":
+            stage_meta = metadata.solution
         elif stage == "tikz":
             stage_meta = metadata.tikz
         elif stage == "ideas":
@@ -186,6 +190,8 @@ class PipelineCache:
             metadata.diagram_analysis = stage_meta
         elif stage == "scan":
             metadata.scan = stage_meta
+        elif stage == "solution":
+            metadata.solution = stage_meta
         elif stage == "tikz":
             metadata.tikz = stage_meta
         elif stage == "ideas":
@@ -259,6 +265,8 @@ class PipelineCache:
             stages.append("diagram")
         if metadata.scan and metadata.scan.status == StageStatus.COMPLETED:
             stages.append("scan")
+        if metadata.solution and metadata.solution.status == StageStatus.COMPLETED:
+            stages.append("solution")
         if metadata.tikz and metadata.tikz.status == StageStatus.COMPLETED:
             stages.append("tikz")
         if metadata.ideas and metadata.ideas.status == StageStatus.COMPLETED:

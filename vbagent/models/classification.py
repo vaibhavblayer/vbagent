@@ -8,7 +8,7 @@ Version 2.0 of classification system with support for:
 - TikZ validation
 """
 
-from typing import Literal, Optional, Dict, Any
+from typing import Literal, Optional, Dict, Any, ClassVar
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from datetime import datetime
 
@@ -92,6 +92,66 @@ class DiagramAnalysis(BaseModel):
     suggested_tikz_agent: str = "generic"
     confidence: float = Field(ge=0.0, le=1.0, default=1.0)
     analyzed_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+    
+    # MCQ option diagrams detection
+    has_option_diagrams: bool = Field(
+        default=False,
+        description="Whether this MCQ has diagrams in the answer options"
+    )
+    num_option_diagrams: int = Field(
+        default=0,
+        description="Number of options that contain diagrams (typically 4)"
+    )
+    option_diagram_type: str = Field(
+        default="",
+        description="Type of diagrams in the options (e.g., organic_structure, circuit, graph)"
+    )
+    option_diagram_descriptions: list[str] = Field(
+        default_factory=list,
+        description="Brief description of what each option diagram shows"
+    )
+    
+    # Valid diagram types per subject (ClassVar to avoid Pydantic field annotation error)
+    VALID_TYPES: ClassVar[Dict[str, list[str]]] = {
+        "physics": ["fbd", "circuit", "graph", "optics", "generic"],
+        "chemistry": ["organic_structure", "reaction_mechanism", "chemical_equation", 
+                     "energy_diagram", "orbital", "lewis_structure", "generic"],
+        "mathematics": ["number_line", "function_graph", "coordinate_geometry", 
+                       "geometric_figure", "venn_diagram", "generic"],
+    }
+    
+    # Mapping of common variations to correct types (ClassVar)
+    TYPE_CORRECTIONS: ClassVar[Dict[str, str]] = {
+        "reaction_scheme": "reaction_mechanism",
+        "free_body": "fbd",
+        "ray_diagram": "optics",
+        "geometry": "geometric_figure",
+        "coordinate_plane": "coordinate_geometry",
+        "graph_plot": "function_graph",
+        "molecular_structure": "organic_structure",
+    }
+    
+    @field_validator('diagram_type')
+    @classmethod
+    def validate_diagram_type(cls, v: str) -> str:
+        """Validate and correct diagram type"""
+        # Apply corrections for common variations
+        corrected = cls.TYPE_CORRECTIONS.get(v, v)
+        
+        # If it was corrected, return the corrected value
+        if corrected != v:
+            return corrected
+        
+        # Check if it's a valid type for any subject
+        all_valid = set()
+        for types in cls.VALID_TYPES.values():
+            all_valid.update(types)
+        
+        if v not in all_valid:
+            # If not valid, default to generic
+            return "generic"
+        
+        return v
 
 
 # Agent 3: Difficulty Assessment

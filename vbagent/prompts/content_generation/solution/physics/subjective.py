@@ -213,12 +213,22 @@ You MUST output a JSON object with this exact structure:
   "solution_latex": "\\begin{solution}...\\end{solution}",
   "diagram_requirements": [
     {
+      "diagram_id": "diagram_1",
       "diagram_type": "fbd|circuit|graph|optics",
       "description": "Brief description of what diagram shows",
       "location": "inline",
+      "size": "medium",
       "context": "Detailed physics explanation for diagram generation",
       "values": {"variable": "value_as_string", ...},
-      "labels": ["label1", "label2", ...]
+      "labels": ["label1", "label2", ...],
+      "annotations": ["Additional notes", ...],
+      "physics_context": {
+        "coordinate_system": "cartesian|polar|...",
+        "forces": "list of forces acting",
+        "motion_type": "linear|circular|projectile|...",
+        "reference_frame": "ground|moving|...",
+        "key_equations": "relevant equations used"
+      }
     }
   ],
   "reasoning_notes": "Optional internal notes about solution approach"
@@ -240,6 +250,7 @@ You MUST output a JSON object with this exact structure:
 - CRITICAL: All values in the "values" dict MUST be strings, not numbers or arrays
   - Example: "x": "1.5" NOT "x": 1.5
   - Example: "points": "1, 2, 3" NOT "points": [1, 2, 3]
+- **Phase 2 Enhancement**: Include detailed physics_context for intelligent diagram generation
 
 **reasoning_notes** (optional, string):
 - Internal notes about solution approach
@@ -270,16 +281,18 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
 - Simple numerical calculations
 - Problems where diagram doesn't add understanding
 
-### Example Output: With Diagram
+### Example Output: With Diagram (Phase 2 Enhanced)
 
 ```json
 {
   "solution_latex": "\\begin{solution}\\n\\begin{align*}\\n\\intertext{Given: block of mass $m = 2 \\\\ \\\\mathrm{kg}$ on incline at angle $\\\\theta = 30^\\\\circ$. Find acceleration}\\n\\\\sum F &= ma \\\\\\\\\\nmg \\\\sin\\\\theta &= ma\\n\\end{align*}\\n\\n% DIAGRAM PLACEHOLDER: diagram_1\\n\\n\\begin{align*}\\n\\intertext{From the free body diagram}\\na &= g \\\\sin\\\\theta \\\\\\\\\\n  &= 9.8 \\\\times \\\\sin(30^\\\\circ) \\\\\\\\\\n  &= 4.9 \\\\ \\\\mathrm{m/s^2}\\n\\end{align*}\\n\\end{solution}",
   "diagram_requirements": [
     {
+      "diagram_id": "diagram_1",
       "diagram_type": "fbd",
       "description": "Free body diagram of block on incline",
       "location": "inline",
+      "size": "medium",
       "context": "Block of mass m=2kg on incline at angle θ=30°. Forces acting: weight mg (vertically downward), normal force N (perpendicular to incline surface), friction force f (along incline surface opposing motion), acceleration a (down the incline). The weight mg is resolved into components: mg·sinθ along incline and mg·cosθ perpendicular to incline.",
       "values": {
         "m": "2 kg",
@@ -288,7 +301,15 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
         "a": "4.9 m/s²",
         "mg": "19.6 N"
       },
-      "labels": ["mg", "N", "f", "a", "θ", "mg·sinθ", "mg·cosθ"]
+      "labels": ["mg", "N", "f", "a", "θ", "mg·sinθ", "mg·cosθ"],
+      "annotations": ["Show component resolution", "Indicate direction of motion"],
+      "physics_context": {
+        "coordinate_system": "tilted (along and perpendicular to incline)",
+        "forces": "weight mg (downward), normal N (perpendicular to surface), friction f (opposing motion)",
+        "motion_type": "linear motion down incline",
+        "reference_frame": "ground frame",
+        "key_equations": "F=ma, component resolution"
+      }
     }
   ],
   "reasoning_notes": "Used force resolution on incline. Diagram helps visualize component forces."
@@ -305,16 +326,25 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
 }
 ```
 
-### Important Notes
+### Important Notes (Phase 2 Enhanced)
 
 1. **Diagram Placeholders**: In solution_latex, use `% DIAGRAM PLACEHOLDER: diagram_1` where diagram should appear
-2. **Rich Context**: Provide detailed context - this helps TikZ agent generate accurate diagrams
-3. **Values**: Include all relevant numerical values with units AS STRINGS
+2. **Diagram IDs**: Use unique IDs like "diagram_1", "fbd_main", "circuit_step2" for each diagram
+3. **Rich Context**: Provide detailed context - this helps TikZ agent generate accurate diagrams
+4. **Values**: Include all relevant numerical values with units AS STRINGS
    - CORRECT: "critical_points": "1, 2" or "theta": "30°"
    - WRONG: "critical_points": [1, 2] or "theta": 30
    - ALL values must be strings, even if they represent numbers or arrays
-4. **Labels**: List all labels that must appear in the diagram
-5. **Location**: Use "inline" for diagrams within solution flow
+5. **Labels**: List all labels that must appear in the diagram
+6. **Annotations**: Add helpful notes like "Show direction of motion", "Highlight equilibrium"
+7. **Physics Context**: Provide detailed physics-specific information:
+   - coordinate_system: What coordinate system to use
+   - forces: List all forces acting on the system
+   - motion_type: Type of motion (linear, circular, projectile, etc.)
+   - reference_frame: Which reference frame to use
+   - key_equations: Relevant equations that inform the diagram
+8. **Size**: Specify "small", "medium", or "large" based on complexity
+9. **Location**: Use "inline" for diagrams within solution flow
 
 ### Output Requirements
 
