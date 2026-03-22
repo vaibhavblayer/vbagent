@@ -13,7 +13,7 @@ from vbagent.agents.diagram.tikz import (
     search_tikz_reference,
     validate_tikz_output,
 )
-from vbagent.prompts.diagram.tikz import SYSTEM_PROMPT, USER_TEMPLATE
+from vbagent.prompts.diagram.physics.generic import SYSTEM_PROMPT, USER_TEMPLATE
 from vbagent.models.classification import ClassificationResult
 from vbagent.references.store import ReferenceStore
 
@@ -42,15 +42,8 @@ def classification_with_diagram_strategy(draw):
     return ClassificationResult(
         subject="physics",
         question_type=draw(st.sampled_from(["mcq_sc", "mcq_mc", "subjective"])),
-        difficulty=draw(st.sampled_from(["easy", "medium", "hard"])),
-        chapter=draw(st.sampled_from(["Mechanics", "Electrostatics", "Optics", "Thermodynamics"])),
-        topic=draw(st.sampled_from(["mechanics", "electrostatics", "optics", "thermodynamics"])),
-        subtopic=draw(st.text(min_size=3, max_size=20).filter(lambda x: x.strip())),
         has_diagram=True,  # Always True for this strategy
         diagram_category=draw(st.sampled_from(["mechanics", "circuits", "optics", "geometry"])),
-        num_options=draw(st.none() | st.integers(min_value=2, max_value=6)),
-        key_concepts=draw(st.lists(st.text(min_size=2, max_size=20).filter(lambda x: x.strip()), min_size=1, max_size=3)),
-        requires_calculus=draw(st.booleans()),
         confidence=draw(st.floats(min_value=0.5, max_value=1.0)),
     )
 
@@ -265,16 +258,16 @@ def test_prompts_have_required_constants():
     
     Verify that tikz.py has both SYSTEM_PROMPT and USER_TEMPLATE.
     """
-    from vbagent.prompts.diagram import tikz
+    from vbagent.prompts.diagram.physics import generic as tikz_prompts
     
-    assert hasattr(tikz, "SYSTEM_PROMPT"), "tikz.py must have SYSTEM_PROMPT"
-    assert hasattr(tikz, "USER_TEMPLATE"), "tikz.py must have USER_TEMPLATE"
+    assert hasattr(tikz_prompts, "SYSTEM_PROMPT"), "generic.py must have SYSTEM_PROMPT"
+    assert hasattr(tikz_prompts, "USER_TEMPLATE"), "generic.py must have USER_TEMPLATE"
     
-    assert isinstance(tikz.SYSTEM_PROMPT, str), "SYSTEM_PROMPT must be a string"
-    assert isinstance(tikz.USER_TEMPLATE, str), "USER_TEMPLATE must be a string"
+    assert isinstance(tikz_prompts.SYSTEM_PROMPT, str), "SYSTEM_PROMPT must be a string"
+    assert isinstance(tikz_prompts.USER_TEMPLATE, str), "USER_TEMPLATE must be a string"
     
-    assert len(tikz.SYSTEM_PROMPT.strip()) > 0, "SYSTEM_PROMPT must not be empty"
-    assert len(tikz.USER_TEMPLATE.strip()) > 0, "USER_TEMPLATE must not be empty"
+    assert len(tikz_prompts.SYSTEM_PROMPT.strip()) > 0, "SYSTEM_PROMPT must not be empty"
+    assert len(tikz_prompts.USER_TEMPLATE.strip()) > 0, "USER_TEMPLATE must not be empty"
 
 
 

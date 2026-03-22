@@ -78,9 +78,7 @@ For ground, walls, inclined planes, and pivots, use the **kinematikz** package:
 
 ```latex
 \usetikzlibrary{calc}  % Always include for coordinate calculations
-\tikzset{>=latex}  % Use latex arrow tips
-\tikzstyle{force}=[->, thick, draw=blue!70!black]
-\tikzstyle{body}=[draw, thick, minimum width=2cm, minimum height=1.5cm]
+% Arrow tips and thickness set globally in document preamble
 ```
 
 ## Code Structure with Proper Spacing
@@ -88,7 +86,6 @@ For ground, walls, inclined planes, and pivots, use the **kinematikz** package:
 ```latex
 \begin{tikzpicture}
     \usetikzlibrary{calc}
-    \tikzset{>=latex}
     
     % Surface using kinematikz
     \pic (surface) at (0,0) {frame=6cm};
@@ -97,10 +94,10 @@ For ground, walls, inclined planes, and pivots, use the **kinematikz** package:
     \node[draw, thick, minimum width=2cm, minimum height=1.5cm] (block) at ($(surface-center)+(0,1.5)$) {$m$};
     
     % Forces from appropriate anchor points
-    \draw[->, thick, blue!70!black] (block.south) -- ++(0,-1.5) node[right] {$mg$};
-    \draw[->, thick, blue!70!black] (block.north) -- ++(0,1.2) node[right] {$N$};
-    \draw[->, thick, red!70!black] (block.east) -- ++(1.5,0) node[above] {$F$};
-    \draw[->, thick, orange!70!black] (block.west) -- ++(-1,0) node[above] {$f$};
+    \draw[->, thick] (block.south) -- ++(0,-1.5) node[right] {$mg$};
+    \draw[->, thick] (block.north) -- ++(0,1.2) node[right] {$N$};
+    \draw[->, thick] (block.east) -- ++(1.5,0) node[above] {$F$};
+    \draw[->, thick] (block.west) -- ++(-1,0) node[above] {$f$};
 \end{tikzpicture}
 ```
 
@@ -211,8 +208,8 @@ Block on 30° incline | coordinate_system: tilted (along and perpendicular to in
 \draw[->] (block.east) ++(0.5,0) -- ++(0,1) node[above] {$y$};
 
 % Component resolution (from key_equations)
-\draw[dashed,red] (block.center) -- ++(0.75,-0.433) node[right] {$mg\sin\theta$};
-\draw[dashed,red] (block.center) -- ++(-0.433,-0.75) node[below] {$mg\cos\theta$};
+\draw[dashed] (block.center) -- ++(0.75,-0.433) node[right] {$mg\sin\theta$};
+\draw[dashed] (block.center) -- ++(-0.433,-0.75) node[below] {$mg\cos\theta$};
 ```
 
 This produces an FBD that precisely matches the solution's physics analysis!

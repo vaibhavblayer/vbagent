@@ -14,6 +14,7 @@ from vbagent.prompts.variants.multi_context import SYSTEM_PROMPT, USER_TEMPLATE
 multi_context_agent = create_agent(
     name="MultiContextVariant",
     instructions=SYSTEM_PROMPT,
+    agent_type="variant",
 )
 
 

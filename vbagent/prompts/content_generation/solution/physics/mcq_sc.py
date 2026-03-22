@@ -202,7 +202,8 @@ You MUST output a JSON object with this exact structure:
 - Must start with \\begin{solution} and end with \\end{solution}
 - Must conclude with "Therefore, the correct option is (X)."
 - Follow all formatting rules above
-- Do NOT include TikZ code inline - use diagram_requirements instead
+- Do NOT include TikZ code inline for complex diagrams - use diagram_requirements instead
+- For SIMPLE diagrams (quick graphs, number lines, basic sketches), write TikZ directly inline
 
 **diagram_requirements** (required, array):
 - List of diagrams needed in the solution
@@ -291,4 +292,10 @@ IMPORTANT: Use ONLY these exact diagram type names.
 - Use \\n for newlines
 """
 
-__all__ = ["SYSTEM_PROMPT"]
+USER_TEMPLATE = """Generate a complete solution for this physics MCQ (single correct) problem:
+
+{problem}
+
+Identify the correct option and provide clear reasoning."""
+
+__all__ = ["SYSTEM_PROMPT", "USER_TEMPLATE"]

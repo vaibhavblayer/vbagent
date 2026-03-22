@@ -196,12 +196,11 @@ def process_single_image(
     from vbagent.agents.content_generation.idea import extract_ideas
     from vbagent.agents.content_generation.alternate import generate_alternate
     from vbagent.agents.variants.variant import generate_variant
-    from vbagent.models.batch import ProcessingStatus
+    from vbagent.models.workflow import ProcessingStatus
     from vbagent.models.classification import ClassificationResult
     from vbagent.models.content import IdeaResult
-    from vbagent.cli.core.process import (
-        format_latex,
-        extract_problem_solution,
+    from vbagent.cli.common import format_latex, extract_problem_solution
+    from vbagent.pipeline.io import (
         save_pipeline_result_organized,
         get_base_name,
     )
@@ -303,7 +302,7 @@ def process_single_image(
                 db.update_status(image_id, ProcessingStatus.IDEAS, "ideas")
                 
                 ideas = _run_with_retry(
-                    lambda: extract_ideas(problem, solution),
+                    lambda: extract_ideas(problem, solution, subject=classification.subject),
                     "Ideas"
                 )
                 db.save_ideas(image_id, ideas.model_dump_json())
@@ -445,7 +444,7 @@ def init(
         vbagent batch init -i ./images -o ./output --no-context
     """
     # Lazy imports
-    from vbagent.models.batch import BatchDatabase
+    from vbagent.models.workflow import BatchDatabase
     
     console = _get_console()
     
@@ -515,7 +514,7 @@ def continue_batch(reset_failed: bool):
     Tip: Run 'vbagent batch status' to see current progress.
     """
     # Lazy imports
-    from vbagent.models.batch import BatchDatabase
+    from vbagent.models.workflow import BatchDatabase
     
     console = _get_console()
     
@@ -578,7 +577,7 @@ def status():
         vbagent batch status
     """
     # Lazy imports
-    from vbagent.models.batch import BatchDatabase, ProcessingStatus
+    from vbagent.models.workflow import BatchDatabase, ProcessingStatus
     
     console = _get_console()
     

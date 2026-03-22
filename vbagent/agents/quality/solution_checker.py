@@ -1,97 +1,26 @@
-"""Solution checker agent for physics problems.
-
-Verifies mathematical correctness, physics principles,
-and final answer accuracy in physics solutions.
-Also creates solutions when none exists.
-"""
-
-import re
+"""Solution checker agent for physics problems."""
 
 from vbagent.agents.base import create_agent, run_agent_sync
+from vbagent.agents.quality.base import parse_check_result, has_check_passed
 from vbagent.prompts.quality.solution_checker import SYSTEM_PROMPT, USER_TEMPLATE
 from vbagent.utils.latex import clean_latex_output
 
-
-# Create the solution checker agent
 solution_checker_agent = create_agent(
     name="SolutionChecker",
     instructions=SYSTEM_PROMPT,
-    agent_type="quality.solution_checker",  # Uses solution_checker model config
+    agent_type="quality.solution_checker",
 )
 
 
 def check_solution(full_content: str) -> tuple[bool, str, str]:
-    """Check a physics solution for correctness, or create one if missing.
-    
-    Analyzes the solution for:
-    - Mathematical calculation errors
-    - Physics principle misapplication
-    - Final answer correctness
-    - Unit consistency
-    
-    If no solution exists, creates a complete solution.
-    
-    Args:
-        full_content: Full LaTeX file content (problem with or without solution)
-        
-    Returns:
-        Tuple of (passed, summary, corrected_content)
-        - passed: True if no errors found (existing solution is correct)
-        - summary: Description of what was fixed/created (or "PASSED")
-        - corrected_content: The corrected/completed file content (empty if passed)
-        
-    Raises:
-        ValueError: If content is empty
-    """
+    """Check a physics solution for correctness, or create one if missing."""
     if not full_content.strip():
         raise ValueError("Content cannot be empty")
-    
-    # Use string replace instead of .format() to avoid issues with LaTeX curly braces
     message = USER_TEMPLATE.replace('{full_content}', full_content)
-    
     raw_result = run_agent_sync(solution_checker_agent, message)
     result = clean_latex_output(raw_result)
-    
     return parse_check_result(result, "SOLUTION_CHECK")
 
 
-def parse_check_result(result: str, check_type: str) -> tuple[bool, str, str]:
-    """Parse the check result to extract pass/fail status and content.
-    
-    Args:
-        result: Raw result from checker
-        check_type: Type of check (SOLUTION_CHECK, GRAMMAR_CHECK, CLARITY_CHECK)
-        
-    Returns:
-        Tuple of (passed, summary, corrected_content)
-    """
-    # Check if passed
-    passed_pattern = rf'%\s*{check_type}:\s*PASSED'
-    if re.search(passed_pattern, result, re.IGNORECASE):
-        # Extract the summary after PASSED
-        match = re.search(rf'%\s*{check_type}:\s*PASSED\s*[-–—]?\s*(.*?)(?:\n|$)', result, re.IGNORECASE)
-        summary = match.group(1).strip() if match else "No issues found"
-        return True, summary, ""
-    
-    # Extract summary from comment (handles both "Created new solution" and error fixes)
-    summary_pattern = rf'%\s*{check_type}:\s*(.*?)(?:\n|$)'
-    summary_match = re.search(summary_pattern, result, re.IGNORECASE)
-    summary = summary_match.group(1).strip() if summary_match else "Issues found and corrected"
-    
-    # Remove the check comment line to get clean content
-    corrected_content = re.sub(rf'%\s*{check_type}:.*?\n', '', result, count=1, flags=re.IGNORECASE)
-    corrected_content = corrected_content.strip()
-    
-    return False, summary, corrected_content
-
-
 def has_solution_passed(result: str) -> bool:
-    """Check if solution check passed.
-    
-    Args:
-        result: Raw result from checker
-        
-    Returns:
-        True if solution check passed
-    """
-    return '% SOLUTION_CHECK: PASSED' in result or 'SOLUTION_CHECK: PASSED' in result.upper()
+    return has_check_passed(result, "SOLUTION_CHECK")

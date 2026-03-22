@@ -1,7 +1,15 @@
 """Common prompt components for chemistry scanner prompts.
 
 Chemistry-specific TikZ guidelines, LaTeX formatting rules, and notation.
+Shared constants (DIAGRAM_PLACEHOLDER, PASSAGE_DIAGRAM_INLINE, OPTIONS_WITH_DIAGRAMS)
+are imported from the _shared module.
 """
+
+from .._shared import (
+    DIAGRAM_PLACEHOLDER,
+    PASSAGE_DIAGRAM_INLINE,
+    OPTIONS_WITH_DIAGRAMS_CHEMISTRY as OPTIONS_WITH_DIAGRAMS,
+)
 
 # Chemistry-specific TikZ guidelines
 TIKZ_GUIDELINES = r"""
@@ -96,54 +104,7 @@ LATEX_FORMATTING_RULES = r"""
 """
 
 
-# Diagram placeholder for chemistry
-DIAGRAM_PLACEHOLDER = r"""
-    **Diagram Handling (IMPORTANT):**
-    *   If the image contains a diagram, output ONLY a placeholder:
-        ```latex
-        \begin{center}
-            \input{diagram}
-        \end{center}
-        ```
-    *   Do NOT generate TikZ/chemfig code during scanning - the diagram agent will generate it separately.
-    *   Place the placeholder immediately after the `\item` line (before options/tasks).
-"""
 
-# Passage diagram - generate actual code inline (not placeholder)
-PASSAGE_DIAGRAM_INLINE = r"""
-    **Diagram Handling for Passage (IMPORTANT):**
-    *   If the passage contains a diagram, generate the ACTUAL TikZ/chemfig code inline:
-        ```latex
-        \begin{center}
-        \begin{tikzpicture}
-            % Your TikZ code here
-        \end{tikzpicture}
-        \end{center}
-        ```
-    *   Do NOT use `\input{diagram}` placeholder for passage diagrams.
-    *   Generate complete, compilable code directly in the passage.
-    *   Place the diagram after the passage text, before the questions.
-"""
-
-# Options with diagrams
-OPTIONS_WITH_DIAGRAMS = r"""
-    **IMPORTANT - Options with Diagrams/Structures:**
-    If the options contain chemical structures or diagrams, output ONLY placeholders in the tasks:
-    ```latex
-    % Placeholder comment for diagram agent to generate option structures
-    % OPTIONS_DIAGRAMS: 4 options with different organic structures
-    \begin{tasks}(2)
-        \task \OptionA
-        \task \OptionB
-        \task \OptionC \ans
-        \task \OptionD
-    \end{tasks}
-    ```
-    *   Do NOT generate chemfig code for options during scanning.
-    *   The diagram agent will generate `\def\OptionA{...}`, `\def\OptionB{...}`, etc.
-    *   Just use `\OptionA`, `\OptionB`, `\OptionC`, `\OptionD` as placeholders in tasks.
-    *   Add a comment describing what each option shows (for diagram agent).
-"""
 
 # Chemistry solution structure guidelines
 SOLUTION_STRUCTURE = r"""

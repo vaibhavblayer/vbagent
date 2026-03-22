@@ -1,13 +1,21 @@
-"""Solution orchestration system for coordinating specialized agents."""
+"""Orchestration system for problem and solution pipelines."""
 
-from vbagent.agents.orchestration.planner import SolutionPlanner
-from vbagent.agents.orchestration.executor import SolutionExecutor
-from vbagent.agents.orchestration.assembler import SolutionAssembler
-from vbagent.agents.orchestration.solution_orchestrator import create_solution_orchestrator
+from vbagent.agents.orchestration.solution_orchestrator import (
+    SolutionOrchestrator,
+    SolutionResult,
+    create_solution_orchestrator,
+)
+from vbagent.agents.orchestration.problem_orchestrator import (
+    ProblemOrchestrator,
+    ProblemResult,
+    create_problem_orchestrator,
+)
 
 __all__ = [
-    "SolutionPlanner",
-    "SolutionExecutor",
-    "SolutionAssembler",
+    "SolutionOrchestrator",
+    "SolutionResult",
     "create_solution_orchestrator",
+    "ProblemOrchestrator",
+    "ProblemResult",
+    "create_problem_orchestrator",
 ]

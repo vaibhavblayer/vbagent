@@ -23,7 +23,7 @@ if TYPE_CHECKING:
         run_agent,
         run_agent_sync,
     )
-    from .classifier import classifier_agent, classify, classify_structural
+    from .classifier import classifier_agent, classify
     from .content_generation.scanner import scan, scan_with_type, create_scanner_agent
     from .classification.taxonomy_classifier import classify_taxonomy, create_taxonomy_classifier_agent
     from .classification.difficulty_assessor import assess_difficulty, create_difficulty_assessor_agent
@@ -99,7 +99,6 @@ __all__ = [
     # Classifier
     "classifier_agent",
     "classify",
-    "classify_structural",
     # Scanner
     "scan",
     "scan_with_type",
@@ -178,7 +177,7 @@ def __getattr__(name: str):
         from . import base
         return getattr(base, name)
     
-    if name in ("classifier_agent", "classify", "classify_structural"):
+    if name in ("classifier_agent", "classify"):
         from . import classifier
         return getattr(classifier, name)
     

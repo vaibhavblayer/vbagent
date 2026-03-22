@@ -1,19 +1,5 @@
 """Data models for solution orchestration.
 
-DEPRECATED: This module is deprecated. Import from vbagent.models.workflow instead.
+DEPRECATED: The old Planner/Executor/Assembler models have been removed.
+SolutionResult now lives in vbagent.agents.orchestration.solution_orchestrator.
 """
-
-# Re-export from workflow module for backward compatibility
-from .workflow import (
-    AgentCall,
-    SolutionPlan,
-    AgentOutput,
-    SolutionResult,
-)
-
-__all__ = [
-    "AgentCall",
-    "SolutionPlan",
-    "AgentOutput",
-    "SolutionResult",
-]

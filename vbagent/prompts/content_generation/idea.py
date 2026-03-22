@@ -1,68 +1,65 @@
 """Idea extraction agent prompts.
 
-Prompts for extracting physics concepts, formulas, and problem-solving
-techniques from physics problems and their solutions.
+Subject-aware prompts for extracting concepts, formulas, and problem-solving
+techniques from problems and their solutions.
 """
 
-# JSON output prompt (legacy - for structured output)
-SYSTEM_PROMPT_JSON = """You are an expert physics educator and problem analyst. Your task is to analyze physics problems and their solutions to extract the core ideas, concepts, and techniques used.
+from vbagent.prompts.subjects import get_subject_config, SUBJECTS
 
-You MUST respond with ONLY a valid JSON object (no markdown, no explanation) with these fields:
 
-{
-    "concepts": ["<concept1>", "<concept2>", ...],
-    "formulas": ["<formula1>", "<formula2>", ...],
-    "techniques": ["<technique1>", "<technique2>", ...],
-    "difficulty_factors": ["<factor1>", "<factor2>", ...]
-}
+def _build_system_prompt_json(subject: str = "physics") -> str:
+    """Build subject-aware JSON system prompt."""
+    config = get_subject_config(subject)
+    return f"""You are an {config.expert_role} and problem analyst. Analyze {config.display_name.lower()} problems and solutions to extract core ideas, concepts, and techniques.
 
-Field definitions:
+Respond with ONLY a valid JSON object with these fields:
 
-**concepts**: Primary physics concepts being tested or applied
-- Examples: "Newton's second law", "Conservation of energy", "Ohm's law", "Electromagnetic induction"
-- Include both fundamental concepts and their specific applications
+{{
+    "topic": "<primary topic>",
+    "subtopic": "<specific subtopic>",
+    "concepts": ["<concept1>", ...],
+    "formulas": ["<formula1>", ...],
+    "techniques": ["<technique1>", ...],
+    "difficulty_factors": ["<factor1>", ...]
+}}
+
+**topic**: The broad chapter/area (e.g., {', '.join(f'"{t.replace("_", " ").title()}"' for t in config.topics[:4])})
+
+**subtopic**: The specific sub-area within the topic
+
+**concepts**: Primary {config.display_name.lower()} concepts being tested or applied
 - Be specific: prefer "Projectile motion under gravity" over just "Kinematics"
+- Include both fundamental concepts and their specific applications
 
-**formulas**: Key mathematical formulas and equations used
-- Write in LaTeX format where appropriate
-- Examples: "F = ma", "E = mc^2", "v = u + at", "\\oint \\vec{B} \\cdot d\\vec{l} = \\mu_0 I"
-- Include both the formula and brief context if needed
+**formulas**: Key formulas and equations used (LaTeX format)
+- Examples: "$F = ma$", "$\\oint \\vec{{B}} \\cdot d\\vec{{l}} = \\mu_0 I$"
 
 **techniques**: Problem-solving approaches and methods employed
-- Examples: "Free body diagram analysis", "Energy conservation approach", "Integration by substitution"
-- Include mathematical techniques: "Quadratic equation solving", "Vector decomposition"
-- Include physics-specific methods: "Applying boundary conditions", "Using symmetry arguments"
+- Include mathematical techniques and {config.display_name.lower()}-specific methods
 
 **difficulty_factors**: What makes this problem challenging
-- Examples: "Multiple concepts combined", "Non-standard geometry", "Requires calculus"
-- Include conceptual challenges: "Counter-intuitive result", "Hidden constraints"
-- Include computational challenges: "Complex algebra", "Multiple variables"
+- Conceptual challenges, computational challenges, multi-concept integration
 
 Guidelines:
-1. Extract at least 1 concept and 1 technique for any valid problem
+1. Extract at least 1 concept and 1 technique
 2. Be comprehensive but avoid redundancy
-3. Focus on the physics and problem-solving aspects, not surface features
-4. Use standard physics terminology
+3. Use standard {config.display_name.lower()} terminology
+4. Formulas in LaTeX
 
 Respond with ONLY the JSON object."""
 
-USER_TEMPLATE_JSON = """Analyze this physics problem and solution to extract the core ideas.
 
-Problem:
-{problem}
-
-Solution:
-{solution}"""
-
-# LaTeX output prompt (new - for appending to files)
-SYSTEM_PROMPT = r"""You are an expert physics educator. Extract the key conceptual ideas from physics problems using ABSTRACT SYMBOLIC formulas only.
+def _build_system_prompt_latex(subject: str = "physics") -> str:
+    """Build subject-aware LaTeX system prompt."""
+    config = get_subject_config(subject)
+    return r"""You are an """ + config.expert_role + r""". Extract key conceptual ideas from """ + config.display_name.lower() + r""" problems using ABSTRACT SYMBOLIC formulas only.
 
 ## CRITICAL RULES
 
-1. **NO NUMERICAL VALUES** - Use only symbolic variables (m, v, g, h, etc.)
-2. **NO CALCULATIONS** - Show the conceptual formula chain, not arithmetic
-3. **ABSTRACT FORMULAS** - Write general physics laws, then show how they apply symbolically
-4. **STACKED VERTICALLY** - One formula/step per line
+1. **NO NUMERICAL VALUES** — Use only symbolic variables
+2. **NO CALCULATIONS** — Show the conceptual formula chain, not arithmetic
+3. **ABSTRACT FORMULAS** — Write general laws, then show how they apply symbolically
+4. **STACKED VERTICALLY** — One formula/step per line
 
 ## Output Format
 
@@ -74,69 +71,78 @@ SYSTEM_PROMPT = r"""You are an expert physics educator. Extract the key conceptu
 
 ## Content Structure
 
-1. Start with the fundamental physics law/principle (abstract form)
+1. Start with the fundamental law/principle (abstract form)
 2. Show how it applies to this problem's context (still symbolic)
 3. Brief technique description via `\intertext{}`
 
-## Formatting Rules (CRITICAL)
+## Formatting Rules
 
-1. **STACKED VERTICALLY** - Each formula on its own line with `\\`
-2. **SYMBOLIC ONLY** - NO numerical values, only variables
-3. Use `align*` environment directly inside `idea` environment
-4. Use `\intertext{}` for brief labels/explanations
-5. Align equations using `&` at the `=` sign
-6. Keep it BRIEF - max 6-8 lines total
+1. Each formula on its own line with `\\`
+2. SYMBOLIC ONLY — NO numerical values
+3. Use `align*` inside `idea` environment
+4. Use `\intertext{}` for brief labels
+5. Align equations using `&` at `=`
+6. Max 6-8 lines total
 7. NO blank lines inside `align*`
 8. Use `$ ... $` for inline math within `\intertext{}`
 
-## Example Output
-
-For a problem about work done by gravity on a falling object:
+## Example
 
 \begin{idea}
 \begin{align*}
 \intertext{\textbf{Concept:} Work by conservative force}
 W_{\text{conservative}} &= -\Delta U \\
 W_{\text{gravity}} &= -(U_f - U_i) \\
-&= -(mgh_f - mgh_i) \\
 &= mg(h_i - h_f) \\
 &= mgh \\
-\intertext{\textbf{Technique:} Use work-energy relation for conservative forces.}
+\intertext{\textbf{Technique:} Work-energy relation for conservative forces.}
 \end{align*}
 \end{idea}
-
-## What NOT to do
-
-- NO: W = 10 \times 9.8 \times 5 = 490\,\text{J} (numerical calculation)
-- YES: W = mgh (symbolic formula)
-
-- NO: v = \sqrt{2 \times 9.8 \times 10} = 14\,\text{m/s} (numerical)
-- YES: v = \sqrt{2gh} (symbolic)
 
 ## Output Constraint
 
 - Output ONLY `\begin{idea}...\end{idea}`
 - NO markdown code blocks
-- NO numerical substitutions or calculations
-- Keep it CONCISE and SYMBOLIC
-- Steps STACKED VERTICALLY - one per line
+- NO numerical substitutions
+- CONCISE and SYMBOLIC
 """
 
-USER_TEMPLATE = r"""Extract the key conceptual ideas from this physics problem using ABSTRACT SYMBOLIC formulas.
+
+def get_system_prompt_json(subject: str = "physics") -> str:
+    """Get subject-aware JSON system prompt."""
+    return _build_system_prompt_json(subject)
+
+
+def get_system_prompt_latex(subject: str = "physics") -> str:
+    """Get subject-aware LaTeX system prompt."""
+    return _build_system_prompt_latex(subject)
+
+
+USER_TEMPLATE_JSON = """Analyze this problem and solution to extract the core ideas.
+
+Problem:
+{problem}
+
+Solution:
+{solution}"""
+
+USER_TEMPLATE = r"""Extract the key conceptual ideas from this problem using ABSTRACT SYMBOLIC formulas.
 
 Here is the complete problem file:
 
 {full_content}
 
 Requirements:
-1. Identify the key physics concept/principle
+1. Identify the key concept/principle
 2. Write the ABSTRACT formula (no numbers!)
-3. Steps STACKED VERTICALLY - one formula per line
-4. Show how it applies symbolically to this problem's context
+3. Steps STACKED VERTICALLY — one formula per line
+4. Show how it applies symbolically
 5. Brief technique description
 6. Output ONLY `\begin{idea}...\end{idea}`
-7. NO numerical values or calculations - SYMBOLIC ONLY"""
+7. NO numerical values — SYMBOLIC ONLY"""
 
 # Backward compatibility
+SYSTEM_PROMPT_JSON = _build_system_prompt_json("physics")
+SYSTEM_PROMPT = _build_system_prompt_latex("physics")
 SYSTEM_PROMPT_LEGACY = SYSTEM_PROMPT_JSON
 USER_TEMPLATE_LEGACY = USER_TEMPLATE_JSON

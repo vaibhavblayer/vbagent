@@ -26,6 +26,7 @@ def create_scanner_agent(
     question_type: str,
     use_context: bool = True,
     subject: Optional[str] = None,
+    sample_reference: Optional[str] = None,
 ) -> "Agent":
     """Create a scanner agent with type-specific prompt.
     
@@ -33,6 +34,7 @@ def create_scanner_agent(
         question_type: The type of question (mcq_sc, mcq_mc, etc.)
         use_context: Whether to include reference context in prompt
         subject: Subject override (uses config if not provided)
+        sample_reference: Optional golden sample .tex for formatting reference
         
     Returns:
         Configured Agent instance for scanning that question type
@@ -42,6 +44,10 @@ def create_scanner_agent(
         subject = get_config().subject
     
     prompt = get_scanner_prompt(question_type, subject)
+    
+    # Add golden sample as formatting reference
+    if sample_reference:
+        prompt = prompt + "\n\n## Formatting Reference (Golden Sample)\n\nYour output MUST match this exact formatting style:\n\n```latex\n" + sample_reference + "\n```\n"
     
     # Add reference context if enabled
     context = get_context_prompt_section("latex", use_context)
@@ -61,6 +67,7 @@ def scan(
     use_context: bool = True,
     subject: Optional[str] = None,
     show_spinner: bool = True,
+    sample_reference: Optional[str] = None,
 ) -> ScanResult:
     """Extract LaTeX from a question image.
     
@@ -73,6 +80,7 @@ def scan(
         use_context: Whether to include reference context in prompt
         subject: Subject override (uses config if not provided)
         show_spinner: Whether to show animated spinner (default: True)
+        sample_reference: Optional golden sample .tex for formatting reference
         
     Returns:
         ScanResult with extracted LaTeX and diagram info
@@ -84,7 +92,7 @@ def scan(
     if subject is None:
         subject = get_config().subject
     
-    agent = create_scanner_agent(classification.question_type, use_context, subject)
+    agent = create_scanner_agent(classification.question_type, use_context, subject, sample_reference=sample_reference)
     user_template = get_user_template(subject)
     message = create_image_message(image_path, user_template)
     raw_latex = run_agent_sync(agent, message, show_spinner=show_spinner)
@@ -147,6 +155,7 @@ def scan_problem(
     use_context: bool = True,
     subject: Optional[str] = None,
     show_spinner: bool = True,
+    sample_reference: Optional[str] = None,
 ) -> str:
     r"""Extract ONLY the problem statement from an image (no solution).
     
@@ -163,36 +172,46 @@ def scan_problem(
         use_context: Whether to include reference context
         subject: Subject override (uses config if not provided)
         show_spinner: Whether to show animated spinner
+        sample_reference: Optional golden sample .tex for formatting reference
         
     Returns:
         LaTeX string with problem statement only
     """
-    from vbagent.prompts.content_generation.scanner.problem_only import get_problem_prompt, USER_TEMPLATE
-    
+    import importlib
+
     if subject is None:
         subject = get_config().subject
-    
-    # Get problem-only prompt
-    system_prompt = get_problem_prompt(question_type)
-    
+
+    # Import subject-specific problem_only module
+    mod = importlib.import_module(
+        f"vbagent.prompts.content_generation.scanner.{subject}.problem_only"
+    )
+    system_prompt = mod.get_problem_prompt(question_type)
+    user_template = mod.USER_TEMPLATE
+
+    # Add golden sample as formatting reference
+    if sample_reference:
+        system_prompt += (
+            "\n\n## Formatting Reference (Golden Sample)\n\n"
+            "Your output MUST match this exact formatting style:\n\n"
+            "```latex\n" + sample_reference + "\n```\n"
+        )
+
     # Add context if requested
     if use_context:
-        context_section = get_context_prompt_section(question_type, subject)
+        context_section = get_context_prompt_section("latex", use_context)
         if context_section:
-            system_prompt = system_prompt + "\n\n" + context_section
-    
-    # Create agent
+            system_prompt += "\n" + context_section
+
     agent = create_agent(
-        name=f"ProblemScanner-{question_type}",
+        name=f"ProblemScanner-{question_type}-{subject}",
         instructions=system_prompt,
         agent_type="scanner",
     )
-    
-    # Run agent
-    message = create_image_message(image_path, USER_TEMPLATE)
+
+    message = create_image_message(image_path, user_template)
     raw_latex = run_agent_sync(agent, message, show_spinner=show_spinner)
-    
-    # Clean output
+
     return clean_latex_output(raw_latex)
 
 

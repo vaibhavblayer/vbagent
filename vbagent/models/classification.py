@@ -246,24 +246,16 @@ class CombinedProblem(BaseModel):
 
 # Complete Classification Result (combines all agents)
 class ClassificationResult(BaseModel):
-    """Complete classification result combining all agents.
+    """Complete classification result combining Agents 1 and 2.
     
-    This is the unified result that can be built incrementally
-    as different agents complete their work.
+    Core classification + diagram analysis. Difficulty and taxonomy
+    are stored separately via their own models.
     """
     
     # From Agent 1/4: Primary Classification
     subject: Subject
     question_type: QuestionType
-    chapter: Optional[str] = None  # No longer extracted by classifier
-    topic: Optional[str] = None    # No longer extracted by classifier
-    subtopic: Optional[str] = None # No longer extracted by classifier
     has_diagram: bool
-    num_options: Optional[int] = None
-    key_concepts: list[str] = Field(default_factory=list)
-    requires_calculus: bool = False
-    estimated_marks: int = 4
-    time_estimate_minutes: int = 3
     
     # From Agent 2: Diagram Analysis (optional)
     diagram_type: Optional[str] = None
@@ -274,22 +266,11 @@ class ClassificationResult(BaseModel):
     tikz_requirements: Optional[TikZRequirements] = None
     suggested_tikz_agent: Optional[str] = None
     
-    # From Agent 3: Difficulty Assessment (optional, filled after scan)
-    difficulty: Optional[Difficulty] = None
-    difficulty_score: Optional[float] = None
-    difficulty_factors: Optional[DifficultyFactors] = None
-    difficulty_reasoning: Optional[str] = None
-    expected_solve_time_minutes: Optional[int] = None
-    expected_error_rate: Optional[float] = None
-    prerequisite_concepts: list[str] = Field(default_factory=list)
-    common_mistakes: list[str] = Field(default_factory=list)
-    cognitive_level: Optional[CognitiveLevel] = None
-    solution_approach: list[str] = Field(default_factory=list)
-    required_formulas: list[str] = Field(default_factory=list)
-    problem_structure: Optional[ProblemStructure] = None
-    exam_relevance: Optional[ExamRelevance] = None
-    learning_objectives: list[str] = Field(default_factory=list)
-    tags_auto: list[str] = Field(default_factory=list)
+    # MCQ option diagrams
+    has_option_diagrams: bool = False
+    num_option_diagrams: int = 0
+    option_diagram_type: str = ""
+    option_diagram_descriptions: list[str] = Field(default_factory=list)
     
     # Metadata
     confidence: float = Field(ge=0.0, le=1.0, default=1.0)
@@ -321,9 +302,8 @@ class ClassificationResult(BaseModel):
         cls,
         primary: PrimaryClassification,
         diagram: Optional[DiagramAnalysis] = None,
-        difficulty: Optional[DifficultyAssessment] = None
     ) -> "ClassificationResult":
-        """Combine results from multiple agents"""
+        """Combine results from primary + diagram agents"""
         result = cls.from_primary(primary)
         
         if diagram:
@@ -334,22 +314,9 @@ class ClassificationResult(BaseModel):
             result.diagram_features = diagram.diagram_features
             result.tikz_requirements = diagram.tikz_requirements
             result.suggested_tikz_agent = diagram.suggested_tikz_agent
-        
-        if difficulty:
-            result.difficulty = difficulty.difficulty
-            result.difficulty_score = difficulty.difficulty_score
-            result.difficulty_factors = difficulty.difficulty_factors
-            result.difficulty_reasoning = difficulty.difficulty_reasoning
-            result.expected_solve_time_minutes = difficulty.expected_solve_time_minutes
-            result.expected_error_rate = difficulty.expected_error_rate
-            result.prerequisite_concepts = difficulty.prerequisite_concepts
-            result.common_mistakes = difficulty.common_mistakes
-            result.cognitive_level = difficulty.cognitive_level
-            result.solution_approach = difficulty.solution_approach
-            result.required_formulas = difficulty.required_formulas
-            result.problem_structure = difficulty.problem_structure
-            result.exam_relevance = difficulty.exam_relevance
-            result.learning_objectives = difficulty.learning_objectives
-            result.tags_auto = difficulty.tags_auto
+            result.has_option_diagrams = diagram.has_option_diagrams
+            result.num_option_diagrams = diagram.num_option_diagrams
+            result.option_diagram_type = diagram.option_diagram_type
+            result.option_diagram_descriptions = diagram.option_diagram_descriptions
         
         return result

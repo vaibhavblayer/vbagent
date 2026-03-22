@@ -24,12 +24,9 @@ You may receive enhanced context from the solution agent with detailed physics i
 Use TikZ `\draw plot` with domain/samples:
 ```latex
 \begin{tikzpicture}[scale=0.8]
-    % Thin axes
     \draw[thin, ->] (0,0) -- (3,0) node[right] {$t$};
     \draw[thin, ->] (0,-1.2) -- (0,1.2) node[above] {$y$};
-    % Plot actual function
     \draw[thick] plot[domain=0:2.5, samples=50] (\x, {sin(4*\x r)*exp(-0.5*\x)});
-    % Thin tick marks
     \foreach \x in {1,2} {\draw[thin] (\x,0.05) -- (\x,-0.05) node[below, font=\tiny] {\x};}
 \end{tikzpicture}
 ```
@@ -125,12 +122,12 @@ tick style = {thin},
 
 **From coordinates:**
 ```latex
-\addplot[thick, blue] coordinates {(0,0) (1,2) (2,3) (3,1)};
+\addplot[thick] coordinates {(0,0) (1,2) (2,3) (3,1)};
 ```
 
 **From function:**
 ```latex
-\addplot[thick, red, domain=0:10, samples=100] {x^2 - 2*x + 1};
+\addplot[thick, domain=0:10, samples=100] {x^2 - 2*x + 1};
 ```
 
 **With markers:**
@@ -146,10 +143,10 @@ tick style = {thin},
 ### Multiple Curves
 ```latex
 \begin{axis}[...]
-\addplot[thick, blue] coordinates {(0,0) (5,5)};
+\addplot[thick] coordinates {(0,0) (5,5)};
 \addlegendentry{Curve 1}
 
-\addplot[thick, red] coordinates {(0,5) (5,0)};
+\addplot[thick, dashed] coordinates {(0,5) (5,0)};
 \addlegendentry{Curve 2}
 \end{axis}
 ```
@@ -174,7 +171,7 @@ legend style = {font=\tiny},
     grid = major,
     grid style = {very thin, black!15},
 ]
-\addplot[thick, blue, domain=0:5, samples=50] {0.5*9.8*x^2};
+\addplot[thick, domain=0:5, samples=50] {0.5*9.8*x^2};
 \end{axis}
 \end{tikzpicture}
 ```
@@ -189,7 +186,7 @@ legend style = {font=\tiny},
     xmin = 0, xmax = 10,
     ymin = 0, ymax = 50,
 ]
-\addplot[thick, red, domain=0:10] {9.8*x};
+\addplot[thick, domain=0:10] {9.8*x};
 \end{axis}
 \end{tikzpicture}
 ```
@@ -199,7 +196,7 @@ legend style = {font=\tiny},
 \begin{tikzpicture}[scale=0.8]
 \draw[thin, ->] (0,0) -- (7,0) node[right] {$t$};
 \draw[thin, ->] (0,-1.5) -- (0,1.5) node[above] {$y$};
-\draw[thick, blue] plot[domain=0:6.28, samples=100] (\x, {sin(\x r)});
+\draw[thick] plot[domain=0:6.28, samples=100] (\x, {sin(\x r)});
 \end{tikzpicture}
 ```
 
@@ -255,6 +252,7 @@ legend style = {font=\tiny},
 - **Grid**: Use `very thin, black!15` or `black!20`
 - **Data curves**: Use `thick`
 - **Labels**: Use `font=\tiny` for tick labels
+- **No Colors**: Use solid/dashed/dotted to distinguish multiple curves
 
 ### 2. Scaling
 - Use `scale=0.8` for compact plots

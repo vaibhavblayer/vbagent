@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from vbagent.models.batch import BatchDatabase, ProcessingStatus
+from vbagent.models.workflow import BatchDatabase, ProcessingStatus
 
 
 class TestBatchDatabase:

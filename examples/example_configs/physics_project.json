@@ -1,0 +1,80 @@
+{
+  "_comment": "Example workspace config for a physics project",
+  "_comment2": "Save as .vbagent.json in your project root",
+  
+  "subject": "physics",
+  "debug": false,
+  "log_level": "INFO",
+  
+  "default_model": "gpt-5.4-mini",
+  "default_reasoning_effort": "medium",
+  
+  "agents": {
+    "_comment": "Classification - fast and cheap",
+    "classifier": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "low"
+    },
+    "image_classifier": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "low"
+    },
+    "diagram_analyzer": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "medium"
+    },
+    
+    "_comment2": "Content generation",
+    "scanner": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "medium"
+    },
+    
+    "_comment3": "Physics diagram agents - high quality for accuracy",
+    "fbd": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_note": "Free body diagrams need precision"
+    },
+    "circuit": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_note": "Circuit diagrams with circuitikz"
+    },
+    "graph": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_note": "Physics graphs and plots"
+    },
+    "optics": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_note": "Ray diagrams and optical systems"
+    },
+    "tikz": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_note": "Generic TikZ for other diagrams"
+    },
+    
+    "_comment4": "Solution generation - high quality",
+    "solution": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    "variant": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "high"
+    },
+    
+    "_comment5": "Quality checking",
+    "latex_fixer": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "low"
+    },
+    "solution_checker": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "medium"
+    }
+  }
+}

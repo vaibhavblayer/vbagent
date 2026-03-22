@@ -219,7 +219,7 @@ class TestTexParser:
 
     def test_parse_tex_file(self, tmp_path):
         """Test reading TeX file content."""
-        from vbagent.utils.tex_parser import parse_tex_file
+        from vbagent.tex import parse_tex_file
         
         # Create a temporary TeX file
         tex_file = tmp_path / "test.tex"
@@ -231,7 +231,7 @@ class TestTexParser:
 
     def test_parse_tex_file_with_sections(self, tmp_path):
         """Test extracting problem and solution sections."""
-        from vbagent.utils.tex_parser import parse_tex_file_with_sections
+        from vbagent.tex import parse_tex_file_with_sections
         
         # Create a temporary TeX file
         tex_file = tmp_path / "test.tex"
@@ -244,7 +244,7 @@ class TestTexParser:
 
     def test_parse_tex_file_with_sections_no_solution(self, tmp_path):
         """Test parsing file without solution."""
-        from vbagent.utils.tex_parser import parse_tex_file_with_sections
+        from vbagent.tex import parse_tex_file_with_sections
         
         tex_file = tmp_path / "test.tex"
         content = "\\item This is the problem"
@@ -257,7 +257,7 @@ class TestTexParser:
 
     def test_extract_items(self):
         """Test extracting items from content."""
-        from vbagent.utils.tex_parser import extract_items
+        from vbagent.tex import extract_items
         
         content = """
         \\item First problem
@@ -275,14 +275,14 @@ class TestTexParser:
 
     def test_extract_items_empty(self):
         """Test extracting items from empty content."""
-        from vbagent.utils.tex_parser import extract_items
+        from vbagent.tex import extract_items
         
         items = extract_items("")
         assert len(items) == 0
 
     def test_extract_items_no_items(self):
         """Test extracting items from content without items."""
-        from vbagent.utils.tex_parser import extract_items
+        from vbagent.tex import extract_items
         
         content = "Some content without items"
         items = extract_items(content)
@@ -290,7 +290,7 @@ class TestTexParser:
 
     def test_extract_answer_mcq_single(self):
         """Test extracting single MCQ answer."""
-        from vbagent.utils.tex_parser import extract_answer
+        from vbagent.tex import extract_answer
         
         content = """
         \\begin{tasks}(4)
@@ -306,7 +306,7 @@ class TestTexParser:
 
     def test_extract_answer_mcq_multiple(self):
         """Test extracting multiple correct MCQ answers."""
-        from vbagent.utils.tex_parser import extract_answer
+        from vbagent.tex import extract_answer
         
         content = """
         \\begin{tasks}(4)
@@ -322,7 +322,7 @@ class TestTexParser:
 
     def test_extract_answer_integer(self):
         """Test extracting integer answer."""
-        from vbagent.utils.tex_parser import extract_answer
+        from vbagent.tex import extract_answer
         
         content = "The answer is \\ansint{42}"
         answer = extract_answer(content)
@@ -330,7 +330,7 @@ class TestTexParser:
 
     def test_extract_answer_none(self):
         """Test extracting answer when none present."""
-        from vbagent.utils.tex_parser import extract_answer
+        from vbagent.tex import extract_answer
         
         content = "Some problem without answer markers"
         answer = extract_answer(content)
@@ -338,7 +338,7 @@ class TestTexParser:
 
     def test_extract_answer_with_comments(self):
         """Test extracting answer with comments in content."""
-        from vbagent.utils.tex_parser import extract_answer
+        from vbagent.tex import extract_answer
         
         content = """
         \\begin{tasks}(4)

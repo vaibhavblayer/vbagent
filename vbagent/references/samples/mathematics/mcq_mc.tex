@@ -1,0 +1,27 @@
+% subject: mathematics
+% type: mcq_mc
+% has_diagram: false
+
+\item Let $f(x) = x^3 - 3x + 2$. Which of the following is/are true?
+
+\begin{tasks}(1)
+    \task $f$ has a local maximum at $x = -1$ \ans
+    \task $f$ has a local minimum at $x = 1$ \ans
+    \task $f$ is increasing on $(-\infty, -1)$ \ans
+    \task $f$ is decreasing on $(-1, 1)$ \ans
+\end{tasks}
+
+\begin{solution}
+\begin{align*}
+f'(x) &= 3x^2 - 3 \\
+    &= 3(x^2 - 1) \\
+    &= 3(x - 1)(x + 1)
+\intertext{Setting $f'(x) = 0$ gives $x = -1$ and $x = 1$.}
+f''(x) &= 6x
+\intertext{At $x = -1$: $f''(-1) = -6 < 0$, so local maximum. This confirms (a).}
+\intertext{At $x = 1$: $f''(1) = 6 > 0$, so local minimum. This confirms (b).}
+\intertext{For $x < -1$: $f'(x) > 0$, so $f$ is increasing on $(-\infty, -1)$. This confirms (c).}
+\intertext{For $-1 < x < 1$: $f'(x) < 0$, so $f$ is decreasing on $(-1, 1)$. This confirms (d).}
+\intertext{All four options are correct.}
+\end{align*}
+\end{solution}

@@ -294,7 +294,7 @@ def clean(output: bool, config: bool, cache: bool, all_: bool, yes: bool):
 def list(directory: str, ext: tuple):
     """List files ready for processing.
     
-    Shows files that can be processed with `vbagent process`.
+    Shows files that can be processed with `vbagent run`.
     
     \b
     Examples:
@@ -320,4 +320,4 @@ def list(directory: str, ext: tuple):
         console.print(f"  {i:3}. {f.name}")
     
     console.print(f"\n[dim]Total: {len(files)} file(s)[/dim]")
-    console.print(f"[dim]Process with: vbagent process -i {files[0]} -r 1 {len(files)}[/dim]")
+    console.print(f"[dim]Process with: vbagent run -i {files[0]} --from 1 --to {len(files)}[/dim]")

@@ -36,7 +36,7 @@ def extans(main_file: str, output: Optional[str], output_format: str):
         vbagent extans -o answers.yaml --format yaml
         vbagent extans --format latex -o answers.tex
     """
-    from vbagent.parsers import parse_main_tex, extract_answer_from_problem
+    from vbagent.tex import parse_main_tex, extract_answer_from_problem
     
     console = _get_console()
     main_path = Path(main_file)

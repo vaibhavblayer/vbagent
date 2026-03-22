@@ -97,14 +97,8 @@ def test_populate_from_classification(temp_db):
     classification = ClassificationResult(
         subject="physics",
         question_type="mcq_sc",
-        chapter="Mechanics",
-        topic="Forces",
-        subtopic="FBD",
         has_diagram=True,
         diagram_category="mechanics",
-        difficulty="medium",
-        difficulty_score=5.5,
-        cognitive_level="apply"
     )
     
     record = QuestionRecord(
@@ -116,7 +110,6 @@ def test_populate_from_classification(temp_db):
     
     assert record.subject == "physics"
     assert record.diagram_category == "mechanics"
-    assert record.difficulty_score == 5.5
 
 
 def test_backward_compatibility(temp_db):

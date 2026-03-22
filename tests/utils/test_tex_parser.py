@@ -7,7 +7,7 @@ import pytest
 from pathlib import Path
 from hypothesis import given, strategies as st
 
-from vbagent.utils.tex_parser import (
+from vbagent.tex import (
     parse_tex_file,
     parse_tex_file_with_sections,
     extract_items,

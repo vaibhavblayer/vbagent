@@ -1,0 +1,81 @@
+{
+  "_comment": "xAI Grok configuration",
+  "_comment2": "Uses Grok models for all agents",
+  "_comment3": "Note: Set XAI_API_KEY environment variable",
+  
+  "subject": "physics",
+  "debug": false,
+  "log_level": "INFO",
+  
+  "base_url": "https://api.x.ai/v1",
+  
+  "default_model": "grok-4-1-fast-reasoning",
+  "default_reasoning_effort": "medium",
+  
+  "agents": {
+    "_comment": "Classification - fast Grok model",
+    "classifier": {
+      "model": "grok-4-1-fast-reasoning",
+      "_note": "Grok models don't use reasoning_effort parameter"
+    },
+    "image_classifier": {
+      "model": "grok-4-1-fast-reasoning"
+    },
+    "diagram_analyzer": {
+      "model": "grok-4-1-fast-reasoning"
+    },
+    
+    "_comment2": "Content generation",
+    "scanner": {
+      "model": "grok-4-1-fast-reasoning"
+    },
+    
+    "_comment3": "Diagram generation - use code-specialized model",
+    "tikz": {
+      "model": "grok-code-fast-1",
+      "_note": "Code-specialized model for TikZ generation"
+    },
+    "fbd": {
+      "model": "grok-code-fast-1"
+    },
+    "circuit": {
+      "model": "grok-code-fast-1"
+    },
+    "organic_structure": {
+      "model": "grok-code-fast-1",
+      "_note": "Good for chemfig code generation"
+    },
+    
+    "_comment4": "Solution generation - frontier model",
+    "solution": {
+      "model": "grok-4",
+      "_note": "Frontier reasoning model for complex solutions"
+    },
+    
+    "_comment5": "Variants",
+    "variant": {
+      "model": "grok-4-1-fast-reasoning"
+    },
+    
+    "_comment6": "Quality checking",
+    "latex_fixer": {
+      "model": "grok-4-1-fast-reasoning"
+    },
+    "solution_checker": {
+      "model": "grok-4-1-fast-reasoning"
+    }
+  },
+  
+  "_setup": [
+    "1. Get API key from https://console.x.ai/",
+    "2. Set environment variable: export XAI_API_KEY=xai-xxx",
+    "3. Or use: vbagent config provider xai --api-key xai-xxx"
+  ],
+  
+  "_models": {
+    "grok-4": "Frontier reasoning, 256k context, $3/$15",
+    "grok-4-1-fast-reasoning": "2M context, agentic reasoning + tools",
+    "grok-code-fast-1": "Agentic coding, 256k context, $0.20/$1.50",
+    "grok-3-mini": "Budget option, 131k context"
+  }
+}

@@ -93,16 +93,10 @@ async def enrich_metadata_parallel(
         latex_content += f"\n\n**Solution:**\n{latex_solution}"
     
     # Create a minimal PrimaryClassification for difficulty assessor
-    # (it expects this object)
     primary = PrimaryClassification(
         subject=subject,
         question_type=question_type or "subjective",
-        chapter="",  # Will be filled by taxonomy
-        topic="",    # Will be filled by taxonomy
-        subtopic="",
         has_diagram=bool(tikz_code),
-        key_concepts=key_concepts or [],
-        requires_calculus=requires_calculus,
         classified_from="latex",
     )
     
@@ -196,16 +190,11 @@ def enrich_metadata_sequential(
     if latex_solution:
         latex_content += f"\n\n**Solution:**\n{latex_solution}"
     
-    # Create PrimaryClassification with taxonomy results
+    # Create PrimaryClassification for difficulty assessor
     primary = PrimaryClassification(
         subject=subject,
         question_type=question_type or "subjective",
-        chapter=taxonomy.chapter,
-        topic=taxonomy.topic,
-        subtopic=taxonomy.subtopic,
         has_diagram=bool(tikz_code),
-        key_concepts=taxonomy.key_concepts,
-        requires_calculus=requires_calculus,
         classified_from="latex",
     )
     

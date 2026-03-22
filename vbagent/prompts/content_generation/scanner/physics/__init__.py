@@ -20,6 +20,8 @@ from .common import (
     PGFPLOTS_EXAMPLE,
     OPTIONS_WITH_DIAGRAMS,
     DIAGRAM_PLACEHOLDER,
+    PASSAGE_DIAGRAM_INLINE,
+    SOLUTION_STRUCTURE,
 )
 
 # Mapping from question type to prompt

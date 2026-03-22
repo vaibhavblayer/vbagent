@@ -1,0 +1,79 @@
+{
+  "_comment": "Example workspace config for a chemistry project",
+  "_comment2": "Save as .vbagent.json in your project root",
+  
+  "subject": "chemistry",
+  "debug": false,
+  "log_level": "INFO",
+  
+  "default_model": "gpt-5.4-mini",
+  "default_reasoning_effort": "medium",
+  
+  "agents": {
+    "_comment": "Classification agents - use fast models with low reasoning",
+    "classifier": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "low"
+    },
+    "image_classifier": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "low"
+    },
+    "diagram_analyzer": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "medium"
+    },
+    
+    "_comment2": "Content generation - balanced models",
+    "scanner": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "medium"
+    },
+    
+    "_comment3": "Chemistry diagram agents - use powerful models with high reasoning",
+    "organic_structure": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    "reaction_mechanism": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    "chemical_equation": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    "energy_diagram": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    "orbital": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    "lewis_structure": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    
+    "_comment4": "Solution and variant generation - high quality needed",
+    "solution": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    "variant": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "high"
+    },
+    
+    "_comment5": "Quality checking - fast models sufficient",
+    "latex_fixer": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "low"
+    },
+    "solution_checker": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "medium"
+    }
+  }
+}

@@ -4,10 +4,70 @@
 LATEX_FORMATTING_RULES = """
 ## LaTeX Formatting Standards
 
-### Solution Environment
+### Solution Environment Structure
 - Use \\begin{solution}...\\end{solution} for all solutions
 - Place align* directly inside solution (no other environments between)
 - Use \\intertext{} for explanations within align*
+- Multiple align* blocks ONLY when diagram/table interrupts flow
+
+### Align Environment Rules (CRITICAL)
+
+**1. One step per line** - don't combine multiple operations
+```latex
+% GOOD:
+\\begin{align*}
+n &= \\frac{m}{M} \\\\
+  &= \\frac{5.85}{58.5} \\\\
+  &= 0.1 \\ \\text{mol}
+\\end{align*}
+
+% BAD:
+\\begin{align*}
+n &= \\frac{m}{M} = \\frac{5.85}{58.5} = 0.1 \\ \\text{mol}
+\\end{align*}
+```
+
+**2. Variable repetition rule (CRITICAL):**
+- First line: variable = expression
+- Intermediate lines: &= expression (NO variable)
+- Last line: can have variable for final answer
+
+```latex
+% GOOD:
+\\begin{align*}
+K_{\\text{eq}} &= \\frac{[\\ce{C}][\\ce{D}]}{[\\ce{A}][\\ce{B}]} \\\\
+              &= \\frac{(0.5)(0.5)}{(0.2)(0.3)} \\\\
+              &= 4.17
+\\end{align*}
+
+% BAD (repetitive):
+\\begin{align*}
+K_{\\text{eq}} &= \\frac{[\\ce{C}][\\ce{D}]}{[\\ce{A}][\\ce{B}]} \\\\
+K_{\\text{eq}} &= \\frac{(0.5)(0.5)}{(0.2)(0.3)} \\\\
+K_{\\text{eq}} &= 4.17
+\\end{align*}
+```
+
+**3. NO blank lines** inside align*
+
+**4. Use \\intertext{}** for text between steps
+- Math within \\intertext{} uses $...$
+- NO \\text{...} inside \\intertext{}
+
+```latex
+\\begin{align*}
+\\intertext{Calculate moles of \\ce{NaCl}}
+n &= \\frac{m}{M} \\\\
+  &= \\frac{5.85}{58.5} \\\\
+  &= 0.1 \\ \\text{mol}
+\\intertext{Now find concentration using $V = 100$ mL}
+C &= \\frac{n}{V} \\\\
+  &= \\frac{0.1}{0.1} \\\\
+  &= 1.0 \\ \\text{M}
+\\end{align*}
+```
+
+**5. Alignment at equals sign** using &
 
 ### Chemical Notation
 - Use \\ce{} for chemical formulas: \\ce{H2O}, \\ce{CH3COOH}
@@ -15,26 +75,66 @@ LATEX_FORMATTING_RULES = """
 - Use proper subscripts and superscripts
 - Use \\Delta for heat, \\rightleftharpoons for equilibrium
 
-### Align Environment Rules
-1. **One step per line** - don't combine multiple operations
-2. **Variable repetition rule**: 
-   - First line: variable = expression
-   - Subsequent lines: &= expression (no variable)
-3. **NO blank lines** inside align*
-4. **Use \\intertext{}** for text between steps
-5. **Math in intertext** uses $...$
+### Inline TikZ in Solutions (Encouraged)
 
-### Example
+For SIMPLE diagrams, write the TikZ code directly in the solution instead of
+using DIAGRAM_REQUIREMENT placeholders. This produces better, more contextual results.
+
+**Write TikZ directly when:**
+- Simple energy level diagrams (2-3 levels with arrows)
+- Quick reaction coordinate sketches (activation energy, ΔH)
+- Simple phase diagrams or P-V graphs
+- Basic orbital filling diagrams
+
+**Use DIAGRAM_REQUIREMENT placeholder when:**
+- Complex organic structures (use chemfig specialist)
+- Detailed reaction mechanisms with curved arrows
+- Complex molecular orbital diagrams
+- Multi-step synthesis schemes
+
+**Example: Simple energy diagram inline**
+```latex
+\\begin{center}
+\\begin{tikzpicture}
+\\draw[thin, ->] (0,0) -- (0,3) node[above] {Energy};
+\\draw[thin, ->] (0,0) -- (5,0) node[right] {Reaction coordinate};
+\\draw[thick] (0.5,0.5) -- (1.5,0.5) node[left, font=\\tiny, pos=0] {reactants};
+\\draw[thick] (3.5,1.5) -- (4.5,1.5) node[right, font=\\tiny] {products};
+\\draw[thick, dashed] (1.5,0.5) .. controls (2.5,2.8) .. (3.5,1.5);
+\\fill (2.5,2.5) circle (1.5pt);
+\\node[above, font=\\tiny] at (2.5,2.5) {$E_a$};
+\\draw[<->, thin] (4.7,0.5) -- (4.7,1.5) node[midway, right, font=\\tiny] {$\\Delta H$};
+\\end{tikzpicture}
+\\end{center}
+```
+
+**TikZ style rules for inline diagrams:**
+- NO colors — use solid/dashed/dotted line styles
+- NO inline `>=latex` or `\\tikzset` — already set globally
+- Use `thin, ->` for axes, `thick` for main curves
+- Use `font=\\tiny` or `font=\\footnotesize` for labels
+- Wrap in `\\begin{center}...\\end{center}`
+
+### MCQ Solutions
+Must end with: "Therefore, the correct option is (X)."
+
 ```latex
 \\begin{solution}
 \\begin{align*}
-\\intertext{Calculate moles of \\ce{NaCl}}
-n &= \\frac{m}{M} \\\\
-  &= \\frac{5.85}{58.5} \\\\
-  &= 0.1 \\ \\text{mol}
+\\intertext{Brief analysis}
+% ... steps ...
 \\end{align*}
+
+Therefore, the correct option is (c).
 \\end{solution}
 ```
+
+### Solution Quality
+- Show ALL steps, even "obvious" ones
+- Keep solutions CONCISE - key steps only
+- One operation per line
+- NO \\boxed{} for final answers
+- Explain the chemistry, not just the math
 """
 
 # Diagram identification guidelines

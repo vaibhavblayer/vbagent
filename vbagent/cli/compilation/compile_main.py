@@ -94,11 +94,21 @@ def generate_preamble(subject: str = "physics", title: str = "Problems", include
     
     # Custom commands
     custom_commands = r"""
-\renewcommand{\frac}{\dfrac}
+\everymath{\displaystyle}
 \newcommand{\ans}{\textcolor{blue!20!red}{\textit{\quad Ans.}}}
 % \renewcommand{\ans}{}  % Uncomment to hide answers
-\newenvironment{solution}{\par\noindent\color{red!95}\textbf{Solution: }\ignorespaces}{\par}
-\newenvironment{alternatesolution}{\par\noindent\color{black!15!red!65!yellow}\textbf{Alternate Solution: }\ignorespaces}{\par}"""
+\newenvironment{solution}{\par\noindent\color{red!80!black}$\Rightarrow$\enspace\ignorespaces}{\par}
+\newenvironment{alternatesolution}{\par\noindent\color{blue!80!black}$\Rrightarrow$\enspace\ignorespaces}{\par}
+\newenvironment{hint}{\par\noindent\color{red!50!black}$\looparrowright$\enspace\ignorespaces}{\par}
+\newenvironment{idea}{\par\noindent\color{violet!80!black}$\diamond$\enspace\ignorespaces}{\par}
+\newenvironment{remark}{\par\noindent\color{teal!80!black}$\circ$\enspace\ignorespaces}{\par}
+
+% --- Global TikZ style (design uniformity across all diagrams) ---
+\tikzset{
+    >=latex,
+    thick,
+    every node/.append style={font=\small},
+}"""
     
     # Combine
     preamble = base_packages
@@ -326,7 +336,7 @@ def compile(
     
     \b
     See Also:
-        vbagent process --help    # For processing problems
+        vbagent run --help        # For processing problems
         vbagent batch --help      # For batch processing
     """
     console = _get_console()

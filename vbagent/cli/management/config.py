@@ -14,7 +14,6 @@ from vbagent.config import (
     get_workspace_config_path,
     get_provider_name,
     apply_model_group,
-    AGENT_TYPES,
     MODELS,
     MODEL_GROUPS,
     SUBJECTS,
@@ -33,16 +32,6 @@ def config():
     """Configure vbagent models and settings.
     
     View and modify model configurations for different agent types.
-    
-    \b
-    Agent Types:
-        classifier  - Image classification
-        scanner     - LaTeX extraction from images
-        tikz        - TikZ diagram generation
-        idea        - Concept extraction
-        alternate   - Alternate solution generation
-        variant     - Problem variant generation
-        converter   - Format conversion
     
     \b
     Examples:
@@ -69,49 +58,33 @@ def show():
     else:
         console.print(f"[#6b7280]Using global config: {CONFIG_FILE}[/]\n")
 
-    # Create table using new category table helper
-    from vbagent.ui.tables import create_category_table, add_category_row
-
-    table = create_category_table(
-        title="Agent Model Configuration",
-        columns=["Category", "Agent", "Model", "Reasoning", "Max Tokens"],
-        caption=f"subject={cfg.subject}  provider={get_provider_name()}  debug={'on' if cfg.debug else 'off'}",
-    )
+    # Create simple table
+    table = _get_table(title="Agent Model Configuration")
+    table.add_column("Agent", style="cyan")
+    table.add_column("Model", style="green")
+    table.add_column("Reasoning", style="yellow")
+    table.add_column("Max Tokens", style="magenta")
 
     # Global default
-    add_category_row(table, "global", [
+    table.add_row(
         "[bold]default[/]",
         cfg.default_model,
         cfg.default_reasoning_effort,
         "-",
-    ], is_header=True)
+        style="dim"
+    )
 
-    # Agent categories
-    categories = [
-        ("classification", ["image_classifier", "diagram_analyzer", "difficulty_assessor", "latex_classifier", "taxonomy_classifier"]),
-        ("content_generation", ["scanner", "idea", "alternate", "converter"]),
-        ("diagram", ["tikz", "fbd", "tikz_checker"]),
-        ("variants", ["variant", "multi_context"]),
-        ("quality", ["reviewer", "solution_checker", "grammar_checker", "clarity_checker", "latex_fixer"]),
-    ]
-
-    for cat_key, agent_names in categories:
-        cat_cfg = getattr(cfg, cat_key, None)
-        if not cat_cfg:
-            continue
-        first = True
-        for agent_name in agent_names:
-            agent_cfg = getattr(cat_cfg, agent_name, None)
-            if agent_cfg:
-                add_category_row(table, cat_key, [
-                    agent_name,
-                    agent_cfg.model,
-                    agent_cfg.reasoning_effort,
-                    str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
-                ], is_header=first)
-                first = False
+    # Show all agent overrides
+    for agent_type, agent_cfg in cfg.agents.items():
+        table.add_row(
+            agent_type,
+            agent_cfg.model,
+            agent_cfg.reasoning_effort,
+            str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
+        )
 
     console.print(table)
+    console.print(f"\n[dim]subject={cfg.subject}  provider={get_provider_name()}  debug={'on' if cfg.debug else 'off'}[/dim]")
 
     # Extra info
     if cfg.base_url:
@@ -122,7 +95,6 @@ def show():
 
     console.print(f"\n[#6b7280]Models: {', '.join(MODELS.keys())}[/]")
     console.print(f"[#6b7280]Subjects: {', '.join(SUBJECTS)}  |  Providers: {', '.join(PROVIDERS.keys())}  |  Groups: {', '.join(MODEL_GROUPS.keys())}[/]")
-    console.print(f"[#6b7280]Tip: Use paths like 'content_generation.scanner' or flat 'scanner'[/]")
 
 
 @config.command()
@@ -138,23 +110,19 @@ def show():
 def set(agent_type: str, model: str, reasoning: str, max_tokens: int, workspace: bool):
     """Set model configuration for an agent type.
     
-    Supports both flat and hierarchical paths:
-    - Flat: scanner, tikz, reviewer
-    - Hierarchical: content_generation.scanner, diagram.tikz, quality.reviewer
-    
     \b
     Arguments:
-        AGENT_TYPE  Agent to configure (supports hierarchical paths)
+        AGENT_TYPE  Agent to configure (or 'default' for global defaults)
     
     \b
     Examples:
         vbagent config set scanner --model gpt-4o
-        vbagent config set content_generation.scanner --model gpt-4o
-        vbagent config set diagram.tikz --model o1-mini --reasoning medium
+        vbagent config set tikz --model o1-mini --reasoning medium
         vbagent config set default --model gpt-4.1
         vbagent config set scanner -m gpt-4o --workspace  # Save to .vbagent.json
     """
     from vbagent.cli.interfaces.ui import print_status
+    from vbagent.config import AgentModelConfig
     console = _get_console()
     cfg = get_config()
     
@@ -165,83 +133,21 @@ def set(agent_type: str, model: str, reasoning: str, max_tokens: int, workspace:
             cfg.default_reasoning_effort = reasoning
         print_status(console, "Updated default configuration", "success")
     else:
-        # Support hierarchical paths (e.g., "content_generation.scanner")
-        if "." in agent_type:
-            category, agent_name = agent_type.split(".", 1)
-            category_config = getattr(cfg, category, None)
-            if not category_config:
-                console.print(f"[red]Error:[/red] Unknown category '{category}'")
-                console.print(f"[dim]Valid categories: classification, content_generation, diagram, variants, quality[/dim]")
-                return
-            agent_cfg = getattr(category_config, agent_name, None)
-            if not agent_cfg:
-                console.print(f"[red]Error:[/red] Unknown agent '{agent_name}' in category '{category}'")
-                return
-        else:
-            # Flat path (backward compatibility)
-            agent_cfg = getattr(cfg, agent_type, None)
-            if not agent_cfg or not isinstance(agent_cfg, type(cfg.scanner)):
-                console.print(f"[red]Error:[/red] Unknown agent type '{agent_type}'")
-                console.print(f"[dim]Valid flat paths: {', '.join(AGENT_TYPES)}[/dim]")
-                console.print(f"[dim]Or use hierarchical paths like 'content_generation.scanner'[/dim]")
-                return
-            
-            # Also update hierarchical config for consistency
-            # Map flat names to hierarchical paths
-            hierarchical_map = {
-                # Classification
-                "classifier": ("classification", "image_classifier"),
-                "taxonomy_classifier": ("classification", "taxonomy_classifier"),
-                "difficulty_assessor": ("classification", "difficulty_assessor"),
-                # Content Generation
-                "scanner": ("content_generation", "scanner"),
-                "idea": ("content_generation", "idea"),
-                "alternate": ("content_generation", "alternate"),
-                "converter": ("content_generation", "converter"),
-                # Diagram
-                "tikz": ("diagram", "tikz"),
-                "fbd": ("diagram", "fbd"),
-                "tikz_checker": ("diagram", "tikz_checker"),
-                # Variants
-                "variant": ("variants", "variant"),
-                # Quality
-                "reviewer": ("quality", "reviewer"),
-                "solution_checker": ("quality", "solution_checker"),
-                "grammar_checker": ("quality", "grammar_checker"),
-                "clarity_checker": ("quality", "clarity_checker"),
-                "latex_fixer": ("quality", "latex_fixer"),
-                "format_checker": ("quality", "format_checker"),
-            }
-            
-            if agent_type in hierarchical_map:
-                category, agent_name = hierarchical_map[agent_type]
-                category_config = getattr(cfg, category, None)
-                if category_config:
-                    hierarchical_agent_cfg = getattr(category_config, agent_name, None)
-                    if hierarchical_agent_cfg:
-                        # Update both flat and hierarchical configs
-                        if model:
-                            agent_cfg.model = model
-                            hierarchical_agent_cfg.model = model
-                        if reasoning:
-                            agent_cfg.reasoning_effort = reasoning
-                            hierarchical_agent_cfg.reasoning_effort = reasoning
-                        if max_tokens is not None:
-                            agent_cfg.max_tokens = max_tokens
-                            hierarchical_agent_cfg.max_tokens = max_tokens
-                        print_status(console, f"Updated {agent_type} configuration", "success")
-                        # Skip the normal update below
-                        agent_cfg = None
+        # Get or create agent config
+        if agent_type not in cfg.agents:
+            cfg.agents[agent_type] = AgentModelConfig(
+                model=cfg.default_model,
+                reasoning_effort=cfg.default_reasoning_effort
+            )
         
-        # Normal update (for hierarchical paths or if flat path didn't match)
-        if agent_cfg:
-            if model:
-                agent_cfg.model = model
-            if reasoning:
-                agent_cfg.reasoning_effort = reasoning
-            if max_tokens is not None:
-                agent_cfg.max_tokens = max_tokens
-            print_status(console, f"Updated {agent_type} configuration", "success")
+        agent_cfg = cfg.agents[agent_type]
+        if model:
+            agent_cfg.model = model
+        if reasoning:
+            agent_cfg.reasoning_effort = reasoning
+        if max_tokens is not None:
+            agent_cfg.max_tokens = max_tokens
+        print_status(console, f"Updated {agent_type} configuration", "success")
     
     # Save to file
     config_path = save_config(workspace=workspace)
@@ -251,40 +157,11 @@ def set(agent_type: str, model: str, reasoning: str, max_tokens: int, workspace:
         console.print(f"  Model: {cfg.default_model}")
         console.print(f"  Reasoning: {cfg.default_reasoning_effort}")
     else:
-        # Get the config to display (prefer hierarchical if available)
-        display_cfg = agent_cfg
-        if not display_cfg and "." not in agent_type:
-            # For flat paths that were synced, get from hierarchical
-            hierarchical_map = {
-                "classifier": ("classification", "image_classifier"),
-                "taxonomy_classifier": ("classification", "taxonomy_classifier"),
-                "difficulty_assessor": ("classification", "difficulty_assessor"),
-                "scanner": ("content_generation", "scanner"),
-                "idea": ("content_generation", "idea"),
-                "alternate": ("content_generation", "alternate"),
-                "converter": ("content_generation", "converter"),
-                "tikz": ("diagram", "tikz"),
-                "fbd": ("diagram", "fbd"),
-                "tikz_checker": ("diagram", "tikz_checker"),
-                "variant": ("variants", "variant"),
-                "reviewer": ("quality", "reviewer"),
-                "solution_checker": ("quality", "solution_checker"),
-                "grammar_checker": ("quality", "grammar_checker"),
-                "clarity_checker": ("quality", "clarity_checker"),
-                "latex_fixer": ("quality", "latex_fixer"),
-                "format_checker": ("quality", "format_checker"),
-            }
-            if agent_type in hierarchical_map:
-                category, agent_name = hierarchical_map[agent_type]
-                category_config = getattr(cfg, category, None)
-                if category_config:
-                    display_cfg = getattr(category_config, agent_name, None)
-        
-        if display_cfg:
-            console.print(f"  Model: {display_cfg.model}")
-            console.print(f"  Reasoning: {display_cfg.reasoning_effort}")
-            if display_cfg.max_tokens:
-                console.print(f"  Max Tokens: {display_cfg.max_tokens}")
+        agent_cfg = cfg.agents[agent_type]
+        console.print(f"  Model: {agent_cfg.model}")
+        console.print(f"  Reasoning: {agent_cfg.reasoning_effort}")
+        if agent_cfg.max_tokens:
+            console.print(f"  Max Tokens: {agent_cfg.max_tokens}")
     
     console.print(f"\n[dim]Saved to: {config_path}[/dim]")
 
@@ -524,8 +401,8 @@ def provider(provider: str, base_url: str, api_key: str, no_models: bool, worksp
         table.add_column("Agent", style="cyan")
         table.add_column("Model", style="green")
         table.add_row("[bold]default[/bold]", cfg.default_model, style="dim")
-        for agent_type in AGENT_TYPES:
-            table.add_row(agent_type, getattr(cfg, agent_type).model)
+        for agent_type, agent_cfg in cfg.agents.items():
+            table.add_row(agent_type, agent_cfg.model)
         console.print(table)
     
     if not provider and not base_url and not api_key:
@@ -570,9 +447,9 @@ def model_group(group_name: str, workspace: bool):
             table.add_column("Agent", style="cyan")
             table.add_column("Model", style="green")
             table.add_row("[bold]default[/bold]", group["default_model"], style="dim")
-            for agent_type in AGENT_TYPES:
-                if agent_type in group:
-                    table.add_row(agent_type, group[agent_type])
+            for agent_type, model in group.items():
+                if agent_type != "default_model":
+                    table.add_row(agent_type, model)
             console.print(table)
             console.print()
         return
@@ -590,7 +467,7 @@ def model_group(group_name: str, workspace: bool):
     table.add_column("Agent", style="cyan")
     table.add_column("Model", style="green")
     table.add_row("[bold]default[/bold]", cfg.default_model, style="dim")
-    for agent_type in AGENT_TYPES:
-        table.add_row(agent_type, getattr(cfg, agent_type).model)
+    for agent_type, agent_cfg in cfg.agents.items():
+        table.add_row(agent_type, agent_cfg.model)
     console.print(table)
     console.print(f"[dim]Saved to: {config_path}[/dim]")

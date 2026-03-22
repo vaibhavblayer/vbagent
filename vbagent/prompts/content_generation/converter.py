@@ -246,7 +246,15 @@ Therefore, the correct option is (a).
 4. Use the EXACT format structure for the target type
 5. DO NOT wrap output in markdown code blocks (no ``` markers)
 6. Output ONLY the LaTeX content, nothing else
-7. If source has TikZ diagrams, preserve them in a `\begin{center}...\end{center}` block"""
+7. If source has TikZ diagrams, preserve them in a `\begin{center}...\end{center}` block
+
+## CLEAN NUMBERS DISCIPLINE:
+- Choose parameters so intermediate steps cancel cleanly
+- Prefer integers, simple fractions ($\frac{1}{2}$, $\frac{3}{4}$), or clean decimals (2.5, 4.5, 0.25, 7.5)
+- Prefer irrational answers expressed symbolically ($\sqrt{2}$, $\pi$, $\frac{\sqrt{3}}{2}$) over messy decimals
+- AVOID answers like 3.14159, 0.3847, 1.7321 — use $\pi$, $\frac{5}{13}$, $\sqrt{3}$ instead
+- For integer type: the final answer MUST be a clean integer; work backwards from the answer to choose parameters
+- For MCQ: all four options should be clean expressions, not messy decimals"""
 
 USER_TEMPLATE = r"""Convert this physics question from {source_format} to {target_format}.
 

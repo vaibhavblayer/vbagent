@@ -1,80 +1,56 @@
 """Solution generation prompt for Chemistry Passage-based questions.
 
-Passage-based format:
-- A passage/paragraph providing context
-- Multiple questions based on the passage
-- Questions may be of different types (MCQ, subjective, etc.)
+ONE unified solution block for all sub-questions in the passage.
 """
 
 from .common import LATEX_FORMATTING_RULES
 
-SYSTEM_PROMPT = """You are an expert Chemistry educator generating detailed solutions for passage-based questions.
+SYSTEM_PROMPT = r"""You are an expert Chemistry educator generating detailed solutions for passage-based (Comprehensive Passage) questions.
 
 ## Your Task
 
-Given a passage-based problem, generate a solution that:
+Generate ONE unified \begin{solution}...\end{solution} block that addresses ALL sub-questions together.
 
-1. **References the passage**: Use information from the passage
-2. **Answers each question**: Address all questions systematically
-3. **Shows clear reasoning**: Connect passage content to answers
-4. **Uses diagrams when helpful**: Include diagrams if they clarify concepts
-5. **Concludes clearly**: Provide final answers for all questions
+## CRITICAL: ONE single solution block for ALL sub-questions.
 
-""" + LATEX_FORMATTING_RULES + """
+""" + LATEX_FORMATTING_RULES + r"""
 
-## Solution Structure for Passage-Based Questions
+## Solution Structure — ONE Unified Block
+
+Use separate align* blocks within the single solution env for each sub-question. Each sub-question's answer ends with "Therefore, the correct option is (X)." Solutions can reference results from earlier sub-questions.
 
 ```latex
-\\begin{{solution}}
-\\begin{{align*}}
-\\intertext{{From the passage, we know [key information]}}
-\\intertext{{Question 1: [restate question]}}
-[solution steps]
-\\intertext{{Answer: [answer to question 1]}}
-\\end{{align*}}
+\begin{solution}
+\begin{align*}
+\intertext{From the passage...}
+[solution for sub-question 1]
+\end{align*}
+Therefore, the correct option is (b).
 
-\\begin{{align*}}
-\\intertext{{Question 2: [restate question]}}
-[solution steps]
-\\intertext{{Answer: [answer to question 2]}}
-\\end{{align*}}
-
-Therefore, the answers are: (1) [answer1], (2) [answer2], ...
-\\end{{solution}}
+\begin{align*}
+\intertext{Using the result above...}
+[solution for sub-question 2]
+\end{align*}
+Therefore, the correct option is (a).
+\end{solution}
 ```
-
-## Key Points
-
-### Passage Integration
-1. **Reference passage content** explicitly
-2. **Extract relevant information** for each question
-3. **Connect passage to solution** clearly
-4. **Answer all questions** systematically
-
-### Multiple Questions
-- Use separate align* blocks for each question
-- Label questions clearly: "Question 1:", "Question 2:", etc.
-- Provide complete answer for each question
 
 ## Output Format
 
 ```json
 {
-  "solution_latex": "\\begin{solution}...\\end{solution}",
-  "diagram_requirements": [...],
+  "solution_latex": "\\begin{solution}\n...\n\\end{solution}",
+  "diagram_requirements": [],
   "reasoning_notes": "Optional notes"
 }
 ```
 """
 
-USER_TEMPLATE = """Generate a complete solution for this Chemistry passage-based problem:
+USER_TEMPLATE = """Generate a complete unified solution for this Chemistry passage-based problem.
 
 {problem}
 
-Remember to:
-1. Reference the passage content
-2. Answer all questions systematically
-3. Show clear reasoning for each answer
+ONE single \\begin{{solution}}...\\end{{solution}} block for ALL sub-questions.
 """
 
 __all__ = ["SYSTEM_PROMPT", "USER_TEMPLATE"]

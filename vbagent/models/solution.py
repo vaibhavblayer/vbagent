@@ -1,6 +1,6 @@
 """Models for solution generation with diagram requirements."""
 
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Literal
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -100,7 +100,17 @@ class SolutionOutput(BaseModel):
         description="Internal notes about solution approach (not included in output)"
     )
     
-    # Phase 2: Additional metadata
+    # Answer marking
+    answer_type: Literal["mcq", "integer", "subjective"] = Field(
+        default="subjective",
+        description="Type of answer: mcq (mark correct option), integer (\\ansint{N}), subjective (no marking)"
+    )
+    answer_value: Optional[str] = Field(
+        default=None,
+        description="The answer: option letter(s) for MCQ, integer for integer-type, None for subjective"
+    )
+    
+    # Additional metadata
     solution_steps: Optional[List[str]] = Field(
         default=None,
         description="List of solution steps for step-by-step diagrams"

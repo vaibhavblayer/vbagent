@@ -54,15 +54,8 @@ def create_test_classification() -> ClassificationResult:
     return ClassificationResult(
         subject="physics",
         question_type="mcq_sc",
-        difficulty="medium",
-        chapter="Mechanics",
-        topic="mechanics",
-        subtopic="kinematics",
         has_diagram=False,
         diagram_type=None,
-        num_options=4,
-        key_concepts=["velocity", "acceleration"],
-        requires_calculus=False,
         confidence=0.95,
     )
 
@@ -186,7 +179,7 @@ def test_property_cli_output_persistence_saves_classification(dirname: str):
         import json
         content = json.loads(class_path.read_text())
         assert "question_type" in content, "Classification should have question_type"
-        assert "difficulty" in content, "Classification should have difficulty"
+        assert "subject" in content, "Classification should have subject"
 
 
 @given(dirname=dirname_strategy)

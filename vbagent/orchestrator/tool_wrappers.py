@@ -124,16 +124,10 @@ def classify_tool(
         output_path.write_text(result.model_dump_json(indent=2))
     
     return {
+        "subject": result.subject,
         "question_type": result.question_type,
-        "difficulty": result.difficulty,
-        "topic": result.topic,
-        "subtopic": result.subtopic,
         "has_diagram": result.has_diagram,
-        "diagram_type": result.diagram_type,
-        "num_options": result.num_options,
-        "requires_calculus": result.requires_calculus,
         "confidence": result.confidence,
-        "key_concepts": result.key_concepts,
         "output_path": str(output_path) if output_path else None
     }
 
@@ -967,7 +961,7 @@ def extract_subitems_tool(
             - count: Number of subitems extracted
             - output_paths: List of output file paths (if output specified)
     """
-    from vbagent.latex.extractor import extract_subitems
+    from vbagent.tex import extract_subitems
     
     # Validate input
     if not tex and not content:
@@ -1031,7 +1025,7 @@ def parse_latex_project_tool(
             - main_file: Path to the main file
             - referenced_files: List of all referenced file paths
     """
-    from vbagent.latex.extractor import parse_latex_project, CircularReferenceError
+    from vbagent.tex import parse_latex_project, CircularReferenceError
     
     # Validate input
     main_path = Path(main_tex)
@@ -1081,7 +1075,7 @@ def extract_from_directory_tool(
             - directory: Directory that was searched
             - subdirectory: Subdirectory filter used (if any)
     """
-    from vbagent.latex.extractor import extract_from_directory
+    from vbagent.tex import extract_from_directory
     
     # Validate input
     dir_path = Path(directory)
@@ -1785,7 +1779,7 @@ def generate_problem_tool(
             - metadata: Classification and difficulty metadata (if run_pipeline=True)
     """
     from vbagent.agents.classification.idea_generator import generate_from_idea
-    from vbagent.cli.core.process import process_generated_problem
+    from vbagent.pipeline.runner import process_generated_problem
     from pathlib import Path
     
     # Prepare concepts list

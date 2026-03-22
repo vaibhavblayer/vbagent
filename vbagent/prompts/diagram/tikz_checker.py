@@ -1,7 +1,7 @@
 """TikZ checker prompts.
 
 Prompts for checking TikZ/PGF code for syntax errors, best practices,
-and physics diagram conventions.
+and diagram conventions across physics, chemistry, and mathematics.
 
 Includes both legacy prompts (full content output) and patch prompts
 (for use with apply_patch tool).
@@ -199,6 +199,63 @@ When using `kinematikz` package for frames/supports:
 ```
 """
 
+# ---- Subject-specific checklist extensions ----
+
+_CHEMISTRY_CHECKLIST = r"""
+**13. Chemistry-Specific (chemfig)**
+- ALWAYS use `\chemfig{...}` for molecular structures — NEVER manual TikZ
+- Use `\schemestart...\schemestop` for reaction schemes
+- Use `\chemmove{...}` for curved arrows (electron movement)
+- Subscripts: `CH_3`, `NH_2` (NOT `CH3`, `NH2`)
+- Charges: `O^-`, `N^+`, `SO_3^{2-}` (NOT `O-`, `N+`)
+- Benzene: `*6(=-=-=-)` (Kekulé) or `**6(------)` (circle)
+- Lone pairs: `\charge{[circle]90=\:}{N}` (NOT manual dots)
+- Angles: use `[:degrees]` format (NOT `[n]` shorthand)
+- Validate ring sizes match atom count
+- Check that all parentheses in branches are balanced
+
+**14. chemfig Reaction Schemes**
+- Mark atoms with `@{name}` for curved arrow anchors
+- Put `\chemmove{...}` AFTER `\schemestop`
+- Use `\arrow{->}`, `\arrow{<=>}`, `\arrow{<->}` for reaction arrows
+- Use `\ce{...}` (mhchem) for reagent labels on arrows
+- Use `\chemleft[...\chemright]` for bracketed intermediates
+"""
+
+_MATHEMATICS_CHECKLIST = r"""
+**13. Mathematics-Specific (pgfplots)**
+- Use `\begin{axis}...\end{axis}` for quantitative plots
+- Use `\draw plot[domain=a:b, samples=N]` for simple schematic curves
+- Use `deg(x)` for trig functions in pgfplots: `{sin(deg(x))}` NOT `{sin(x)}`
+- Use `r` suffix for trig in TikZ plot: `sin(\x r)` NOT `sin(\x)`
+- NO `\foreach` with curly braces inside axis — use `\pgfplotsextra{...}`
+- Mark open circles (○) for strict inequalities, closed (●) for non-strict
+- Use `axis cs:` prefix for coordinates inside axis environment
+- Set appropriate `domain`, `samples`, `xmin/xmax/ymin/ymax`
+- Use `\addplot[only marks,mark=*]` for discrete points
+- Use `\addplot[only marks,mark=o]` for excluded points (holes)
+
+**14. Venn Diagrams**
+- Draw universal set as rectangle first
+- Use `\clip` + `\fill` for set operations (union, intersection, etc.)
+- Label all sets clearly
+- Include cardinality counts in regions when relevant
+"""
+
+
+def get_review_checklist(subject: str | None = None) -> str:
+    """Return the review checklist, optionally extended for a specific subject.
+
+    Args:
+        subject: One of "physics", "chemistry", "mathematics", or None for base only.
+    """
+    checklist = _REVIEW_CHECKLIST
+    if subject == "chemistry":
+        checklist += _CHEMISTRY_CHECKLIST
+    elif subject == "mathematics":
+        checklist += _MATHEMATICS_CHECKLIST
+    return checklist
+
 
 # =============================================================================
 # LEGACY PROMPTS (full content output)
@@ -246,11 +303,7 @@ IMPORTANT:
 # PATCH PROMPTS (for use with apply_patch tool)
 # =============================================================================
 
-PATCH_SYSTEM_PROMPT = r"""You are an expert TikZ/PGF code reviewer with the ability to apply patches to fix code.
-
-You have access to the `apply_patch` tool to make precise, targeted fixes to TikZ code.
-
-""" + _REVIEW_CHECKLIST + r"""
+_PATCH_PROMPT_SUFFIX = r"""
 
 ## How to Use apply_patch
 
@@ -302,6 +355,29 @@ For fixing spring decoration:
 +    }}
 ```
 """
+
+
+def build_patch_system_prompt(subject: str | None = None) -> str:
+    """Build the patch system prompt with subject-specific checklist.
+
+    Args:
+        subject: One of "physics", "chemistry", "mathematics", or None.
+    """
+    checklist = get_review_checklist(subject)
+    return (
+        r"""You are an expert TikZ/PGF code reviewer with the ability to apply patches to fix code.
+
+You have access to the `apply_patch` tool to make precise, targeted fixes to TikZ code.
+
+"""
+        + checklist
+        + _PATCH_PROMPT_SUFFIX
+    )
+
+
+# Backward-compatible alias
+PATCH_SYSTEM_PROMPT = build_patch_system_prompt(None)
+
 
 PATCH_USER_TEMPLATE = r"""Check this TikZ code for errors and apply patches to fix them.
 

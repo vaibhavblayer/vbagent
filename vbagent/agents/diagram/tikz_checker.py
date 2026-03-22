@@ -16,7 +16,6 @@ from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.prompts.diagram.tikz_checker import (
     SYSTEM_PROMPT,
     USER_TEMPLATE,
-    PATCH_SYSTEM_PROMPT,
     PATCH_USER_TEMPLATE,
 )
 from vbagent.utils.latex import clean_latex_output
@@ -119,7 +118,38 @@ def create_tikz_checker_agent(
     Returns:
         Configured Agent instance
     """
-    prompt = SYSTEM_PROMPT
+    from vbagent.prompts.diagram.tikz_checker import get_review_checklist
+    
+    # Build subject-aware checklist
+    subject = getattr(classification, "subject", None) if classification else None
+    checklist = get_review_checklist(subject)
+    
+    prompt = r"""You are an expert TikZ/PGF code reviewer. Check TikZ code for errors and provide ONLY the corrected version.
+
+""" + checklist + r"""
+
+## Output Format
+
+**CRITICAL: Output ONLY what was given to you. Do NOT add document preamble, \documentclass, or any content that wasn't in the original.**
+
+If issues found:
+```
+% TIKZ_CHECK: [Brief fixes description]
+[EXACT corrected content - same structure as input]
+```
+
+If correct:
+```
+% TIKZ_CHECK: PASSED - No TikZ errors found
+```
+
+## Rules
+
+1. Fix ONLY genuine errors
+2. Preserve EXACT file structure - do NOT add preamble or packages not in original
+3. Do NOT wrap in markdown code blocks
+4. Keep the same content, just fix errors
+"""
     
     if use_context:
         context = _get_tikz_reference_context(classification, diagram_type)
@@ -205,8 +235,11 @@ def create_tikz_patch_agent(
     """
     from agents import Agent, ApplyPatchTool
     from vbagent.config import get_model, get_model_settings
+    from vbagent.prompts.diagram.tikz_checker import build_patch_system_prompt
     
-    prompt = PATCH_SYSTEM_PROMPT
+    # Build subject-aware prompt
+    subject = getattr(classification, "subject", None) if classification else None
+    prompt = build_patch_system_prompt(subject)
     
     if use_context:
         context = _get_tikz_reference_context(classification, diagram_type)
@@ -312,7 +345,9 @@ def check_tikz_with_patch(
         ValueError: If content is empty
     """
     from agents import Runner
-    from vbagent.agents.base import create_image_message, _print_agent_info
+    from vbagent.agents.base import create_image_message
+    from ..ui.logging import log_agent_usage
+    import time
     
     if not full_content.strip():
         raise ValueError("Content cannot be empty")
@@ -333,10 +368,22 @@ def check_tikz_with_patch(
     else:
         message = message_text
     
-    _print_agent_info(agent)
+    _start = time.time()
     
     # Run the agent
     result = Runner.run_sync(agent, input=message)
+    
+    _duration = time.time() - _start
+    _usage = result.context_wrapper.usage if result.context_wrapper else None
+    _resp_id = None
+    try:
+        if result.raw_responses:
+            _resp_id = getattr(result.raw_responses[-1], "response_id", None)
+    except (AttributeError, IndexError):
+        pass
+    log_agent_usage(agent.name, model=agent.model or "default", duration=_duration,
+                    usage=_usage, response_id=_resp_id,
+                    has_image=bool(image_path), reasoning="none")
     
     # Check if agent returned text indicating pass
     final_output = result.final_output or ""
@@ -384,36 +431,17 @@ def check_tikz_with_patch(
 
 def parse_check_result(result: str, check_type: str) -> tuple[bool, str, str]:
     """Parse the check result to extract pass/fail status and content.
-    
-    Args:
-        result: Raw result from checker
-        check_type: Type of check (TIKZ_CHECK)
-        
-    Returns:
-        Tuple of (passed, summary, corrected_content)
+
+    Delegates to the shared implementation in quality.base.
     """
-    # Check if passed
-    passed_pattern = rf'%\s*{check_type}:\s*PASSED'
-    if re.search(passed_pattern, result, re.IGNORECASE):
-        match = re.search(rf'%\s*{check_type}:\s*PASSED\s*[-–—]?\s*(.*?)(?:\n|$)', result, re.IGNORECASE)
-        summary = match.group(1).strip() if match else "No TikZ errors found"
-        return True, summary, ""
-    
-    # Extract summary from comment
-    summary_pattern = rf'%\s*{check_type}:\s*(.*?)(?:\n|$)'
-    summary_match = re.search(summary_pattern, result, re.IGNORECASE)
-    summary = summary_match.group(1).strip() if summary_match else "TikZ issues found and corrected"
-    
-    # Remove the check comment line to get clean content
-    corrected_content = re.sub(rf'%\s*{check_type}:.*?\n', '', result, count=1, flags=re.IGNORECASE)
-    corrected_content = corrected_content.strip()
-    
-    return False, summary, corrected_content
+    from vbagent.agents.quality.base import parse_check_result as _parse
+    return _parse(result, check_type)
 
 
 def has_tikz_passed(result: str) -> bool:
     """Check if TikZ check passed."""
-    return '% TIKZ_CHECK: PASSED' in result or 'TIKZ_CHECK: PASSED' in result.upper()
+    from vbagent.agents.quality.base import has_check_passed
+    return has_check_passed(result, "TIKZ_CHECK")
 
 
 def has_tikz_environment(content: str) -> bool:
@@ -445,3 +473,177 @@ class _TikzCheckerAgentProxy:
 
 
 tikz_checker_agent = _TikzCheckerAgentProxy()
+
+
+# ---------------------------------------------------------------------------
+# Structured validation (formerly in classification/tikz_checker.py)
+# ---------------------------------------------------------------------------
+
+_STRUCTURED_CHECKER_PROMPT = """You are an expert TikZ validator and fixer. Analyze TikZ code for errors and provide fixes.
+
+You MUST respond with ONLY a valid JSON object:
+
+{
+    "is_valid": true | false,
+    "compilation_status": "success" | "fixed" | "failed",
+    "fixed_tikz_code": "<corrected code if fixes applied, else null>",
+    "errors_found": [
+        {
+            "type": "syntax" | "missing_library" | "undefined_command" | "dimension" | "style",
+            "line": <line number>,
+            "message": "<error description>",
+            "severity": "error" | "warning"
+        }
+    ],
+    "fixes_applied": [
+        {
+            "type": "<fix type>",
+            "description": "<what was fixed>",
+            "before": "<original code snippet>",
+            "after": "<fixed code snippet>"
+        }
+    ],
+    "validation_metadata": {
+        "libraries_used": ["<lib1>", "<lib2>"],
+        "packages_required": ["<pkg1>", "<pkg2>"],
+        "complexity_score": <1-10>,
+        "compilation_time_ms": <estimated time>
+    },
+    "suggestions": ["<suggestion1>", "<suggestion2>"]
+}
+
+Common TikZ errors to check:
+1. **Syntax errors**: Missing semicolons, unmatched braces, invalid coordinates
+2. **Missing libraries**: calc, arrows.meta, positioning, decorations, patterns
+3. **Undefined commands**: Custom commands without definition
+4. **Dimension errors**: Missing units (cm, pt), invalid dimensions
+5. **Style errors**: Undefined styles, invalid style syntax
+
+Common fixes:
+1. Add missing semicolons at end of paths
+2. Add required TikZ libraries to \\usetikzlibrary{}
+3. Fix coordinate syntax: (x,y) not (x y)
+4. Add units to dimensions: 2cm not 2
+5. Fix arrow syntax: ->, -latex, -stealth
+6. Escape special characters in node text
+
+Best practices:
+1. Use \\usetikzlibrary{} for all required libraries
+2. Define custom styles in preamble
+3. Use meaningful coordinate names
+4. Add comments for complex constructions
+5. Use consistent spacing and indentation
+
+Validation process:
+1. Parse TikZ code structure
+2. Identify errors and warnings
+3. Apply automatic fixes where possible
+4. Provide suggestions for manual fixes
+5. Estimate compilation success
+
+Respond with ONLY the JSON object."""
+
+
+def create_structured_tikz_checker_agent():
+    """Create a TikZ checker agent that returns structured TikZValidation."""
+    from vbagent.models.diagram import TikZValidation
+
+    return create_agent(
+        name="TikZChecker",
+        instructions=_STRUCTURED_CHECKER_PROMPT,
+        output_type=TikZValidation,
+        agent_type="tikz_checker",
+    )
+
+
+def validate_tikz(
+    tikz_code: str,
+    context: Optional[str] = None,
+    auto_fix: bool = True,
+    compile_test: bool = True,
+):
+    """Validate and fix TikZ code, returning structured TikZValidation.
+
+    Args:
+        tikz_code: TikZ code to validate
+        context: Optional context (problem description, diagram type)
+        auto_fix: Whether to automatically apply fixes
+        compile_test: Whether to test compilation
+
+    Returns:
+        TikZValidation with errors, fixes, and corrected code
+    """
+    agent = create_structured_tikz_checker_agent()
+
+    validation_context = f"""Validate this TikZ code and fix any errors.
+
+**TikZ Code:**
+```latex
+{tikz_code}
+```
+"""
+    if context:
+        validation_context += f"\n\n**Context:**\n{context}\n"
+
+    validation_context += (
+        f"\n\n**Auto-fix:** {auto_fix}\n"
+        f"**Compile test:** {compile_test}\n\n"
+        "Analyze the code, identify errors, and provide fixes."
+    )
+
+    result = run_agent_sync(agent, validation_context)
+
+    if compile_test and result.fixed_tikz_code:
+        from vbagent.compile import compile_latex
+
+        compile_result = compile_latex(
+            result.fixed_tikz_code, subject="physics", verbose=False
+        )
+        if compile_result.success:
+            result.compilation_status = "success"
+            result.is_valid = True
+        else:
+            result.compilation_status = "failed"
+            result.is_valid = False
+            if compile_result.error:
+                from vbagent.models.diagram import TikZError
+
+                result.errors_found.append(
+                    TikZError(
+                        type="compilation",
+                        line=0,
+                        message=compile_result.error,
+                        severity="error",
+                    )
+                )
+
+    return result
+
+
+def check_and_fix_tikz(
+    tikz_code: str, max_retries: int = 2
+) -> tuple[bool, str, object]:
+    """Check and fix TikZ code with retries.
+
+    Args:
+        tikz_code: TikZ code to check
+        max_retries: Maximum fix attempts
+
+    Returns:
+        Tuple of (success, final_code, validation_result)
+    """
+    current_code = tikz_code
+    result = None
+
+    for attempt in range(max_retries + 1):
+        result = validate_tikz(current_code, compile_test=True)
+
+        if result.is_valid:
+            return True, current_code, result
+
+        if result.fixed_tikz_code and attempt < max_retries:
+            current_code = result.fixed_tikz_code
+        else:
+            return False, current_code, result
+
+    return False, current_code, result

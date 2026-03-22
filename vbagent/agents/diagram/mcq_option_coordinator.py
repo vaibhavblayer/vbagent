@@ -16,7 +16,7 @@ def generate_mcq_options(
     use_context: bool = True,
     show_spinner: bool = True,
 ) -> str:
-    """Generate all 4 MCQ option diagrams using subject-specific agents.
+    """Generate MCQ option diagrams using subject-specific agents.
     
     Args:
         image_path: Path to problem image
@@ -31,10 +31,21 @@ def generate_mcq_options(
         String with \\def\\OptionA{...}\\def\\OptionB{...}\\def\\OptionC{...}\\def\\OptionD{...}
     """
     
+    # Determine number of options from diagram_analysis
+    num_options = 4  # Default
+    if diagram_analysis and isinstance(diagram_analysis, dict):
+        num_options = diagram_analysis.get('num_option_diagrams', 4)
+    elif diagram_analysis and hasattr(diagram_analysis, 'num_option_diagrams'):
+        num_options = diagram_analysis.num_option_diagrams
+    
+    # Limit option_descriptions to actual number of options
+    if option_descriptions and len(option_descriptions) > num_options:
+        option_descriptions = option_descriptions[:num_options]
+    
     # Build description from option_descriptions
-    description = "Generate 4 MCQ option diagrams"
+    description = f"Generate {num_options} MCQ option diagrams"
     if option_descriptions:
-        description += ":\n" + "\n".join(f"({chr(65+i)}) {desc}" for i, desc in enumerate(option_descriptions[:4]))
+        description += ":\n" + "\n".join(f"({chr(65+i)}) {desc}" for i, desc in enumerate(option_descriptions))
     
     # Route based on subject
     if subject.lower() == "chemistry":
@@ -44,6 +55,7 @@ def generate_mcq_options(
             description=description,
             option_descriptions=option_descriptions,
             diagram_analysis=diagram_analysis,
+            num_options=num_options,
             use_context=use_context,
             show_spinner=show_spinner,
         )
@@ -54,6 +66,7 @@ def generate_mcq_options(
             option_diagram_type=option_diagram_type,
             description=description,
             option_descriptions=option_descriptions,
+            num_options=num_options,
             use_context=use_context,
             show_spinner=show_spinner,
         )
@@ -64,6 +77,7 @@ def generate_mcq_options(
             option_diagram_type=option_diagram_type,
             description=description,
             option_descriptions=option_descriptions,
+            num_options=num_options,
             use_context=use_context,
             show_spinner=show_spinner,
         )
@@ -73,6 +87,7 @@ def generate_mcq_options(
         return _generate_generic_options(
             image_path=image_path,
             description=description,
+            num_options=num_options,
             use_context=use_context,
             show_spinner=show_spinner,
         )
@@ -84,6 +99,7 @@ def _generate_chemistry_options(
     description: str,
     option_descriptions: Optional[list[str]],
     diagram_analysis: Optional[dict],
+    num_options: int,
     use_context: bool,
     show_spinner: bool,
 ) -> str:
@@ -103,9 +119,12 @@ def _generate_chemistry_options(
                 # Fallback for object (shouldn't happen but safe)
                 chemistry_context["features"] = diagram_analysis.diagram_features
         
+        # Add num_options to description
+        description_with_count = f"{description}\n\nGenerate EXACTLY {num_options} options (A through {chr(64+num_options)})."
+        
         return generate_organic_orchestrated(
             image_path=image_path,
-            description=description,
+            description=description_with_count,
             chemistry_context=chemistry_context,
             use_context=use_context,
             show_spinner=show_spinner,
@@ -117,6 +136,7 @@ def _generate_chemistry_options(
         return _generate_generic_options(
             image_path=image_path,
             description=description,
+            num_options=num_options,
             use_context=use_context,
             show_spinner=show_spinner,
         )
@@ -127,6 +147,7 @@ def _generate_physics_options(
     option_diagram_type: str,
     description: str,
     option_descriptions: Optional[list[str]],
+    num_options: int,
     use_context: bool,
     show_spinner: bool,
 ) -> str:
@@ -137,6 +158,7 @@ def _generate_physics_options(
         return _generate_generic_options(
             image_path=image_path,
             description=description,
+            num_options=num_options,
             use_context=use_context,
             show_spinner=show_spinner,
         )
@@ -147,6 +169,7 @@ def _generate_physics_options(
         return _generate_generic_options(
             image_path=image_path,
             description=description,
+            num_options=num_options,
             use_context=use_context,
             show_spinner=show_spinner,
         )
@@ -156,6 +179,7 @@ def _generate_physics_options(
         return _generate_generic_options(
             image_path=image_path,
             description=description,
+            num_options=num_options,
             use_context=use_context,
             show_spinner=show_spinner,
         )
@@ -165,6 +189,7 @@ def _generate_physics_options(
         return _generate_generic_options(
             image_path=image_path,
             description=description,
+            num_options=num_options,
             use_context=use_context,
             show_spinner=show_spinner,
         )
@@ -175,6 +200,7 @@ def _generate_mathematics_options(
     option_diagram_type: str,
     description: str,
     option_descriptions: Optional[list[str]],
+    num_options: int,
     use_context: bool,
     show_spinner: bool,
 ) -> str:
@@ -185,6 +211,7 @@ def _generate_mathematics_options(
         return _generate_generic_options(
             image_path=image_path,
             description=description,
+            num_options=num_options,
             use_context=use_context,
             show_spinner=show_spinner,
         )
@@ -194,6 +221,7 @@ def _generate_mathematics_options(
         return _generate_generic_options(
             image_path=image_path,
             description=description,
+            num_options=num_options,
             use_context=use_context,
             show_spinner=show_spinner,
         )
@@ -203,6 +231,7 @@ def _generate_mathematics_options(
         return _generate_generic_options(
             image_path=image_path,
             description=description,
+            num_options=num_options,
             use_context=use_context,
             show_spinner=show_spinner,
         )
@@ -211,17 +240,22 @@ def _generate_mathematics_options(
 def _generate_generic_options(
     image_path: str,
     description: str,
+    num_options: int,
     use_context: bool,
     show_spinner: bool,
 ) -> str:
     """Fallback: generate options using generic TikZ agent."""
     from vbagent.agents.diagram.tikz import generate_tikz
     
+    # Build option list
+    option_letters = [chr(65+i) for i in range(num_options)]  # A, B, C, ...
+    option_defs = ", ".join(f"\\def\\Option{letter}{{...}}" for letter in option_letters)
+    
     # Add explicit instruction for option format
     description_with_format = f"""{description}
 
-CRITICAL: Output MUST be in \\def\\OptionA{{...}} format.
-Generate exactly 4 definitions: \\def\\OptionA{{...}}, \\def\\OptionB{{...}}, \\def\\OptionC{{...}}, \\def\\OptionD{{...}}"""
+CRITICAL: Output MUST be in \\def\\OptionX{{...}} format.
+Generate exactly {num_options} definitions: {option_defs}"""
     
     return generate_tikz(
         description=description_with_format,

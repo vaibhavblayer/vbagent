@@ -7,7 +7,7 @@ import shutil
 from vbagent.metadata import MetadataStore, QuestionMetadata
 from vbagent.dpp import DPPBuilder
 from vbagent.export import Exporter, ExportMode
-from vbagent.latex.extractor import parse_latex_project, extract_from_directory
+from vbagent.tex import parse_latex_project, extract_from_directory
 
 
 class TestSupportingSystemsIntegration:

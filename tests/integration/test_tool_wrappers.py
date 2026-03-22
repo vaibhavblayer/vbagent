@@ -94,16 +94,11 @@ class TestClassifyTool:
         mock_path.return_value = mock_path_instance
         
         mock_result = Mock()
+        mock_result.subject = "physics"
         mock_result.question_type = "mcq_sc"
-        mock_result.difficulty = "medium"
-        mock_result.topic = "mechanics"
-        mock_result.subtopic = "kinematics"
         mock_result.has_diagram = True
-        mock_result.diagram_type = "free_body"
-        mock_result.num_options = 4
-        mock_result.requires_calculus = False
         mock_result.confidence = 0.95
-        mock_result.key_concepts = ["velocity", "acceleration"]
+        mock_result.model_dump_json = Mock(return_value='{}')
         mock_classify.return_value = mock_result
         
         # Execute
@@ -111,8 +106,7 @@ class TestClassifyTool:
         
         # Verify
         assert result["question_type"] == "mcq_sc"
-        assert result["difficulty"] == "medium"
-        assert result["topic"] == "mechanics"
+        assert result["subject"] == "physics"
         assert result["has_diagram"] is True
         assert result["confidence"] == 0.95
         assert result["output_path"] is None

@@ -185,9 +185,12 @@ def classify_taxonomy(
     config = get_config()
     if result.confidence < config.taxonomy_confidence_threshold:
         # Retry with gpt-5-mini
-        config.taxonomy_classifier.model = "gpt-5-mini"
+        taxonomy_config = config.get_agent_config("taxonomy_classifier")
+        original_model = taxonomy_config.model
+        taxonomy_config.model = "gpt-5-mini"
         agent = create_taxonomy_classifier_agent(subject)
         response = run_agent_sync(agent, message)
+        taxonomy_config.model = original_model  # Restore
         parsed = schema_model.model_validate_json(response)
         result = TaxonomyClassification(
             chapter=parsed.chapter,

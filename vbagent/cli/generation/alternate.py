@@ -9,7 +9,7 @@ from pathlib import Path
 
 import click
 
-from vbagent.utils.tex_parser import parse_tex_file_with_sections
+from vbagent.tex import parse_tex_file_with_sections
 from ..common import _get_console, _get_panel
 
 

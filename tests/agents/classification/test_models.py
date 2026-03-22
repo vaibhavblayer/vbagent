@@ -35,7 +35,7 @@ def test_diagram_analysis_creation():
         suggested_tikz_agent="fbd"
     )
     
-    assert diagram.diagram_type == "free_body"
+    assert diagram.diagram_type == "fbd"  # free_body is auto-corrected to fbd
     assert diagram.diagram_category == "mechanics"
     assert diagram.suggested_tikz_agent == "fbd"
 
@@ -70,11 +70,11 @@ def test_classification_result_from_primary():
     assert result.subject == "physics"
     assert result.question_type == "mcq_sc"
     assert result.has_diagram is True
-    assert result.difficulty is None  # Not set yet
+    assert result.diagram_type is None  # Not set yet
 
 
 def test_classification_result_from_agents():
-    """Test ClassificationResult combining all agents (simplified)."""
+    """Test ClassificationResult combining agents (simplified)."""
     primary = PrimaryClassification(
         subject="physics",
         question_type="mcq_sc",
@@ -88,20 +88,10 @@ def test_classification_result_from_agents():
         suggested_tikz_agent="fbd"
     )
     
-    difficulty = DifficultyAssessment(
-        difficulty="medium",
-        difficulty_score=5.5,
-        difficulty_reasoning="Test",
-        expected_solve_time_minutes=5,
-        cognitive_level="apply"
-    )
-    
-    result = ClassificationResult.from_agents(primary, diagram, difficulty)
+    result = ClassificationResult.from_agents(primary, diagram)
     
     assert result.subject == "physics"
-    assert result.diagram_type == "free_body"
-    assert result.difficulty == "medium"
-    assert result.difficulty_score == 5.5
+    assert result.diagram_type == "fbd"  # free_body is auto-corrected to fbd
     assert result.suggested_tikz_agent == "fbd"
 
 

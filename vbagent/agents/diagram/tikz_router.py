@@ -240,25 +240,13 @@ def route_tikz_agent(
         if any(x in dtype for x in ["ray", "lens", "mirror", "optic"]):
             return "optics"
     
-    # Priority 4: Primary classification hints
-    if primary and hasattr(primary, 'topic') and primary.topic:
-        topic = primary.topic.lower()
-        
-        # Chemistry topics
-        if any(x in topic for x in ["organic", "hydrocarbon", "functional_group"]):
+    # Priority 4: Subject-based fallback
+    if primary:
+        subject = primary.subject
+        if subject == "chemistry":
             return "organic_structure"
-        if any(x in topic for x in ["mechanism", "reaction"]):
-            return "reaction_mechanism"
-        if any(x in topic for x in ["orbital", "electron", "configuration"]):
-            return "orbital"
-        
-        # Physics topics
-        if any(x in topic for x in ["force", "motion", "mechanics", "dynamics"]):
-            return "fbd"
-        if any(x in topic for x in ["circuit", "current", "resistance"]):
-            return "circuit"
-        if any(x in topic for x in ["optics", "light", "lens", "mirror"]):
-            return "optics"
+        if subject == "mathematics":
+            return "function_graph"
     
     # Default
     return "generic"

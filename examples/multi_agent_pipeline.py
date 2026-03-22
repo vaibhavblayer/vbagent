@@ -5,8 +5,8 @@ system with all 7 agents.
 """
 
 from vbagent.agents.classification import (
-    get_pipeline,
     classify_from_image,
+    classify_and_analyze,
     analyze_diagram,
     assess_difficulty,
     validate_tikz,
@@ -126,20 +126,19 @@ def example_5_complete_pipeline():
     print("Example 5: Complete Pipeline")
     print("=" * 60)
     
-    pipeline = get_pipeline()
-    
-    # Step 1: Classify from image
+    # Use unified classifier (single API call)
+    result = classify_and_analyze("question.png")
+    primary = result  # or use to_primary(result) for PrimaryClassification
+
+    # Step 1: Classification
     print("Step 1: Classification...")
-    primary = pipeline.classify_from_image("question.png")
-    print(f"  ✓ Type: {primary.question_type}, Topic: {primary.topic}")
-    
-    # Step 2: Analyze diagram (if present)
-    diagram = None
-    if primary.has_diagram:
+    print(f"  ✓ Type: {result.question_type}, Subject: {result.subject}")
+
+    # Step 2: Diagram analysis (already included in unified result)
+    if result.has_diagram:
         print("Step 2: Diagram Analysis...")
-        diagram = pipeline.analyze_diagram("question.png", None, primary)
-        print(f"  ✓ Type: {diagram.diagram_type}, Agent: {diagram.suggested_tikz_agent}")
-    
+        print(f"  ✓ Type: {result.diagram_type}, Agent: {result.suggested_tikz_agent}")
+
     # Step 3: Scan to LaTeX (simulated)
     print("Step 3: Scanning...")
     latex_content = "\\item Sample problem..."
@@ -147,14 +146,16 @@ def example_5_complete_pipeline():
     
     # Step 4: Assess difficulty
     print("Step 4: Difficulty Assessment...")
-    difficulty = pipeline.assess_difficulty(None, latex_content, primary, diagram)
+    from vbagent.agents.classification.unified_classifier import to_primary
+    primary_cls = to_primary(result)
+    difficulty = assess_difficulty(latex_content, primary_cls)
     print(f"  ✓ Difficulty: {difficulty.difficulty} ({difficulty.difficulty_score}/10)")
-    
+
     # Step 5: Validate TikZ (if generated)
-    if diagram:
+    if result.has_diagram:
         print("Step 5: TikZ Validation...")
         tikz_code = "\\begin{tikzpicture}...\\end{tikzpicture}"
-        validation = pipeline.validate_tikz_code(tikz_code, auto_fix=True)
+        validation = validate_tikz(tikz_code, auto_fix=True)
         print(f"  ✓ Valid: {validation.is_valid}")
     
     print("\n✅ Pipeline complete!")

@@ -1667,6 +1667,7 @@ def recheck(output_dir: str, failed: bool, problem_id: tuple[str, ...]):
     default=None,
     help="Additional instructions or context for generating alternates"
 )
+@click.option("-y", "--yes", "auto_approve", is_flag=True, help="Auto-approve all suggestions without prompting")
 def check_alternate(
     output_dir: str,
     count: int,
@@ -1674,6 +1675,7 @@ def check_alternate(
     problem_id: Optional[str],
     images_dir: Optional[str],
     prompt: Optional[str],
+    auto_approve: bool,
 ):
     """Check and generate alternate solutions for problems.
     
@@ -1875,24 +1877,28 @@ def check_alternate(
             ))
             
             # Prompt for action
-            console.print("\n[bold]Actions:[/bold]")
-            console.print("  [green]a[/green]pprove - Append to file")
-            console.print("  [red]r[/red]eject  - Store for later, don't apply")
-            console.print("  [blue]e[/blue]dit    - Edit in editor before appending")
-            console.print("  [yellow]s[/yellow]kip    - Skip without storing")
-            console.print("  [dim]q[/dim]uit    - Exit session")
-            
-            Prompt = _get_prompt()
-            try:
-                choice = Prompt.ask(
-                    "\nAction",
-                    choices=["a", "r", "e", "s", "q", "approve", "reject", "edit", "skip", "quit"],
-                    default="a"
-                ).lower()
-            except KeyboardInterrupt:
-                console.print("\n[yellow]Interrupted[/yellow]")
-                shutdown_requested = True
-                break
+            if auto_approve:
+                choice = "a"
+                console.print("[dim]Auto-approving...[/dim]")
+            else:
+                console.print("\n[bold]Actions:[/bold]")
+                console.print("  [green]a[/green]pprove - Append to file")
+                console.print("  [red]r[/red]eject  - Store for later, don't apply")
+                console.print("  [blue]e[/blue]dit    - Edit in editor before appending")
+                console.print("  [yellow]s[/yellow]kip    - Skip without storing")
+                console.print("  [dim]q[/dim]uit    - Exit session")
+                
+                Prompt = _get_prompt()
+                try:
+                    choice = Prompt.ask(
+                        "\nAction",
+                        choices=["a", "r", "e", "s", "q", "approve", "reject", "edit", "skip", "quit"],
+                        default="a"
+                    ).lower()
+                except KeyboardInterrupt:
+                    console.print("\n[yellow]Interrupted[/yellow]")
+                    shutdown_requested = True
+                    break
             
             if choice in ["q", "quit"]:
                 shutdown_requested = True
@@ -2029,10 +2035,12 @@ def check_alternate(
     default=None,
     help="Process a specific problem by ID"
 )
+@click.option("-y", "--yes", "auto_approve", is_flag=True, help="Auto-approve all suggestions without prompting")
 def check_idea(
     output_dir: str,
     count: int,
     problem_id: Optional[str],
+    auto_approve: bool,
 ):
     """Generate and append idea summaries to problems.
     
@@ -2204,24 +2212,28 @@ def check_idea(
             ))
             
             # Prompt for action
-            console.print("\n[bold]Actions:[/bold]")
-            console.print("  [green]a[/green]pprove - Append to file")
-            console.print("  [red]r[/red]eject  - Store for later, don't apply")
-            console.print("  [blue]e[/blue]dit    - Edit in editor before appending")
-            console.print("  [yellow]s[/yellow]kip    - Skip without storing")
-            console.print("  [dim]q[/dim]uit    - Exit session")
-            
-            Prompt = _get_prompt()
-            try:
-                choice = Prompt.ask(
-                    "\nAction",
-                    choices=["a", "r", "e", "s", "q", "approve", "reject", "edit", "skip", "quit"],
-                    default="a"
-                ).lower()
-            except KeyboardInterrupt:
-                console.print("\n[yellow]Interrupted[/yellow]")
-                shutdown_requested = True
-                break
+            if auto_approve:
+                choice = "a"
+                console.print("[dim]Auto-approving...[/dim]")
+            else:
+                console.print("\n[bold]Actions:[/bold]")
+                console.print("  [green]a[/green]pprove - Append to file")
+                console.print("  [red]r[/red]eject  - Store for later, don't apply")
+                console.print("  [blue]e[/blue]dit    - Edit in editor before appending")
+                console.print("  [yellow]s[/yellow]kip    - Skip without storing")
+                console.print("  [dim]q[/dim]uit    - Exit session")
+                
+                Prompt = _get_prompt()
+                try:
+                    choice = Prompt.ask(
+                        "\nAction",
+                        choices=["a", "r", "e", "s", "q", "approve", "reject", "edit", "skip", "quit"],
+                        default="a"
+                    ).lower()
+                except KeyboardInterrupt:
+                    console.print("\n[yellow]Interrupted[/yellow]")
+                    shutdown_requested = True
+                    break
             
             if choice in ["q", "quit"]:
                 shutdown_requested = True
@@ -2375,6 +2387,7 @@ def check_idea(
     is_flag=True,
     help="Reset progress and re-check all files"
 )
+@click.option("-y", "--yes", "auto_approve", is_flag=True, help="Auto-approve all suggestions without prompting")
 def check_solution_cmd(
     output_dir: str,
     count: int,
@@ -2382,6 +2395,7 @@ def check_solution_cmd(
     images_dir: Optional[str],
     prompt: Optional[str],
     reset: bool,
+    auto_approve: bool,
 ):
     """Check or create solutions for physics problems.
     
@@ -2401,6 +2415,7 @@ def check_solution_cmd(
         vbagent check solution -p Problem_1
         vbagent check solution --prompt "Focus on unit consistency"
         vbagent check solution --reset
+        vbagent check solution -y -c 56
     """
     _run_checker_session(
         output_dir=output_dir,
@@ -2409,10 +2424,11 @@ def check_solution_cmd(
         checker_name="solution",
         check_func_module="vbagent.agents.quality.solution_checker",
         check_func_name="check_solution",
-        require_solution=False,  # Solution checker can create solutions if missing
+        require_solution=False,
         reset=reset,
         extra_prompt=prompt,
         images_dir=images_dir,
+        auto_approve=auto_approve,
     )
 
 
@@ -2447,12 +2463,14 @@ def check_solution_cmd(
     is_flag=True,
     help="Reset progress and re-check all files"
 )
+@click.option("-y", "--yes", "auto_approve", is_flag=True, help="Auto-approve all suggestions without prompting")
 def check_grammar_cmd(
     output_dir: str,
     count: int,
     problem_id: Optional[str],
     prompt: Optional[str],
     reset: bool,
+    auto_approve: bool,
 ):
     """Check content for grammar and spelling errors.
     
@@ -2469,6 +2487,7 @@ def check_grammar_cmd(
         vbagent check grammar -p Problem_1
         vbagent check grammar --prompt "Use British English spelling"
         vbagent check grammar --reset
+        vbagent check grammar -y -c 56
     """
     _run_checker_session(
         output_dir=output_dir,
@@ -2480,6 +2499,7 @@ def check_grammar_cmd(
         require_solution=False,
         reset=reset,
         extra_prompt=prompt,
+        auto_approve=auto_approve,
     )
 
 
@@ -2514,12 +2534,14 @@ def check_grammar_cmd(
     is_flag=True,
     help="Reset progress and re-check all files"
 )
+@click.option("-y", "--yes", "auto_approve", is_flag=True, help="Auto-approve all suggestions without prompting")
 def check_clarity_cmd(
     output_dir: str,
     count: int,
     problem_id: Optional[str],
     prompt: Optional[str],
     reset: bool,
+    auto_approve: bool,
 ):
     """Check content for clarity and conciseness.
     
@@ -2536,6 +2558,7 @@ def check_clarity_cmd(
         vbagent check clarity -p Problem_1
         vbagent check clarity --prompt "Keep explanations brief for JEE level"
         vbagent check clarity --reset
+        vbagent check clarity -y -c 56
     """
     _run_checker_session(
         output_dir=output_dir,
@@ -2547,6 +2570,7 @@ def check_clarity_cmd(
         require_solution=False,
         reset=reset,
         extra_prompt=prompt,
+        auto_approve=auto_approve,
     )
 
 
@@ -2581,12 +2605,14 @@ def check_clarity_cmd(
     is_flag=True,
     help="Reset progress and re-check all files"
 )
+@click.option("-y", "--yes", "auto_approve", is_flag=True, help="Auto-approve all suggestions without prompting")
 def check_format_cmd(
     output_dir: str,
     count: int,
     problem_id: Optional[str],
     prompt: Optional[str],
     reset: bool,
+    auto_approve: bool,
 ):
     """Check and fix formatting issues specific to problem types.
     
@@ -2606,6 +2632,7 @@ def check_format_cmd(
         vbagent check format -p Problem_1
         vbagent check format --prompt "Focus on MCQ option formatting"
         vbagent check format --reset
+        vbagent check format -y -c 56
     """
     _run_checker_session(
         output_dir=output_dir,
@@ -2617,6 +2644,7 @@ def check_format_cmd(
         require_solution=False,
         reset=reset,
         extra_prompt=prompt,
+        auto_approve=auto_approve,
     )
 
 
@@ -2678,6 +2706,7 @@ def check_format_cmd(
     default=None,
     help="Filter reference examples by diagram type (e.g., circuit, free_body, graph)"
 )
+@click.option("-y", "--yes", "auto_approve", is_flag=True, help="Auto-approve all suggestions without prompting")
 def check_tikz_cmd(
     output_dir: str,
     count: int,
@@ -2689,6 +2718,7 @@ def check_tikz_cmd(
     patch: bool,
     use_context: bool,
     ref_type: Optional[str],
+    auto_approve: bool,
 ):
     """Check and generate TikZ diagram code.
     
@@ -2735,6 +2765,7 @@ def check_tikz_cmd(
             reset=reset,
             use_context=use_context,
             ref_diagram_type=ref_type,
+            auto_approve=auto_approve,
         )
     else:
         # Use legacy checker
@@ -2750,6 +2781,7 @@ def check_tikz_cmd(
             reset=reset,
             images_dir=images_dir,
             extra_prompt=prompt,
+            auto_approve=auto_approve,
         )
 
 
@@ -2915,6 +2947,7 @@ def _run_tikz_patch_session(
     reset: bool = False,
     use_context: bool = True,
     ref_diagram_type: Optional[str] = None,
+    auto_approve: bool = False,
 ) -> None:
     """Run TikZ checker session using apply_patch mode.
     
@@ -3106,7 +3139,9 @@ def _run_tikz_patch_session(
                     )
                     
                     # Prompt for action
-                    action = _prompt_tikz_action(console)
+                    action = "approve" if auto_approve else _prompt_tikz_action(console)
+                    if auto_approve:
+                        console.print("[dim]Auto-approving...[/dim]")
                     
                     if action == "quit":
                         shutdown_requested = True
@@ -3223,24 +3258,28 @@ def _run_tikz_patch_session(
                 display_diff(diff_text, console)
             
             # Prompt for action
-            console.print("\n[bold]Actions:[/bold]")
-            console.print("  [green]a[/green]pprove - Apply this change")
-            console.print("  [red]r[/red]eject  - Store for later, don't apply")
-            console.print("  [blue]e[/blue]dit    - Edit in editor before applying")
-            console.print("  [yellow]s[/yellow]kip    - Skip without storing")
-            console.print("  [dim]q[/dim]uit    - Exit session")
-            
-            Prompt = _get_prompt()
-            try:
-                choice = Prompt.ask(
-                    "\nAction",
-                    choices=["a", "r", "e", "s", "q", "approve", "reject", "edit", "skip", "quit"],
-                    default="a"
-                ).lower()
-            except KeyboardInterrupt:
-                console.print("\n[yellow]Interrupted[/yellow]")
-                shutdown_requested = True
-                break
+            if auto_approve:
+                choice = "a"
+                console.print("[dim]Auto-approving...[/dim]")
+            else:
+                console.print("\n[bold]Actions:[/bold]")
+                console.print("  [green]a[/green]pprove - Apply this change")
+                console.print("  [red]r[/red]eject  - Store for later, don't apply")
+                console.print("  [blue]e[/blue]dit    - Edit in editor before applying")
+                console.print("  [yellow]s[/yellow]kip    - Skip without storing")
+                console.print("  [dim]q[/dim]uit    - Exit session")
+                
+                Prompt = _get_prompt()
+                try:
+                    choice = Prompt.ask(
+                        "\nAction",
+                        choices=["a", "r", "e", "s", "q", "approve", "reject", "edit", "skip", "quit"],
+                        default="a"
+                    ).lower()
+                except KeyboardInterrupt:
+                    console.print("\n[yellow]Interrupted[/yellow]")
+                    shutdown_requested = True
+                    break
             
             if choice in ["q", "quit"]:
                 shutdown_requested = True
@@ -3330,6 +3369,7 @@ def _run_checker_session(
     reset: bool = False,
     images_dir: Optional[str] = None,
     extra_prompt: Optional[str] = None,
+    auto_approve: bool = False,
 ) -> None:
     """Run an interactive checker session with approval workflow.
     
@@ -3348,6 +3388,7 @@ def _run_checker_session(
         reset: Whether to reset progress and re-check all files
         images_dir: Optional directory containing images for problems
         extra_prompt: Optional additional instructions for the checker
+        auto_approve: Whether to auto-approve all suggestions without prompting
     """
     import re
     import importlib
@@ -3527,7 +3568,9 @@ def _run_checker_session(
                         )
                         
                         # Prompt for action
-                        action = _prompt_tikz_action(console)
+                        action = "approve" if auto_approve else _prompt_tikz_action(console)
+                        if auto_approve:
+                            console.print("[dim]Auto-approving...[/dim]")
                         
                         if action == "quit":
                             shutdown_requested = True
@@ -3667,24 +3710,28 @@ def _run_checker_session(
                 ))
             
             # Prompt for action
-            console.print("\n[bold]Actions:[/bold]")
-            console.print("  [green]a[/green]pprove - Apply this change")
-            console.print("  [red]r[/red]eject  - Store for later, don't apply")
-            console.print("  [blue]e[/blue]dit    - Edit in editor before applying")
-            console.print("  [yellow]s[/yellow]kip    - Skip without storing")
-            console.print("  [dim]q[/dim]uit    - Exit session")
-            
-            Prompt = _get_prompt()
-            try:
-                choice = Prompt.ask(
-                    "\nAction",
-                    choices=["a", "r", "e", "s", "q", "approve", "reject", "edit", "skip", "quit"],
-                    default="a"
-                ).lower()
-            except KeyboardInterrupt:
-                console.print("\n[yellow]Interrupted[/yellow]")
-                shutdown_requested = True
-                break
+            if auto_approve:
+                choice = "a"
+                console.print("[dim]Auto-approving...[/dim]")
+            else:
+                console.print("\n[bold]Actions:[/bold]")
+                console.print("  [green]a[/green]pprove - Apply this change")
+                console.print("  [red]r[/red]eject  - Store for later, don't apply")
+                console.print("  [blue]e[/blue]dit    - Edit in editor before applying")
+                console.print("  [yellow]s[/yellow]kip    - Skip without storing")
+                console.print("  [dim]q[/dim]uit    - Exit session")
+                
+                Prompt = _get_prompt()
+                try:
+                    choice = Prompt.ask(
+                        "\nAction",
+                        choices=["a", "r", "e", "s", "q", "approve", "reject", "edit", "skip", "quit"],
+                        default="a"
+                    ).lower()
+                except KeyboardInterrupt:
+                    console.print("\n[yellow]Interrupted[/yellow]")
+                    shutdown_requested = True
+                    break
             
             if choice in ["q", "quit"]:
                 shutdown_requested = True

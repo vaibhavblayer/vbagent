@@ -47,6 +47,8 @@ from .tikz_checker import (
     parse_check_result,
     has_tikz_passed,
     has_tikz_environment,
+    validate_tikz,
+    check_and_fix_tikz,
 )
 
 __all__ = [
@@ -144,4 +146,7 @@ __all__ = [
     "parse_check_result",
     "has_tikz_passed",
     "has_tikz_environment",
+    # Structured validation
+    "validate_tikz",
+    "check_and_fix_tikz",
 ]

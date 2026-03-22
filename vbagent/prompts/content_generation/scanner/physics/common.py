@@ -1,7 +1,15 @@
-"""Common prompt components for scanner prompts.
+"""Common prompt components for physics scanner prompts.
 
-Shared TikZ guidelines, LaTeX formatting rules, and other reusable prompt sections.
+Physics-specific TikZ guidelines, LaTeX formatting rules, and notation.
+Shared constants (DIAGRAM_PLACEHOLDER, PASSAGE_DIAGRAM_INLINE, OPTIONS_WITH_DIAGRAMS)
+are imported from the _shared module.
 """
+
+from .._shared import (
+    DIAGRAM_PLACEHOLDER,
+    PASSAGE_DIAGRAM_INLINE,
+    OPTIONS_WITH_DIAGRAMS_PHYSICS as OPTIONS_WITH_DIAGRAMS,
+)
 
 # TikZ Variable Guidelines - shared across all scanner prompts
 TIKZ_GUIDELINES = r"""
@@ -173,62 +181,56 @@ PGFPLOTS_EXAMPLE = r"""
         ```
 """
 
-# Diagram placeholder instruction - scanner outputs placeholder, TikZ agent generates actual code
-DIAGRAM_PLACEHOLDER = r"""
-    **Diagram Handling (IMPORTANT):**
-    *   If the image contains a diagram, output ONLY a placeholder:
-        ```latex
-        \begin{center}
-            \input{diagram}
-        \end{center}
-        ```
-    *   Do NOT generate TikZ code during scanning - the TikZ agent will generate it separately.
-    *   Place the placeholder immediately after the `\item` line (before options/tasks).
-"""
+# Physics solution structure guidelines
+SOLUTION_STRUCTURE = r"""
+## Physics Solution Structure
 
-# Passage diagram - generate actual TikZ inline (not placeholder)
-PASSAGE_DIAGRAM_INLINE = r"""
-    **Diagram Handling for Passage (IMPORTANT):**
-    *   If the passage contains a diagram, generate the ACTUAL TikZ code inline:
-        ```latex
-        \begin{center}
-        \begin{tikzpicture}
-            % Your TikZ code here
-        \end{tikzpicture}
-        \end{center}
-        ```
-    *   Do NOT use `\input{diagram}` placeholder for passage diagrams.
-    *   Generate complete, compilable TikZ code directly in the passage.
-    *   Place the diagram after the passage text, before the questions.
-"""
+**For Kinematics/Dynamics:**
+```latex
+\begin{solution}
+\begin{align*}
+    \intertext{Using Newton's second law:}
+    F &= ma \\
+      &= 2 \times 5 \\
+      &= 10 \ \mathrm{N}
+\end{align*}
+\end{solution}
+```
 
-# Options with diagrams - scanner outputs placeholders, TikZ agent generates definitions
-OPTIONS_WITH_DIAGRAMS = r"""
-    **IMPORTANT - Options with Diagrams/Graphs:**
-    If the options contain diagrams or graphs, output ONLY placeholders in the tasks:
-    ```latex
-    % Placeholder comment for TikZ agent to generate option diagrams
-    % OPTIONS_DIAGRAMS: 4 options with graphs showing different curves
-    \begin{tasks}(2)
-        \task \OptionA
-        \task \OptionB
-        \task \OptionC \ans
-        \task \OptionD
-    \end{tasks}
-    ```
-    *   Do NOT generate TikZ code for options during scanning.
-    *   The TikZ agent will generate `\def\OptionA{...}`, `\def\OptionB{...}`, etc.
-    *   Just use `\OptionA`, `\OptionB`, `\OptionC`, `\OptionD` as placeholders in tasks.
-    *   Add a comment describing what each option diagram shows (for TikZ agent).
+**For Energy/Work Problems:**
+```latex
+\begin{solution}
+\begin{align*}
+    \intertext{By conservation of energy:}
+    \frac{1}{2}mv^2 &= mgh \\
+    v &= \sqrt{2gh} \\
+      &= \sqrt{2 \times 9.8 \times 5} \\
+      &= 9.9 \ \mathrm{m/s}
+\end{align*}
+\end{solution}
+```
+
+**For Circuit Problems:**
+```latex
+\begin{solution}
+\begin{align*}
+    \intertext{Using Kirchhoff's voltage law:}
+    \mathcal{E} - IR_1 - IR_2 &= 0 \\
+    I &= \frac{\mathcal{E}}{R_1 + R_2} \\
+      &= \frac{12}{4 + 6} \\
+      &= 1.2 \ \mathrm{A}
+\end{align*}
+\end{solution}
+```
 """
 
 __all__ = [
     "TIKZ_GUIDELINES",
-    "DIAGRAM_PLACEHOLDER",
-    "PASSAGE_DIAGRAM_INLINE",
     "TIKZ_GUIDELINES_SHORT",
     "LATEX_FORMATTING_RULES",
     "PGFPLOTS_EXAMPLE",
-    "OPTIONS_WITH_DIAGRAMS",
     "DIAGRAM_PLACEHOLDER",
+    "PASSAGE_DIAGRAM_INLINE",
+    "OPTIONS_WITH_DIAGRAMS",
+    "SOLUTION_STRUCTURE",
 ]

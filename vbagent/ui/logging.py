@@ -18,6 +18,23 @@ console = Console()
 # Lock to synchronize debug log output with spinners
 _log_lock = threading.Lock()
 
+# Thread-local task tag — set by parallel orchestrators so log output
+# shows which pipeline task (Scan / TikZ / Options) an agent belongs to.
+_task_tag = threading.local()
+
+
+def set_task_tag(tag: str | None):
+    """Set a task tag for the current thread's log output."""
+    _task_tag.value = tag
+
+
+def _get_tagged_name(agent_name: str) -> str:
+    """Return 'Tag › AgentName' if a task tag is set, else just agent_name."""
+    tag = getattr(_task_tag, "value", None)
+    if tag:
+        return f"{tag} › {agent_name}"
+    return agent_name
+
 _MAX_TEXT_LEN = 600
 _MAX_JSON_LEN = 1200
 _BASE64_PATTERN = re.compile(
@@ -27,15 +44,14 @@ _RAW_BASE64_PATTERN = re.compile(r'[A-Za-z0-9+/=]{200,}')
 
 
 def log_agent_input(agent_name, input_data, model=None):
-    """Log agent input in debug mode."""
-    from vbagent.config import get_config
-    if not get_config().debug:
-        return
-    title = f"[INPUT] {agent_name}"
+    """Log agent input."""
+    display_name = _get_tagged_name(agent_name)
+    title = f"[INPUT] {display_name}"
     if model:
         title += f" : {model}"
     body = _format_input(input_data)
     with _log_lock:
+        console.print()
         console.print(Panel(
             body, title=title, title_align="left",
             border_style="#3b82f6", box=box.SIMPLE,
@@ -44,11 +60,9 @@ def log_agent_input(agent_name, input_data, model=None):
 
 
 def log_agent_output(agent_name, output_data, duration=None):
-    """Log agent output in debug mode."""
-    from vbagent.config import get_config
-    if not get_config().debug:
-        return
-    title = f"[OUTPUT] {agent_name}"
+    """Log agent output."""
+    display_name = _get_tagged_name(agent_name)
+    title = f"[OUTPUT] {display_name}"
     if duration is not None:
         title += f" : {duration:.2f}s"
     
@@ -57,6 +71,7 @@ def log_agent_output(agent_name, output_data, duration=None):
     body = _format_output(output_data, skip_truncation=skip_truncation)
     
     with _log_lock:
+        console.print()
         console.print(Panel(
             body, title=title, title_align="left",
             border_style="#22c55e", box=box.SIMPLE,
@@ -65,10 +80,8 @@ def log_agent_output(agent_name, output_data, duration=None):
 
 
 def log_agent_error(agent_name, error):
-    """Log agent error in debug mode."""
-    from vbagent.config import get_config
-    if not get_config().debug:
-        return
+    """Log agent error."""
+    display_name = _get_tagged_name(agent_name)
     err_type = type(error).__name__
     err_msg = str(error)
     body = Text()
@@ -76,11 +89,72 @@ def log_agent_error(agent_name, error):
     body.append(": ", style="#6b7280")
     body.append(_truncate(err_msg, 400), style="#e5e7eb")
     with _log_lock:
+        console.print()
         console.print(Panel(
-            body, title=f"[ERROR] {agent_name}",
+            body, title=f"[ERROR] {display_name}",
             title_align="left", border_style="#ef4444",
             box=box.SIMPLE, padding=(1, 2),
         ))
+
+
+def log_agent_usage(agent_name, *, model="", duration=0.0, usage=None,
+                    response_id=None, has_image=False, reasoning="none"):
+    """Log agent completion as a compact JSON panel.
+
+    Always shown (not gated by debug) — this is the primary completion indicator.
+    """
+    import json as _json
+    from rich.syntax import Syntax
+
+    short_model = model.replace("openai/", "") if model else "?"
+
+    data: dict = {
+        "duration": f"{duration:.1f}s",
+        "model": short_model,
+    }
+
+    if reasoning and reasoning != "none":
+        data["reasoning"] = reasoning
+
+    if has_image:
+        data["image"] = True
+
+    if usage is not None:
+        inp = getattr(usage, "input_tokens", 0) or 0
+        out = getattr(usage, "output_tokens", 0) or 0
+        cached = 0
+        reasoning_tok = 0
+        inp_details = getattr(usage, "input_tokens_details", None)
+        if inp_details:
+            cached = getattr(inp_details, "cached_tokens", 0) or 0
+        out_details = getattr(usage, "output_tokens_details", None)
+        if out_details:
+            reasoning_tok = getattr(out_details, "reasoning_tokens", 0) or 0
+
+        tokens: dict = {"input": inp}
+        if cached:
+            tokens["cached"] = cached
+        tokens["output"] = out
+        if reasoning_tok:
+            tokens["reasoning"] = reasoning_tok
+        data["tokens"] = tokens
+
+        reqs = getattr(usage, "requests", 0) or 0
+        if reqs > 1:
+            data["requests"] = reqs
+
+    if response_id:
+        short_id = response_id if len(response_id) <= 20 else f"…{response_id[-12:]}"
+        data["id"] = short_id
+
+    raw = _json.dumps(data, indent=2, ensure_ascii=False)
+    body = Syntax(raw, "json", theme="monokai", word_wrap=True, padding=1)
+
+    with _log_lock:
+        display_name = _get_tagged_name(agent_name)
+        console.print()
+        console.print(f"[dim]✓ {display_name}[/dim]")
+        console.print(body)
 
 
 def _format_input(data):

@@ -4,7 +4,7 @@ Prompts for checking and fixing formatting issues specific to
 problem types (MCQ, subjective, assertion-reason, etc.).
 """
 
-SYSTEM_PROMPT = r"""You are an expert LaTeX formatter for physics educational content. Your job is to check and fix formatting issues in problems, solutions, and TikZ diagrams based on the exact standards used during content generation.
+SYSTEM_PROMPT = r"""You are an expert LaTeX formatter for educational content (physics, chemistry, mathematics). Your job is to check and fix formatting issues in problems, solutions, and TikZ diagrams based on the exact standards used during content generation.
 
 ## Core Formatting Standards
 
@@ -63,6 +63,62 @@ SYSTEM_PROMPT = r"""You are an expert LaTeX formatter for physics educational co
 - Use `\renewcommand{\labelenumi}{(\alph{enumi})}` before enumerate for (a), (b), (c) labels
 - NEVER use `\begin{enumerate}[(a)]` (requires enumerate package)
 - NEVER use manual `(a) ...\\` formatting
+
+**Integer Type:**
+```latex
+\item [Problem statement] \hrulefill. \ansint{7}
+```
+- Integer answer marked with `\ansint{N}` at end of problem
+- Solution uses same align* + \intertext{} pattern as subjective
+
+**Passage / Comprehensive Paragraph:**
+```latex
+\item[]\begin{center}\textsc{Comprehensive Passage} \hfill [\number\numexpr\value{enumi}+1\relax\ to \number\numexpr\value{enumi}+3\relax]\end{center}
+\noindent [Shared passage text with diagram if needed]
+
+\item [Sub-question 1]
+\begin{tasks}(2)
+\task Option A \task Option B \ans
+\task Option C \task Option D
+\end{tasks}
+
+\item [Sub-question 2]
+...
+
+\begin{solution}
+[ONE unified solution block for ALL sub-questions]
+[Use separate align* blocks per sub-question within this single solution env]
+\end{solution}
+```
+- Passage header uses `\item[]` (empty item) with centered title
+- `\number\numexpr\value{enumi}+1\relax` auto-computes the sub-question range
+- Each sub-question is its own `\item` with MCQ options
+- ONE single `\begin{solution}...\end{solution}` block for ALL sub-questions (placed after the last sub-question)
+
+**Match the Following (Matrix Match):**
+```latex
+\item [Problem setup text]
+\begin{center}
+\renewcommand{\arraystretch}{2}
+\begin{tabular}{p{0.5cm}p{2.5cm}|p{0.5cm}p{3cm}}
+\hline
+\multicolumn{2}{c|}{List I} & \multicolumn{2}{c}{List II} \\
+\hline
+P. & Item P & 1. & Item 1 \\
+...
+\hline
+\end{tabular}
+\end{center}
+Codes
+\begin{tasks}(2)
+\task P-1, Q-2, R-3, S-4
+\task P-2, Q-1, R-4, S-3 \ans
+\task P-3, Q-4, R-1, S-2
+\task P-4, Q-3, R-2, S-1
+\end{tasks}
+```
+- Uses tabular for List I / List II
+- Answer selected via MCQ "Codes" options
 
 **Options with Diagrams:**
 ```latex
@@ -295,7 +351,7 @@ If correct:
 5. Maintain original problem difficulty and intent
 6. Apply ALL the formatting standards from above"""
 
-USER_TEMPLATE = r"""Check this physics content for formatting issues.
+USER_TEMPLATE = r"""Check this content for formatting issues.
 
 % subject: {subject}
 % type: {question_type}

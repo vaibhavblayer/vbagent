@@ -70,6 +70,7 @@ class PipelineMetadata(BaseModel):
     scan: Optional[StageMetadata] = Field(default=None)
     solution: Optional[StageMetadata] = Field(default=None, description="Solution generation stage")
     tikz: Optional[StageMetadata] = Field(default=None)
+    options: Optional[StageMetadata] = Field(default=None, description="MCQ option diagrams stage")
     ideas: Optional[StageMetadata] = Field(default=None)
     alternates: Dict[int, StageMetadata] = Field(default_factory=dict, description="Alternate solutions by index")
     variants: Dict[str, StageMetadata] = Field(default_factory=dict, description="Variants by type")
@@ -97,6 +98,7 @@ class PipelineMetadata(BaseModel):
             self.scan,
             self.solution,
             self.tikz,
+            self.options,
             self.ideas,
         ]
         stages.extend(self.alternates.values())
@@ -161,15 +163,23 @@ class CacheEntry(BaseModel):
 
 
 
-# Legacy models for backward compatibility
 class TaxonomyClassification(BaseModel):
-    """Taxonomy classification result (placeholder for backward compatibility)."""
+    """Output from taxonomy classifier (Stage 4).
+    
+    Classifies problems into curriculum taxonomy.
+    """
     chapter: Optional[str] = None
     topic: Optional[str] = None
     subtopic: Optional[str] = None
+    key_concepts: list[str] = Field(default_factory=list)
+    prerequisite_concepts: list[str] = Field(default_factory=list)
+    related_topics: list[str] = Field(default_factory=list)
+    cognitive_level: Optional[str] = None
+    exam_relevance: list[str] = Field(default_factory=list)
+    confidence: float = Field(ge=0.0, le=1.0, default=1.0)
 
 
 class EnrichedMetadata(BaseModel):
-    """Enriched metadata (placeholder for backward compatibility)."""
+    """Combined taxonomy + difficulty metadata from Stages 4 & 5."""
     taxonomy: Optional[TaxonomyClassification] = None
     keywords: list[str] = Field(default_factory=list)

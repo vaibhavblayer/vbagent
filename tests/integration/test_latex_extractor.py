@@ -9,7 +9,7 @@ This module tests the enhanced LaTeX extraction capabilities including:
 
 import pytest
 from pathlib import Path
-from vbagent.latex.extractor import (
+from vbagent.tex import (
     extract_subitems,
     parse_latex_project,
     extract_from_directory,

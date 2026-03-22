@@ -10,7 +10,6 @@ Focuses on:
 
 from .common import (
     LATEX_FORMATTING_RULES,
-    SOLUTION_MCQ_TEMPLATE,
 )
 
 SYSTEM_PROMPT = """You are an expert chemistry educator generating detailed solutions for multiple-choice questions with MULTIPLE CORRECT answers.

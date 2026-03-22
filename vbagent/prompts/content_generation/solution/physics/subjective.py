@@ -96,6 +96,23 @@ v_{{\\text{{max}}}} &= A\\omega \\\\
 
 ## Key Points for Subjective Solutions
 
+### Integer Type Problems (\\ansint)
+When the problem is an integer-type question (contains \\ansint or asks for an integer answer):
+- The answer MUST be marked with `\\ansint{N}` where N is the integer answer
+- Place `\\ansint{N}` at the END of the problem statement, NOT inside the solution
+- Format: `\\item [Problem text] \\hrulefill [unit]. \\ansint{N}`
+- The solution should derive the answer and end with the integer value
+- Common pattern: express answer as `$\\frac{a\\pi}{k}$` and ask for value of $k$
+
+### Clean Numbers Discipline
+When generating or solving problems, prefer numbers that lead to clean calculations:
+- Prefer integers, simple fractions ($\\frac{1}{2}$, $\\frac{3}{4}$), or clean decimals (2.5, 4.5, 0.25, 7.5)
+- Design expressions to be easily cancellable — factors should simplify neatly
+- Prefer irrational answers expressed symbolically ($\\sqrt{2}$, $\\pi$, $\\frac{\\sqrt{3}}{2}$) over messy decimals
+- AVOID answers like 3.14159, 0.3847, 1.7321 — use $\\pi$, $\\frac{5}{13}$, $\\sqrt{3}$ instead
+- If a decimal is unavoidable, keep it to one decimal place (4.9, 0.5, 2.5) or use "nearest integer"
+- Choose problem parameters so intermediate steps cancel cleanly
+
 ### Completeness
 - Show ALL steps - don't skip "obvious" ones
 - Explain the physics, not just the math
@@ -175,9 +192,9 @@ R_{{\\text{{series}}}} &= R_1 + R_2 \\\\
 
 \\begin{{center}}
 \\begin{{tikzpicture}}
-\\draw (0,0) to[battery1, l=$12\\mathrm{{V}}$] (0,2)
-      to[R, l=$R_1$] (2,2)
-      to[R, l=$R_2$] (4,2)
+\\draw (0,0) to[battery1, l={$12\\mathrm{{V}}$}] (0,2)
+      to[R, l={$R_1$}] (2,2)
+      to[R, l={$R_2$}] (4,2)
       to (4,0)
       to (0,0);
 \\end{{tikzpicture}}
@@ -241,7 +258,8 @@ You MUST output a JSON object with this exact structure:
 - Complete solution in LaTeX format
 - Must start with \\begin{solution} and end with \\end{solution}
 - Follow all formatting rules above
-- Do NOT include TikZ code inline - use diagram_requirements instead
+- For SIMPLE diagrams (v-t graphs, basic circuits, number lines), write TikZ directly inline
+- For COMPLEX diagrams, use diagram_requirements with DIAGRAM PLACEHOLDER
 
 **diagram_requirements** (required, array):
 - List of diagrams needed in the solution
@@ -355,4 +373,10 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
 - Use \\n for newlines in LaTeX strings
 """
 
-__all__ = ["SYSTEM_PROMPT"]
+USER_TEMPLATE = """Generate a complete solution for this physics subjective problem:
+
+{problem}
+
+Provide step-by-step solution with clear physics reasoning, diagrams where helpful, and final answer."""
+
+__all__ = ["SYSTEM_PROMPT", "USER_TEMPLATE"]

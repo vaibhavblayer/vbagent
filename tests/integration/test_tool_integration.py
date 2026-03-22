@@ -100,16 +100,11 @@ class TestToolIntegration:
         mock_path.return_value = mock_path_instance
         
         mock_result = Mock()
+        mock_result.subject = "physics"
         mock_result.question_type = "mcq_sc"
-        mock_result.difficulty = "medium"
-        mock_result.topic = "mechanics"
-        mock_result.subtopic = "kinematics"
         mock_result.has_diagram = False
-        mock_result.diagram_type = None
-        mock_result.num_options = 4
-        mock_result.requires_calculus = False
         mock_result.confidence = 0.95
-        mock_result.key_concepts = ["velocity"]
+        mock_result.model_dump_json = Mock(return_value='{}')
         mock_classify.return_value = mock_result
         
         # Execute through registry
@@ -123,7 +118,7 @@ class TestToolIntegration:
         
         # Verify result
         assert result["question_type"] == "mcq_sc"
-        assert result["difficulty"] == "medium"
+        assert result["subject"] == "physics"
         assert result["confidence"] == 0.95
     
     @pytest.mark.asyncio

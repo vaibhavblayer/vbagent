@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     from .content_generation.idea import SYSTEM_PROMPT as IDEA_PROMPT
     from .content_generation.alternate import SYSTEM_PROMPT as ALTERNATE_PROMPT
     from .quality.reviewer import SYSTEM_PROMPT as REVIEWER_PROMPT
-    from .diagram.tikz import SYSTEM_PROMPT as TIKZ_PROMPT
     from .quality.solution_checker import SYSTEM_PROMPT as SOLUTION_CHECKER_PROMPT
     from .quality.grammar_checker import SYSTEM_PROMPT as GRAMMAR_CHECKER_PROMPT
     from .quality.clarity_checker import SYSTEM_PROMPT as CLARITY_CHECKER_PROMPT
@@ -51,7 +50,6 @@ __all__ = [
     "IDEA_PROMPT",
     "ALTERNATE_PROMPT",
     "REVIEWER_PROMPT",
-    "TIKZ_PROMPT",
     "SOLUTION_CHECKER_PROMPT",
     "GRAMMAR_CHECKER_PROMPT",
     "CLARITY_CHECKER_PROMPT",
@@ -95,10 +93,6 @@ def __getattr__(name: str):
     
     if name == "REVIEWER_PROMPT":
         from .quality.reviewer import SYSTEM_PROMPT
-        return SYSTEM_PROMPT
-    
-    if name == "TIKZ_PROMPT":
-        from .diagram.tikz import SYSTEM_PROMPT
         return SYSTEM_PROMPT
     
     if name == "SOLUTION_CHECKER_PROMPT":

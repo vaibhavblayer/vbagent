@@ -16,11 +16,10 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .classification import ClassificationResult, QuestionType, Difficulty, DifficultyAssessment, DiagramCategory
-    from .structural import StructuralClassification
     from .content import ScanResult, IdeaResult
     from .diagram import TikZRequirements, TikZError, TikZFix, TikZValidation
     from .quality import ReviewIssueType, Suggestion, ReviewResult, ReviewStats, DiffError, DiffErrorType, DiffResult
-    from .workflow import PipelineResult, ProcessingStatus, ImageRecord, BatchDatabase, AgentCall, SolutionPlan, AgentOutput, SolutionResult
+    from .workflow import PipelineResult, ProcessingStatus, ImageRecord, BatchDatabase
     from .version_store import SuggestionStatus, StoredSuggestion, VersionStore
     from .diff import generate_unified_diff, apply_unified_diff, apply_diff, parse_diff
     from .metadata import (
@@ -35,11 +34,14 @@ __all__ = [
     "QuestionType",
     "Difficulty",
     "DiagramCategory",
-    "StructuralClassification",
     # Scan
     "ScanResult",
     # Idea
     "IdeaResult",
+    # Concepts
+    "ConceptSheet",
+    "ConceptGroup",
+    "ConceptEntry",
     # Diagram
     "TikZRequirements",
     "TikZError",
@@ -58,10 +60,6 @@ __all__ = [
     "ProcessingStatus",
     "ImageRecord",
     "BatchDatabase",
-    "AgentCall",
-    "SolutionPlan",
-    "AgentOutput",
-    "SolutionResult",
     # Version store
     "SuggestionStatus",
     "StoredSuggestion",
@@ -91,11 +89,7 @@ def __getattr__(name: str):
         from . import classification
         return getattr(classification, name)
     
-    if name == "StructuralClassification":
-        from .structural import StructuralClassification
-        return StructuralClassification
-    
-    if name in ("ScanResult", "IdeaResult"):
+    if name in ("ScanResult", "IdeaResult", "ConceptSheet", "ConceptGroup", "ConceptEntry"):
         from . import content
         return getattr(content, name)
     
@@ -103,7 +97,7 @@ def __getattr__(name: str):
         from . import diagram
         return getattr(diagram, name)
     
-    if name in ("PipelineResult", "ProcessingStatus", "ImageRecord", "BatchDatabase", "AgentCall", "SolutionPlan", "AgentOutput", "SolutionResult"):
+    if name in ("PipelineResult", "ProcessingStatus", "ImageRecord", "BatchDatabase"):
         from . import workflow
         return getattr(workflow, name)
     

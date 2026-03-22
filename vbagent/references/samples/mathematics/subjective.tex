@@ -1,0 +1,21 @@
+% subject: mathematics
+% type: subjective
+% has_diagram: false
+
+\item Evaluate $\displaystyle\int_{0}^{\pi/2} \frac{\sin x}{\sin x + \cos x} \, dx$.
+
+\begin{solution}
+\begin{align*}
+\intertext{Let}
+I &= \int_{0}^{\pi/2} \frac{\sin x}{\sin x + \cos x} \, dx
+\intertext{Using the property $\displaystyle\int_{0}^{a} f(x) \, dx = \int_{0}^{a} f(a - x) \, dx$ with $a = \frac{\pi}{2}$}
+I &= \int_{0}^{\pi/2} \frac{\sin\left(\frac{\pi}{2} - x\right)}{\sin\left(\frac{\pi}{2} - x\right) + \cos\left(\frac{\pi}{2} - x\right)} \, dx \\
+    &= \int_{0}^{\pi/2} \frac{\cos x}{\cos x + \sin x} \, dx
+\intertext{Adding the two expressions for $I$}
+2I &= \int_{0}^{\pi/2} \frac{\sin x + \cos x}{\sin x + \cos x} \, dx \\
+    &= \int_{0}^{\pi/2} 1 \, dx \\
+    &= \frac{\pi}{2}
+\intertext{Therefore}
+I &= \frac{\pi}{4}
+\end{align*}
+\end{solution}

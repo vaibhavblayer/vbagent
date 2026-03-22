@@ -8,7 +8,11 @@ Solution prompts for chemistry questions focusing on:
 """
 
 from .mcq_sc import SYSTEM_PROMPT as MCQ_SC_PROMPT
+from .mcq_mc import SYSTEM_PROMPT as MCQ_MC_PROMPT
 from .subjective import SYSTEM_PROMPT as SUBJECTIVE_PROMPT
+from .assertion_reason import SYSTEM_PROMPT as ASSERTION_REASON_PROMPT
+from .passage import SYSTEM_PROMPT as PASSAGE_PROMPT
+from .match import SYSTEM_PROMPT as MATCH_PROMPT
 from .common import (
     LATEX_FORMATTING_RULES,
     DIAGRAM_IDENTIFICATION,
@@ -20,11 +24,13 @@ from .common import (
 # Mapping from question type to prompt
 SOLUTION_PROMPTS = {
     "mcq_sc": MCQ_SC_PROMPT,
-    "mcq_mc": MCQ_SC_PROMPT,  # TODO: Create specific MCQ_MC prompt
+    "mcq_mc": MCQ_MC_PROMPT,
     "subjective": SUBJECTIVE_PROMPT,
-    "assertion_reason": MCQ_SC_PROMPT,  # TODO: Create specific prompt
-    "passage": SUBJECTIVE_PROMPT,  # TODO: Create specific prompt
-    "match": SUBJECTIVE_PROMPT,  # TODO: Create specific prompt
+    "integer": SUBJECTIVE_PROMPT,
+    "assertion_reason": ASSERTION_REASON_PROMPT,
+    "passage": PASSAGE_PROMPT,
+    "match": MATCH_PROMPT,
+    "matrix_match": MATCH_PROMPT,
 }
 
 

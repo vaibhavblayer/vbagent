@@ -139,10 +139,45 @@ def create_agent(
     )
 
 
-def _print_agent_info(agent: "Agent") -> None:
-    """Print agent information when running (now uses spinner in run_agent_sync)."""
-    # Deprecated - spinner is shown in run_agent_sync
-    pass
+def _extract_reasoning(agent: "Agent") -> str:
+    """Extract reasoning effort string from agent model settings."""
+    if not agent.model_settings:
+        return "none"
+    settings = agent.model_settings
+    if not hasattr(settings, 'reasoning') or not settings.reasoning:
+        return "none"
+    reasoning_obj = settings.reasoning
+    if isinstance(reasoning_obj, dict):
+        return reasoning_obj.get('effort', 'none')
+    if hasattr(reasoning_obj, 'effort'):
+        return reasoning_obj.effort or 'none'
+    return "none"
+
+
+def _input_has_image(input_text: str | list) -> bool:
+    """Check if the input contains an image."""
+    if not isinstance(input_text, list):
+        return False
+    for item in input_text:
+        if not isinstance(item, dict):
+            continue
+        content = item.get("content")
+        if isinstance(content, list):
+            for part in content:
+                if isinstance(part, dict) and part.get("type") in ("input_image", "image_url", "image"):
+                    return True
+    return False
+
+
+def _extract_response_id(result) -> Optional[str]:
+    """Extract the last response ID from raw_responses."""
+    try:
+        if result.raw_responses:
+            last = result.raw_responses[-1]
+            return getattr(last, "response_id", None)
+    except (AttributeError, IndexError):
+        pass
+    return None
 
 
 async def run_agent(agent: "Agent", input_text: str | list) -> Any:
@@ -156,13 +191,14 @@ async def run_agent(agent: "Agent", input_text: str | list) -> Any:
         The agent's final output (string or structured type)
     """
     import time
-    from ..ui.logging import log_agent_input, log_agent_output, log_agent_error
+    from ..ui.logging import log_agent_input, log_agent_output, log_agent_error, log_agent_usage
     
     Runner = _get_runner_class()
-    _print_agent_info(agent)
     
-    # Log input in debug mode
     model = agent.model or "default"
+    reasoning = _extract_reasoning(agent)
+    has_image = _input_has_image(input_text)
+    
     log_agent_input(agent.name, input_text, model)
     
     start_time = time.time()
@@ -170,12 +206,17 @@ async def run_agent(agent: "Agent", input_text: str | list) -> Any:
         result = await Runner.run(agent, input=input_text)
         duration = time.time() - start_time
         
-        # Log output in debug mode
+        # Extract usage and response ID
+        usage = result.context_wrapper.usage if result.context_wrapper else None
+        response_id = _extract_response_id(result)
+        
+        log_agent_usage(agent.name, model=model, duration=duration,
+                        usage=usage, response_id=response_id,
+                        has_image=has_image, reasoning=reasoning)
         log_agent_output(agent.name, result.final_output, duration)
         
         return result.final_output
     except Exception as e:
-        # Log error in debug mode
         log_agent_error(agent.name, e)
         raise
 
@@ -199,36 +240,21 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
         KeyboardInterrupt: If user presses Ctrl+C
         TimeoutError: If timeout is exceeded
     """
-    import concurrent.futures
     import threading
     import time
-    import json
-    from ..config import get_config
-    from ..ui.logging import log_agent_input, log_agent_output, log_agent_error, console, _log_lock
+    from ..ui.logging import log_agent_input, log_agent_output, log_agent_error, log_agent_usage, console, _log_lock
     from rich.progress import Progress, SpinnerColumn, TextColumn
     
     Runner = _get_runner_class()
     
     # Get agent info for display
     model = agent.model or "default"
-    reasoning = "none"  # Default for models without reasoning support
-    if agent.model_settings:
-        settings = agent.model_settings
-        if hasattr(settings, 'reasoning') and settings.reasoning:
-            reasoning_obj = settings.reasoning
-            if isinstance(reasoning_obj, dict):
-                reasoning = reasoning_obj.get('effort', 'none')
-            elif hasattr(reasoning_obj, 'effort'):
-                reasoning = reasoning_obj.effort or 'none'
+    reasoning = _extract_reasoning(agent)
+    has_image = _input_has_image(input_text)
     
-    config = get_config()
-    is_debug = config.debug
-    
-    # Debug mode: log input using UI module (before spinner starts)
-    # Flush to ensure debug panel is fully rendered before spinner
+    # Log input (before spinner starts)
     log_agent_input(agent.name, input_text, model)
-    if is_debug:
-        console.file.flush()
+    console.file.flush()
     
     # Show spinner during execution (if enabled)
     start_time = time.time()
@@ -242,10 +268,7 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
         except Exception as e:
             result_holder["error"] = e
     
-    # In debug mode, skip the spinner entirely to prevent overlap with debug Panels
-    use_spinner = show_spinner and not is_debug
-    
-    if use_spinner:
+    if show_spinner:
         # Use global lock to prevent concurrent spinners
         with _spinner_lock:
             progress = Progress(
@@ -279,10 +302,6 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
                             f"{agent.name} timed out after {timeout:.0f}s (model: {model})"
                         )
     else:
-        # No spinner — debug mode or show_spinner=False
-        # Always log model and reasoning info when spinner is disabled
-        if show_spinner:
-            console.print(f"[dim]⏳ {agent.name} running ({model}, {reasoning} reasoning)...[/dim]")
         thread = threading.Thread(target=run_in_thread, daemon=True)
         thread.start()
         while thread.is_alive():
@@ -293,21 +312,23 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
                 )
     
     if result_holder["error"]:
-        # Debug mode: log error using UI module
         log_agent_error(agent.name, result_holder["error"])
         raise result_holder["error"]
     
     duration = time.time() - start_time
-    final_output = result_holder["result"].final_output
+    run_result = result_holder["result"]
+    final_output = run_result.final_output
     
-    # Print completion (subtle) - show model and reasoning info
-    if use_spinner:
-        console.print(f"[dim]✓ {agent.name} completed in {duration:.1f}s ({model}, {reasoning} reasoning)[/dim]")
-    elif show_spinner:
-        # No spinner but show_spinner=True (debug mode) - show completion
-        console.print(f"[dim]✓ {agent.name} completed in {duration:.1f}s ({model}, {reasoning} reasoning)[/dim]")
+    # Extract usage and response ID from RunResult
+    usage = run_result.context_wrapper.usage if run_result.context_wrapper else None
+    response_id = _extract_response_id(run_result)
     
-    # Debug mode: log output using UI module
+    # Always show compact completion line with token usage
+    log_agent_usage(agent.name, model=model, duration=duration,
+                    usage=usage, response_id=response_id,
+                    has_image=has_image, reasoning=reasoning)
+    
+    # Log full output
     log_agent_output(agent.name, final_output, duration)
     
     return final_output

@@ -1,0 +1,93 @@
+{
+  "_comment": "Cost-optimized configuration",
+  "_comment2": "Uses fast models for simple tasks, powerful models only where needed",
+  "_comment3": "Estimated cost savings: 60-70% compared to using gpt-5.4 for everything",
+  
+  "subject": "physics",
+  "debug": false,
+  "log_level": "INFO",
+  
+  "default_model": "gpt-5.4-mini",
+  "default_reasoning_effort": "low",
+  
+  "agents": {
+    "_comment": "Classification - cheapest models, low reasoning",
+    "classifier": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "low",
+      "_cost": "Very low - fast classification"
+    },
+    "image_classifier": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "low",
+      "_cost": "Very low"
+    },
+    "diagram_analyzer": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "low",
+      "_cost": "Low - simple analysis"
+    },
+    
+    "_comment2": "Content extraction - medium cost",
+    "scanner": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "medium",
+      "_cost": "Low-medium - LaTeX extraction"
+    },
+    
+    "_comment3": "Diagram generation - ONLY place we use expensive models",
+    "tikz": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_cost": "High - but necessary for quality diagrams"
+    },
+    "fbd": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_cost": "High - precision needed"
+    },
+    "circuit": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_cost": "High - complex circuitikz"
+    },
+    "organic_structure": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_cost": "High - complex chemfig"
+    },
+    
+    "_comment4": "Solution generation - use cheaper model with high reasoning",
+    "solution": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "high",
+      "_cost": "Medium - cheaper model but more thinking"
+    },
+    
+    "_comment5": "Variants - cheap model, high reasoning",
+    "variant": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "high",
+      "_cost": "Medium"
+    },
+    
+    "_comment6": "Quality checking - cheapest possible",
+    "latex_fixer": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "low",
+      "_cost": "Very low - simple fixes"
+    },
+    "solution_checker": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "low",
+      "_cost": "Very low - basic validation"
+    },
+    "format_checker": {
+      "model": "gpt-5.4-mini",
+      "reasoning_effort": "low",
+      "_cost": "Very low"
+    }
+  },
+  
+  "_strategy": "Use gpt-5.4 ONLY for diagram generation where quality is critical. Everything else uses gpt-5.4-mini with appropriate reasoning levels."
+}

@@ -1,72 +1,78 @@
-"""Solution generation prompt for Physics Match the Following questions.
+"""Solution generation prompt for Physics Match/Matrix Match questions.
 
-Match the Following format:
-- Column I: List of items (A, B, C, D)
-- Column II: List of items (P, Q, R, S)
-- Task: Match items from Column I with items from Column II
+Match the Following (Matrix Match) format:
+- List I: Items P, Q, R, S (or A, B, C, D)
+- List II: Items 1, 2, 3, 4 (or P, Q, R, S)
+- Presented in a tabular
+- Answer is selected via MCQ "Codes" options with \\task and \\ans
 """
 
 from .common import LATEX_FORMATTING_RULES
 
-SYSTEM_PROMPT = """You are an expert Physics educator generating detailed solutions for Match the Following questions.
+SYSTEM_PROMPT = r"""You are an expert Physics educator generating detailed solutions for Match the Following / Matrix Match questions.
 
 ## Your Task
 
-Given a Match the Following problem, generate a solution that:
+Given a matching problem with List I and List II, generate a solution that:
+1. Analyzes each item in List I systematically
+2. Determines the correct match from List II with physics reasoning
+3. States the final matching and selects the correct MCQ code option
 
-1. **Analyzes each item in Column I**: Understand what each item represents
-2. **Analyzes each item in Column II**: Understand what each item represents
-3. **Finds correct matches**: Determine which items from Column I match with Column II
-4. **Explains each match**: Provide reasoning for each pairing
-5. **Concludes clearly**: State all correct matches
+""" + LATEX_FORMATTING_RULES + r"""
 
-""" + LATEX_FORMATTING_RULES + """
+## Solution Structure for Match Questions
 
-## Solution Structure for Match the Following
+The problem presents List I and List II in a tabular, followed by MCQ "Codes" options.
+Your solution should analyze each item and conclude with the correct code option.
 
 ```latex
-\\begin{{solution}}
-\\begin{{align*}}
-\\intertext{{Column I analysis}}
-\\intertext{{A: [description]}}
-\\intertext{{B: [description]}}
-\\intertext{{C: [description]}}
-\\intertext{{D: [description]}}
-\\end{{align*}}
-
-\\begin{{align*}}
-\\intertext{{Column II analysis}}
-\\intertext{{P: [description]}}
-\\intertext{{Q: [description]}}
-\\intertext{{R: [description]}}
-\\intertext{{S: [description]}}
-\\end{{align*}}
-
-\\begin{{align*}}
-\\intertext{{Matching}}
-\\intertext{{A matches with [P/Q/R/S] because [reason]}}
-\\intertext{{B matches with [P/Q/R/S] because [reason]}}
-\\intertext{{C matches with [P/Q/R/S] because [reason]}}
-\\intertext{{D matches with [P/Q/R/S] because [reason]}}
-\\end{{align*}}
-
-Therefore, the correct matches are: A-[X], B-[Y], C-[Z], D-[W].
-\\end{{solution}}
+\begin{solution}
+\begin{align*}
+\intertext{If the blocks are at rest, then for block $m_1$ along the incline, the contact force from block $m_2$ must balance its component of weight along the plane:}
+F &= m_1 g \sin\theta.
+\intertext{For block $m_2$, the friction from the plane must balance its own component of weight plus the force exerted by $m_1$. Therefore,}
+f &= m_2 g \sin\theta + F \\
+  &= (m_1 + m_2) g \sin\theta.
+\intertext{The maximum static friction on block $m_2$ is}
+f_{\max} &= \alpha N = \alpha m_2 g \cos\theta.
+\intertext{For equilibrium,}
+(m_1 + m_2) g \sin\theta &\leq \alpha m_2 g \cos\theta \\
+\tan\theta &\leq \frac{\alpha m_2}{m_1 + m_2} \\
+           &= 0.2.
+\intertext{Thus, for $\theta = 5^\circ$ and $\theta = 10^\circ$, the blocks remain at rest and}
+f &= (m_1 + m_2) g \sin\theta.
+\intertext{For $\theta = 15^\circ$ and $\theta = 20^\circ$, the blocks slide and the friction is kinetic:}
+f &= \alpha m_2 g \cos\theta.
+\intertext{Hence the matching is}
+P &\rightarrow 2,\quad Q \rightarrow 2,\quad R \rightarrow 3,\quad S \rightarrow 3.
+\intertext{Therefore, the correct option is (d).}
+\end{align*}
+\end{solution}
 ```
 
-## Key Points
+## Key Rules
 
-### Systematic Matching
-1. **Understand each item** in both columns
-2. **Find relationships** between items
-3. **Explain each match** with clear reasoning
-4. **List all matches** in conclusion
+### Systematic Analysis
+- Derive the physics for each case (P, Q, R, S)
+- Show the reasoning that leads to each match
+- Use align* with \intertext{} throughout
+- State each match clearly: $P \rightarrow 2$, etc.
+
+### Answer Format
+- End with "Therefore, the correct option is (X)." matching the Codes MCQ
+- The answer is one of the code options (a), (b), (c), (d)
+
+### Solution Style
+- One continuous align* block (unless diagram interrupts)
+- Use \intertext{} for all explanatory text
+- Keep concise — show key reasoning, not every trivial step
+- Variable repetition rule applies
 
 ## Output Format
 
 ```json
 {
-  "solution_latex": "\\begin{solution}...\\end{solution}",
+  "solution_latex": "\\begin{solution}\n...\n\\end{solution}",
   "diagram_requirements": [],
   "reasoning_notes": "Optional notes"
 }
@@ -77,10 +83,7 @@ USER_TEMPLATE = """Generate a complete solution for this Physics Match the Follo
 
 {problem}
 
-Remember to:
-1. Analyze items in both columns
-2. Find correct matches with reasoning
-3. List all matches clearly
+Analyze each item systematically and select the correct code option.
 """
 
 __all__ = ["SYSTEM_PROMPT", "USER_TEMPLATE"]

@@ -1,0 +1,108 @@
+{
+  "_comment": "Quality-first configuration",
+  "_comment2": "Uses best models for maximum quality, cost is secondary",
+  "_comment3": "Recommended for: research papers, textbook content, high-stakes work",
+  
+  "subject": "physics",
+  "debug": false,
+  "log_level": "INFO",
+  
+  "default_model": "gpt-5.4",
+  "default_reasoning_effort": "high",
+  
+  "agents": {
+    "_comment": "Even classification uses quality models",
+    "classifier": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "medium",
+      "_note": "Better classification = better downstream results"
+    },
+    "image_classifier": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "medium"
+    },
+    "diagram_analyzer": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_note": "Detailed analysis improves diagram generation"
+    },
+    
+    "_comment2": "Content generation - highest quality",
+    "scanner": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_note": "Perfect LaTeX extraction"
+    },
+    
+    "_comment3": "Diagram generation - maximum quality",
+    "tikz": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    "fbd": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    "circuit": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    "graph": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    "optics": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    "organic_structure": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    "reaction_mechanism": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    "chemical_equation": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high"
+    },
+    
+    "_comment4": "Solution generation - best possible",
+    "solution": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_note": "Detailed, accurate solutions"
+    },
+    
+    "_comment5": "Variants - creative and accurate",
+    "variant": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_note": "High-quality problem variants"
+    },
+    "alternate": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_note": "Multiple solution approaches"
+    },
+    
+    "_comment6": "Quality checking - thorough validation",
+    "latex_fixer": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "medium",
+      "_note": "Intelligent LaTeX fixes"
+    },
+    "solution_checker": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "high",
+      "_note": "Thorough solution validation"
+    },
+    "format_checker": {
+      "model": "gpt-5.4",
+      "reasoning_effort": "medium"
+    }
+  },
+  
+  "_strategy": "Use gpt-5.4 with high reasoning for everything. Prioritize quality over cost."
+}

@@ -15,118 +15,167 @@ def _get_version():
         from importlib.metadata import version
         return version("vbagent")
     except Exception:
-        return "0.2.1"  # Fallback
+        return "0.3.0"  # Fallback
 
 
-class LazyGroup(click.Group):
-    """A click Group that lazily loads subcommands.
-    
-    This dramatically improves CLI startup time by deferring imports
-    of heavy dependencies (openai, agents, mcp, rich, etc.) until
-    a specific command is actually invoked.
+# Command sections for grouped --help output
+COMMAND_SECTIONS = {
+    "Core Pipeline": [
+        "run", "scan", "classify", "batch",
+    ],
+    "Generate": [
+        "tikz", "fbd", "idea", "concepts", "alternate", "variant", "convert",
+    ],
+    "Quality": [
+        "check", "compile",
+    ],
+    "Manage": [
+        "init", "config", "ref", "cache", "db", "metadata",
+        "export", "dpp", "util",
+    ],
+    "Interfaces": [
+        "chat", "mcp",
+    ],
+    "Paper": [
+        "paper",
+    ],
+    "Utilities": [
+        "extans", "screenshot",
+    ],
+}
+
+# Flat lookup: command_name → section
+_CMD_TO_SECTION = {}
+for _section, _cmds in COMMAND_SECTIONS.items():
+    for _cmd in _cmds:
+        _CMD_TO_SECTION[_cmd] = _section
+
+
+class SectionedGroup(click.Group):
+    """A click Group with lazy loading and sectioned --help output.
+
+    Lazy-loads subcommands for fast startup. Groups commands into
+    labelled sections in --help output for discoverability.
     """
-    
+
     def __init__(self, *args, lazy_subcommands: dict[str, str] | None = None, **kwargs):
         super().__init__(*args, **kwargs)
-        # Map of command name -> module path
         self._lazy_subcommands = lazy_subcommands or {}
-    
+
     def list_commands(self, ctx: click.Context) -> list[str]:
         base = super().list_commands(ctx)
         lazy = sorted(self._lazy_subcommands.keys())
         return base + lazy
-    
+
     def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
         if cmd_name in self._lazy_subcommands:
             return self._lazy_load(cmd_name)
         return super().get_command(ctx, cmd_name)
-    
+
     def _lazy_load(self, cmd_name: str) -> click.Command:
-        # Import the module and get the command
         import importlib
         module_path = self._lazy_subcommands[cmd_name]
         module = importlib.import_module(module_path)
         return getattr(module, cmd_name)
 
+    def format_commands(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+        """Override to group commands by section."""
+        commands = []
+        for subcommand in self.list_commands(ctx):
+            cmd = self.get_command(ctx, subcommand)
+            if cmd is None or cmd.hidden:
+                continue
+            help_text = cmd.get_short_help_str(limit=formatter.width)
+            commands.append((subcommand, help_text))
+
+        if not commands:
+            return
+
+        # Build section → [(name, help)] mapping
+        sectioned: dict[str, list[tuple[str, str]]] = {}
+        unsectioned: list[tuple[str, str]] = []
+
+        for name, help_text in commands:
+            section = _CMD_TO_SECTION.get(name)
+            if section:
+                sectioned.setdefault(section, []).append((name, help_text))
+            else:
+                unsectioned.append((name, help_text))
+
+        # Write sections in defined order
+        for section_name, section_cmds in COMMAND_SECTIONS.items():
+            items = sectioned.get(section_name, [])
+            if items:
+                # Sort by the order defined in COMMAND_SECTIONS
+                order = {cmd: i for i, cmd in enumerate(section_cmds)}
+                items.sort(key=lambda x: order.get(x[0], 999))
+                with formatter.section(section_name):
+                    formatter.write_dl(items)
+
+        if unsectioned:
+            with formatter.section("Other"):
+                formatter.write_dl(unsectioned)
+
 
 # Define lazy subcommands: command_name -> module_path
 LAZY_SUBCOMMANDS = {
-    # Core commands
-    "classify": "vbagent.cli.core.classify",
+    # Core pipeline
+    "run": "vbagent.cli.core.process",
     "scan": "vbagent.cli.core.scan",
-    "process": "vbagent.cli.core.process",
+    "classify": "vbagent.cli.core.classify",
     "batch": "vbagent.cli.core.batch",
-    "init": "vbagent.cli.core.init",
-    # Generation commands
+    # Generate
     "tikz": "vbagent.cli.generation.tikz",
     "fbd": "vbagent.cli.generation.fbd",
     "idea": "vbagent.cli.generation.idea",
+    "concepts": "vbagent.cli.generation.concepts",
     "alternate": "vbagent.cli.generation.alternate",
     "variant": "vbagent.cli.generation.variant",
     "convert": "vbagent.cli.generation.convert",
-    # Compilation commands
-    "compile": "vbagent.cli.compilation.compile_main",
-    # Quality commands
+    # Quality
     "check": "vbagent.cli.quality.check",
-    # Management commands
-    "ref": "vbagent.cli.management.ref",
+    "compile": "vbagent.cli.compilation.compile_main",
+    # Manage
+    "init": "vbagent.cli.core.init",
     "config": "vbagent.cli.management.config",
-    "util": "vbagent.cli.management.util",
-    "metadata": "vbagent.cli.management.metadata",
-    "dpp": "vbagent.cli.management.dpp",
-    "export": "vbagent.cli.management.export",
-    "extans": "vbagent.cli.management.extans",
-    "db": "vbagent.cli.management.db",
-    "screenshot": "vbagent.cli.management.screenshot",
+    "ref": "vbagent.cli.management.ref",
     "cache": "vbagent.cli.cache.cache_commands",
-    # Interface commands
+    "db": "vbagent.cli.management.db",
+    "metadata": "vbagent.cli.management.metadata",
+    "export": "vbagent.cli.management.export",
+    "dpp": "vbagent.cli.management.dpp",
+    "util": "vbagent.cli.management.util",
+    # Interfaces
     "chat": "vbagent.cli.interfaces.chat",
     "mcp": "vbagent.cli.interfaces.mcp",
+    # Paper
+    "paper": "vbagent.cli.paper.paper_commands",
+    # Utilities
+    "extans": "vbagent.cli.management.extans",
+    "screenshot": "vbagent.cli.management.screenshot",
 }
 
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 
-@click.group(cls=LazyGroup, lazy_subcommands=LAZY_SUBCOMMANDS, context_settings=CONTEXT_SETTINGS)
+@click.group(cls=SectionedGroup, lazy_subcommands=LAZY_SUBCOMMANDS, context_settings=CONTEXT_SETTINGS)
 @click.version_option(version=_get_version(), prog_name="vbagent")
 def main():
     """VBAgent - Multi-subject question processing pipeline.
-    
-    A multi-agent CLI system for processing question images across physics,
-    chemistry, and mathematics. Supports classification, scanning, diagram
-    generation, variant creation, and format conversion.
-    
+
+    Process question images across physics, chemistry, and mathematics
+    with AI-powered classification, scanning, diagram generation,
+    solution orchestration, and variant creation.
+
     \b
-    Commands:
-        init       - Initialize workspace config (.vbagent.json)
-        chat       - Interactive conversational interface
-        mcp        - Start MCP server for external agents
-        metadata   - Manage question bank metadata
-        dpp        - Create Daily Practice Problem sets
-        export     - Export LaTeX files in different formats
-        extans     - Extract answers from LaTeX problem files
-        db         - Database management for question bank
-        screenshot - Manage screenshot save location
-        cache      - Manage pipeline cache and metadata
-        process    - Full pipeline orchestration
-        classify   - Stage 1: Classify question image and detect subject
-        scan       - Stage 2: Extract LaTeX from image
-        tikz       - Generate TikZ code for diagrams
-        fbd        - Generate Free Body Diagram TikZ code (physics)
-        idea       - Extract concepts and ideas
-        alternate  - Generate alternative solutions
-        variant    - Generate problem variants
-        convert    - Convert between question formats
-        compile    - Generate main LaTeX file for compilation
-        batch      - Batch processing with resume capability
-        check      - QA review with interactive approval
-        ref        - Manage reference context files
-        config     - Configure models and settings
-        util       - File utilities (rename, count, clean)
+    Quick Start:
+        vbagent run -i question.png          # Full pipeline
+        vbagent scan -i question.png         # Extract LaTeX only
+        vbagent classify -i question.png     # Classify only
+        vbagent batch init -i ./images       # Batch processing
     """
     # Disable tracing early (before agents SDK import) for non-OpenAI providers.
-    # The SDK initializes tracing at import time, so the env var must be set first.
     from vbagent.config import get_config
     cfg = get_config()
     if cfg.base_url:

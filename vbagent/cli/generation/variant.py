@@ -14,7 +14,7 @@ from typing import Optional
 
 import click
 
-from vbagent.utils.tex_parser import parse_tex_file, extract_items
+from vbagent.tex import parse_tex_file, extract_items
 from ..common import _get_console, _get_panel
 
 

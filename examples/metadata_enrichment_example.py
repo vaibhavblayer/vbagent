@@ -132,11 +132,11 @@ def example_config():
     print(f"\nTaxonomy enabled: {config.enable_taxonomy}")
     print(f"Difficulty enabled: {config.enable_difficulty}")
     print(f"Run in parallel: {config.run_metadata_parallel}")
-    print(f"\nTaxonomy classifier model: {config.taxonomy_classifier.model}")
-    print(f"Taxonomy reasoning: {config.taxonomy_classifier.reasoning_effort}")
+    print(f"\nTaxonomy classifier model: {config.get_model('taxonomy_classifier')}")
+    print(f"Taxonomy reasoning: {config.get_agent_config('taxonomy_classifier').reasoning_effort}")
     print(f"Taxonomy confidence threshold: {config.taxonomy_confidence_threshold}")
-    print(f"\nDifficulty assessor model: {config.difficulty_assessor.model}")
-    print(f"Difficulty reasoning: {config.difficulty_assessor.reasoning_effort}")
+    print(f"\nDifficulty assessor model: {config.get_model('difficulty_assessor')}")
+    print(f"Difficulty reasoning: {config.get_agent_config('difficulty_assessor').reasoning_effort}")
 
 
 if __name__ == "__main__":

@@ -55,4 +55,10 @@ You MUST output a JSON object with this exact structure:
 ```
 """
 
-__all__ = ["SYSTEM_PROMPT"]
+USER_TEMPLATE = """Generate a complete solution for this mathematics MCQ (single correct) problem:
+
+{problem}
+
+Identify the correct option and provide clear reasoning."""
+
+__all__ = ["SYSTEM_PROMPT", "USER_TEMPLATE"]

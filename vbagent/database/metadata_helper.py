@@ -6,6 +6,7 @@ from vbagent.models.classification import (
     DifficultyAssessment,
     ClassificationResult,
 )
+from vbagent.models.metadata import TaxonomyClassification
 from vbagent.database.store import QuestionRecord
 
 
@@ -13,23 +14,15 @@ def populate_diagram_metadata(
     record: QuestionRecord,
     diagram: DiagramAnalysis
 ) -> QuestionRecord:
-    """Populate record with Agent 2 (Diagram Analysis) metadata.
-    
-    Args:
-        record: QuestionRecord to update
-        diagram: DiagramAnalysis from Agent 2
-        
-    Returns:
-        Updated QuestionRecord
-    """
+    """Populate record with Agent 2 (Diagram Analysis) metadata."""
     record.diagram_category = diagram.diagram_category
     record.diagram_complexity = diagram.diagram_complexity
     record.diagram_elements = diagram.diagram_elements
     record.suggested_tikz_agent = diagram.suggested_tikz_agent
-    
+
     if diagram.tikz_requirements:
         record.tikz_libraries = diagram.tikz_requirements.libraries
-    
+
     return record
 
 
@@ -37,15 +30,7 @@ def populate_difficulty_metadata(
     record: QuestionRecord,
     difficulty: DifficultyAssessment
 ) -> QuestionRecord:
-    """Populate record with Agent 3 (Difficulty Assessment) metadata.
-    
-    Args:
-        record: QuestionRecord to update
-        difficulty: DifficultyAssessment from Agent 3
-        
-    Returns:
-        Updated QuestionRecord
-    """
+    """Populate record with Agent 3 (Difficulty Assessment) metadata."""
     record.difficulty = difficulty.difficulty
     record.difficulty_score = difficulty.difficulty_score
     record.difficulty_reasoning = difficulty.difficulty_reasoning
@@ -58,74 +43,66 @@ def populate_difficulty_metadata(
     record.required_formulas = difficulty.required_formulas
     record.learning_objectives = difficulty.learning_objectives
     record.tags_auto = difficulty.tags_auto
-    
+
     if difficulty.exam_relevance:
         record.exam_relevance = {
             'jee_main': difficulty.exam_relevance.jee_main,
             'jee_advanced': difficulty.exam_relevance.jee_advanced,
             'neet': difficulty.exam_relevance.neet,
         }
-    
+
+    return record
+
+
+def populate_taxonomy_metadata(
+    record: QuestionRecord,
+    taxonomy: TaxonomyClassification
+) -> QuestionRecord:
+    """Populate record with Stage 4 (Taxonomy) metadata."""
+    record.chapter = taxonomy.chapter
+    record.topic = taxonomy.topic
+    record.subtopic = taxonomy.subtopic
+    record.key_concepts = taxonomy.key_concepts or []
     return record
 
 
 def populate_from_classification_result(
     record: QuestionRecord,
-    classification: ClassificationResult
+    classification: ClassificationResult,
+    difficulty: Optional[DifficultyAssessment] = None,
+    taxonomy: Optional[TaxonomyClassification] = None,
 ) -> QuestionRecord:
-    """Populate record from complete ClassificationResult (v2).
-    
+    """Populate record from ClassificationResult + optional difficulty/taxonomy.
+
     Args:
         record: QuestionRecord to update
-        classification: Complete ClassificationResult with all agent data
-        
-    Returns:
-        Updated QuestionRecord
+        classification: Classification with core + diagram data
+        difficulty: Optional DifficultyAssessment from Agent 3
+        taxonomy: Optional TaxonomyClassification from Stage 4
     """
-    # Basic classification (Agent 1/4)
+    # Core classification (Agent 1/4)
     record.subject = classification.subject
     record.question_type = classification.question_type
     record.has_diagram = classification.has_diagram
     record.confidence = classification.confidence
-    record.chapter = classification.chapter
-    record.topic = classification.topic
-    record.subtopic = classification.subtopic
-    record.num_options = classification.num_options
-    record.key_concepts = classification.key_concepts or []
-    record.requires_calculus = classification.requires_calculus
-    
-    # Agent 2 metadata (if available)
+
+    # Agent 2 diagram metadata (if available)
     if classification.diagram_category:
         record.diagram_category = classification.diagram_category
         record.diagram_complexity = classification.diagram_complexity
         record.diagram_elements = classification.diagram_elements or []
         record.suggested_tikz_agent = classification.suggested_tikz_agent
         record.diagram_type = classification.diagram_type
-        
+
         if classification.tikz_requirements:
             record.tikz_libraries = classification.tikz_requirements.libraries or []
-    
-    # Agent 3 metadata (if available — check difficulty_score as primary indicator
-    # since difficulty string could be None even when assessment was done)
-    if classification.difficulty or classification.difficulty_score is not None:
-        record.difficulty = classification.difficulty
-        record.difficulty_score = classification.difficulty_score
-        record.difficulty_reasoning = classification.difficulty_reasoning
-        record.expected_solve_time_minutes = classification.expected_solve_time_minutes
-        record.expected_error_rate = classification.expected_error_rate
-        record.prerequisite_concepts = classification.prerequisite_concepts or []
-        record.common_mistakes = classification.common_mistakes or []
-        record.cognitive_level = classification.cognitive_level
-        record.solution_approach = classification.solution_approach or []
-        record.required_formulas = classification.required_formulas or []
-        record.learning_objectives = classification.learning_objectives or []
-        record.tags_auto = classification.tags_auto or []
-        
-        if classification.exam_relevance:
-            record.exam_relevance = {
-                'jee_main': classification.exam_relevance.jee_main,
-                'jee_advanced': classification.exam_relevance.jee_advanced,
-                'neet': classification.exam_relevance.neet,
-            }
-    
+
+    # Agent 3 difficulty (if provided)
+    if difficulty:
+        populate_difficulty_metadata(record, difficulty)
+
+    # Stage 4 taxonomy (if provided)
+    if taxonomy:
+        populate_taxonomy_metadata(record, taxonomy)
+
     return record

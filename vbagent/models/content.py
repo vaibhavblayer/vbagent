@@ -21,13 +21,39 @@ class ScanResult(BaseModel):
 class IdeaResult(BaseModel):
     """Result from the Idea Agent.
     
-    Contains extracted physics concepts and problem-solving ideas.
+    Contains extracted concepts and problem-solving ideas.
     Used as output_type for structured outputs with openai-agents SDK.
     """
-    concepts: list[str] = Field(default_factory=list, description="Primary physics concepts")
-    formulas: list[str] = Field(default_factory=list, description="Key formulas used")
+    topic: str = Field(default="", description="Primary topic (e.g., Mechanics, Thermodynamics, Organic Chemistry)")
+    subtopic: str = Field(default="", description="Subtopic (e.g., Collision, Carnot Cycle, Aldol Condensation)")
+    concepts: list[str] = Field(default_factory=list, description="Primary concepts tested")
+    formulas: list[str] = Field(default_factory=list, description="Key formulas used (LaTeX)")
     techniques: list[str] = Field(default_factory=list, description="Problem-solving techniques")
     difficulty_factors: list[str] = Field(default_factory=list, description="What makes this problem difficult")
+
+
+class ConceptEntry(BaseModel):
+    """A single concept in the concept sheet."""
+    name: str = Field(description="Concept name")
+    description: str = Field(description="One-line description")
+    formulas: list[str] = Field(default_factory=list, description="Key formulas (LaTeX)")
+    frequency: int = Field(default=1, description="Number of problems using this concept")
+    problem_refs: list[str] = Field(default_factory=list, description="Problem filenames referencing this concept")
+    needs_diagram: bool = Field(default=False, description="Whether this concept benefits from a TikZ diagram")
+    diagram_description: str = Field(default="", description="Description for TikZ diagram generation")
+
+
+class ConceptGroup(BaseModel):
+    """A group of concepts under a subtopic."""
+    subtopic: str = Field(description="Subtopic name")
+    entries: list[ConceptEntry] = Field(default_factory=list)
+
+
+class ConceptSheet(BaseModel):
+    """Structured concept sheet output from the concept agent."""
+    title: str = Field(description="Sheet title (e.g., 'Mechanics — Collision')")
+    topic: str = Field(description="Main topic")
+    groups: list[ConceptGroup] = Field(default_factory=list, description="Concepts grouped by subtopic")
 
 
 class CrossTopicAnalysis(BaseModel):

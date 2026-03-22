@@ -2,40 +2,154 @@
 
 # LaTeX formatting rules for mathematics solutions
 LATEX_FORMATTING_RULES = """
-## LaTeX Formatting Standards
+## LaTeX Formatting Standards (CRITICAL - Follow Exactly)
 
-### Solution Environment
+### Solution Environment Structure
 - Use \\begin{solution}...\\end{solution} for all solutions
 - Place align* directly inside solution (no other environments between)
 - Use \\intertext{} for explanations within align*
+- Multiple align* blocks ONLY when diagram/table interrupts flow
+- NO blank lines inside align*
+- Keep solution CONCISE - show key steps, omit trivial algebra
+- Do NOT use \\boxed{} for final answers - just plain result
 
-### Mathematical Notation
-- Use proper LaTeX commands: \\frac{}{}, \\sqrt{}, \\sin, \\cos, etc.
-- Use \\text{} for text within math mode
-- Use proper spacing: \\, for thin space, \\quad for larger space
-- Use \\left and \\right for auto-sizing delimiters
+### Align Environment Rules (CRITICAL)
 
-### Align Environment Rules
-1. **One step per line** - don't combine multiple operations
-2. **Variable repetition rule**: 
-   - First line: variable = expression
-   - Subsequent lines: &= expression (no variable)
-3. **NO blank lines** inside align*
-4. **Use \\intertext{}** for text between steps
-5. **Math in intertext** uses $...$
-
-### Example
+**1. One step per line** - don't combine multiple operations
 ```latex
-\\begin{solution}
+% GOOD:
 \\begin{align*}
-\\intertext{Given: $a = 2$, $b = 3$. Find $c$}
 c &= \\sqrt{a^2 + b^2} \\\\
   &= \\sqrt{2^2 + 3^2} \\\\
   &= \\sqrt{4 + 9} \\\\
   &= \\sqrt{13}
 \\end{align*}
+
+% BAD:
+\\begin{align*}
+c &= \\sqrt{a^2 + b^2} = \\sqrt{2^2 + 3^2} = \\sqrt{13}
+\\end{align*}
+```
+
+**2. Variable repetition rule (CRITICAL):**
+- First line: variable = expression
+- Intermediate lines: &= expression (NO variable)
+- Last line: can have variable for final answer
+
+```latex
+% GOOD:
+\\begin{align*}
+f(x) &= x^2 + 2x + 1 \\\\
+     &= (x + 1)^2 \\\\
+     &= (x + 1)(x + 1)
+\\end{align*}
+
+% BAD (repetitive):
+\\begin{align*}
+f(x) &= x^2 + 2x + 1 \\\\
+f(x) &= (x + 1)^2 \\\\
+f(x) &= (x + 1)(x + 1)
+\\end{align*}
+```
+
+**3. NO blank lines** inside align*
+
+**4. Use \\intertext{}** for text between steps
+- Math within \\intertext{} uses $...$
+- NO \\text{...} inside \\intertext{}
+
+```latex
+\\begin{align*}
+\\intertext{Given: $a = 2$, $b = 3$. Find $c$ using Pythagorean theorem}
+c &= \\sqrt{a^2 + b^2} \\\\
+  &= \\sqrt{2^2 + 3^2} \\\\
+  &= \\sqrt{13}
+\\intertext{Therefore, $c = \\sqrt{13} \\approx 3.61$}
+\\end{align*}
+```
+
+**5. Alignment at equals sign** using &
+
+### Mathematical Notation
+- Fractions: \\frac{a}{b} - NEVER \\tfrac
+- Parentheses: \\left( ... \\right), \\left[ ... \\right], \\left| ... \\right|
+- NO \\bigl, \\bigr, \\Bigl, \\Bigr sizing commands
+- Trigonometric functions: \\sin, \\cos, \\tan (with backslash)
+- Logarithms: \\log, \\ln
+- Limits: \\lim_{x \\to a}
+- Integrals: \\int_{a}^{b}
+- Summations: \\sum_{i=1}^{n}
+
+### Inline TikZ in Solutions (Encouraged)
+
+For SIMPLE diagrams, write the TikZ code directly in the solution instead of
+using DIAGRAM_REQUIREMENT placeholders. This produces better, more contextual results.
+
+**Write TikZ directly when:**
+- Simple function sketches (parabola, line, basic curve)
+- Number lines for inequalities or intervals
+- Quick geometric figures (triangle with labels, circle with tangent)
+- Simple coordinate geometry (point, line, distance)
+- Venn diagrams with 2 sets
+
+**Use DIAGRAM_REQUIREMENT placeholder when:**
+- Complex function graphs needing pgfplots (multiple curves, shading, legends)
+- Detailed geometric constructions with many elements
+- 3D geometry projections
+
+**Example: Simple parabola sketch inline**
+```latex
+\\begin{center}
+\\begin{tikzpicture}
+\\draw[thin, ->] (-2,0) -- (2,0) node[right] {$x$};
+\\draw[thin, ->] (0,-0.5) -- (0,3) node[above] {$y$};
+\\draw[thick, domain=-1.5:1.5, samples=40] plot (\\x, {\\x*\\x});
+\\fill (0,0) circle (2pt) node[below left, font=\\tiny] {$O$};
+\\fill (1,1) circle (2pt) node[right, font=\\tiny] {$(1,1)$};
+\\end{tikzpicture}
+\\end{center}
+```
+
+**Example: Number line for inequality inline**
+```latex
+\\begin{center}
+\\begin{tikzpicture}
+\\draw[<->] (-3,0) -- (3,0);
+\\foreach \\x in {-2,-1,0,1,2}
+    \\draw (\\x,0.1) -- (\\x,-0.1) node[below, font=\\tiny] {$\\x$};
+\\draw (1,0) circle (2pt);
+\\draw[->] (1,0) -- (2.8,0);
+\\node[below, font=\\footnotesize] at (0,-0.5) {$x > 1$};
+\\end{tikzpicture}
+\\end{center}
+```
+
+**TikZ style rules for inline diagrams:**
+- NO colors — use solid/dashed/dotted line styles
+- NO inline `>=latex` or `\\tikzset` — already set globally
+- Use `thin, ->` for axes, `thick` for main curves
+- Use `font=\\tiny` or `font=\\footnotesize` for labels
+- Wrap in `\\begin{center}...\\end{center}`
+
+### MCQ Solutions
+Must end with: "Therefore, the correct option is (X)."
+
+```latex
+\\begin{solution}
+\\begin{align*}
+\\intertext{Brief analysis}
+% ... steps ...
+\\end{align*}
+
+Therefore, the correct option is (b).
 \\end{solution}
 ```
+
+### Solution Quality
+- Show ALL steps, even "obvious" ones
+- Keep solutions CONCISE - key steps only
+- One operation per line
+- Explain the reasoning, not just the calculation
 """
 
 # Diagram identification guidelines

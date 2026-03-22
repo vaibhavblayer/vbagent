@@ -12,7 +12,7 @@ from vbagent.agents.base import (
     create_image_message,
     run_agent_sync,
 )
-from vbagent.prompts.diagram.tikz import SYSTEM_PROMPT, USER_TEMPLATE
+from vbagent.prompts.diagram.physics.generic import SYSTEM_PROMPT, USER_TEMPLATE
 from vbagent.references.store import ReferenceStore
 from vbagent.references.context import get_context_prompt_section
 from vbagent.utils.latex import clean_latex_output
@@ -85,6 +85,10 @@ def create_tikz_agent(use_context: bool = True, classification: "ClassificationR
         Configured Agent instance for TikZ generation
     """
     prompt = SYSTEM_PROMPT
+    
+    # Inject shared style discipline rules
+    from vbagent.prompts.diagram._style_discipline import STYLE_DISCIPLINE
+    prompt = prompt + "\n" + STYLE_DISCIPLINE
     
     # Add metadata-based TikZ context if classification provided
     if use_context and classification:
@@ -177,7 +181,7 @@ def generate_tikz(
         FileNotFoundError: If image_path is provided but file doesn't exist
         ValueError: If neither description, image_path, nor problem_text is provided
     """
-    from vbagent.prompts.diagram.tikz import USER_TEMPLATE, USER_TEMPLATE_FROM_PROBLEM
+    from vbagent.prompts.diagram.physics.generic import USER_TEMPLATE, USER_TEMPLATE_FROM_PROBLEM
     
     # Validate inputs
     if not description and not image_path and not problem_text:
@@ -203,8 +207,8 @@ def generate_tikz(
     else:
         message = user_message
     
-    # Run the agent
-    raw_result = run_agent_sync(agent, message, show_spinner=show_spinner)
+    # Run the agent (10 min timeout for complex diagrams)
+    raw_result = run_agent_sync(agent, message, show_spinner=show_spinner, timeout=600)
     
     # Clean up markdown artifacts from LLM output
     return clean_latex_output(raw_result)

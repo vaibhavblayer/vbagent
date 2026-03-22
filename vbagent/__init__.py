@@ -12,7 +12,7 @@ This package provides agents for processing physics questions:
 Usage as a library:
     from vbagent import classify, scan, generate_variant
     from vbagent.models import ClassificationResult, ScanResult
-    from vbagent.config import get_config, set_config
+    from vbagent.config import get_config, set_config, AgentModelConfig
 
     # Classify an image
     result = classify("question.png")
@@ -28,7 +28,7 @@ Usage as a library:
     
     # Configure models
     config = get_config()
-    config.scanner.model = "gpt-5.2"
+    config.agents["scanner"] = AgentModelConfig(model="gpt-5.2")
     set_config(config)
 
 Submodule access:
@@ -48,7 +48,6 @@ if TYPE_CHECKING:
     from vbagent.agents import (
         # Classification
         classify,
-        classify_structural,
         # Scanning
         scan,
         scan_with_type,
@@ -101,7 +100,6 @@ if TYPE_CHECKING:
     )
     from vbagent.models import (
         ClassificationResult,
-        StructuralClassification,
         ScanResult,
         IdeaResult,
         PipelineResult,
@@ -109,11 +107,7 @@ if TYPE_CHECKING:
         ReviewStats,
         Suggestion,
         ReviewIssueType,
-        SolutionPlan,
-        AgentCall,
-        AgentOutput,
-        SolutionResult,
-        # Metadata models (NEW)
+        # Metadata models
         TaxonomyClassification,
         EnrichedMetadata,
         # Difficulty from classification
@@ -137,7 +131,6 @@ __all__ = [
     "__version__",
     # Classification
     "classify",
-    "classify_structural",
     # Scanning
     "scan",
     "scan_with_type",
@@ -189,7 +182,6 @@ __all__ = [
     "create_image_message",
     # Models
     "ClassificationResult",
-    "StructuralClassification",
     "ScanResult",
     "IdeaResult",
     "PipelineResult",
@@ -197,11 +189,7 @@ __all__ = [
     "ReviewStats",
     "Suggestion",
     "ReviewIssueType",
-    "SolutionPlan",
-    "AgentCall",
-    "AgentOutput",
-    "SolutionResult",
-    # Metadata models (NEW)
+    # Metadata models
     "TaxonomyClassification",
     "EnrichedMetadata",
     "DifficultyAssessment",
@@ -224,7 +212,6 @@ def __getattr__(name: str):
     # Agent functions
     if name in (
         "classify",
-        "classify_structural",
         "scan", "scan_with_type",
         "classify_taxonomy", "assess_difficulty", "enrich_metadata",
         "extract_ideas", "generate_idea_latex",
@@ -254,10 +241,8 @@ def __getattr__(name: str):
     # Models
     if name in (
         "ClassificationResult", "ScanResult", "IdeaResult",
-        "StructuralClassification",
         "PipelineResult", "ReviewResult", "ReviewStats",
         "Suggestion", "ReviewIssueType",
-        "SolutionPlan", "AgentCall", "AgentOutput", "SolutionResult",
         "TaxonomyClassification", "DifficultyAssessment", "EnrichedMetadata",
     ):
         from vbagent import models
