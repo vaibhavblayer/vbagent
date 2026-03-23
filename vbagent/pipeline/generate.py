@@ -158,11 +158,14 @@ def _infer_diagram_type(description: str, subject: str) -> str | None:
             "circuit", "resistor", "capacitor", "inductor", "battery",
             "emf", "rail", "solenoid", "coil", "wheatstone", "potentiometer",
             "galvanometer", "ammeter", "voltmeter", "transformer", "diode",
+            "shunt", "rheostat", "switch", "wire loop", "current loop",
+            "cyclotron", "toroid", "helmholtz",
         ]):
             return "circuit"
         if any(kw in desc for kw in [
             "free body", "fbd", "force diagram", "block", "pulley",
             "incline", "wedge", "spring", "tension", "friction",
+            "equilibrium", "rod", "hinge", "normal force",
         ]):
             return "fbd"
         if any(kw in desc for kw in [
@@ -172,8 +175,17 @@ def _infer_diagram_type(description: str, subject: str) -> str | None:
             return "optics"
         if any(kw in desc for kw in [
             "graph", "plot", "v-t", "x-t", "a-t", "curve", "axes",
+            "b vs r", "b-r", "flux vs", "variation", "dependence",
+            "vs distance", "vs time", "vs position",
         ]):
             return "graph"
+        # Magnetic field diagrams (field lines, cross-section views)
+        if any(kw in desc for kw in [
+            "field lines", "magnetic field", "cross section",
+            "electron orbit", "circular orbit", "charge in field",
+            "velocity selector", "crossed fields",
+        ]):
+            return "generic"  # these are geometric/field diagrams, generic is fine
 
     elif subject_lower == "chemistry":
         if any(kw in desc for kw in [

@@ -167,7 +167,12 @@ def generate_combined_problem(
     # 3. TikZ generation (if needed)
     tikz_code = None
     if with_diagram and result.diagram_description:
-        tikz_code = _generate_tikz(result.diagram_description, subject, console)
+        tikz_code = _generate_tikz(
+            result.diagram_description,
+            subject,
+            problem_tex=result.problem_latex or "",
+            console=console,
+        )
 
     # 4. Determine output path
     primary_topic = topic or _infer_primary_topic(candidates)
@@ -280,11 +285,22 @@ def generate_batch(
 # ---------------------------------------------------------------------------
 
 def _generate_tikz(
-    description: str, subject: str, console: object | None = None
+    description: str,
+    subject: str,
+    problem_tex: str = "",
+    console: object | None = None,
 ) -> str | None:
-    """Generate TikZ code using existing TikZ router."""
+    """Generate TikZ code using existing TikZ router.
+
+    Infers the diagram type from the description so the router picks
+    a specialised agent (circuit, optics, graph, fbd …) instead of
+    falling back to generic.
+    """
     try:
-        from vbagent.pipeline.generate import _generate_tikz_for_problem
+        from vbagent.pipeline.generate import (
+            _generate_tikz_for_problem,
+            _infer_diagram_type,
+        )
 
         # Use a no-op console if none provided
         class _NoopConsole:
@@ -292,12 +308,16 @@ def _generate_tikz(
 
         c = console if console is not None else _NoopConsole()
 
+        # Infer diagram type from description + problem text for better routing
+        combined_hint = f"{description} {problem_tex}".strip()
+        sketch_type = _infer_diagram_type(combined_hint, subject)
+
         return _generate_tikz_for_problem(
             diagram_desc=description,
             subject=subject,
-            problem_tex="",
+            problem_tex=problem_tex,
             image_path=None,
-            sketch_type=None,
+            sketch_type=sketch_type,
             console=c,
         )
     except Exception:
