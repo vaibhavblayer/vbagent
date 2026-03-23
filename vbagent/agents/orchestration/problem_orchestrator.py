@@ -25,6 +25,25 @@ from vbagent.cli.common import format_latex, _get_console, _get_panel
 from vbagent.references.samples import get_sample
 
 
+def _isolate_http_client():
+    """Reset the shared httpx client so this thread gets its own instance.
+
+    The openai-agents SDK uses a global singleton ``httpx.AsyncClient``.
+    When multiple threads each run their own ``asyncio`` event loop (via
+    ``Runner.run_sync``), sharing a single ``AsyncClient`` across loops
+    causes connection-pool deadlocks — one thread's request blocks the
+    other indefinitely.
+
+    Calling this at the start of each worker thread forces a fresh client
+    bound to that thread's event loop.
+    """
+    try:
+        import agents.models.openai_provider as _provider
+        _provider._http_client = None
+    except Exception:
+        pass
+
+
 class ProblemResult:
     """Result from the problem orchestrator."""
 
@@ -187,6 +206,7 @@ class ProblemOrchestrator:
         def do_scan():
             from vbagent.ui.logging import set_task_tag
             set_task_tag("Scan")
+            _isolate_http_client()
             start_times["scan"] = time.time()
             state["scan"]["status"] = "running"
             if scan_cached:
@@ -216,6 +236,7 @@ class ProblemOrchestrator:
         def do_tikz():
             from vbagent.ui.logging import set_task_tag
             set_task_tag("TikZ")
+            _isolate_http_client()
             start_times["tikz"] = time.time()
             state["tikz"]["status"] = "running"
             try:
@@ -245,6 +266,7 @@ class ProblemOrchestrator:
         def do_options():
             from vbagent.ui.logging import set_task_tag
             set_task_tag("Options")
+            _isolate_http_client()
             start_times["options"] = time.time()
             state["options"]["status"] = "running"
             try:

@@ -231,6 +231,7 @@ def process_image_unified(
     problem_id: Optional[str] = None,
     use_orchestrator: bool = False,
     generate_solution: bool = False,
+    quiet: bool = False,
 ) -> "PipelineResult":
     """Process an image using the unified pipeline (fewer API calls).
 
@@ -238,6 +239,9 @@ def process_image_unified(
     1. Unified Classifier (1 call → subject + type + diagram analysis)
     2. Problem Orchestrator (scan ∥ tikz, deterministic routing)
     3. Optional: Solution Orchestrator, Ideas, Alternates, Variants
+
+    Args:
+        quiet: If True, suppress all console output (used in parallel mode).
     """
     from vbagent.cache import PipelineCache
     from vbagent.models.pipeline import PipelineResult
@@ -249,7 +253,13 @@ def process_image_unified(
     from vbagent.agents.classification.unified_classifier import to_primary, to_diagram_analysis
 
     variant_types = variant_types or []
-    console = _get_console()
+    # In quiet mode, use a devnull console to suppress all output
+    if quiet:
+        import io
+        from rich.console import Console
+        console = Console(file=io.StringIO(), stderr=False)
+    else:
+        console = _get_console()
 
     cache = PipelineCache() if use_cache else None
     if problem_id is None:

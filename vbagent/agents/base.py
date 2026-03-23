@@ -302,14 +302,21 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
                             f"{agent.name} timed out after {timeout:.0f}s (model: {model})"
                         )
     else:
-        thread = threading.Thread(target=run_in_thread, daemon=True)
-        thread.start()
-        while thread.is_alive():
-            thread.join(timeout=0.1)
-            if timeout and (time.time() - start_time) > timeout:
-                raise TimeoutError(
-                    f"{agent.name} timed out after {timeout:.0f}s (model: {model})"
-                )
+        # No spinner — call Runner.run_sync directly on the current thread.
+        # This is critical for parallel pipelines: each worker thread gets its
+        # own asyncio event loop and its own httpx connection, avoiding the
+        # shared-http-client deadlock that occurs when multiple inner threads
+        # all share the same global AsyncClient singleton.
+        try:
+            result_holder["result"] = Runner.run_sync(agent, input=input_text)
+        except Exception as e:
+            result_holder["error"] = e
+        # Check timeout (approximate — we can't interrupt a blocking call,
+        # but we can raise after it returns)
+        if timeout and (time.time() - start_time) > timeout:
+            raise TimeoutError(
+                f"{agent.name} timed out after {timeout:.0f}s (model: {model})"
+            )
     
     if result_holder["error"]:
         log_agent_error(agent.name, result_holder["error"])

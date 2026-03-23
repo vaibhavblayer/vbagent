@@ -38,6 +38,17 @@ from vbagent.cli.common import (
 from vbagent.tex import parse_tex_file
 
 
+def _parse_parallel(value: str, image_count: int) -> int:
+    """Parse --parallel value: integer or 'auto'."""
+    if value.strip().lower() == "auto":
+        return min(image_count, 5)
+    try:
+        n = int(value)
+        return min(max(1, n), image_count, 20)
+    except ValueError:
+        return 1
+
+
 def _process_images_parallel(
     image_paths: list[str],
     variant_types: list[str],
@@ -54,18 +65,32 @@ def _process_images_parallel(
     do_compile: bool,
     verbose_compile: bool,
 ) -> tuple[list, int]:
-    """Process multiple images in parallel using ThreadPoolExecutor."""
+    """Process multiple images in parallel using ThreadPoolExecutor.
+
+    Features:
+    - Quiet mode: suppresses per-image console output to avoid garbled output
+    - Per-image progress tracking with worker assignment
+    - API rate limiting via semaphore (max 6 concurrent API calls)
+    - Time tracking per image
+    - Summary table at the end
+    """
     import concurrent.futures
     import threading
-    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+    import time
+    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn
+    from rich.table import Table
 
     results = []
     output_path = Path(output_dir)
     lock = threading.Lock()
-    completed = {"success": 0, "failed": 0}
+    # Track per-image results for summary
+    image_results: list[dict] = []
 
-    def process_single_image(img_path: str):
+    def process_single_image(img_path: str, worker_id: int):
+        img_name = Path(img_path).name
+        t0 = time.time()
         try:
+            # quiet=True suppresses all per-image console output
             result = process_image_unified(
                 image_path=img_path,
                 variant_types=variant_types,
@@ -77,6 +102,7 @@ def _process_images_parallel(
                 use_cache=use_cache,
                 use_orchestrator=solve,
                 generate_solution=solve,
+                quiet=True,
             )
             if do_compile:
                 from vbagent.compile import compile_and_retry
@@ -92,41 +118,88 @@ def _process_images_parallel(
                     )
             base_name = get_base_name(result.source_path)
             save_pipeline_result_organized(result, output_path, base_name)
-            return (img_path, result, None)
+            elapsed = time.time() - t0
+            return (img_path, result, None, elapsed, worker_id)
         except Exception as e:
-            return (img_path, None, str(e))
+            elapsed = time.time() - t0
+            return (img_path, None, str(e), elapsed, worker_id)
 
     with Progress(
-        SpinnerColumn(), TextColumn("[progress.description]{task.description}"),
-        BarColumn(), TaskProgressColumn(), console=console,
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        TimeElapsedColumn(),
+        console=console,
     ) as progress:
-        task = progress.add_task(f"[cyan]Processing {len(image_paths)} images...", total=len(image_paths))
+        task = progress.add_task(
+            f"[cyan]Processing {len(image_paths)} images ({num_workers} workers)...",
+            total=len(image_paths),
+        )
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
-            future_to_path = {executor.submit(process_single_image, p): p for p in image_paths}
-            for future in concurrent.futures.as_completed(future_to_path):
-                img_path = future_to_path[future]
+            # Assign worker IDs round-robin
+            future_to_info = {}
+            for idx, p in enumerate(image_paths):
+                worker_id = (idx % num_workers) + 1
+                future = executor.submit(process_single_image, p, worker_id)
+                future_to_info[future] = (p, worker_id)
+
+            for future in concurrent.futures.as_completed(future_to_info):
+                img_path, worker_id = future_to_info[future]
                 img_name = Path(img_path).name
                 try:
-                    path, result, error = future.result()
+                    path, result, error, elapsed, wid = future.result()
                     if error:
                         with lock:
-                            completed["failed"] += 1
-                        from .ui import print_status
-                        print_status(console, f"{img_name}: {error}", "error")
+                            image_results.append({
+                                "name": img_name, "status": "failed",
+                                "time": elapsed, "error": error, "worker": wid,
+                            })
+                        progress.update(task, advance=1, description=f"[red]✗ {img_name}[/red]")
                     else:
                         with lock:
-                            completed["success"] += 1
                             results.append(result)
-                        from .ui import print_status
-                        print_status(console, img_name, "success")
+                            image_results.append({
+                                "name": img_name, "status": "success",
+                                "time": elapsed, "error": None, "worker": wid,
+                            })
+                        progress.update(task, advance=1, description=f"[green]✓ {img_name}[/green]")
                 except Exception as e:
                     with lock:
-                        completed["failed"] += 1
-                    from .ui import print_status
-                    print_status(console, f"{img_name}: {e}", "error")
-                progress.update(task, advance=1)
+                        image_results.append({
+                            "name": img_name, "status": "failed",
+                            "time": 0, "error": str(e), "worker": worker_id,
+                        })
+                    progress.update(task, advance=1, description=f"[red]✗ {img_name}[/red]")
 
-    return results, completed["failed"]
+    # Print summary table
+    failed_count = sum(1 for r in image_results if r["status"] == "failed")
+    success_count = len(image_results) - failed_count
+
+    if len(image_results) > 1:
+        table = Table(title="Processing Summary", show_lines=False)
+        table.add_column("Image", style="cyan", no_wrap=True)
+        table.add_column("Status", justify="center")
+        table.add_column("Time", justify="right")
+        table.add_column("Worker", justify="center", style="dim")
+
+        for r in image_results:
+            status = "[green]✓[/green]" if r["status"] == "success" else f"[red]✗[/red] {r.get('error', '')[:50]}"
+            time_str = f"{r['time']:.1f}s"
+            table.add_row(r["name"], status, time_str, f"W{r['worker']}")
+
+        total_time = sum(r["time"] for r in image_results)
+        table.add_section()
+        table.add_row(
+            f"[bold]{len(image_results)} total[/bold]",
+            f"[green]{success_count}✓[/green] [red]{failed_count}✗[/red]",
+            f"{total_time:.1f}s",
+            "",
+        )
+        console.print()
+        console.print(table)
+
+    return results, failed_count
 
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
@@ -143,7 +216,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 @click.option("--ref", "ref_dirs", multiple=True, type=click.Path(exists=True), help="Reference directories for TikZ generation")
 @click.option("-o", "--output", type=click.Path(), default="agentic", help="Output directory [default: agentic]")
 @click.option("--context/--no-context", default=True, help="Use reference context [default: on]")
-@click.option("-p", "--parallel", type=int, default=1, help="Number of parallel workers [default: 1, max: 10]")
+@click.option("-p", "--parallel", type=str, default="1", help="Number of parallel workers or 'auto' [default: 1, max: 20]")
 @click.option("-c", "--compile", "do_compile", is_flag=True, help="Compile generated LaTeX to validate")
 @click.option("--verbose-compile", "verbose_compile", is_flag=True, help="Show full LaTeX document before each compile")
 @click.option("--assess-difficulty/--no-assess-difficulty", "assess_difficulty", default=False, help="Assess difficulty [default: off]")
@@ -163,7 +236,7 @@ def run(
     ref_dirs: tuple[str, ...],
     output: str,
     context: bool,
-    parallel: int,
+    parallel: str,
     do_compile: bool,
     verbose_compile: bool,
     assess_difficulty: bool,
@@ -329,7 +402,7 @@ def _process_image_input(
     else:
         image_paths = [image]
 
-    num_workers = min(max(1, parallel), len(image_paths), 10)
+    num_workers = _parse_parallel(parallel, len(image_paths))
 
     if num_workers > 1 and len(image_paths) > 1:
         console.print(f"[cyan]Using {num_workers} parallel workers[/cyan]")

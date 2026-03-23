@@ -25,7 +25,7 @@ def create_idea_generator_agent(subject: Optional[str] = None):
         name=f"IdeaGenerator-{subject}",
         instructions=prompt,
         output_type=AgentOutputSchema(GeneratedProblem, strict_json_schema=False),
-        agent_type="variant",
+        agent_type="idea",
     )
 
 

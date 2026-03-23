@@ -8,7 +8,7 @@ from vbagent.utils.latex import clean_latex_output
 clarity_checker_agent = create_agent(
     name="ClarityChecker",
     instructions=SYSTEM_PROMPT,
-    agent_type="quality.clarity_checker",
+    agent_type="clarity_checker",
 )
 
 

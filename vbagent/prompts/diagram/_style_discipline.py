@@ -133,7 +133,14 @@ readable at typical document width (~12cm usable).
 \node[circle, draw, thick, minimum size=1cm, fill=white] (pulley) {};
 ```
 
-### 6. Output Cleanliness
+### 6. Vector Notation — Always `\vec{}`
+Use `\vec{}` for ALL vector quantities. NEVER use `\mathbf{}`, `\boldsymbol{}`,
+or `\textbf{}` for vectors.
+
+- ✅ `$\vec{B}$`, `$\vec{F}$`, `$\vec{v}$`, `$\vec{E}$`, `$\vec{p}$`
+- ❌ `$\mathbf{B}$`, `$\boldsymbol{F}$`, `$\textbf{v}$`
+
+### 7. Output Cleanliness
 - No `\usepackage` commands (preamble handles this)
 - No `\documentclass`, `\begin{document}`, etc.
 - No markdown code fences
@@ -141,7 +148,7 @@ readable at typical document width (~12cm usable).
 - Start with `\begin{tikzpicture}` and end with `\end{tikzpicture}`
   (or `\def\OptionA{...}` for MCQ option diagrams)
 
-### 7. Centering — Always Wrap in `\begin{center}`
+### 8. Centering — Always Wrap in `\begin{center}`
 Every `\begin{tikzpicture}...\end{tikzpicture}` block MUST be wrapped in
 `\begin{center}...\end{center}` so diagrams are horizontally centered in the
 document. The ONLY exception is MCQ option diagrams (inside `\def\OptionA{...}`

@@ -16,6 +16,8 @@ from vbagent.config import (
     apply_model_group,
     MODELS,
     MODEL_GROUPS,
+    AGENT_GROUPS,
+    AGENT_TYPES,
     SUBJECTS,
     PROVIDERS,
     CONFIG_FILE,
@@ -29,62 +31,91 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 def config():
-    """Configure vbagent models and settings.
-    
-    View and modify model configurations for different agent types.
-    
+    """Configure models, providers, and pipeline settings.
+
     \b
-    Examples:
-        vbagent config show
-        vbagent config models
-        vbagent config set scanner --model gpt-4o
-        vbagent config set scanner -m gpt-4o
-        vbagent config set variant --model o1-mini --reasoning medium
-        vbagent config reset
+    Quick Start:
+        vbagent config show                  View current config
+        vbagent config set tikz -m gpt-5.4   Set model for an agent
+        vbagent config provider xai           Switch provider
+        vbagent config subject chemistry      Change subject
+
+    \b
+    Config Files:
+        Global:    ~/.config/vbagent/models.json
+        Workspace: .vbagent.json (overrides global)
+
+    \b
+    Agent Groups:
+        Classification   classifier, diagram_analyzer, ...
+        Extraction       scanner, converter
+        Diagram          tikz, fbd, circuit, graph, optics, ...
+        Generation       idea, alternate, variant, solution
+        Quality          reviewer, solution_checker, format_checker, ...
+
+    \b
+    Use -w/--workspace on any set/provider/subject command to save
+    to .vbagent.json instead of the global config.
     """
     pass
 
 
 @config.command()
-def show():
-    """Show current model configuration for all agents."""
+@click.option("--compact", "-c", is_flag=True, help="Compact one-line-per-group summary")
+def show(compact):
+    """Show current model configuration for all agents.
+
+    \b
+    Examples:
+        vbagent config show            Full grouped table
+        vbagent config show --compact  One-line summary per group
+    """
     console = _get_console()
     cfg = get_config()
 
     # Show config source
     workspace_path = get_workspace_config_path()
     if workspace_path:
-        console.print(f"[#6b7280]Using workspace config: {workspace_path}[/]\n")
+        console.print(f"[#6b7280]workspace: {workspace_path}[/]")
     else:
-        console.print(f"[#6b7280]Using global config: {CONFIG_FILE}[/]\n")
+        console.print(f"[#6b7280]global: {CONFIG_FILE}[/]")
 
-    # Create simple table
-    table = _get_table(title="Agent Model Configuration")
-    table.add_column("Agent", style="cyan")
-    table.add_column("Model", style="green")
-    table.add_column("Reasoning", style="yellow")
-    table.add_column("Max Tokens", style="magenta")
+    console.print(f"[dim]subject={cfg.subject}  provider={get_provider_name()}  "
+                  f"default_model={cfg.default_model}  reasoning={cfg.default_reasoning_effort}  "
+                  f"debug={'on' if cfg.debug else 'off'}[/dim]\n")
 
-    # Global default
-    table.add_row(
-        "[bold]default[/]",
-        cfg.default_model,
-        cfg.default_reasoning_effort,
-        "-",
-        style="dim"
-    )
+    if compact:
+        # Compact: one line per group showing model(s) used
+        for group_name, agent_names in AGENT_GROUPS.items():
+            models_in_group = set()
+            for name in agent_names:
+                ac = cfg.get_agent_config(name)
+                models_in_group.add(f"{ac.model}/{ac.reasoning_effort}")
+            models_str = ", ".join(sorted(models_in_group))
+            console.print(f"  [cyan]{group_name:<22}[/cyan] {models_str}")
+        return
 
-    # Show all agent overrides
-    for agent_type, agent_cfg in cfg.agents.items():
-        table.add_row(
-            agent_type,
-            agent_cfg.model,
-            agent_cfg.reasoning_effort,
-            str(agent_cfg.max_tokens) if agent_cfg.max_tokens else "-",
-        )
+    # Full grouped table
+    for group_name, agent_names in AGENT_GROUPS.items():
+        table = _get_table(title=group_name)
+        table.add_column("Agent", style="cyan", min_width=22)
+        table.add_column("Model", style="green")
+        table.add_column("Reasoning", style="yellow")
+        table.add_column("Max Tokens", style="magenta")
 
-    console.print(table)
-    console.print(f"\n[dim]subject={cfg.subject}  provider={get_provider_name()}  debug={'on' if cfg.debug else 'off'}[/dim]")
+        for name in agent_names:
+            ac = cfg.get_agent_config(name)
+            # Dim rows that match defaults exactly
+            is_default = (ac.model == cfg.default_model and
+                          ac.reasoning_effort == cfg.default_reasoning_effort and
+                          ac.max_tokens is None)
+            style = "dim" if is_default else ""
+            table.add_row(
+                name, ac.model, ac.reasoning_effort,
+                str(ac.max_tokens) if ac.max_tokens else "-",
+                style=style,
+            )
+        console.print(table)
 
     # Extra info
     if cfg.base_url:
@@ -93,13 +124,10 @@ def show():
         masked = cfg.api_key[:8] + "..." + cfg.api_key[-4:] if len(cfg.api_key) > 12 else "***"
         console.print(f"[bold #5eead4]API Key:[/] {masked}")
 
-    console.print(f"\n[#6b7280]Models: {', '.join(MODELS.keys())}[/]")
-    console.print(f"[#6b7280]Subjects: {', '.join(SUBJECTS)}  |  Providers: {', '.join(PROVIDERS.keys())}  |  Groups: {', '.join(MODEL_GROUPS.keys())}[/]")
 
-
-@config.command()
+@config.command("set")
 @click.argument("agent_type")
-@click.option("--model", "-m", help="Model to use (e.g., gpt-4o, o1-mini)")
+@click.option("--model", "-m", help="Model to use (e.g., gpt-5.4, gpt-5.4-mini)")
 @click.option(
     "--reasoning", "-r",
     type=click.Choice(["low", "medium", "high", "xhigh"]),
@@ -107,7 +135,7 @@ def show():
 )
 @click.option("--max-tokens", type=int, help="Maximum tokens")
 @click.option("--workspace", "-w", is_flag=True, help="Save to workspace config instead of global")
-def set(agent_type: str, model: str, reasoning: str, max_tokens: int, workspace: bool):
+def set_agent(agent_type: str, model: str, reasoning: str, max_tokens: int, workspace: bool):
     """Set model configuration for an agent type.
     
     \b
@@ -115,11 +143,26 @@ def set(agent_type: str, model: str, reasoning: str, max_tokens: int, workspace:
         AGENT_TYPE  Agent to configure (or 'default' for global defaults)
     
     \b
+    Agent Types (by group):
+        Classification:  classifier, diagram_analyzer, taxonomy_classifier, ...
+        Extraction:      scanner, converter
+        Diagram:         tikz, fbd, circuit, graph, optics, organic_structure, ...
+        Generation:      idea, alternate, variant, solution
+        Quality:         reviewer, solution_checker, format_checker, ...
+    
+    \b
     Examples:
-        vbagent config set scanner --model gpt-4o
-        vbagent config set tikz --model o1-mini --reasoning medium
-        vbagent config set default --model gpt-4.1
-        vbagent config set scanner -m gpt-4o --workspace  # Save to .vbagent.json
+        vbagent config set default -m gpt-5.4-mini          Global default
+        vbagent config set classifier -m gpt-5.4-mini -r low   Classification
+        vbagent config set scanner -m gpt-5.4-mini -r medium   Extraction
+        vbagent config set tikz -m gpt-5.4 -r high             Diagram
+        vbagent config set circuit -m gpt-5.4 -r high          Diagram (specialist)
+        vbagent config set idea -m gpt-5.4 -r high             Generation
+        vbagent config set alternate -m gpt-5.4 -r high        Generation
+        vbagent config set solution -m gpt-5.4 -r high         Generation
+        vbagent config set variant -m gpt-5.4 -r high          Generation
+        vbagent config set format_checker -m gpt-5.4-mini      Quality
+        vbagent config set scanner -m gpt-5.4 -w               Save to workspace
     """
     from vbagent.cli.interfaces.ui import print_status
     from vbagent.config import AgentModelConfig
@@ -255,32 +298,33 @@ def log_level(level: str, workspace: bool):
 
 @config.command()
 def models():
-    """List available models."""
+    """List available models and agent types.
+
+    \b
+    Examples:
+        vbagent config models
+    """
     console = _get_console()
-    console.print("[bold]Available Models:[/bold]\n")
-    
+
     # Group models by provider
     gpt_models = [m for m in MODELS.keys() if m.startswith("gpt")]
     grok_models = [m for m in MODELS.keys() if m.startswith("grok")]
     gemini_models = [m for m in MODELS.keys() if m.startswith("gemini")]
-    
+
+    console.print("[bold]Models[/bold]\n")
     if gpt_models:
-        console.print("[cyan]OpenAI:[/cyan]")
-        for m in gpt_models:
-            console.print(f"  • {m}")
-    
+        console.print("[cyan]OpenAI:[/cyan]  " + ", ".join(gpt_models))
     if grok_models:
-        console.print("\n[cyan]xAI Grok:[/cyan]")
-        for m in grok_models:
-            console.print(f"  • {m}")
-    
+        console.print("[cyan]xAI:[/cyan]     " + ", ".join(grok_models))
     if gemini_models:
-        console.print("\n[cyan]Google Gemini:[/cyan]")
-        for m in gemini_models:
-            console.print(f"  • {m}")
-    
-    console.print(f"\n[dim]Model groups available: {', '.join(MODEL_GROUPS.keys())}[/dim]")
-    console.print("[dim]Use 'vbagent config model-group' to view/apply groups[/dim]")
+        console.print("[cyan]Google:[/cyan]  " + ", ".join(gemini_models))
+
+    console.print("\n[bold]Agent Types[/bold]\n")
+    for group_name, agents in AGENT_GROUPS.items():
+        console.print(f"  [cyan]{group_name}:[/cyan] {', '.join(agents)}")
+
+    console.print(f"\n[dim]Providers: {', '.join(PROVIDERS.keys())}  |  "
+                  f"Model groups: {', '.join(MODEL_GROUPS.keys())}[/dim]")
 
 
 

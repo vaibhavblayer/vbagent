@@ -28,7 +28,7 @@ Usage as a library:
     
     # Configure models
     config = get_config()
-    config.agents["scanner"] = AgentModelConfig(model="gpt-5.2")
+    config.agents["scanner"] = AgentModelConfig(model="gpt-5.4-mini")
     set_config(config)
 
 Submodule access:
@@ -41,7 +41,7 @@ Submodule access:
 
 from typing import TYPE_CHECKING
 
-__version__ = "0.2.0"
+__version__ = "0.3.4"
 
 # Lazy imports for library consumers
 if TYPE_CHECKING:

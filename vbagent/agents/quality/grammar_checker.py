@@ -8,7 +8,7 @@ from vbagent.utils.latex import clean_latex_output
 grammar_checker_agent = create_agent(
     name="GrammarChecker",
     instructions=SYSTEM_PROMPT,
-    agent_type="quality.grammar_checker",
+    agent_type="grammar_checker",
 )
 
 

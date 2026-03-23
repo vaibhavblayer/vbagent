@@ -193,8 +193,14 @@ def route_tikz_agent(
                 if any(x in dtype for x in ["free_body", "fbd", "force", "forces"]):
                     return "fbd"
                 
-                # Circuits
-                if any(x in dtype for x in ["circuit", "electrical", "resistor", "capacitor"]):
+                # Circuits (includes EMI, AC, current electricity)
+                if any(x in dtype for x in [
+                    "circuit", "electrical", "resistor", "capacitor",
+                    "inductor", "induction", "emf", "battery",
+                    "rail", "rod_on_rail", "solenoid", "coil",
+                    "wheatstone", "potentiometer", "galvanometer",
+                    "ammeter", "voltmeter", "transformer",
+                ]):
                     return "circuit"
                 
                 # Graphs and plots
@@ -217,6 +223,31 @@ def route_tikz_agent(
                     return "graph"
                 elif category == "optics":
                     return "optics"
+
+            # Element-based fallback: check diagram_elements for clues
+            if diagram and diagram.diagram_elements:
+                elements_str = " ".join(e.lower() for e in diagram.diagram_elements)
+                circuit_keywords = [
+                    "resistor", "capacitor", "inductor", "battery", "emf",
+                    "wire", "switch", "ammeter", "voltmeter", "galvanometer",
+                    "rail", "rod", "coil", "solenoid", "transformer",
+                    "diode", "bulb", "lamp", "cell", "current",
+                ]
+                if any(kw in elements_str for kw in circuit_keywords):
+                    return "circuit"
+                fbd_keywords = [
+                    "block", "pulley", "spring", "incline", "wedge",
+                    "string", "rope", "mass", "weight", "friction",
+                    "hinge", "pivot", "plank", "sphere", "cylinder",
+                ]
+                if any(kw in elements_str for kw in fbd_keywords):
+                    return "fbd"
+                optics_keywords = [
+                    "lens", "mirror", "prism", "slit", "screen",
+                    "ray", "beam", "focal", "aperture",
+                ]
+                if any(kw in elements_str for kw in optics_keywords):
+                    return "optics"
     
     # Priority 3: Specific diagram type (subject-agnostic)
     if diagram and diagram.diagram_type:
@@ -233,7 +264,7 @@ def route_tikz_agent(
         # Physics types
         if any(x in dtype for x in ["free_body", "fbd", "force"]):
             return "fbd"
-        if any(x in dtype for x in ["circuit", "electrical"]):
+        if any(x in dtype for x in ["circuit", "electrical", "induction", "emf", "inductor"]):
             return "circuit"
         if any(x in dtype for x in ["graph", "plot"]):
             return "graph"

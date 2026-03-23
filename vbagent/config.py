@@ -66,6 +66,8 @@ SUBJECTS = ["physics", "chemistry", "mathematics", "biology"]
 # Available model presets
 MODELS = {
     # OpenAI
+    "gpt-5.4": "gpt-5.4",
+    "gpt-5.4-mini": "gpt-5.4-mini",
     "gpt-5.2": "gpt-5.2",
     "gpt-5.1": "gpt-5.1",
     "gpt-5-mini": "gpt-5-mini",
@@ -73,19 +75,19 @@ MODELS = {
     "gpt-5.1-codex-mini": "gpt-5.1-codex-mini",
     "gpt-5.1-codex-max": "gpt-5.1-codex-max",
     # xAI Grok
-    "grok-4": "grok-4",                                  # Frontier reasoning, 256k ctx, $3/$15
-    "grok-4-fast-reasoning": "grok-4-fast-reasoning",     # 2M ctx, reasoning + tools, $0.20/$0.50
-    "grok-4-fast-non-reasoning": "grok-4-fast-non-reasoning",  # 2M ctx, no reasoning tokens, $0.20/$0.50
-    "grok-4-1-fast-reasoning": "grok-4-1-fast-reasoning",     # 2M ctx, agentic reasoning + tools
-    "grok-4-1-fast-non-reasoning": "grok-4-1-fast-non-reasoning",  # 2M ctx, fast non-reasoning
-    "grok-code-fast-1": "grok-code-fast-1",               # Agentic coding, 256k ctx, $0.20/$1.50
-    "grok-3": "grok-3",                                   # Enterprise generalist, 131k ctx
-    "grok-3-mini": "grok-3-mini",                         # Budget generalist, 131k ctx
-    "grok-2-vision-1212": "grok-2-vision-1212",           # Image understanding, 32k ctx
+    "grok-4": "grok-4",
+    "grok-4-fast-reasoning": "grok-4-fast-reasoning",
+    "grok-4-fast-non-reasoning": "grok-4-fast-non-reasoning",
+    "grok-4-1-fast-reasoning": "grok-4-1-fast-reasoning",
+    "grok-4-1-fast-non-reasoning": "grok-4-1-fast-non-reasoning",
+    "grok-code-fast-1": "grok-code-fast-1",
+    "grok-3": "grok-3",
+    "grok-3-mini": "grok-3-mini",
+    "grok-2-vision-1212": "grok-2-vision-1212",
     # Google
     "gemini-2.5-pro": "gemini-2.5-pro",
     "gemini-2.5-flash": "gemini-2.5-flash",
-    "gemini-3-flash-preview": "gemini-3-flash-preview",   # 1M ctx, thinking model
+    "gemini-3-flash-preview": "gemini-3-flash-preview",
 }
 
 # Known providers with their base URLs and env var names
@@ -95,26 +97,41 @@ PROVIDERS = {
     "google": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai", "env_key": "GOOGLE_API_KEY"},
 }
 
-# Agent types
-AGENT_TYPES = [
-    "classifier",
-    "scanner",
-    "tikz",
-    "fbd",
-    "tikz_checker",
-    "idea",
-    "alternate",
-    "variant",
-    "converter",
-    "reviewer",
-    "taxonomy_classifier",
-    "difficulty_assessor",
-    "solution_checker",
-    "grammar_checker",
-    "clarity_checker",
-    "latex_fixer",
-    "format_checker",
-]
+# Agent types — grouped by role for display and documentation.
+# The flat list is used for validation; the grouped dict for `config show`.
+AGENT_GROUPS: dict[str, list[str]] = {
+    "Classification": [
+        "classifier", "image_classifier", "diagram_analyzer",
+        "taxonomy_classifier", "difficulty_assessor", "latex_classifier",
+    ],
+    "Content Extraction": [
+        "scanner", "converter",
+    ],
+    "Diagram (Physics)": [
+        "tikz", "fbd", "circuit", "graph", "optics",
+    ],
+    "Diagram (Chemistry)": [
+        "organic_structure", "reaction_mechanism", "orbital",
+        "lewis_structure", "chemical_equation", "energy_diagram",
+    ],
+    "Diagram (Mathematics)": [
+        "function_graph", "coordinate_geometry", "geometric_figure",
+        "number_line", "venn_diagram",
+    ],
+    "Diagram QA": [
+        "tikz_checker",
+    ],
+    "Generation": [
+        "idea", "alternate", "variant", "solution",
+    ],
+    "Quality": [
+        "reviewer", "solution_checker", "grammar_checker",
+        "clarity_checker", "latex_fixer", "format_checker",
+    ],
+}
+
+# Flat list for validation
+AGENT_TYPES = [agent for agents in AGENT_GROUPS.values() for agent in agents]
 
 # Model groups: per-provider default models for each agent type.
 # When switching providers, these get auto-applied so every agent
@@ -182,6 +199,8 @@ MODEL_GROUPS: dict[str, dict[str, str]] = {
 #   Google: low, medium, high (2.5 models also support none/minimal)
 REASONING_SUPPORT: dict[str, Optional[set[str]]] = {
     # OpenAI models
+    "gpt-5.4": {"low", "medium", "high"},
+    "gpt-5.4-mini": {"low", "medium", "high"},
     "gpt-5.2": {"low", "medium", "high", "xhigh"},
     "gpt-5.1": {"none", "low", "medium", "high"},
     "gpt-5-mini": {"low", "medium", "high"},
@@ -306,6 +325,9 @@ class AgentModelConfig:
         if self.max_tokens is not None:
             settings_dict["max_tokens"] = self.max_tokens
 
+        # Enable data sharing for incentive-tier pricing and prompt caching
+        settings_dict["store"] = True
+
         return ModelSettings(**settings_dict)
 
     def to_dict(self) -> dict:
@@ -364,90 +386,68 @@ class VBAgentConfig:
     taxonomy_confidence_threshold: float = 0.8
 
     def __post_init__(self):
-        """Apply smart defaults for specific agents if not overridden."""
-        # Classification agents: low reasoning
-        if "classifier" not in self.agents:
-            self.agents["classifier"] = AgentModelConfig(
-                model=self.default_model,
-                reasoning_effort="low"
-            )
-        
-        if "image_classifier" not in self.agents:
-            self.agents["image_classifier"] = AgentModelConfig(
-                model=self.default_model,
-                reasoning_effort="low"
-            )
-        
-        if "diagram_analyzer" not in self.agents:
-            self.agents["diagram_analyzer"] = AgentModelConfig(
-                model=self.default_model,
-                reasoning_effort="low"
-            )
-        
-        if "taxonomy_classifier" not in self.agents:
-            self.agents["taxonomy_classifier"] = AgentModelConfig(
-                model=self.default_model,
-                reasoning_effort="low"
-            )
-        
-        if "difficulty_assessor" not in self.agents:
-            self.agents["difficulty_assessor"] = AgentModelConfig(
-                model=self.default_model,
-                reasoning_effort="low"
-            )
-        
-        if "latex_classifier" not in self.agents:
-            self.agents["latex_classifier"] = AgentModelConfig(
-                model=self.default_model,
-                reasoning_effort="low"
-            )
-        
-        # Content generation: medium reasoning
+        """Apply smart defaults for specific agents if not overridden.
+
+        Uses two tiers:
+        - ``default_model`` (typically gpt-5.4-mini) for classification / QA
+        - ``_heavy_model`` (gpt-5.4) for generation / diagrams / solutions
+        """
+        # Heavy model for generation/diagram tasks — derived from default
+        # If default is a -mini variant, use the non-mini version.
+        heavy = self.default_model.replace("-mini", "") if "-mini" in self.default_model else self.default_model
+
+        # Classification agents: low reasoning, light model
+        for name in ["classifier", "image_classifier", "diagram_analyzer",
+                      "taxonomy_classifier", "difficulty_assessor", "latex_classifier"]:
+            if name not in self.agents:
+                self.agents[name] = AgentModelConfig(
+                    model=self.default_model, reasoning_effort="low"
+                )
+
+        # Content extraction: medium reasoning, light model
         if "scanner" not in self.agents:
             self.agents["scanner"] = AgentModelConfig(
-                model=self.default_model,
-                reasoning_effort="medium"
+                model=self.default_model, reasoning_effort="medium"
             )
-        
         if "converter" not in self.agents:
             self.agents["converter"] = AgentModelConfig(
-                model="gpt-5.4",
-                reasoning_effort="medium"
+                model=heavy, reasoning_effort="medium"
             )
-        
-        # Diagram agents: gpt-5.4 with high reasoning
+
+        # Diagram agents: heavy model, high reasoning
         diagram_agents = [
             "tikz", "fbd", "circuit", "graph", "optics",
-            "organic_structure", "reaction_mechanism", "orbital", 
+            "organic_structure", "reaction_mechanism", "orbital",
             "lewis_structure", "chemical_equation", "energy_diagram",
             "function_graph", "coordinate_geometry", "geometric_figure",
-            "number_line", "venn_diagram"
+            "number_line", "venn_diagram",
         ]
-        for agent_name in diagram_agents:
-            if agent_name not in self.agents:
-                self.agents[agent_name] = AgentModelConfig(
-                    model="gpt-5.4",
-                    reasoning_effort="high"
+        for name in diagram_agents:
+            if name not in self.agents:
+                self.agents[name] = AgentModelConfig(
+                    model=heavy, reasoning_effort="high"
                 )
-        
-        # Diagram checkers: low reasoning
+
+        # Diagram checker: light model, low reasoning
         if "tikz_checker" not in self.agents:
             self.agents["tikz_checker"] = AgentModelConfig(
-                model=self.default_model,
-                reasoning_effort="low"
+                model=self.default_model, reasoning_effort="low"
             )
-        
-        # Complex agents: high/xhigh reasoning (use defaults)
-        # idea, alternate, variant, reviewer, solution_checker, etc.
-        # These will use default_model with default_reasoning_effort (high)
-        
-        # Generation agents: gpt-5.4 with high reasoning
-        generation_agents = ["idea", "alternate", "variant", "solution"]
-        for agent_name in generation_agents:
-            if agent_name not in self.agents:
-                self.agents[agent_name] = AgentModelConfig(
-                    model="gpt-5.4",
-                    reasoning_effort="high"
+
+        # Generation agents: heavy model, high reasoning
+        for name in ["idea", "alternate", "variant", "solution"]:
+            if name not in self.agents:
+                self.agents[name] = AgentModelConfig(
+                    model=heavy, reasoning_effort="high"
+                )
+
+        # Quality agents: light model, default reasoning
+        for name in ["reviewer", "solution_checker", "grammar_checker",
+                      "clarity_checker", "latex_fixer", "format_checker"]:
+            if name not in self.agents:
+                self.agents[name] = AgentModelConfig(
+                    model=self.default_model,
+                    reasoning_effort=self.default_reasoning_effort,
                 )
 
     def get_agent_config(self, agent_type: str) -> AgentModelConfig:
@@ -735,7 +735,10 @@ def get_model_settings(agent_type: str = "default") -> "ModelSettings":
     config = get_config()
     if agent_type == "default":
         ModelSettings = _get_model_settings_class()
-        return ModelSettings(reasoning={"effort": config.default_reasoning_effort})
+        return ModelSettings(
+            reasoning={"effort": config.default_reasoning_effort},
+            store=True,
+        )
     return config.get_model_settings(agent_type)
 
 
@@ -746,7 +749,7 @@ DEFAULT_MODEL = "gpt-5.1"
 def _get_default_model_settings() -> "ModelSettings":
     """Lazy getter for default model settings."""
     ModelSettings = _get_model_settings_class()
-    return ModelSettings(reasoning={"effort": "high"})
+    return ModelSettings(reasoning={"effort": "high"}, store=True)
 
 
 # Use property-like access for lazy loading

@@ -23,7 +23,7 @@ def create_diagram_analyzer_agent(subject: Optional[str] = None):
         name=f"DiagramAnalyzer-{subject}",
         instructions=prompt,
         output_type=DiagramAnalysis,
-        agent_type="classifier",
+        agent_type="diagram_analyzer",
     )
 
 

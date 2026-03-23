@@ -24,7 +24,7 @@ COMMAND_SECTIONS = {
         "run", "scan", "classify", "batch",
     ],
     "Generate": [
-        "tikz", "fbd", "idea", "concepts", "alternate", "variant", "convert",
+        "generate", "tikz", "fbd", "idea", "concepts", "alternate", "variant", "convert",
     ],
     "Quality": [
         "check", "compile",
@@ -125,6 +125,7 @@ LAZY_SUBCOMMANDS = {
     "classify": "vbagent.cli.core.classify",
     "batch": "vbagent.cli.core.batch",
     # Generate
+    "generate": "vbagent.cli.generation.generate",
     "tikz": "vbagent.cli.generation.tikz",
     "fbd": "vbagent.cli.generation.fbd",
     "idea": "vbagent.cli.generation.idea",

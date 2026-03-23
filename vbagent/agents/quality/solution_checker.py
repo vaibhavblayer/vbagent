@@ -8,7 +8,7 @@ from vbagent.utils.latex import clean_latex_output
 solution_checker_agent = create_agent(
     name="SolutionChecker",
     instructions=SYSTEM_PROMPT,
-    agent_type="quality.solution_checker",
+    agent_type="solution_checker",
 )
 
 

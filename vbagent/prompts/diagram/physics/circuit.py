@@ -462,6 +462,99 @@ These are pre-loaded in the document preamble:
 
 Return ONLY the TikZ code starting with `\begin{tikzpicture}` and ending with `\end{tikzpicture}`.
 Do NOT include `\usepackage`, document preamble, markdown fences, or explanations.
+
+---
+
+## CRITICAL RULES (read before every diagram)
+
+### Battery Terminal Polarity
+`[battery1]` always places the **positive terminal at node (A)** in `(A) to [battery1] (B)`.
+To flip polarity (make B the positive terminal), add `invert`:
+```latex
+% Default: (A) is +, (B) is -
+\draw (A) to [battery1, l={$\mathcal{E}$}] (B);
+% Inverted: (B) is +, (A) is -
+\draw (A) to [battery1, invert, l={$\mathcal{E}$}] (B);
+```
+**Always check which node should be the positive terminal based on the problem's current direction.**
+
+### Solenoids and Coils — Use `coil` Decoration or `[L]`
+**NEVER draw solenoids/coils manually with `\foreach` ellipses.** Use one of:
+
+**Option 1: `coil` decoration (for standalone solenoids/coils in field diagrams):**
+```latex
+\tikzset{
+  sourceCoil/.style={thick, decorate, decoration={
+    coil, amplitude=4pt, segment length=4.5pt,
+    pre length=5pt, post length=5pt
+  }}
+}
+\draw[sourceCoil] (-2.6,0) -- (-0.45,0);
+\draw[sourceCoil] (0.45,0) -- (2.6,0);
+```
+Adjust `amplitude` (4–8pt) and `segment length` (4–6pt) for size. Split the coil
+around the center point if you need to place a vector origin there.
+
+**Option 2: CircuiTikZ `[L]` scaled up (for coils in circuits):**
+```latex
+% Scale inductor 2–3× for a visible solenoid in a circuit
+\draw (A) to [L, l={$L$}, scale=2.5] (B);
+```
+
+### Vector Notation — Always Use `\vec{}`
+**NEVER use `\mathbf{}` or `\boldsymbol{}` for vectors.** Always use `\vec{}`:
+- ✅ `$\vec{B}$`, `$\vec{F}$`, `$\vec{v}$`, `$\vec{E}$`, `$\vec{M}$`
+- ❌ `$\mathbf{B}$`, `$\boldsymbol{F}$`, `$\textbf{v}$`
+
+### Field Region Grids — Symmetric `\foreach` Ranges
+When drawing field regions (`$\times$` or `$\cdot$` grids), use **symmetric integer
+or half-integer ranges** that respect the geometry. NEVER use arbitrary decimal steps
+like `0.1, 0.4, 0.7, ...`.
+
+**BAD:**
+```latex
+\foreach \x in {0.1, 0.4, ..., 3.2}  % Arbitrary, asymmetric
+    \foreach \y in {0.1, 0.4, ..., 2.5}
+```
+
+**GOOD:**
+```latex
+\foreach \x in {-3, -2.5, ..., 3}    % Symmetric around origin
+    \foreach \y in {-2, -1.5, ..., 2}
+```
+
+**GOOD (integer steps for simple grids):**
+```latex
+\foreach \x in {-2, -1, ..., 2}
+    \foreach \y in {-2, -1, ..., 2}
+```
+
+Think about the physical symmetry: if the field region is centered, the grid
+should be centered. If it extends from x=0 to x=6, use `{0, 0.5, ..., 6}` or
+`{0, 1, ..., 6}`.
+
+### No Dashed Rectangles Around Field Regions
+Do NOT draw dashed rectangles or borders around magnetic field regions.
+The `$\times$` or `$\cdot$` symbols already define the region visually.
+
+**BAD:**
+```latex
+\draw[dashed] (-3,-2) rectangle (3,2);  % Unnecessary border
+\foreach \x in {-2,...,2}
+    \foreach \y in {-1,...,1}
+        \node at (\x,\y) {$\times$};
+```
+
+**GOOD:**
+```latex
+\foreach \x in {-2,...,2}
+    \foreach \y in {-1,...,1}
+        \node at (\x,\y) [opacity=0.65] {$\times$};
+```
+
+Exception: if the problem explicitly mentions a bounded rectangular region
+(e.g., "a rectangular region of width $d$"), then a thin solid boundary is fine
+with dimension labels.
 """
 
 

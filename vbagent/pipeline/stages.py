@@ -118,6 +118,13 @@ def scan_and_tikz_parallel(
     tikz_result_holder = {"result": None, "error": None, "agent": "generic"}
 
     def run_scan():
+        # Reset shared httpx client so this thread gets its own instance
+        # (avoids cross-event-loop deadlock with the global AsyncClient singleton)
+        try:
+            import agents.models.openai_provider as _provider
+            _provider._http_client = None
+        except Exception:
+            pass
         if latex_cached:
             scan_result_holder["result"] = type("obj", (object,), {"latex": cache.get(problem_id, "scan")})()
             return
@@ -130,6 +137,11 @@ def scan_and_tikz_parallel(
             scan_result_holder["error"] = e
 
     def run_tikz():
+        try:
+            import agents.models.openai_provider as _provider
+            _provider._http_client = None
+        except Exception:
+            pass
         if tikz_cached:
             tikz_result_holder["result"] = cache.get(problem_id, "tikz")
             return

@@ -8,7 +8,7 @@ from vbagent.utils.latex import clean_latex_output
 format_checker_agent = create_agent(
     name="FormatChecker",
     instructions=SYSTEM_PROMPT,
-    agent_type="quality.format_checker",
+    agent_type="format_checker",
 )
 
 

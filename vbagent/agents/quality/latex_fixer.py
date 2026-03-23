@@ -44,7 +44,7 @@ def fix_latex(error_summary: str, latex: str) -> str:
     agent = create_agent(
         name="LaTeX-Fixer",
         instructions=SYSTEM_PROMPT,
-        agent_type="converter",  # Use converter model (lighter/cheaper)
+        agent_type="latex_fixer",
     )
 
     prompt = USER_TEMPLATE.format(errors=error_summary, latex=latex)
