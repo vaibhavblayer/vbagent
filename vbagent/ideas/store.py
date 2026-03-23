@@ -100,10 +100,36 @@ class IdeaStore:
     # ------------------------------------------------------------------
 
     def _signature_exists(self, sig: str) -> Optional[Idea]:
-        """Check if an idea with this signature already exists."""
+        """Check if an idea with this signature already exists.
+
+        Uses exact match first, then word-overlap similarity for
+        near-duplicates (>80% word overlap within same topic).
+        """
+        sig_parts = sig.split(":", 2)
+        sig_words = set(sig_parts[2].split()) if len(sig_parts) > 2 else set()
+
         for idea in self._store.ideas:
-            if idea.signature() == sig:
+            existing_sig = idea.signature()
+
+            # Exact match
+            if existing_sig == sig:
                 return idea
+
+            # Fuzzy match: same subject+topic, high word overlap
+            ex_parts = existing_sig.split(":", 2)
+            if (
+                len(sig_parts) > 2
+                and len(ex_parts) > 2
+                and sig_parts[0] == ex_parts[0]   # same subject
+                and sig_parts[1] == ex_parts[1]   # same topic
+            ):
+                ex_words = set(ex_parts[2].split())
+                if sig_words and ex_words:
+                    overlap = len(sig_words & ex_words)
+                    total = max(len(sig_words), len(ex_words))
+                    if total > 0 and overlap / total > 0.80:
+                        return idea
+
         return None
 
     # ------------------------------------------------------------------

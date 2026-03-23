@@ -192,6 +192,78 @@ def stats(store_path, subject):
 
 
 @ideas.command()
+@click.option("--dry-run", is_flag=True, help="Show duplicates without removing")
+@click.option("--store", "store_path", default=None)
+@click.option("--subject", default=None)
+def dedup(dry_run, store_path, subject):
+    """Re-deduplicate the store with improved signature matching.
+
+    \b
+    Useful after upgrading the dedup algorithm. Rebuilds the store
+    keeping only unique ideas (merges sources from duplicates).
+
+    \b
+    Examples:
+        vbagent ideas dedup --dry-run       # Preview what would be merged
+        vbagent ideas dedup                 # Actually merge duplicates
+    """
+    from vbagent.ideas.store import IdeaStore as IS
+    from vbagent.ideas.models import Idea
+
+    console = _get_console()
+    store = _get_store(store_path, subject)
+
+    original_count = store.count()
+    if original_count == 0:
+        console.print("[yellow]Store is empty[/yellow]")
+        return
+
+    # Rebuild: add all ideas to a fresh store, letting dedup catch near-dupes
+    fresh = IS(store.path.parent / "__dedup_temp__.json", store.subject)
+
+    merged_pairs: list[tuple[str, str]] = []
+    for idea in store.ideas:
+        # Reset ID so fresh store assigns new ones
+        idea_copy = idea.model_copy()
+        idea_copy.id = ""
+        result, is_new = fresh.add(idea_copy)
+        if not is_new:
+            merged_pairs.append((idea.text[:60], result.text[:60]))
+
+    new_count = fresh.count()
+    removed = original_count - new_count
+
+    if dry_run:
+        console.print(f"Would merge {removed} duplicate(s) ({original_count} → {new_count})")
+        if merged_pairs:
+            console.print("\nMerge pairs:")
+            for dup, kept in merged_pairs:
+                console.print(f"  [red]- {dup}[/red]")
+                console.print(f"  [green]→ {kept}[/green]")
+        # Clean up temp
+        temp_path = store.path.parent / "__dedup_temp__.json"
+        if temp_path.exists():
+            temp_path.unlink()
+    else:
+        if removed == 0:
+            console.print(f"[green]No duplicates found[/green] ({original_count} ideas)")
+            temp_path = store.path.parent / "__dedup_temp__.json"
+            if temp_path.exists():
+                temp_path.unlink()
+        else:
+            # Replace original store with deduped version
+            fresh.path = store.path
+            # Preserve combinations from original
+            fresh._store.combinations = store.combinations
+            fresh.save()
+            console.print(f"[green]Deduped:[/green] {original_count} → {new_count} ({removed} merged)")
+            # Clean up temp
+            temp_path = store.path.parent / "__dedup_temp__.json"
+            if temp_path.exists():
+                temp_path.unlink()
+
+
+@ideas.command()
 @click.option("--format", "fmt", type=click.Choice(["latex", "json"]), default="latex")
 @click.option("--output", "-o", default=None, help="Output file path")
 @click.option("--topic", default=None, help="Filter by topic")

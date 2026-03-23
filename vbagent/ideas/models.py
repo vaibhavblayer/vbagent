@@ -206,13 +206,117 @@ class Idea(BaseModel):
     added_at: str = Field(default_factory=lambda: datetime.now().isoformat())
 
     def signature(self) -> str:
-        """Normalized signature for deduplication."""
+        """Normalized signature for deduplication.
+
+        Uses synonym normalization and keyword extraction to catch
+        semantically equivalent ideas like:
+          "Magnetic field at centre of circular loop"
+          "B at center of current loop"
+        Both normalize to the same signature.
+        """
         import re
-        # Strip LaTeX commands, whitespace, lowercase
-        clean = re.sub(r"\\[a-zA-Z]+\{?", "", self.text)
-        clean = re.sub(r"[{}\\\$]", "", clean)
+
+        text = self.text
+
+        # 1. Strip LaTeX commands and symbols
+        clean = re.sub(r"\\[a-zA-Z]+\{?", "", text)
+        clean = re.sub(r"[{}\\\$_^]", "", clean)
         clean = re.sub(r"\s+", " ", clean).strip().lower()
-        return f"{self.subject}:{self.topic}:{clean}"
+
+        # 2. Synonym normalization — map common physics phrasings
+        for pattern, replacement in _SYNONYMS:
+            clean = re.sub(pattern, replacement, clean)
+
+        # 3. Remove filler words
+        words = clean.split()
+        words = [w for w in words if w not in _STOPWORDS]
+
+        # 4. Sort words for order-independence
+        #    "field magnetic circular loop" == "circular loop magnetic field"
+        normalized = " ".join(sorted(words))
+
+        return f"{self.subject}:{self.topic}:{normalized}"
+
+
+# Synonym pairs: (regex_pattern, replacement)
+# Applied in order to normalize common physics/chem/math phrasings
+_SYNONYMS: list[tuple[str, str]] = [
+    # Spelling variants
+    (r"\bcentre\b", "center"),
+    (r"\bcentre\b", "center"),
+    (r"\bcolour\b", "color"),
+    (r"\banalogue\b", "analog"),
+    # Physics concept synonyms
+    (r"\bemf\b", "electromotive force"),
+    (r"\bemi\b", "electromagnetic induction"),
+    (r"\bshm\b", "simple harmonic motion"),
+    (r"\bcurrent[- ]carrying\b", "current"),
+    (r"\bcurrent[- ]loop\b", "current loop"),
+    (r"\bfield at center\b", "field center"),
+    (r"\bfield at the center\b", "field center"),
+    (r"\bat the center\b", "center"),
+    (r"\bat center\b", "center"),
+    (r"\bat the centre\b", "center"),
+    (r"\bat centre\b", "center"),
+    (r"\binduced emf\b", "induced electromotive force"),
+    (r"\bfaradays law\b", "faraday law"),
+    (r"\bfaraday's law\b", "faraday law"),
+    (r"\bnewtons\b", "newton"),
+    (r"\bnewton's\b", "newton"),
+    (r"\bcoulombs\b", "coulomb"),
+    (r"\bcoulomb's\b", "coulomb"),
+    (r"\bgauss's\b", "gauss"),
+    (r"\bgauss'\b", "gauss"),
+    (r"\bamperes\b", "ampere"),
+    (r"\bampere's\b", "ampere"),
+    (r"\blenzs\b", "lenz"),
+    (r"\blenz's\b", "lenz"),
+    (r"\bbiot[- ]savart\b", "biot savart"),
+    (r"\bkirchhoffs\b", "kirchhoff"),
+    (r"\bkirchoff\b", "kirchhoff"),
+    (r"\bkirchoff's\b", "kirchhoff"),
+    (r"\bkirchhoff's\b", "kirchhoff"),
+    (r"\bohms\b", "ohm"),
+    (r"\bohm's\b", "ohm"),
+    # Abbreviations
+    (r"\bke\b", "kinetic energy"),
+    (r"\bpe\b", "potential energy"),
+    (r"\bcm\b", "center mass"),
+    (r"\bcom\b", "center mass"),
+    (r"\bfbd\b", "free body diagram"),
+    (r"\bwep\b", "work energy power"),
+    # Math
+    (r"\bdifferentiation\b", "derivative"),
+    (r"\bintegration\b", "integral"),
+    # Remove articles and prepositions
+    (r"\bof a\b", ""),
+    (r"\bof the\b", ""),
+    (r"\bdue to\b", ""),
+    (r"\bin a\b", ""),
+    (r"\bin the\b", ""),
+    (r"\bon a\b", ""),
+    (r"\bon the\b", ""),
+    (r"\bfor a\b", ""),
+    (r"\bfor the\b", ""),
+    (r"\bby a\b", ""),
+    (r"\bby the\b", ""),
+    (r"\bwith a\b", ""),
+    (r"\bwith the\b", ""),
+]
+
+_STOPWORDS: set[str] = {
+    "a", "an", "the", "of", "in", "on", "at", "to", "for", "by",
+    "with", "from", "and", "or", "is", "are", "was", "were",
+    "be", "been", "being", "have", "has", "had", "do", "does",
+    "did", "will", "would", "shall", "should", "may", "might",
+    "can", "could", "its", "it", "this", "that", "these", "those",
+    "their", "them", "they", "we", "our", "us", "you", "your",
+    "he", "she", "his", "her", "him", "when", "where", "which",
+    "what", "who", "whom", "how", "why", "if", "then", "than",
+    "so", "as", "but", "not", "no", "nor", "only", "also",
+    "very", "just", "about", "between", "through", "during",
+    "before", "after", "above", "below", "up", "down",
+}
 
 
 class CombinationRecord(BaseModel):
