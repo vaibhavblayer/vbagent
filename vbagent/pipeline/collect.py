@@ -174,14 +174,18 @@ def _extract_concept_name(idea_text: str) -> str:
 
 
 def _extract_formulas(idea_text: str) -> list[str]:
-    """Extract formula strings from idea LaTeX."""
+    """Extract formula strings from idea LaTeX.
+
+    Formulas are stored WITHOUT math delimiters ($, \\[, etc.)
+    since they'll be placed inside align* or other math environments.
+    """
     formulas = []
 
-    # Inline math: $...$
+    # Inline math: $...$  — extract content without delimiters
     for m in re.finditer(r"\$([^$]+)\$", idea_text):
         formula = m.group(1).strip()
         if len(formula) > 3:  # skip trivial like $x$
-            formulas.append(f"${formula}$")
+            formulas.append(formula)
 
     # align* content
     for m in re.finditer(
@@ -190,13 +194,22 @@ def _extract_formulas(idea_text: str) -> list[str]:
         # Extract individual lines
         for line in m.group(1).split("\\\\"):
             line = line.strip()
-            if line and "&" in line:
-                # Take the RHS of alignment
-                parts = line.split("&", 1)
-                rhs = parts[1].strip().lstrip("=").strip()
-                if rhs:
-                    formulas.append(rhs)
-            elif line:
+            # Strip any stray $ delimiters inside align*
+            line = re.sub(r"^\$|\$$", "", line).strip()
+            if not line:
+                continue
+            if "&" in line:
+                # Take the full aligned expression
+                formulas.append(line)
+            else:
                 formulas.append(line)
 
-    return formulas[:10]  # cap at 10
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    unique: list[str] = []
+    for f in formulas:
+        if f not in seen:
+            seen.add(f)
+            unique.append(f)
+
+    return unique[:10]  # cap at 10

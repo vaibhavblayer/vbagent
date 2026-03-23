@@ -444,16 +444,57 @@ def _ideas_to_latex(ideas: list, title: str) -> str:
         lines.append(f"\n\\subsection*{{{topic_name.replace('-', ' ').title()}}}")
         lines.append("\\begin{itemize}")
         for idea in topic_ideas:
-            formulas_str = ""
-            if idea.formulas:
-                formulas_str = "\n    \\begin{align*}\n"
-                formulas_str += " \\\\\n".join(f"    {f}" for f in idea.formulas[:3])
-                formulas_str += "\n    \\end{align*}"
-
             lenses = ", ".join(idea.natural_lenses[:3])
             lines.append(f"    \\item {idea.text} \\hfill [{lenses}]")
-            if formulas_str:
-                lines.append(formulas_str)
+
+            if idea.formulas:
+                clean_formulas = [_strip_math_delimiters(f) for f in idea.formulas[:5]]
+                # Filter out empty/trivial
+                clean_formulas = [f for f in clean_formulas if len(f.strip()) > 1]
+                if clean_formulas:
+                    lines.append("    \\begin{align*}")
+                    for i, f in enumerate(clean_formulas):
+                        # Add & before = for alignment if present
+                        f = _add_alignment(f)
+                        suffix = " \\\\" if i < len(clean_formulas) - 1 else ""
+                        lines.append(f"    {f}{suffix}")
+                    lines.append("    \\end{align*}")
+
         lines.append("\\end{itemize}")
 
     return "\n".join(lines)
+
+
+def _strip_math_delimiters(formula: str) -> str:
+    """Strip $...$ and \\(...\\) delimiters from a formula.
+
+    Inside align*, you're already in math mode — no delimiters needed.
+    """
+    import re
+    f = formula.strip()
+    # Strip $...$ (single or double)
+    if f.startswith("$$") and f.endswith("$$"):
+        f = f[2:-2].strip()
+    elif f.startswith("$") and f.endswith("$"):
+        f = f[1:-1].strip()
+    # Strip \(...\)
+    if f.startswith("\\(") and f.endswith("\\)"):
+        f = f[2:-2].strip()
+    # Strip \[...\]
+    if f.startswith("\\[") and f.endswith("\\]"):
+        f = f[2:-2].strip()
+    return f
+
+
+def _add_alignment(formula: str) -> str:
+    """Add & before = for align* alignment if not already present."""
+    if "&" in formula:
+        return formula  # already has alignment
+    # Add & before the first = that isn't \= or part of \leq, \geq, \neq etc.
+    import re
+    # Match standalone = (not preceded by \ or part of <=, >=, !=)
+    m = re.search(r"(?<!\\)(?<!<)(?<!>)(?<!!)=", formula)
+    if m:
+        pos = m.start()
+        return formula[:pos] + "&" + formula[pos:]
+    return formula
