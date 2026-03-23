@@ -264,6 +264,129 @@ def dedup(dry_run, store_path, subject):
 
 
 @ideas.command()
+@click.option("--auto", "auto_accept", is_flag=True, help="Auto-accept all changes (no review)")
+@click.option("--include-suggested", is_flag=True, help="Also add suggested missing ideas")
+@click.option("--store", "store_path", default=None)
+@click.option("--subject", default=None)
+@click.option("--verbose", "-v", is_flag=True)
+def curate(auto_accept, include_suggested, store_path, subject, verbose):
+    """LLM-powered semantic deduplication and cleanup.
+
+    \b
+    Sends all ideas to an AI agent that understands physics concepts.
+    The agent merges semantic duplicates, cleans up text, fixes topics,
+    and optionally suggests missing ideas.
+
+    \b
+    Examples:
+        vbagent ideas curate                        # Review changes before applying
+        vbagent ideas curate --auto                 # Auto-accept all changes
+        vbagent ideas curate --include-suggested    # Also add suggested ideas
+        vbagent ideas curate --auto --include-suggested
+    """
+    from vbagent.agents.classification.idea_curator import curate_ideas
+    from vbagent.ideas.models import Idea
+    from vbagent.ideas.store import IdeaStore as IS
+    from vbagent.ideas.tagger import tag_lenses
+
+    console = _get_console()
+    store = _get_store(store_path, subject)
+
+    if store.count() == 0:
+        console.print("[yellow]Store is empty[/yellow]")
+        return
+
+    console.print(f"Curating {store.count()} ideas with AI agent...")
+
+    try:
+        with console.status("[bold green]Running IdeaCurator agent..."):
+            result = curate_ideas(store.ideas, subject=store.subject)
+    except Exception as e:
+        console.print(f"[red]Curation failed:[/red] {e}")
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        raise SystemExit(1)
+
+    stats = result.stats
+    console.print(f"\n[cyan]Curation results:[/cyan]")
+    console.print(f"  Input:     {stats.get('input_count', store.count())}")
+    console.print(f"  Unique:    {stats.get('unique_count', '?')}")
+    console.print(f"  Merged:    {stats.get('merged_count', '?')}")
+    console.print(f"  Suggested: {stats.get('suggested_count', 0)}")
+
+    # Show merge log
+    if result.merge_log:
+        console.print(f"\n[cyan]Merge decisions:[/cyan]")
+        for entry in result.merge_log:
+            console.print(f"  [green]✓ {entry.kept}[/green]")
+            for m in entry.merged:
+                console.print(f"    [red]← {m}[/red]")
+            if entry.reason:
+                console.print(f"    [dim]{entry.reason}[/dim]")
+
+    # Show suggested ideas
+    suggested = [c for c in result.curated_ideas if c.suggested]
+    if suggested:
+        console.print(f"\n[cyan]Suggested missing ideas ({len(suggested)}):[/cyan]")
+        for s in suggested:
+            console.print(f"  [yellow]+ {s.text}[/yellow] ({s.topic})")
+
+    # Confirm
+    if not auto_accept:
+        if not click.confirm(f"\nApply curation? ({store.count()} → {stats.get('unique_count', '?')} ideas)", default=True):
+            console.print("[dim]Cancelled[/dim]")
+            return
+
+    # Build new store from curated ideas
+    original_ideas = store.ideas
+    fresh = IS(store.path.parent / "__curate_temp__.json", store.subject)
+
+    for curated in result.curated_ideas:
+        if curated.suggested and not include_suggested:
+            continue
+
+        # Collect sources from merged originals
+        sources: list[str] = []
+        idea_latex = ""
+        for idx in curated.merged_from:
+            if 0 <= idx < len(original_ideas):
+                orig = original_ideas[idx]
+                sources.extend(orig.sources)
+                if orig.idea_latex and not idea_latex:
+                    idea_latex = orig.idea_latex
+
+        if curated.suggested:
+            sources = ["ai-suggested"]
+
+        new_idea = Idea(
+            text=curated.text,
+            formulas=curated.formulas,
+            topic=curated.topic,
+            subtopic=curated.subtopic,
+            subject=store.subject,
+            sources=list(set(sources)),
+            idea_latex=idea_latex,
+        )
+        new_idea = tag_lenses(new_idea)
+        fresh.add(new_idea, auto_tag=False)
+
+    # Preserve combinations
+    fresh._store.combinations = store.combinations
+    fresh.path = store.path
+    fresh.save()
+
+    # Clean up temp
+    temp_path = store.path.parent / "__curate_temp__.json"
+    if temp_path.exists():
+        temp_path.unlink()
+
+    console.print(f"\n[green]Curated:[/green] {store.count()} → {fresh.count()} ideas")
+    if suggested and include_suggested:
+        console.print(f"  (includes {len(suggested)} AI-suggested ideas)")
+
+
+@ideas.command()
 @click.option("--format", "fmt", type=click.Choice(["latex", "json"]), default="latex")
 @click.option("--output", "-o", default=None, help="Output file path")
 @click.option("--topic", default=None, help="Filter by topic")
