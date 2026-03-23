@@ -34,7 +34,20 @@ def _get_store(store_path: str | None = None, subject: str | None = None):
 
 @click.group()
 def ideas():
-    """Manage the idea store — the seed database for problem generation."""
+    """Manage the idea store — the seed database for problem generation.
+
+    \b
+    The idea store is a deduplicated JSON bank of unique concepts,
+    formulas, and techniques. It feeds into combine, generate, paper,
+    and concepts pipelines.
+
+    \b
+    Quick Start:
+        vbagent ideas collect --from-scans agentic/scans/
+        vbagent ideas stats
+        vbagent ideas list --topic magnetism
+        vbagent ideas export -o revision.tex
+    """
     pass
 
 
@@ -44,7 +57,19 @@ def ideas():
 @click.option("--store", "store_path", default=None, help="Path to store JSON")
 @click.option("--subject", default=None, help="Subject override")
 def collect(scans_dir, ideas_dir, store_path, subject):
-    """Collect ideas from scans or idea JSONs into the store."""
+    """Collect ideas from scans or idea JSONs into the store.
+
+    \b
+    Extracts ideas, deduplicates, auto-tags math lenses, and saves
+    to the idea store JSON.
+
+    \b
+    Examples:
+        vbagent ideas collect --from-scans agentic/scans/
+        vbagent ideas collect --from-ideas agentic/ideas/
+        vbagent ideas collect --from-scans agentic/scans/ --subject chemistry
+        vbagent ideas collect --from-scans agentic/scans/ --store my_store.json
+    """
     from vbagent.pipeline.collect import collect_from_scans, collect_from_ideas_dir
 
     console = _get_console()
@@ -80,7 +105,14 @@ def collect(scans_dir, ideas_dir, store_path, subject):
 @click.option("--store", "store_path", default=None)
 @click.option("--subject", default=None)
 def add(topic, text, formula, store_path, subject):
-    """Add a single idea manually."""
+    """Add a single idea manually.
+
+    \b
+    Examples:
+        vbagent ideas add --topic magnetism --text "Biot-Savart law for finite wire"
+        vbagent ideas add --topic optics --text "Thin lens formula" --formula "\\frac{1}{v}-\\frac{1}{u}=\\frac{1}{f}"
+        vbagent ideas add --topic mechanics --text "Work-energy theorem" --formula "W=\\Delta K" --formula "W=Fd\\cos\\theta"
+    """
     from vbagent.pipeline.collect import collect_manual
 
     console = _get_console()
@@ -101,7 +133,15 @@ def add(topic, text, formula, store_path, subject):
 @click.option("--store", "store_path", default=None)
 @click.option("--subject", default=None)
 def list_ideas(topic, lens, store_path, subject):
-    """List ideas in the store."""
+    """List ideas in the store.
+
+    \b
+    Examples:
+        vbagent ideas list                          # All ideas
+        vbagent ideas list --topic magnetism        # Filter by topic
+        vbagent ideas list --lens calculus           # Filter by lens compatibility
+        vbagent ideas list --topic optics --lens trigonometry
+    """
     console = _get_console()
     store = _get_store(store_path, subject)
 
@@ -129,7 +169,13 @@ def list_ideas(topic, lens, store_path, subject):
 @click.option("--store", "store_path", default=None)
 @click.option("--subject", default=None)
 def stats(store_path, subject):
-    """Show store statistics."""
+    """Show store statistics.
+
+    \b
+    Examples:
+        vbagent ideas stats
+        vbagent ideas stats --subject chemistry
+    """
     console = _get_console()
     store = _get_store(store_path, subject)
 
@@ -152,7 +198,19 @@ def stats(store_path, subject):
 @click.option("--store", "store_path", default=None)
 @click.option("--subject", default=None)
 def export(fmt, output, topic, store_path, subject):
-    """Export ideas as a revision sheet."""
+    """Export ideas as a revision sheet.
+
+    \b
+    Generates a student-friendly revision sheet from the idea store.
+    LaTeX format produces an itemized list grouped by topic with formulas.
+
+    \b
+    Examples:
+        vbagent ideas export -o revision.tex                    # Full LaTeX sheet
+        vbagent ideas export --topic magnetism -o mag.tex       # Single topic
+        vbagent ideas export --format json -o ideas.json        # JSON dump
+        vbagent ideas export --format latex                     # Print to stdout
+    """
     console = _get_console()
     store = _get_store(store_path, subject)
 

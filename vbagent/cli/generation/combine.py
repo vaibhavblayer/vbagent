@@ -45,20 +45,35 @@ def combine(
     the best subset and design a problem framed through math lenses.
 
     \b
+    Difficulty Scale (1-10):
+        1-3   NCERT / basic (algebra, trigonometry)
+        4-5   NEET / easy JEE Main (vectors, single-var calculus)
+        6-7   JEE Main / easy JEE Advanced (integration, probability)
+        8-9   JEE Advanced (matrix, PnC, multivariable)
+        10    Olympiad-adjacent
+
+    \b
+    Math Lenses:
+        algebra, trigonometry, vectors, calculus,
+        matrix, probability, combinatorics, coordinate
+
+    \b
     Examples:
-        vbagent combine --count 5 --pick 3 --difficulty 7
-        vbagent combine --count 3 --lens calculus --lens probability
-        vbagent combine --topic magnetism --difficulty hard --count 5
-        vbagent combine --count 10 --difficulty 4-7
-        vbagent combine --count 5 --lens all --difficulty 8
+        vbagent combine -c 5 -p 3 -d 7                         # 5 problems, pick 3 ideas each, difficulty 7
+        vbagent combine -c 3 --lens calculus --lens probability # Specific lenses
+        vbagent combine -t magnetism -d hard -c 5               # Topic-filtered
+        vbagent combine -c 10 -d 4-7                            # Difficulty range
+        vbagent combine -c 5 --lens all -d 8                    # All compatible lenses
+        vbagent combine -c 3 --type integer -d 9                # Integer-type, hard
+        vbagent combine -c 5 --concepts agentic/concepts/em.tex # With concepts context
 
     \b
     Output Structure:
         agentic/generated/originals/{subject}/{topic}/{VBP-ID}[-{lens}]/
-        ├── problem.tex
-        ├── solution.tex
-        ├── tikz/diagram.tex
-        └── meta.json
+        ├── problem.tex       # Combined problem + solution + idea
+        ├── solution.tex      # Solution separately
+        ├── tikz/diagram.tex  # TikZ diagram (if generated)
+        └── meta.json         # Full provenance (ideas, lenses, difficulty)
     """
     from vbagent.ideas.models import parse_difficulty, MATH_LENSES
     from vbagent.pipeline.combine import generate_batch
