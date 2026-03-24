@@ -27,11 +27,16 @@ def _find_problem_dirs(target: Path) -> list[Path]:
     """Resolve target into a list of problem directories/files.
 
     Handles:
+      - A concepts dir          (has concepts.json)
       - A single originals dir  (has meta.json)
       - A parent dir containing multiple originals dirs
       - A scans-style dir       (has problems/ subdir)
     """
     results: list[Path] = []
+
+    # Concepts layout
+    if (target / "concepts.json").exists():
+        return [target]
 
     # Single originals-style dir
     if (target / "meta.json").exists():
@@ -52,7 +57,9 @@ def _find_problem_dirs(target: Path) -> list[Path]:
 
 
 def _detect_layout(problem_dir: Path) -> str:
-    """Detect whether this is 'originals' or 'scans' layout."""
+    """Detect whether this is 'originals', 'scans', or 'concepts' layout."""
+    if (problem_dir / "concepts.json").exists():
+        return "concepts"
     if (problem_dir / "meta.json").exists():
         return "originals"
     if (problem_dir / "problems").is_dir():
@@ -318,6 +325,68 @@ def _strip_existing_tikz(tex: str) -> str:
 
 
 # ------------------------------------------------------------------
+# Concepts layout helpers
+# ------------------------------------------------------------------
+
+def _regen_tikz_concepts(concepts_dir: Path, subject: str, items: list[str], console) -> int:
+    """Regenerate TikZ diagrams in a concepts sheet.
+
+    Reads concepts.json, regenerates diagrams for entries with
+    needs_diagram=true, then re-renders concepts.tex.
+    """
+    json_path = concepts_dir / "concepts.json"
+    tex_path = concepts_dir / "concepts.tex"
+
+    data = json.loads(json_path.read_text())
+
+    from vbagent.agents.content_generation.concepts import (
+        _generate_concept_diagram,
+        concept_sheet_to_latex,
+    )
+    from vbagent.models.content import ConceptSheet
+
+    sheet = ConceptSheet.model_validate(data)
+
+    count = 0
+    total = 0
+
+    for group in sheet.groups:
+        for entry in group.entries:
+            if not entry.needs_diagram or not entry.diagram_description:
+                continue
+            if items and entry.name not in items:
+                continue
+
+            total += 1
+            console.print(f"  {entry.name}...", end=" ")
+
+            t0 = time.time()
+            tikz = _generate_concept_diagram(entry.diagram_description, subject)
+            elapsed = time.time() - t0
+
+            if tikz:
+                # Store the generated TikZ in a side file for reference
+                tikz_dir = concepts_dir / "tikz"
+                tikz_dir.mkdir(exist_ok=True)
+                slug = entry.name.lower().replace(" ", "_")[:40]
+                (tikz_dir / f"{slug}.tex").write_text(tikz)
+
+                console.print(f"[green]✓[/green] ({elapsed:.1f}s)")
+                count += 1
+            else:
+                console.print(f"[yellow]empty[/yellow]")
+
+    # Re-render concepts.tex from the JSON (with fresh diagrams)
+    if count > 0:
+        console.print(f"\n  Re-rendering concepts.tex...")
+        latex = concept_sheet_to_latex(sheet, subject=subject)
+        tex_path.write_text(latex)
+        console.print(f"  [green]✓[/green] concepts.tex updated")
+
+    return count
+
+
+# ------------------------------------------------------------------
 # CLI command
 # ------------------------------------------------------------------
 
@@ -325,7 +394,7 @@ def _strip_existing_tikz(tex: str) -> str:
 @click.argument("target", type=click.Path(exists=True))
 @click.option("--tikz-only", is_flag=True, help="Regenerate only the TikZ diagram")
 @click.option("--full", "full_regen", is_flag=True, help="Regenerate everything (problem + solution + diagram)")
-@click.option("--item", multiple=True, help="Specific problem names to regenerate (scans mode)")
+@click.option("--item", multiple=True, help="Filter by name (problem name for scans, entry name for concepts)")
 @click.option("--subject", default=None, help="Subject override")
 @click.option("-v", "--verbose", is_flag=True)
 def regenerate(target, tikz_only, full_regen, item, subject, verbose):
@@ -333,6 +402,7 @@ def regenerate(target, tikz_only, full_regen, item, subject, verbose):
 
     \b
     TARGET is a path to:
+      - A concepts dir         (has concepts.json — regenerates concept diagrams)
       - A single problem dir   (has meta.json or problem.tex)
       - A parent dir           (contains multiple problem dirs)
       - A scans output dir     (has problems/ subdir)
@@ -347,11 +417,10 @@ def regenerate(target, tikz_only, full_regen, item, subject, verbose):
 
     \b
     Examples:
-      vbagent regenerate agentic/generated/originals/physics/magnetism/VBP-PHY-MAG-001-algebra_vectors --tikz-only
-      vbagent regenerate agentic/generated/originals/physics/magnetism/ --tikz-only
+      vbagent regenerate agentic/concepts/                      # Regen all concept diagrams
+      vbagent regenerate agentic/concepts/ --item "Cyclotron frequency and resonance"
       vbagent regenerate agentic/generated/originals/ --tikz-only
-      vbagent regenerate agentic/generated/scans/ --tikz-only
-      vbagent regenerate agentic/generated/scans/ --tikz-only --item problem_1 --item problem_6
+      vbagent regenerate agentic/generated/scans/ --tikz-only --item problem_1
       vbagent regenerate agentic/generated/originals/physics/magnetism/VBP-PHY-MAG-001-algebra_vectors --full
     """
     from vbagent.config import get_config
@@ -381,7 +450,13 @@ def regenerate(target, tikz_only, full_regen, item, subject, verbose):
     for pdir in problem_dirs:
         layout = _detect_layout(pdir)
 
-        if layout == "originals":
+        if layout == "concepts":
+            console.print(f"\n[bold]Concepts: {pdir}[/bold]")
+            success_count += _regen_tikz_concepts(pdir, subject, items_list, console)
+            # For concepts, total_count is set inside the helper
+            total_count += 1  # treat as one unit
+
+        elif layout == "originals":
             console.print(f"\n[bold]{pdir.name}[/bold]")
             total_count += 1
             if tikz_only:

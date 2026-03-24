@@ -263,17 +263,30 @@ def concept_sheet_to_latex(sheet: ConceptSheet, subject: str = "physics") -> str
 
 
 def _generate_concept_diagram(description: str, subject: str = "physics") -> str:
-    """Generate a TikZ diagram for a concept using the TikZ agent.
+    """Generate a TikZ diagram for a concept using the routed TikZ agent.
 
     Returns the diagram wrapped in \\begin{center}...\\end{center},
     or empty string on failure.
     """
     try:
-        from vbagent.agents.diagram.tikz import generate_tikz
-        tikz_code = generate_tikz(
-            description=f"Simple conceptual diagram for a revision sheet: {description}. "
-                        "Keep it minimal and schematic — no colors, no fills, clean lines only.",
-            show_spinner=True,
+        from vbagent.pipeline.generate import _infer_diagram_type, _generate_tikz_for_problem
+
+        class _NoopConsole:
+            def print(self, *a, **kw): pass
+
+        diagram_desc = (
+            f"Simple conceptual diagram for a revision sheet: {description}. "
+            "Keep it minimal and schematic — no colors, no fills, clean lines only."
+        )
+        sketch_type = _infer_diagram_type(description, subject)
+
+        tikz_code = _generate_tikz_for_problem(
+            diagram_desc=diagram_desc,
+            subject=subject,
+            problem_tex="",
+            image_path=None,
+            sketch_type=sketch_type,
+            console=_NoopConsole(),
         )
         if not tikz_code or not tikz_code.strip():
             return ""
