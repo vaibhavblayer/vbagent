@@ -42,6 +42,30 @@ For each unique idea, produce a clean, concise description:
 - Include the key formula reference if applicable
 - Remove LaTeX formatting from the text (formulas go in the formulas field)
 
+## FORMULA FORMATTING (CRITICAL)
+
+All formulas MUST use proper LaTeX commands. NEVER use Unicode math symbols.
+
+Required substitutions:
+- Use \\varepsilon, NOT ε
+- Use \\Phi, NOT Φ  (and \\phi for lowercase)
+- Use \\int, NOT ∫
+- Use \\oint, NOT ∮
+- Use \\sum, NOT Σ (when used as summation)
+- Use \\prod, NOT Π (when used as product)
+- Use \\infty, NOT ∞
+- Use \\alpha, \\beta, \\gamma, \\delta, \\theta, \\omega, \\lambda, \\mu, \\nu, \\pi, \\sigma, \\tau — NOT α, β, γ, δ, θ, ω, λ, μ, ν, π, σ, τ
+- Use \\vec{{B}}, NOT \\mathbf{{B}} for vectors
+- Use \\frac{{a}}{{b}}, NOT a/b for fractions (unless inline shorthand)
+- Use \\cdot for dot product, NOT ·
+- Use \\times for cross product, NOT ×
+- Use \\leq, \\geq, \\neq — NOT ≤, ≥, ≠
+- Use \\rightarrow or \\to — NOT →
+- Use \\partial for partial derivatives, NOT ∂
+
+Each formula string must be a valid LaTeX math expression that compiles inside align*.
+Wrap each formula in $...$ delimiters (e.g. "$B = \\\\frac{{\\\\mu_0 I}}{{2R}}$").
+
 ## 3. TOPIC ASSIGNMENT
 
 Assign the correct topic from this list:

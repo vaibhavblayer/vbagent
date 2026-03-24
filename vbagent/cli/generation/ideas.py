@@ -361,7 +361,7 @@ def curate(auto_accept, include_suggested, store_path, subject, verbose):
 
         new_idea = Idea(
             text=curated.text,
-            formulas=curated.formulas,
+            formulas=[_sanitize_formula_latex(f) for f in curated.formulas],
             topic=curated.topic,
             subtopic=curated.subtopic,
             subject=store.subject,
@@ -449,6 +449,8 @@ def _ideas_to_latex(ideas: list, title: str) -> str:
 
             if idea.formulas:
                 clean_formulas = [_strip_math_delimiters(f) for f in idea.formulas[:5]]
+                # Sanitize Unicode → LaTeX
+                clean_formulas = [_sanitize_formula_latex(f) for f in clean_formulas]
                 # Filter out empty/trivial
                 clean_formulas = [f for f in clean_formulas if len(f.strip()) > 1]
                 if clean_formulas:
@@ -470,11 +472,11 @@ def _strip_math_delimiters(formula: str) -> str:
 
     Inside align*, you're already in math mode — no delimiters needed.
     """
-    import re
     f = formula.strip()
-    # Strip $...$ (single or double)
+    # Strip $$...$$ (display math)
     if f.startswith("$$") and f.endswith("$$"):
         f = f[2:-2].strip()
+    # Strip $...$ (inline math)
     elif f.startswith("$") and f.endswith("$"):
         f = f[1:-1].strip()
     # Strip \(...\)
@@ -497,4 +499,80 @@ def _add_alignment(formula: str) -> str:
     if m:
         pos = m.start()
         return formula[:pos] + "&" + formula[pos:]
+    return formula
+
+
+# Unicode → LaTeX replacement table
+_UNICODE_TO_LATEX: list[tuple[str, str]] = [
+    ("ε", r"\varepsilon"),
+    ("Φ", r"\Phi"),
+    ("φ", r"\phi"),
+    ("∫", r"\int"),
+    ("∮", r"\oint"),
+    ("Σ", r"\sum"),
+    ("Π", r"\prod"),
+    ("∞", r"\infty"),
+    ("α", r"\alpha"),
+    ("β", r"\beta"),
+    ("γ", r"\gamma"),
+    ("δ", r"\delta"),
+    ("θ", r"\theta"),
+    ("ω", r"\omega"),
+    ("λ", r"\lambda"),
+    ("μ", r"\mu"),
+    ("ν", r"\nu"),
+    ("π", r"\pi"),
+    ("σ", r"\sigma"),
+    ("τ", r"\tau"),
+    ("ρ", r"\rho"),
+    ("κ", r"\kappa"),
+    ("η", r"\eta"),
+    ("ζ", r"\zeta"),
+    ("χ", r"\chi"),
+    ("ψ", r"\psi"),
+    ("Ψ", r"\Psi"),
+    ("Ω", r"\Omega"),
+    ("Δ", r"\Delta"),
+    ("Γ", r"\Gamma"),
+    ("Λ", r"\Lambda"),
+    ("Θ", r"\Theta"),
+    ("∂", r"\partial"),
+    ("·", r"\cdot"),
+    ("×", r"\times"),
+    ("≤", r"\leq"),
+    ("≥", r"\geq"),
+    ("≠", r"\neq"),
+    ("→", r"\rightarrow"),
+    ("←", r"\leftarrow"),
+    ("↔", r"\leftrightarrow"),
+    ("≈", r"\approx"),
+    ("∝", r"\propto"),
+    ("√", r"\sqrt"),
+    ("±", r"\pm"),
+    ("∓", r"\mp"),
+    ("∇", r"\nabla"),
+    ("−", "-"),  # Unicode minus → ASCII hyphen-minus
+]
+
+
+def _sanitize_formula_latex(formula: str) -> str:
+    """Replace Unicode math symbols with proper LaTeX commands."""
+    import re
+    for uni, latex in _UNICODE_TO_LATEX:
+        formula = formula.replace(uni, latex)
+    # Ensure LaTeX commands that don't take arguments (Greek letters,
+    # operators) are separated from a following letter.
+    # e.g. \DeltaV → \Delta V, \omegat → \omega t, \cdotd → \cdot d
+    _NO_ARG = (
+        r"alpha|beta|gamma|delta|epsilon|varepsilon|zeta|eta|theta|iota|"
+        r"kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|upsilon|phi|chi|psi|omega|"
+        r"Gamma|Delta|Theta|Lambda|Xi|Pi|Sigma|Upsilon|Phi|Psi|Omega|"
+        r"cdot|times|leq|geq|neq|approx|propto|infty|partial|nabla|"
+        r"sum|prod|int|oint|pm|mp|rightarrow|leftarrow|to"
+    )
+    formula = re.sub(
+        rf"(\\(?:{_NO_ARG}))([A-Za-z])",
+        r"\1 \2",
+        formula,
+    )
     return formula
