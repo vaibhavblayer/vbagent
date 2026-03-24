@@ -71,7 +71,7 @@ def _detect_layout(problem_dir: Path) -> str:
 # Originals layout helpers
 # ------------------------------------------------------------------
 
-def _regen_tikz_originals(problem_dir: Path, subject: str, console) -> bool:
+def _regen_tikz_originals(problem_dir: Path, subject: str, force: bool, console) -> bool:
     """Regenerate only the TikZ diagram for an originals-style problem."""
     from vbagent.pipeline.combine import _generate_tikz, _insert_tikz_into_latex
 
@@ -80,6 +80,12 @@ def _regen_tikz_originals(problem_dir: Path, subject: str, console) -> bool:
 
     if not problem_path.exists():
         console.print(f"  [yellow]No problem.tex in {problem_dir.name}[/yellow]")
+        return False
+
+    # Resume: skip if tikz already exists
+    tikz_file = problem_dir / "tikz" / "diagram.tex"
+    if not force and tikz_file.exists():
+        console.print(f"  [dim]skipped (already done)[/dim]")
         return False
 
     problem_tex = problem_path.read_text()
@@ -188,7 +194,7 @@ def _regen_full_originals(problem_dir: Path, subject: str, console) -> bool:
 # Scans layout helpers
 # ------------------------------------------------------------------
 
-def _regen_tikz_scans(scans_dir: Path, items: list[str], subject: str, console) -> int:
+def _regen_tikz_scans(scans_dir: Path, items: list[str], subject: str, force: bool, console) -> int:
     """Regenerate TikZ for scans-style problems."""
     from vbagent.pipeline.combine import _generate_tikz, _insert_tikz_into_latex
 
@@ -197,9 +203,16 @@ def _regen_tikz_scans(scans_dir: Path, items: list[str], subject: str, console) 
     tikz_dir.mkdir(exist_ok=True)
 
     count = 0
+    skipped = 0
     for tex_file in sorted(problems_dir.glob("*.tex")):
         name = tex_file.stem
         if items and name not in items:
+            continue
+
+        # Resume: skip if tikz already exists
+        tikz_file = tikz_dir / f"{name}.tex"
+        if not force and tikz_file.exists():
+            skipped += 1
             continue
 
         console.print(f"\n[bold]{name}[/bold]")
@@ -224,6 +237,9 @@ def _regen_tikz_scans(scans_dir: Path, items: list[str], subject: str, console) 
             count += 1
         else:
             console.print(f"  [yellow]TikZ generation returned empty[/yellow]")
+
+    if skipped:
+        console.print(f"\n  [dim]Skipped {skipped} (already done, use --force to redo)[/dim]")
 
     return count
 
@@ -328,11 +344,14 @@ def _strip_existing_tikz(tex: str) -> str:
 # Concepts layout helpers
 # ------------------------------------------------------------------
 
-def _regen_tikz_concepts(concepts_dir: Path, subject: str, items: list[str], console) -> int:
+def _regen_tikz_concepts(
+    concepts_dir: Path, subject: str, items: list[str], force: bool, console,
+) -> int:
     """Regenerate TikZ diagrams in a concepts sheet.
 
     Reads concepts.json, regenerates diagrams for entries with
     needs_diagram=true, then re-renders concepts.tex.
+    Skips entries that already have a tikz file unless force=True.
     """
     json_path = concepts_dir / "concepts.json"
     tex_path = concepts_dir / "concepts.tex"
@@ -346,8 +365,10 @@ def _regen_tikz_concepts(concepts_dir: Path, subject: str, items: list[str], con
     from vbagent.models.content import ConceptSheet
 
     sheet = ConceptSheet.model_validate(data)
+    tikz_dir = concepts_dir / "tikz"
 
     count = 0
+    skipped = 0
     total = 0
 
     for group in sheet.groups:
@@ -358,6 +379,14 @@ def _regen_tikz_concepts(concepts_dir: Path, subject: str, items: list[str], con
                 continue
 
             total += 1
+            slug = entry.name.lower().replace(" ", "_")[:40]
+            tikz_path = tikz_dir / f"{slug}.tex"
+
+            # Resume: skip if already generated
+            if not force and tikz_path.exists():
+                skipped += 1
+                continue
+
             console.print(f"  {entry.name}...", end=" ")
 
             t0 = time.time()
@@ -365,16 +394,16 @@ def _regen_tikz_concepts(concepts_dir: Path, subject: str, items: list[str], con
             elapsed = time.time() - t0
 
             if tikz:
-                # Store the generated TikZ in a side file for reference
-                tikz_dir = concepts_dir / "tikz"
                 tikz_dir.mkdir(exist_ok=True)
-                slug = entry.name.lower().replace(" ", "_")[:40]
-                (tikz_dir / f"{slug}.tex").write_text(tikz)
+                tikz_path.write_text(tikz)
 
                 console.print(f"[green]✓[/green] ({elapsed:.1f}s)")
                 count += 1
             else:
                 console.print(f"[yellow]empty[/yellow]")
+
+    if skipped:
+        console.print(f"  [dim]Skipped {skipped}/{total} (already done, use --force to redo)[/dim]")
 
     # Re-render concepts.tex from the JSON (with fresh diagrams)
     if count > 0:
@@ -394,10 +423,11 @@ def _regen_tikz_concepts(concepts_dir: Path, subject: str, items: list[str], con
 @click.argument("target", type=click.Path(exists=True))
 @click.option("--tikz-only", is_flag=True, help="Regenerate only the TikZ diagram")
 @click.option("--full", "full_regen", is_flag=True, help="Regenerate everything (problem + solution + diagram)")
+@click.option("--force", is_flag=True, help="Redo all, even if already generated (default: resume/skip done)")
 @click.option("--item", multiple=True, help="Filter by name (problem name for scans, entry name for concepts)")
 @click.option("--subject", default=None, help="Subject override")
 @click.option("-v", "--verbose", is_flag=True)
-def regenerate(target, tikz_only, full_regen, item, subject, verbose):
+def regenerate(target, tikz_only, full_regen, force, item, subject, verbose):
     """Regenerate diagrams or full content for existing problems.
 
     \b
@@ -414,10 +444,12 @@ def regenerate(target, tikz_only, full_regen, item, subject, verbose):
 
     \b
     Default (no flag) = --tikz-only
+    Resume: skips entries that already have a TikZ file. Use --force to redo all.
 
     \b
     Examples:
-      vbagent regenerate agentic/concepts/                      # Regen all concept diagrams
+      vbagent regenerate agentic/concepts/                      # Regen concept diagrams (resumes)
+      vbagent regenerate agentic/concepts/ --force              # Redo all concept diagrams
       vbagent regenerate agentic/concepts/ --item "Cyclotron frequency and resonance"
       vbagent regenerate agentic/generated/originals/ --tikz-only
       vbagent regenerate agentic/generated/scans/ --tikz-only --item problem_1
@@ -452,15 +484,14 @@ def regenerate(target, tikz_only, full_regen, item, subject, verbose):
 
         if layout == "concepts":
             console.print(f"\n[bold]Concepts: {pdir}[/bold]")
-            success_count += _regen_tikz_concepts(pdir, subject, items_list, console)
-            # For concepts, total_count is set inside the helper
-            total_count += 1  # treat as one unit
+            success_count += _regen_tikz_concepts(pdir, subject, items_list, force, console)
+            total_count += 1
 
         elif layout == "originals":
             console.print(f"\n[bold]{pdir.name}[/bold]")
             total_count += 1
             if tikz_only:
-                if _regen_tikz_originals(pdir, subject, console):
+                if _regen_tikz_originals(pdir, subject, force, console):
                     success_count += 1
             else:
                 if _regen_full_originals(pdir, subject, console):
@@ -474,7 +505,7 @@ def regenerate(target, tikz_only, full_regen, item, subject, verbose):
             total_count += len(tex_files)
 
             if tikz_only:
-                success_count += _regen_tikz_scans(pdir, items_list, subject, console)
+                success_count += _regen_tikz_scans(pdir, items_list, subject, force, console)
             else:
                 success_count += _regen_full_scans(pdir, items_list, subject, console)
 
