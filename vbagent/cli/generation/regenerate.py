@@ -360,7 +360,7 @@ def _regen_tikz_concepts(
 
     from vbagent.agents.content_generation.concepts import (
         _generate_concept_diagram,
-        concept_sheet_to_latex,
+        _build_mindmap,
     )
     from vbagent.models.content import ConceptSheet
 
@@ -405,14 +405,50 @@ def _regen_tikz_concepts(
     if skipped:
         console.print(f"  [dim]Skipped {skipped}/{total} (already done, use --force to redo)[/dim]")
 
-    # Re-render concepts.tex from the JSON (with fresh diagrams)
-    if count > 0:
-        console.print(f"\n  Re-rendering concepts.tex...")
-        latex = concept_sheet_to_latex(sheet, subject=subject)
-        tex_path.write_text(latex)
-        console.print(f"  [green]✓[/green] concepts.tex updated")
+    # Always re-render concepts.tex using cached tikz files
+    console.print(f"\n  Re-rendering concepts.tex from cached diagrams...")
+    latex = _rebuild_concepts_tex(sheet, tikz_dir, subject)
+    tex_path.write_text(latex)
+    console.print(f"  [green]✓[/green] concepts.tex updated")
 
     return count
+
+
+def _rebuild_concepts_tex(sheet, tikz_dir: Path, subject: str) -> str:
+    """Rebuild concepts.tex from JSON + cached tikz files (no LLM calls)."""
+    from vbagent.agents.content_generation.concepts import _build_mindmap
+
+    lines = [f"\\section*{{{sheet.title}}}", ""]
+
+    for group in sheet.groups:
+        lines.append(f"\\subsection*{{{group.subtopic}}}")
+        lines.append("\\begin{itemize}")
+        for entry in group.entries:
+            lines.append(f"\\item {entry.name} \\hfill [{entry.frequency}]\\\\")
+            if entry.description:
+                lines.append(f"\\textit{{{entry.description}}}")
+            if entry.formulas:
+                lines.append("    \\begin{align*}")
+                for i, f in enumerate(entry.formulas):
+                    formula = f.strip().strip("$").strip()
+                    suffix = " \\\\" if i < len(entry.formulas) - 1 else ""
+                    lines.append(f"    {formula}{suffix}")
+                lines.append("    \\end{align*}")
+            # Insert cached TikZ diagram if available
+            if entry.needs_diagram and entry.diagram_description:
+                slug = entry.name.lower().replace(" ", "_")[:40]
+                tikz_path = tikz_dir / f"{slug}.tex"
+                if tikz_path.exists():
+                    lines.append(tikz_path.read_text().strip())
+        lines.append("\\end{itemize}")
+        lines.append("")
+
+    # Mindmap
+    group_names = [g.subtopic for g in sheet.groups]
+    if len(group_names) >= 2:
+        lines.append(_build_mindmap(sheet.title or sheet.topic, group_names))
+
+    return "\n".join(lines)
 
 
 # ------------------------------------------------------------------
