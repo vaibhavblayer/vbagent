@@ -82,7 +82,10 @@ def show(compact):
 
     console.print(f"[dim]subject={cfg.subject}  provider={get_provider_name()}  "
                   f"default_model={cfg.default_model}  reasoning={cfg.default_reasoning_effort}  "
-                  f"debug={'on' if cfg.debug else 'off'}[/dim]\n")
+                  f"debug={'on' if cfg.debug else 'off'}[/dim]")
+    if cfg.single_model:
+        console.print(f"[bold cyan]single_model={cfg.single_model}[/bold cyan] (all agents use this model)")
+    console.print()
 
     if compact:
         # Compact: one line per group showing model(s) used
@@ -374,6 +377,58 @@ def subject(subject: str, workspace: bool):
     cfg.subject = subject
     config_path = save_config(workspace=workspace)
     console.print(f"[green]✓[/green] Subject set to: {subject}")
+    console.print(f"[dim]Saved to: {config_path}[/dim]")
+
+
+@config.command("set-model")
+@click.argument("model")
+@click.option("--workspace", "-w", is_flag=True, help="Save to workspace config")
+def set_model(model: str, workspace: bool):
+    """Set a single model for ALL agents, or revert to auto (two-tier).
+
+    In single-model mode every agent uses the same model while
+    per-category reasoning effort tiers are preserved (low for
+    classifiers, medium for scanner, high for diagrams/solutions).
+
+    Use 'auto' to clear single-model mode and revert to the normal
+    two-tier split (mini for classification/QA, full for generation).
+
+    \b
+    Examples:
+        vbagent config set-model gpt-5.4       # Everything uses gpt-5.4
+        vbagent config set-model gpt-5.4-mini  # Everything uses mini
+        vbagent config set-model auto           # Revert to two-tier
+        vbagent config set-model gpt-5.4 -w    # Workspace only
+    """
+    from vbagent.config import AgentModelConfig, set_config, AGENT_GROUPS
+    console = _get_console()
+    cfg = get_config()
+
+    if model.lower() == "auto":
+        cfg.single_model = None
+        config_path = save_config(workspace=workspace)
+        console.print("[green]✓[/green] Single-model mode [bold]off[/bold] — using two-tier defaults")
+        heavy = cfg.default_model.replace("-mini", "") if "-mini" in cfg.default_model else cfg.default_model
+        console.print(f"  light: {cfg.default_model}  heavy: {heavy}")
+    else:
+        cfg.single_model = model
+        # Re-apply reasoning tiers with the new single model so
+        # agents dict reflects the change immediately.
+        cfg.agents.clear()
+        cfg._apply_reasoning_tiers(light=model, heavy=model)
+        config_path = save_config(workspace=workspace)
+        console.print(f"[green]✓[/green] Single-model mode [bold]on[/bold] — all agents use [cyan]{model}[/cyan]")
+        # Show reasoning tiers
+        tiers: dict[str, list[str]] = {}
+        for group_name, agent_names in AGENT_GROUPS.items():
+            for name in agent_names:
+                ac = cfg.get_agent_config(name)
+                tiers.setdefault(ac.reasoning_effort, []).append(name)
+        for effort in ["low", "medium", "high"]:
+            if effort in tiers:
+                console.print(f"  {effort}: {', '.join(tiers[effort][:6])}"
+                              + (f" +{len(tiers[effort])-6} more" if len(tiers[effort]) > 6 else ""))
+
     console.print(f"[dim]Saved to: {config_path}[/dim]")
 
 

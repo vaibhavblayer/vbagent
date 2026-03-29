@@ -344,6 +344,59 @@ def _strip_existing_tikz(tex: str) -> str:
 # Concepts layout helpers
 # ------------------------------------------------------------------
 
+def _slug(name: str) -> str:
+    """Consistent slug for a concept entry name."""
+    return name.lower().replace(" ", "_")[:40]
+
+
+def _collect_diagram_entries(sheet) -> list[tuple[str, str, object]]:
+    """Return flat list of (group_subtopic, slug, entry) for entries needing diagrams."""
+    entries = []
+    for group in sheet.groups:
+        for entry in group.entries:
+            if entry.needs_diagram and entry.diagram_description:
+                entries.append((group.subtopic, _slug(entry.name), entry))
+    return entries
+
+
+def _parse_selection(raw: str, total: int) -> set[int] | None:
+    """Parse user input like '1,3,7' or 'all' into a set of 0-based indices.
+
+    Returns None for 'all', empty set for empty/skip input.
+    """
+    raw = raw.strip().lower()
+    if raw in ("all", "a"):
+        return None  # means select all
+    if not raw:
+        return set()  # skip
+
+    indices: set[int] = set()
+    for part in raw.split(","):
+        part = part.strip()
+        if "-" in part:
+            # Range like 3-7
+            lo, hi = part.split("-", 1)
+            lo_i, hi_i = int(lo.strip()), int(hi.strip())
+            for i in range(lo_i, hi_i + 1):
+                if 1 <= i <= total:
+                    indices.add(i - 1)
+        elif part.isdigit():
+            idx = int(part)
+            if 1 <= idx <= total:
+                indices.add(idx - 1)
+    return indices
+
+
+def _show_diagram_list(entries, tikz_dir: Path, console) -> None:
+    """Print numbered list of diagram entries with cached status."""
+    console.print()
+    for i, (subtopic, slug, entry) in enumerate(entries, 1):
+        cached = (tikz_dir / f"{slug}.tex").exists()
+        status = "[green]✓[/green]" if cached else "[red]✗[/red]"
+        console.print(f"  {status} {i:>2}. {entry.name}  [dim]({subtopic})[/dim]")
+    console.print()
+
+
 def _regen_tikz_concepts(
     concepts_dir: Path, subject: str, items: list[str], force: bool, console,
 ) -> int:
@@ -351,7 +404,9 @@ def _regen_tikz_concepts(
 
     Reads concepts.json, regenerates diagrams for entries with
     needs_diagram=true, then re-renders concepts.tex.
-    Skips entries that already have a tikz file unless force=True.
+
+    Interactive mode: when no --item filter and not --force, shows a
+    numbered list and prompts user to pick entries by number.
     """
     json_path = concepts_dir / "concepts.json"
     tex_path = concepts_dir / "concepts.tex"
@@ -367,43 +422,79 @@ def _regen_tikz_concepts(
     sheet = ConceptSheet.model_validate(data)
     tikz_dir = concepts_dir / "tikz"
 
+    all_entries = _collect_diagram_entries(sheet)
+
+    # --- Resolve which entries to regenerate ---
+
+    # --item flag: accept names or numbers (e.g. --item 1,3,7)
+    if items:
+        selected_indices: set[int] | None = set()
+        # Check if items look like numbers
+        joined = ",".join(items)
+        parsed = _parse_selection(joined, len(all_entries))
+        if parsed is not None and parsed:
+            selected_indices = parsed
+        else:
+            # Match by name
+            for i, (_sub, _slug, entry) in enumerate(all_entries):
+                if entry.name in items:
+                    selected_indices.add(i)
+        force_selected = True  # --item implies force for those entries
+    elif force:
+        # --force: redo all
+        selected_indices = None  # None = all
+        force_selected = True
+    else:
+        # Interactive: show list and prompt
+        _show_diagram_list(all_entries, tikz_dir, console)
+        raw = click.prompt(
+            "  Enter numbers to regenerate (e.g. 1,3,7 or 1-5 or 'all', empty to skip)",
+            default="",
+            show_default=False,
+        )
+        selected_indices = _parse_selection(raw, len(all_entries))
+        if selected_indices is not None and len(selected_indices) == 0:
+            console.print("  [dim]Nothing selected, skipping generation.[/dim]")
+            # Still rebuild tex from cached
+            console.print(f"\n  Re-rendering concepts.tex from cached diagrams...")
+            latex = _rebuild_concepts_tex(sheet, tikz_dir, subject)
+            tex_path.write_text(latex)
+            console.print(f"  [green]✓[/green] concepts.tex updated")
+            return 0
+        force_selected = True  # user explicitly picked, so force those
+
+    # --- Generate ---
     count = 0
     skipped = 0
-    total = 0
 
-    for group in sheet.groups:
-        for entry in group.entries:
-            if not entry.needs_diagram or not entry.diagram_description:
-                continue
-            if items and entry.name not in items:
-                continue
+    for i, (subtopic, slug, entry) in enumerate(all_entries):
+        # Filter check
+        if selected_indices is not None and i not in selected_indices:
+            continue
 
-            total += 1
-            slug = entry.name.lower().replace(" ", "_")[:40]
-            tikz_path = tikz_dir / f"{slug}.tex"
+        tikz_path = tikz_dir / f"{slug}.tex"
 
-            # Resume: skip if already generated
-            if not force and tikz_path.exists():
-                skipped += 1
-                continue
+        # Resume: skip if already generated and not forced
+        if not force_selected and tikz_path.exists():
+            skipped += 1
+            continue
 
-            console.print(f"  {entry.name}...", end=" ")
+        console.print(f"  {entry.name}...", end=" ")
 
-            t0 = time.time()
-            tikz = _generate_concept_diagram(entry.diagram_description, subject)
-            elapsed = time.time() - t0
+        t0 = time.time()
+        tikz = _generate_concept_diagram(entry.diagram_description, subject)
+        elapsed = time.time() - t0
 
-            if tikz:
-                tikz_dir.mkdir(exist_ok=True)
-                tikz_path.write_text(tikz)
-
-                console.print(f"[green]✓[/green] ({elapsed:.1f}s)")
-                count += 1
-            else:
-                console.print(f"[yellow]empty[/yellow]")
+        if tikz:
+            tikz_dir.mkdir(exist_ok=True)
+            tikz_path.write_text(tikz)
+            console.print(f"[green]✓[/green] ({elapsed:.1f}s)")
+            count += 1
+        else:
+            console.print(f"[yellow]empty[/yellow]")
 
     if skipped:
-        console.print(f"  [dim]Skipped {skipped}/{total} (already done, use --force to redo)[/dim]")
+        console.print(f"  [dim]Skipped {skipped} (already done, use --force to redo)[/dim]")
 
     # Always re-render concepts.tex using cached tikz files
     console.print(f"\n  Re-rendering concepts.tex from cached diagrams...")
@@ -436,7 +527,7 @@ def _rebuild_concepts_tex(sheet, tikz_dir: Path, subject: str) -> str:
                 lines.append("    \\end{align*}")
             # Insert cached TikZ diagram if available
             if entry.needs_diagram and entry.diagram_description:
-                slug = entry.name.lower().replace(" ", "_")[:40]
+                slug = _slug(entry.name)
                 tikz_path = tikz_dir / f"{slug}.tex"
                 if tikz_path.exists():
                     lines.append(tikz_path.read_text().strip())

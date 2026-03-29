@@ -49,7 +49,7 @@ def get_problem_prompt(question_type: str) -> str:
    - Use `\begin{tasks}(2)` for numerical/short options
    - Use `\begin{tasks}(1)` for long statement options
    - Each option: `\task [option text]`
-   - Mark correct answer: `\task [option text] \ans`
+   - Do NOT mark any answer with `\ans` — answer marking is done later by the solution agent
 
 """ + OPTIONS_WITH_DIAGRAMS + r"""
 
@@ -80,7 +80,7 @@ def get_problem_prompt(question_type: str) -> str:
 
 3. **Options (`\begin{tasks}(2) ... \end{tasks}`)**
    - Use 2-column `tasks` environment
-   - Mark ALL correct answers with `\ans`
+   - Do NOT mark any answers with `\ans` — answer marking is done later by the solution agent
 
 """ + OPTIONS_WITH_DIAGRAMS + r"""
 
@@ -132,7 +132,7 @@ def get_problem_prompt(question_type: str) -> str:
 
 2. **Options (`\begin{tasks}(1) ... \end{tasks}`)**
    - Use 1-column tasks (statements are long)
-   - Mark correct answer with `\ans`
+   - Do NOT mark any answer with `\ans` — answer marking is done later by the solution agent
 
 ---
 
@@ -179,12 +179,12 @@ Extract the passage and all sub-questions with their options.
 4. **Sub-questions**
    - Each question: `\item [question text]`
    - Followed by `\begin{tasks}(2) ... \end{tasks}`
-   - **CRITICAL:** Mark correct answers with ` \ans` after the option
+   - **CRITICAL:** Do NOT mark any answers with `\ans` — answer marking is done later by the solution agent
    - Example:
      ```latex
      \begin{tasks}(2)
          \task $10\,\mathrm{m/s}$
-         \task $20\,\mathrm{m/s}$ \ans
+         \task $20\,\mathrm{m/s}$
          \task $30\,\mathrm{m/s}$
          \task $40\,\mathrm{m/s}$
      \end{tasks}
@@ -220,7 +220,7 @@ Extract the passage and all sub-questions with their options.
 
 4. **Options (`\begin{tasks}(2) ... \end{tasks}`)**
    - Extract matching options
-   - Mark correct answer with `\ans`
+   - Do NOT mark any answer with `\ans` — answer marking is done later by the solution agent
 
 ---
 

@@ -76,6 +76,10 @@ def classify_and_analyze(
 ) -> UnifiedClassificationResult:
     """Classify question and analyze diagram in a single API call.
 
+    If the classifier returns a different subject than what was initially
+    detected/provided, re-runs with the correct subject-specific prompt
+    so diagram types and agent routing are accurate.
+
     Args:
         image_path: Path to question image
         subject: Subject override (auto-detected if None)
@@ -84,10 +88,21 @@ def classify_and_analyze(
     Returns:
         UnifiedClassificationResult with both classification and diagram data
     """
-    subject = _resolve_subject(image_path, subject)
-    agent = create_unified_classifier_agent(subject)
-    message = create_image_message(image_path, f"Classify and analyze this {subject} question.")
-    return run_agent_sync(agent, message, show_spinner=show_spinner, timeout=90)
+    initial_subject = _resolve_subject(image_path, subject)
+    agent = create_unified_classifier_agent(initial_subject)
+    message = create_image_message(image_path, f"Classify and analyze this {initial_subject} question.")
+    result = run_agent_sync(agent, message, show_spinner=show_spinner, timeout=90)
+
+    # If classifier corrected the subject, re-run with the right prompt
+    # so diagram_type and suggested_tikz_agent use the correct valid types.
+    # Skip re-run if subject was explicitly provided by the caller.
+    if not subject and result.subject != initial_subject:
+        corrected = result.subject
+        agent = create_unified_classifier_agent(corrected)
+        message = create_image_message(image_path, f"Classify and analyze this {corrected} question.")
+        result = run_agent_sync(agent, message, show_spinner=show_spinner, timeout=90)
+
+    return result
 
 
 def to_primary(result: UnifiedClassificationResult) -> PrimaryClassification:

@@ -63,6 +63,15 @@ def options_with_diagrams(forbidden_examples: str = "") -> str:
     - If YES → Follow STEP 2
     - If NO (text-only options) → Extract text normally
     
+    **EXCEPTION — Truth tables and data tables in options:**
+    Truth tables, data tables, and simple grids are NOT diagrams.
+    Extract them as plain LaTeX using the tabular environment.
+    Place `\ans` AFTER `\end{tabular}`, not inside it:
+    ```latex
+    \task \begin{tabular}{|c|c|c|} \hline $A$ & $B$ & $Y$ \\ \hline 0 & 0 & 0 \\ \hline 0 & 1 & 1 \\ \hline 1 & 0 & 1 \\ \hline 1 & 1 & 1 \\ \hline \end{tabular} \ans
+    ```
+    Do NOT use \OptionA placeholders or TikZ for tables.
+    
     **STEP 2: Use ONLY placeholders (NO actual code)**
     ```latex
     %% OPTIONS_DIAGRAMS: [brief description of what options show]

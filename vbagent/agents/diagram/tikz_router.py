@@ -10,7 +10,7 @@ from vbagent.models.classification import DiagramAnalysis, PrimaryClassification
 
 
 # All agent types
-AgentType = Literal["fbd", "circuit", "graph", "optics", "organic_structure", "reaction_mechanism", "orbital", "lewis_structure", "chemical_equation", "energy_diagram", "function_graph", "coordinate_geometry", "geometric_figure", "number_line", "venn_diagram", "generic"]
+AgentType = Literal["fbd", "circuit", "gates", "graph", "optics", "organic_structure", "reaction_mechanism", "orbital", "lewis_structure", "chemical_equation", "energy_diagram", "function_graph", "coordinate_geometry", "geometric_figure", "number_line", "venn_diagram", "generic"]
 
 
 def route_tikz_agent(
@@ -41,13 +41,32 @@ def route_tikz_agent(
     # Priority 1: Use Agent 2's suggestion
     if diagram and diagram.suggested_tikz_agent:
         agent = diagram.suggested_tikz_agent.lower()
-        valid_agents = ["fbd", "circuit", "graph", "optics", "organic_structure", "reaction_mechanism", "orbital", "generic"]
+        valid_agents = ["fbd", "circuit", "gates", "graph", "optics", "organic_structure", "reaction_mechanism", "orbital", "generic"]
         if agent in valid_agents:
+            # Priority 1.5: Override circuit → gates if elements clearly indicate logic gates
+            # (classifier may not know about the gates agent and suggest "circuit" instead)
+            if agent == "circuit" and diagram.diagram_elements:
+                elements_str = " ".join(e.lower() for e in diagram.diagram_elements)
+                gate_keywords = [
+                    "logic gate", "nand", "nor gate", "xor", "xnor",
+                    "inverter", "flip-flop", "latch", "boolean",
+                    "truth table", "half adder", "full adder",
+                    "multiplexer", "decoder", "combinational",
+                ]
+                if any(kw in elements_str for kw in gate_keywords):
+                    return "gates"
             return agent
     
     # Priority 2: Manual override (diagram_type parameter)
     if diagram_type:
         dtype = diagram_type.lower()
+        # Digital logic gates
+        if any(kw in dtype for kw in [
+            "gate", "logic", "nand", "nor", "xor", "xnor",
+            "flip_flop", "latch", "boolean", "combinational",
+            "sequential", "multiplexer", "decoder", "adder",
+        ]):
+            return "gates"
         # Mathematics
         if "number_line" in dtype or "inequality" in dtype or "interval" in dtype:
             return "number_line"
@@ -189,6 +208,15 @@ def route_tikz_agent(
             if diagram and diagram.diagram_type:
                 dtype = diagram.diagram_type.lower()
                 
+                # Digital logic gates
+                if any(x in dtype for x in [
+                    "gate", "logic", "nand", "nor", "xor", "xnor",
+                    "flip_flop", "latch", "boolean", "combinational",
+                    "sequential", "multiplexer", "decoder", "adder",
+                    "digital",
+                ]):
+                    return "gates"
+                
                 # Free body diagrams
                 if any(x in dtype for x in ["free_body", "fbd", "force", "forces"]):
                     return "fbd"
@@ -227,6 +255,14 @@ def route_tikz_agent(
             # Element-based fallback: check diagram_elements for clues
             if diagram and diagram.diagram_elements:
                 elements_str = " ".join(e.lower() for e in diagram.diagram_elements)
+                # Logic gates
+                gate_keywords = [
+                    "gate", "nand", "nor", "xor", "xnor", "and gate",
+                    "or gate", "not gate", "inverter", "flip-flop",
+                    "latch", "multiplexer", "decoder", "truth table",
+                ]
+                if any(kw in elements_str for kw in gate_keywords):
+                    return "gates"
                 circuit_keywords = [
                     "resistor", "capacitor", "inductor", "battery", "emf",
                     "wire", "switch", "ammeter", "voltmeter", "galvanometer",
@@ -370,6 +406,18 @@ def generate_tikz_with_routing(
     elif agent_type == "optics":
         from vbagent.agents.diagram.physics import generate_optics
         tikz_code = generate_optics(
+            image_path=image_path,
+            description=description,
+            use_context=use_context,
+            show_spinner=show_spinner,
+            problem_text=problem_text,
+            solution_context=solution_context,
+            values=values,
+            labels=labels,
+        )
+    elif agent_type == "gates":
+        from vbagent.agents.diagram.physics import generate_gates
+        tikz_code = generate_gates(
             image_path=image_path,
             description=description,
             use_context=use_context,
@@ -588,6 +636,25 @@ def get_agent_capabilities(agent_type: AgentType) -> dict:
                 "Current/voltage notation"
             ],
             "best_for": ["circuits", "electricity", "electronics"]
+        },
+        "gates": {
+            "name": "Logic Gates Agent",
+            "subject": "physics",
+            "specializes_in": [
+                "AND, OR, NOT gates",
+                "NAND, NOR, XOR, XNOR gates",
+                "Combinational circuits",
+                "Half/full adders",
+                "Multiplexers, decoders",
+                "Flip-flops, latches",
+            ],
+            "strengths": [
+                "IEEE-style gate symbols",
+                "CircuiTikZ logic ports",
+                "Multi-level wiring",
+                "Clean input/output labeling",
+            ],
+            "best_for": ["logic gates", "digital circuits", "boolean algebra", "combinational logic"]
         },
         "graph": {
             "name": "Graph/Plot Agent",

@@ -17,7 +17,7 @@ def _get_valid_types(subject: str) -> str:
 def _get_suggested_agents(subject: str) -> str:
     """Get valid suggested_tikz_agent values for a subject."""
     agents = {
-        "physics": '"fbd", "circuit", "graph", "optics", "generic"',
+        "physics": '"fbd", "circuit", "gates", "graph", "optics", "generic"',
         "chemistry": '"organic_structure", "reaction_mechanism", "chemical_equation", "energy_diagram", "orbital", "lewis_structure", "generic"',
         "mathematics": '"number_line", "function_graph", "coordinate_geometry", "geometric_figure", "venn_diagram", "generic"',
     }
@@ -37,6 +37,15 @@ suggested_tikz_agent selection guide (CRITICAL — pick the MOST SPECIFIC agent)
   • RC/RL/RLC circuits, AC circuits, transformers
   • ANY diagram drawn with CircuiTikZ components
   • If you see wires connecting components → "circuit"
+  • NOTE: If the diagram has ONLY logic gates (AND, OR, NOT, NAND, NOR, XOR), use "gates" instead
+
+"gates" — Digital logic gate circuits:
+  • AND, OR, NOT, NAND, NOR, XOR, XNOR gates
+  • Combinational circuits (half adder, full adder, multiplexer, decoder)
+  • Boolean algebra circuit implementations
+  • Flip-flops, latches, sequential logic
+  • If you see gate symbols with inputs A, B and output Y → "gates"
+  • NOT for analog circuits with resistors/capacitors — those are "circuit"
 
 "fbd" — Free body diagrams and force/mechanics setups:
   • Blocks on surfaces, inclined planes, pulleys, springs, strings
@@ -177,6 +186,8 @@ Question type detection:
 Diagram analysis rules:
 - If has_diagram is false, set diagram fields to null/empty
 - Analyze ONLY the PROBLEM section diagrams, IGNORE solution diagrams
+- Truth tables are NOT diagrams — they are plain LaTeX tables (tabular environment). If the ONLY visual element is a truth table, set has_diagram=false. The scanner will extract it as a tabular. Only set has_diagram=true if there is an actual graphical element (gate circuit, waveform, ray diagram, etc.) alongside or instead of the table.
+- Similarly, simple data tables, matching columns, and text-only charts are NOT diagrams.
 - diagram_type MUST be exactly one of: {valid_types}
 - Check if MCQ options contain diagrams (structures, graphs, circuits in options)
 - suggested_tikz_agent MUST match diagram_type — do NOT default to "generic" unless the diagram truly fits no specialist
@@ -189,6 +200,7 @@ Common diagram_type corrections:
 - "molecular_structure" → "organic_structure"
 
 CRITICAL topic → diagram_type mappings (physics):
+- Logic gates (AND, OR, NAND, NOR, XOR, combinational) → diagram_type: "gates", suggested_tikz_agent: "gates"
 - Electromagnetic induction (rails, sliding rods, coils, flux) → diagram_type: "circuit", suggested_tikz_agent: "circuit"
 - Current electricity (resistors, batteries, Kirchhoff) → diagram_type: "circuit", suggested_tikz_agent: "circuit"
 - AC circuits (RLC, impedance, phasor) → diagram_type: "circuit", suggested_tikz_agent: "circuit"

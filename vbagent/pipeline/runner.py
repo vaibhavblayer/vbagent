@@ -17,7 +17,6 @@ from vbagent.pipeline.io import (
 )
 from vbagent.pipeline.stages import (
     generate_solution_orchestrated,
-    generate_problem_diagrams,
     assess_difficulty_stage,
     extract_ideas_stage,
     generate_alternate_stage,

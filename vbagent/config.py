@@ -108,7 +108,7 @@ AGENT_GROUPS: dict[str, list[str]] = {
         "scanner", "converter",
     ],
     "Diagram (Physics)": [
-        "tikz", "fbd", "circuit", "graph", "optics",
+        "tikz", "fbd", "circuit", "gates", "graph", "optics",
     ],
     "Diagram (Chemistry)": [
         "organic_structure", "reaction_mechanism", "orbital",
@@ -362,6 +362,11 @@ class VBAgentConfig:
     default_model: str = "gpt-5.4-mini"
     default_reasoning_effort: str = "high"
     
+    # Single-model mode: when set, ALL agents use this model
+    # (per-category reasoning tiers are preserved)
+    # Set to None to use the normal two-tier default/heavy split.
+    single_model: Optional[str] = None
+    
     # Subject for prompts (physics, chemistry, mathematics, biology)
     subject: str = "physics"
     
@@ -388,35 +393,50 @@ class VBAgentConfig:
     def __post_init__(self):
         """Apply smart defaults for specific agents if not overridden.
 
-        Uses two tiers:
-        - ``default_model`` (typically gpt-5.4-mini) for classification / QA
-        - ``_heavy_model`` (gpt-5.4) for generation / diagrams / solutions
+        Two modes:
+        - ``single_model`` set → every agent uses that model, reasoning
+          tiers still vary per category.
+        - ``single_model`` is None → normal two-tier split:
+          ``default_model`` (mini) for classification/QA,
+          ``heavy`` (non-mini) for generation/diagrams/solutions.
         """
-        # Heavy model for generation/diagram tasks — derived from default
-        # If default is a -mini variant, use the non-mini version.
-        heavy = self.default_model.replace("-mini", "") if "-mini" in self.default_model else self.default_model
+        if self.single_model:
+            # Single-model mode: one model everywhere, reasoning still varies
+            m = self.single_model
+            self._apply_reasoning_tiers(light=m, heavy=m)
+        else:
+            # Two-tier mode
+            heavy = self.default_model.replace("-mini", "") if "-mini" in self.default_model else self.default_model
+            self._apply_reasoning_tiers(light=self.default_model, heavy=heavy)
 
-        # Classification agents: low reasoning, light model
+    def _apply_reasoning_tiers(self, light: str, heavy: str):
+        """Populate agent configs with per-category reasoning tiers.
+
+        Args:
+            light: Model for classification / QA / scanner.
+            heavy: Model for diagrams / generation / solution.
+        """
+        # Classification agents: low reasoning
         for name in ["classifier", "image_classifier", "diagram_analyzer",
                       "taxonomy_classifier", "difficulty_assessor", "latex_classifier"]:
             if name not in self.agents:
                 self.agents[name] = AgentModelConfig(
-                    model=self.default_model, reasoning_effort="low"
+                    model=light, reasoning_effort="low"
                 )
 
-        # Content extraction: medium reasoning, light model
+        # Content extraction: medium reasoning
         if "scanner" not in self.agents:
             self.agents["scanner"] = AgentModelConfig(
-                model=self.default_model, reasoning_effort="medium"
+                model=light, reasoning_effort="medium"
             )
         if "converter" not in self.agents:
             self.agents["converter"] = AgentModelConfig(
                 model=heavy, reasoning_effort="medium"
             )
 
-        # Diagram agents: heavy model, high reasoning
+        # Diagram agents: high reasoning
         diagram_agents = [
-            "tikz", "fbd", "circuit", "graph", "optics",
+            "tikz", "fbd", "circuit", "gates", "graph", "optics",
             "organic_structure", "reaction_mechanism", "orbital",
             "lewis_structure", "chemical_equation", "energy_diagram",
             "function_graph", "coordinate_geometry", "geometric_figure",
@@ -428,41 +448,51 @@ class VBAgentConfig:
                     model=heavy, reasoning_effort="high"
                 )
 
-        # Diagram checker: light model, low reasoning
+        # Diagram checker: low reasoning
         if "tikz_checker" not in self.agents:
             self.agents["tikz_checker"] = AgentModelConfig(
-                model=self.default_model, reasoning_effort="low"
+                model=light, reasoning_effort="low"
             )
 
-        # Generation agents: heavy model, high reasoning
+        # Generation agents: high reasoning
         for name in ["idea", "alternate", "variant", "solution"]:
             if name not in self.agents:
                 self.agents[name] = AgentModelConfig(
                     model=heavy, reasoning_effort="high"
                 )
 
-        # Quality agents: light model, default reasoning
+        # Quality agents: default reasoning
         for name in ["reviewer", "solution_checker", "grammar_checker",
                       "clarity_checker", "latex_fixer", "format_checker"]:
             if name not in self.agents:
                 self.agents[name] = AgentModelConfig(
-                    model=self.default_model,
+                    model=light,
                     reasoning_effort=self.default_reasoning_effort,
                 )
 
     def get_agent_config(self, agent_type: str) -> AgentModelConfig:
         """Get configuration for a specific agent type.
         
-        Returns agent-specific config if exists, otherwise creates default.
+        When single_model is active, overrides the model on every agent
+        (including explicitly configured ones) while preserving their
+        reasoning_effort and max_tokens.
         """
         if agent_type in self.agents:
-            return self.agents[agent_type]
+            cfg = self.agents[agent_type]
+        else:
+            cfg = AgentModelConfig(
+                model=self.default_model,
+                reasoning_effort=self.default_reasoning_effort
+            )
         
-        # Return default config
-        return AgentModelConfig(
-            model=self.default_model,
-            reasoning_effort=self.default_reasoning_effort
-        )
+        # Single-model override: swap model, keep reasoning
+        if self.single_model:
+            return AgentModelConfig(
+                model=self.single_model,
+                reasoning_effort=cfg.reasoning_effort,
+                max_tokens=cfg.max_tokens,
+            )
+        return cfg
     def get_model(self, agent_type: str) -> str:
         """Get model name for a specific agent type.
         
@@ -505,6 +535,8 @@ class VBAgentConfig:
                 for agent_type, config in self.agents.items()
             },
         }
+        if self.single_model:
+            d["single_model"] = self.single_model
         if self.base_url:
             d["base_url"] = self.base_url
         if self.api_key:
@@ -517,6 +549,7 @@ class VBAgentConfig:
         config = cls(
             default_model=data.get("default_model", "gpt-5.4-mini"),
             default_reasoning_effort=data.get("default_reasoning_effort", "high"),
+            single_model=data.get("single_model"),
             subject=data.get("subject", "physics"),
             debug=data.get("debug", True),
             log_level=data.get("log_level", "INFO"),
@@ -557,6 +590,9 @@ class VBAgentConfig:
             merged.base_url = other_dict["base_url"]
         if other_dict.get("api_key"):
             merged.api_key = other_dict["api_key"]
+        # single_model: workspace can set or clear it
+        if "single_model" in other_dict:
+            merged.single_model = other_dict.get("single_model")
         
         # Merge agent configs
         for agent_type, agent_config in other_dict.get("agents", {}).items():
@@ -725,6 +761,9 @@ def init_workspace(subject: str = "physics", force: bool = False) -> Path:
 def get_model(agent_type: str = "default") -> str:
     """Get model for an agent type."""
     config = get_config()
+    # Single-model mode overrides everything
+    if config.single_model:
+        return config.single_model
     if agent_type == "default":
         return config.default_model
     return config.get_model(agent_type)

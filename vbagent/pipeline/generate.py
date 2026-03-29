@@ -155,6 +155,13 @@ def _infer_diagram_type(description: str, subject: str) -> str | None:
 
     if subject_lower == "physics":
         if any(kw in desc for kw in [
+            "gate", "nand", "nor", "xor", "xnor", "logic",
+            "boolean", "flip-flop", "latch", "truth table",
+            "combinational", "sequential", "multiplexer", "decoder",
+            "half adder", "full adder", "inverter",
+        ]):
+            return "gates"
+        if any(kw in desc for kw in [
             "circuit", "resistor", "capacitor", "inductor", "battery",
             "emf", "rail", "solenoid", "coil", "wheatstone", "potentiometer",
             "galvanometer", "ammeter", "voltmeter", "transformer", "diode",

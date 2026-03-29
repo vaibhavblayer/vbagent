@@ -102,48 +102,76 @@ def insert_tikz_into_latex(latex: str, tikz_code: str) -> str:
     Handles two types of placeholders:
     1. Main diagram: \\begin{center}\\input{diagram}\\end{center}
     2. MCQ option diagrams: \\def\\OptionA{...} through \\def\\OptionD{...}
+
+    When tikz_code contains BOTH a main diagram and option defs
+    (e.g. merged by ProblemOrchestrator), splits them and handles
+    each independently.
     """
     if tikz_code is None:
         return latex
 
-    result = latex
-    has_option_defs = r'\def\Option' in tikz_code or r'\\def\\Option' in tikz_code
+    # Split tikz_code into main diagram and option defs
+    main_tikz, option_tikz = _split_main_and_options(tikz_code)
 
-    if has_option_defs:
-        # Remove existing option defs in the LaTeX (will be replaced by tikz_code)
-        for option in ["A", "B", "C", "D"]:
+    result = latex
+
+    # 1. Replace \input{diagram} with main diagram
+    if main_tikz:
+        placeholder_pattern = r'\\begin\{center\}\s*\\input\{diagram\}\s*\\end\{center\}'
+
+        if "\\begin{center}" not in main_tikz:
+            tikz_wrapped = f"\\begin{{center}}\n{main_tikz}\n\\end{{center}}"
+        else:
+            tikz_wrapped = main_tikz
+
+        result = re.sub(placeholder_pattern, lambda m: tikz_wrapped, result)
+
+        if result == latex:
+            simple_pattern = r'\\input\{diagram\}'
+            if re.search(simple_pattern, latex):
+                result = re.sub(simple_pattern, lambda m: main_tikz, result)
+
+    # 2. Insert option defs before \begin{tasks}
+    if option_tikz:
+        # Remove existing option defs in the LaTeX (will be replaced)
+        for option in ["A", "B", "C", "D", "E", "F"]:
             pattern = rf'\\def\\Option{option}\{{[^{{}}]*(?:\{{[^{{}}]*\}}[^{{}}]*)*\}}'
             result = re.sub(pattern, "", result)
 
         # Remove OPTIONS_DIAGRAMS comment
         result = re.sub(r'%\s*OPTIONS_DIAGRAMS:.*?(?:\n|$)', '', result)
 
-        # Insert tikz_code before \begin{tasks}
+        # Insert option defs before \begin{tasks}
         tasks_pattern = r'(\s*\\begin\{tasks\})'
 
         def insert_before_tasks(match):
-            return f"\n{tikz_code.strip()}\n{match.group(1)}"
+            return f"\n{option_tikz.strip()}\n{match.group(1)}"
 
         result = re.sub(tasks_pattern, insert_before_tasks, result)
-    else:
-        placeholder_pattern = r'\\begin\{center\}\s*\\input\{diagram\}\s*\\end\{center\}'
-
-        if "\\begin{center}" not in tikz_code:
-            tikz_wrapped = f"\\begin{{center}}\n{tikz_code}\n\\end{{center}}"
-        else:
-            tikz_wrapped = tikz_code
-
-        def replace_diagram(match):
-            return tikz_wrapped
-
-        result = re.sub(placeholder_pattern, replace_diagram, result)
-
-        if result == latex:
-            simple_pattern = r'\\input\{diagram\}'
-            if re.search(simple_pattern, latex):
-                result = re.sub(simple_pattern, lambda m: tikz_code, result)
 
     return result
+
+
+def _split_main_and_options(tikz_code: str) -> tuple[str, str]:
+    r"""Split combined tikz_code into (main_diagram, option_defs).
+
+    Option defs are lines starting with ``\def\OptionX{`` through
+    their matching closing brace. Everything else is the main diagram.
+    """
+    has_options = r'\def\Option' in tikz_code
+
+    if not has_options:
+        return tikz_code, ""
+
+    # Find where option defs start — first \def\Option
+    idx = tikz_code.find(r'\def\Option')
+    if idx == -1:
+        return tikz_code, ""
+
+    main_part = tikz_code[:idx].strip()
+    option_part = tikz_code[idx:].strip()
+
+    return main_part, option_part
 
 
 def generate_image_paths_from_range(

@@ -507,60 +507,86 @@ def open_content_in_editor(
 # =============================================================================
 
 def format_latex(content: str) -> str:
-    """Format LaTeX content with proper indentation.
-    
-    Applies consistent indentation to LaTeX environments like:
-    - begin/end blocks (solution, align*, tasks, tikzpicture, center, tabular)
-    - Nested structures
-    
+    """Format LaTeX content with proper indentation and line breaks.
+
+    Applies consistent indentation to LaTeX environments and commands:
+    - \\begin/\\end blocks increase/decrease indent
+    - \\item and \\task get indented inside their environments
+    - TikZ commands (\\draw, \\node, \\fill, \\foreach) inside tikzpicture
+    - Ensures blank lines between major blocks (problem, tasks, solution, idea)
+
     Args:
         content: Raw LaTeX content
-        
+
     Returns:
-        Formatted LaTeX with proper indentation
+        Formatted LaTeX with proper indentation and spacing
     """
     import re
-    
+
     if not content:
         return content
-    
+
+    # --- Phase 1: ensure line breaks before major structural commands ---
+    # Insert newline before \begin{...} if not already on its own line
+    content = re.sub(r'(?<!\n)(\\begin\{(?:solution|tasks|center|idea|align\*|tabular|tikzpicture|enumerate))', r'\n\1', content)
+    # Insert newline before \end{...} if not already on its own line
+    content = re.sub(r'(?<!\n)(\\end\{(?:solution|tasks|center|idea|align\*|tabular|tikzpicture|enumerate))', r'\n\1', content)
+    # Insert newline before \item if not already on its own line
+    content = re.sub(r'(?<!\n)(\\item(?:\s|\[))', r'\n\1', content)
+    # Insert newline before \task if not already on its own line
+    content = re.sub(r'(?<!\n)(\\task\b)', r'\n\1', content)
+    # Insert newline before \def\Option if not already on its own line
+    content = re.sub(r'(?<!\n)(\\def\\Option)', r'\n\1', content)
+    # Insert newline before \intertext if not already on its own line
+    content = re.sub(r'(?<!\n)(\\intertext\{)', r'\n\1', content)
+
     lines = content.split('\n')
-    formatted_lines = []
+    formatted_lines: list[str] = []
     indent_level = 0
     indent_str = "    "  # 4 spaces
-    
-    begin_pattern = re.compile(r'^\s*\\begin\{(\w+)\}')
-    end_pattern = re.compile(r'^\s*\\end\{(\w+)\}')
+
+    begin_pattern = re.compile(r'^\s*\\begin\{(\w+\*?)\}')
+    end_pattern = re.compile(r'^\s*\\end\{(\w+\*?)\}')
     def_pattern = re.compile(r'^\s*\\def\\')
-    
+
     for line in lines:
         stripped = line.strip()
-        
+
         if not stripped:
-            formatted_lines.append('')
+            # Preserve blank lines but avoid consecutive blanks
+            if formatted_lines and formatted_lines[-1] != '':
+                formatted_lines.append('')
             continue
-        
-        # Check for \end{} - decrease indent before this line
+
+        # Check for \end{} — decrease indent before this line
         end_match = end_pattern.match(stripped)
         if end_match:
             indent_level = max(0, indent_level - 1)
-        
+
         # Apply current indentation
         if stripped.startswith('\\item') and indent_level == 0:
-            # \item at root level stays at root
             formatted_lines.append(stripped)
         elif def_pattern.match(stripped) and indent_level == 0:
-            # \def at root level stays at root
             formatted_lines.append(stripped)
         else:
             formatted_lines.append(indent_str * indent_level + stripped)
-        
-        # Check for \begin{} - increase indent after this line
+
+        # Check for \begin{} — increase indent after this line
         begin_match = begin_pattern.match(stripped)
         if begin_match:
             indent_level += 1
-    
-    return '\n'.join(formatted_lines)
+
+    # --- Phase 3: ensure blank line between major blocks ---
+    result = '\n'.join(formatted_lines)
+    # Blank line before \begin{solution}, \begin{idea} (if not already)
+    result = re.sub(r'(?<!\n)\n(\\begin\{solution\})', r'\n\n\1', result)
+    result = re.sub(r'(?<!\n)\n(\\begin\{idea\})', r'\n\n\1', result)
+    # Clean up triple+ blank lines
+    result = re.sub(r'\n{3,}', '\n\n', result)
+    # Strip trailing whitespace on each line
+    result = '\n'.join(l.rstrip() for l in result.split('\n'))
+
+    return result.strip() + '\n'
 
 
 # =============================================================================

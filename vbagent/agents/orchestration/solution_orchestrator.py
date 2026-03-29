@@ -136,9 +136,15 @@ class SolutionOrchestrator:
         )
 
     def _dispatch_diagrams(self, diagram_reqs, image_path, subject):
-        """Dispatch diagram agents in parallel for each requirement."""
+        """Dispatch diagram agents in parallel for each requirement.
+
+        Passes diagram_type and rich context (values, labels, solution_context)
+        from each DiagramRequirement to the TikZ router for better agent
+        selection and generation quality.
+        """
         from vbagent.agents.diagram.tikz_router import generate_tikz_with_routing
         from vbagent.models.classification import PrimaryClassification
+        from vbagent.ui.logging import set_task_tag
 
         results: dict[str, str] = {}
         holders: dict[str, dict] = {}
@@ -152,15 +158,27 @@ class SolutionOrchestrator:
         )
 
         def _gen(req):
+            set_task_tag("SolnDiag")
             key = req.diagram_id if hasattr(req, "diagram_id") else f"diagram_{id(req)}"
             try:
+                # Extract rich context from the requirement
+                diagram_type = getattr(req, "diagram_type", None)
+                context = getattr(req, "context", "") or ""
+                values = getattr(req, "values", None)
+                labels = getattr(req, "labels", None)
+
                 code, agent_name = generate_tikz_with_routing(
-                    image_path=image_path or "",
+                    image_path=image_path or None,
                     description=req.description,
                     diagram=None,
                     primary=primary,
                     use_context=True,
                     show_spinner=False,
+                    subject=subject,
+                    diagram_type=diagram_type,
+                    solution_context=context,
+                    values=values if values else None,
+                    labels=labels if labels else None,
                 )
                 holders[key] = {"code": code, "agent": agent_name, "error": None}
             except Exception as e:
@@ -178,21 +196,51 @@ class SolutionOrchestrator:
         for key, h in holders.items():
             if h["code"]:
                 results[key] = h["code"]
+                self.console.print(f"[green]  ✓ {key}[/green] [dim](agent: {h['agent']})[/dim]")
             elif h["error"]:
-                self.console.print(f"[yellow]  ⚠ Diagram {key} failed: {h['error']}[/yellow]")
+                self.console.print(f"[yellow]  ⚠ {key} failed: {h['error']}[/yellow]")
 
         return results
 
     def _stitch_diagrams(self, solution_latex: str, diagram_codes: dict[str, str]) -> str:
-        """Replace % DIAGRAM PLACEHOLDER: <id> with actual TikZ code."""
+        """Replace diagram placeholders with actual TikZ code.
+
+        Handles two placeholder formats:
+          % DIAGRAM PLACEHOLDER: <id>
+          % PLACEHOLDER: <id>
+        Also replaces any surrounding empty tikzpicture wrapper.
+        """
+        import re
+
         for diagram_id, tikz_code in diagram_codes.items():
-            placeholder = f"% DIAGRAM PLACEHOLDER: {diagram_id}"
-            replacement = (
+            wrapped = (
                 "\\begin{center}\n"
                 + tikz_code.strip()
                 + "\n\\end{center}"
             )
-            solution_latex = solution_latex.replace(placeholder, replacement)
+
+            # Format 1: % DIAGRAM PLACEHOLDER: <id>
+            placeholder1 = f"% DIAGRAM PLACEHOLDER: {diagram_id}"
+            if placeholder1 in solution_latex:
+                solution_latex = solution_latex.replace(placeholder1, wrapped)
+                continue
+
+            # Format 2: % PLACEHOLDER: <id> (possibly inside a tikzpicture wrapper)
+            placeholder2 = f"% PLACEHOLDER: {diagram_id}"
+            if placeholder2 in solution_latex:
+                # Remove surrounding empty tikzpicture + center if present
+                pattern = (
+                    r"\\begin\{center\}\s*"
+                    r"\\begin\{tikzpicture\}\s*"
+                    + re.escape(placeholder2)
+                    + r"\s*\\end\{tikzpicture\}\s*"
+                    r"\\end\{center\}"
+                )
+                if re.search(pattern, solution_latex):
+                    solution_latex = re.sub(pattern, wrapped, solution_latex)
+                else:
+                    solution_latex = solution_latex.replace(placeholder2, wrapped)
+
         return solution_latex
 
     def _mark_answer(self, latex: str, answer_type: str, answer_value: str, question_type: str) -> str:
