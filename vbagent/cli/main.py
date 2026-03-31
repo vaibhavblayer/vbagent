@@ -31,7 +31,7 @@ COMMAND_SECTIONS = {
     ],
     "Manage": [
         "init", "config", "ref", "cache", "db", "metadata",
-        "export", "dpp", "util",
+        "export", "archive", "dpp", "util",
     ],
     "Interfaces": [
         "chat", "mcp",
@@ -147,6 +147,7 @@ LAZY_SUBCOMMANDS = {
     "db": "vbagent.cli.management.db",
     "metadata": "vbagent.cli.management.metadata",
     "export": "vbagent.cli.management.export",
+    "archive": "vbagent.cli.management.archive",
     "dpp": "vbagent.cli.management.dpp",
     "util": "vbagent.cli.management.util",
     # Interfaces

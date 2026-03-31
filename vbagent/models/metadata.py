@@ -72,6 +72,7 @@ class PipelineMetadata(BaseModel):
     tikz: Optional[StageMetadata] = Field(default=None)
     options: Optional[StageMetadata] = Field(default=None, description="MCQ option diagrams stage")
     ideas: Optional[StageMetadata] = Field(default=None)
+    idea_latex: Optional[StageMetadata] = Field(default=None, description="Idea LaTeX block cache")
     alternates: Dict[int, StageMetadata] = Field(default_factory=dict, description="Alternate solutions by index")
     variants: Dict[str, StageMetadata] = Field(default_factory=dict, description="Variants by type")
     
@@ -100,6 +101,7 @@ class PipelineMetadata(BaseModel):
             self.tikz,
             self.options,
             self.ideas,
+            self.idea_latex,
         ]
         stages.extend(self.alternates.values())
         stages.extend(self.variants.values())

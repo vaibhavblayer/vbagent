@@ -331,6 +331,8 @@ def process_image_unified(
         has_diagram=primary.has_diagram,
         confidence=primary.confidence,
         classified_from=primary.classified_from,
+        chapter=getattr(classification, 'chapter', None),
+        topic=getattr(classification, 'topic', None),
     )
 
     variants = generate_variants_stage(

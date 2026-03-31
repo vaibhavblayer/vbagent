@@ -244,7 +244,7 @@ def save_pipeline_result_organized(
     scans_dir = base_dir / "scans"
     scans_dir.mkdir(parents=True, exist_ok=True)
 
-    # Build the scan content — append idea block inline if available
+    # Build the scan content — append idea block and alternate inline
     scan_content = format_latex(result.latex)
     if result.idea_latex:
         from vbagent.agents.content_generation.idea import has_idea_environment
@@ -252,6 +252,14 @@ def save_pipeline_result_organized(
             if not scan_content.endswith('\n'):
                 scan_content += '\n'
             scan_content += '\n' + result.idea_latex.strip() + '\n'
+
+    if result.alternate_solutions:
+        for alt in result.alternate_solutions:
+            alt_stripped = alt.strip()
+            if alt_stripped and "\\begin{alternatesolution}" not in scan_content:
+                if not scan_content.endswith('\n'):
+                    scan_content += '\n'
+                scan_content += '\n' + alt_stripped + '\n'
 
     latex_path = scans_dir / f"{base_name}.tex"
     latex_path.write_text(scan_content)
@@ -312,6 +320,14 @@ def save_pipeline_result(result: "PipelineResult", output_dir: Path) -> dict[str
             if not latex_content.endswith('\n'):
                 latex_content += '\n'
             latex_content += '\n' + result.idea_latex.strip() + '\n'
+
+    if result.alternate_solutions:
+        for alt in result.alternate_solutions:
+            alt_stripped = alt.strip()
+            if alt_stripped and "\\begin{alternatesolution}" not in latex_content:
+                if not latex_content.endswith('\n'):
+                    latex_content += '\n'
+                latex_content += '\n' + alt_stripped + '\n'
 
     latex_path = output_dir / "scanned.tex"
     latex_path.write_text(latex_content)

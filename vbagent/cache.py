@@ -22,6 +22,7 @@ _STAGE_ATTR = {
     "tikz": "tikz",
     "options": "options",
     "ideas": "ideas",
+    "idea_latex": "idea_latex",
 }
 
 

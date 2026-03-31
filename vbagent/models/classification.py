@@ -257,6 +257,10 @@ class ClassificationResult(BaseModel):
     question_type: QuestionType
     has_diagram: bool
     
+    # Topic classification (from unified classifier)
+    chapter: Optional[str] = None
+    topic: Optional[str] = None
+    
     # From Agent 2: Diagram Analysis (optional)
     diagram_type: Optional[str] = None
     diagram_category: Optional[DiagramCategory] = None

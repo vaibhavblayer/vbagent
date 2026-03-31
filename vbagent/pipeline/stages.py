@@ -147,15 +147,23 @@ def extract_ideas_stage(
     idea_latex = None
     content_for_latex = full_content or (problem + "\n\n" + solution)
     if not has_idea_environment(content_for_latex):
-        try:
+        # Check cache first
+        if cache and problem_id and cache.has(problem_id, "idea_latex"):
             if console:
-                with console.status("[bold green]Generating idea block..."):
+                console.print("[dim]Loading cached idea block...[/dim]")
+            idea_latex = cache.get(problem_id, "idea_latex")
+        else:
+            try:
+                if console:
+                    with console.status("[bold green]Generating idea block..."):
+                        idea_latex = generate_idea_latex(content_for_latex)
+                else:
                     idea_latex = generate_idea_latex(content_for_latex)
-            else:
-                idea_latex = generate_idea_latex(content_for_latex)
-        except Exception as e:
-            if console:
-                console.print(f"[dim yellow]  ⚠ idea LaTeX generation skipped: {e}[/dim yellow]")
+                if cache and problem_id and idea_latex:
+                    cache.set(problem_id, "idea_latex", idea_latex)
+            except Exception as e:
+                if console:
+                    console.print(f"[dim yellow]  ⚠ idea LaTeX generation skipped: {e}[/dim yellow]")
 
     if console and ideas:
         ideas_text = f"[bold]Concepts:[/bold] {', '.join(ideas.concepts)}\n"

@@ -3,15 +3,31 @@
 Single API call that handles both classification and diagram analysis.
 """
 
+from vbagent.prompts.classification.taxonomy import get_chapters, SUBJECT_TAXONOMY
+
 
 def _get_valid_types(subject: str) -> str:
     """Get valid diagram types for a subject."""
     types = {
-        "physics": "fbd, circuit, graph, optics",
+        "physics": "fbd, circuit, gates, graph, optics",
         "chemistry": "organic_structure, reaction_mechanism, chemical_equation, energy_diagram, orbital, lewis_structure",
         "mathematics": "number_line, function_graph, coordinate_geometry, geometric_figure, venn_diagram",
     }
     return types.get(subject, "generic")
+
+
+def _get_chapter_topic_guide(subject: str) -> str:
+    """Build a compact chapter → topics reference for the prompt."""
+    taxonomy = SUBJECT_TAXONOMY.get(subject, {})
+    if not taxonomy:
+        return ""
+    lines = []
+    for chapter, topics in taxonomy.items():
+        topic_str = ", ".join(topics[:6])
+        if len(topics) > 6:
+            topic_str += f" (+{len(topics)-6} more)"
+        lines.append(f'  "{chapter}": [{topic_str}]')
+    return "\n".join(lines)
 
 
 def _get_suggested_agents(subject: str) -> str:
@@ -144,6 +160,7 @@ def get_unified_classifier_prompt(subject: str = "physics") -> str:
     valid_types = _get_valid_types(subject)
     suggested_agents = _get_suggested_agents(subject)
     agent_guide = _get_agent_routing_guide(subject)
+    chapter_topic_guide = _get_chapter_topic_guide(subject)
 
     return f"""You are an expert {subject} question analyzer. In a SINGLE pass, classify the question AND analyze any diagrams present.
 
@@ -154,6 +171,9 @@ Respond with ONLY a valid JSON object:
     "question_type": "mcq_sc" | "mcq_mc" | "subjective" | "assertion_reason" | "passage" | "match",
     "has_diagram": true | false,
     "confidence": <0.0-1.0>,
+
+    "chapter": "<chapter name from the taxonomy below>",
+    "topic": "<topic name from the taxonomy below>",
 
     "diagram_type": "<one of: {valid_types}, or null if no diagram>",
     "diagram_category": "mechanics" | "kinematics" | "circuits" | "optics" | "waves" | "thermodynamics" | "organic" | "inorganic" | "graphs" | "geometry" | "none",
@@ -211,5 +231,12 @@ CRITICAL topic → diagram_type mappings (physics):
 - Ray optics (lenses, mirrors, prisms) → diagram_type: "optics", suggested_tikz_agent: "optics"
 - Wave optics (slits, interference) → diagram_type: "optics", suggested_tikz_agent: "optics"
 {agent_guide}
+
+Chapter/Topic taxonomy (pick the BEST match from this list):
+{chapter_topic_guide}
+
+- chapter MUST be one of the chapter names listed above
+- topic MUST be one of the topics under that chapter
+- If unsure, pick the closest match — do NOT leave null
 
 Respond with ONLY the JSON object."""

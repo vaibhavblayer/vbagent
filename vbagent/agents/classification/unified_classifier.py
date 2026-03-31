@@ -33,6 +33,10 @@ class UnifiedClassificationResult(BaseModel):
     has_diagram: bool
     confidence: float = Field(ge=0.0, le=1.0, default=1.0)
 
+    # Topic classification
+    chapter: Optional[str] = None
+    topic: Optional[str] = None
+
     # Diagram analysis — only populated when has_diagram=True
     diagram_type: Optional[str] = None
     diagram_category: Optional[DiagramCategory] = None
