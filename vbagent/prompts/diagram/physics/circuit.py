@@ -33,8 +33,14 @@ You may receive enhanced context from the solution agent with detailed physics i
 
 ### Basic Syntax
 ```latex
+% Absolute coordinates
 \draw (start) to [component, options] (end);
+
+% Relative coordinates (PREFERRED)
+\draw (start) to [component, options] ++(dx,dy);
 ```
+
+**Use relative coordinates `++(dx,dy)` for cleaner, more maintainable circuits. This allows you to think in terms of movements rather than absolute positions.**
 
 ### Component Library
 
@@ -70,36 +76,40 @@ value MUST be wrapped in `{}`.
 
 ### Circuit Patterns
 
+**CRITICAL: Use relative coordinates with `++` for cleaner, more maintainable circuits.**
+
 **Series:**
 ```latex
-\draw (0,0) to [battery1, l={$12\mathrm{V}$}] (0,3)
-    to [R, l={$4\Ohm$}, i={$i$}] (3,3)
-    to [L, l={$2\mathrm{H}$}] (3,0) to [short] (0,0);
+\draw (0,0) to [battery1, l={$12\mathrm{V}$}] ++(0,3)
+    to [R, l={$4\Ohm$}, i={$i$}] ++(3,0)
+    to [L, l={$2\mathrm{H}$}] ++(0,-3) to [short] ++(-3,0);
 ```
 
 **Parallel:**
 ```latex
-\draw (0,0) to [battery1, l={$V$}] (0,3) to [short] (2,3);
-\draw (2,3) to [R, l={$R_1$}] (2,0);
-\draw (2,3) to [short] (4,3) to [R, l={$R_2$}] (4,0);
-\draw (2,0) to [short] (4,0) to [short] (0,0);
+\draw (0,0) to [battery1, l={$V$}] ++(0,3) coordinate (top);
+\draw (top) to [short] ++(2,0) coordinate (branch1);
+\draw (branch1) to [R, l={$R_1$}] ++(0,-3) coordinate (bottom1);
+\draw (branch1) to [short] ++(2,0) to [R, l={$R_2$}] ++(0,-3) coordinate (bottom2);
+\draw (bottom1) to [short] ++(2,0) to [short] ++(-4,0);
 ```
 
 **Wheatstone Bridge:**
 ```latex
-\coordinate (A) at (0,0); \coordinate (B) at (2,1.5);
-\coordinate (C) at (4,0); \coordinate (D) at (2,-1.5);
-\draw (A) to [R, l={$R_1$}] (B) to [R, l={$R_2$}] (C)
-    to [R, l={$R_4$}] (D) to [R, l={$R_3$}] (A);
+\coordinate (A) at (0,0);
+\draw (A) to [R, l={$R_1$}] ++(2,1.5) coordinate (B)
+    to [R, l={$R_2$}] ++(2,-1.5) coordinate (C);
+\draw (A) to [R, l={$R_3$}] ++(2,-1.5) coordinate (D)
+    to [R, l={$R_4$}] (C);
 \draw (B) to [voltmeter, l={$V$}] (D);
 \draw (A) to [battery1, l={$V_0$}] ++(-2,0) |- (C);
 ```
 
 **RLC Series:**
 ```latex
-\draw (0,0) to [vco, l={$V_0\sin(\omega t)$}] (0,3)
-    to [R, l={$R$}] (2,3) to [L, l={$L$}] (4,3)
-    to [C, l={$C$}] (4,0) to [short] (0,0);
+\draw (0,0) to [vco, l={$V_0\sin(\omega t)$}] ++(0,3)
+    to [R, l={$R$}] ++(2,0) to [L, l={$L$}] ++(2,0)
+    to [C, l={$C$}] ++(0,-3) to [short] ++(-4,0);
 ```
 
 ### Circuit Best Practices

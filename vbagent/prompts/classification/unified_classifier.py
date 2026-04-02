@@ -9,7 +9,7 @@ from vbagent.prompts.classification.taxonomy import get_chapters, SUBJECT_TAXONO
 def _get_valid_types(subject: str) -> str:
     """Get valid diagram types for a subject."""
     types = {
-        "physics": "fbd, circuit, gates, graph, optics",
+        "physics": "circuit, gates, graph, optics, mechanics, wave, fbd",
         "chemistry": "organic_structure, reaction_mechanism, chemical_equation, energy_diagram, orbital, lewis_structure",
         "mathematics": "number_line, function_graph, coordinate_geometry, geometric_figure, venn_diagram",
     }
@@ -33,7 +33,7 @@ def _get_chapter_topic_guide(subject: str) -> str:
 def _get_suggested_agents(subject: str) -> str:
     """Get valid suggested_tikz_agent values for a subject."""
     agents = {
-        "physics": '"fbd", "circuit", "gates", "graph", "optics", "generic"',
+        "physics": '"circuit", "gates", "graph", "optics", "mechanics", "wave", "fbd", "generic"',
         "chemistry": '"organic_structure", "reaction_mechanism", "chemical_equation", "energy_diagram", "orbital", "lewis_structure", "generic"',
         "mathematics": '"number_line", "function_graph", "coordinate_geometry", "geometric_figure", "venn_diagram", "generic"',
     }
@@ -63,12 +63,23 @@ suggested_tikz_agent selection guide (CRITICAL — pick the MOST SPECIFIC agent)
   • If you see gate symbols with inputs A, B and output Y → "gates"
   • NOT for analog circuits with resistors/capacitors — those are "circuit"
 
-"fbd" — Free body diagrams and force/mechanics setups:
-  • Blocks on surfaces, inclined planes, pulleys, springs, strings
-  • Collision setups, projectile trajectories, rotational mechanics setups
-  • Fluid mechanics containers, pressure diagrams
-  • Gravitational field diagrams (orbits, satellites)
-  • ANY setup showing physical objects with forces, tensions, or constraints
+"mechanics" — Physical system setups (USE THIS FOR MOST MECHANICS PROBLEMS):
+  • Pulley systems (single, double, Atwood machine, movable pulleys)
+  • Spring-mass systems (horizontal, vertical, SHM, oscillations)
+  • Blocks on inclined planes, connected blocks
+  • Rotational systems (rotating disks, torque on rods, pivots)
+  • Circular motion with particles on paths
+  • Projectile trajectories, kinematics diagrams
+  • Work-energy scenarios with objects in motion
+  • ANY diagram showing the PHYSICAL SETUP of a mechanical system
+  • If you see pulleys, springs, ropes, supports, paths, or system arrangement → "mechanics"
+
+"fbd" — Free body diagrams (RARE — mostly for solution diagrams):
+  • ONLY use if diagram shows an ISOLATED body with ONLY force arrows
+  • NO physical system elements (no pulleys, springs, supports, paths)
+  • Body is a simple dot or box with force vectors
+  • Typically appears in SOLUTION sections, NOT main problems
+  • When in doubt between "fbd" and "mechanics" → choose "mechanics"
 
 "graph" — Plots, charts, and data visualizations:
   • v-t, x-t, a-t, F-t, P-V, T-S graphs
@@ -79,8 +90,18 @@ suggested_tikz_agent selection guide (CRITICAL — pick the MOST SPECIFIC agent)
 "optics" — Ray diagrams and optical setups:
   • Lenses (convex, concave), mirrors, prisms
   • Ray tracing, image formation
-  • Interference/diffraction setups (slits, screens)
+  • Interference/diffraction setups (Young's double slit, diffraction grating)
   • Optical instruments (microscope, telescope)
+
+"wave" — Wave propagation and wave mechanics:
+  • Traveling waves, wave pulses, sinusoidal waves
+  • Reflection at boundaries (fixed end, free end, phase changes)
+  • Transmission at medium boundaries (denser to rarer)
+  • Standing waves on strings and in pipes (nodes, antinodes, harmonics)
+  • Superposition and interference of waves
+  • Wave properties (wavelength, amplitude, frequency, phase)
+  • Doppler effect and wave fronts
+  • NOTE: Use "wave" for wave propagation/reflection/transmission; use "optics" for ray tracing with lenses/mirrors
 
 "generic" — ONLY when the diagram truly doesn't fit any above category:
   • Simple geometric sketches with no physics components
@@ -225,11 +246,13 @@ CRITICAL topic → diagram_type mappings (physics):
 - Current electricity (resistors, batteries, Kirchhoff) → diagram_type: "circuit", suggested_tikz_agent: "circuit"
 - AC circuits (RLC, impedance, phasor) → diagram_type: "circuit", suggested_tikz_agent: "circuit"
 - Electrostatics with capacitors → diagram_type: "circuit", suggested_tikz_agent: "circuit"
-- Mechanics (blocks, pulleys, inclines, springs) → diagram_type: "fbd", suggested_tikz_agent: "fbd"
+- Mechanics (blocks, pulleys, inclines, springs, circular motion) → diagram_type: "mechanics", suggested_tikz_agent: "mechanics"
+- Wave mechanics (wave propagation, reflection, transmission, standing waves) → diagram_type: "wave", suggested_tikz_agent: "wave"
 - Kinematics graphs (v-t, x-t, a-t) → diagram_type: "graph", suggested_tikz_agent: "graph"
 - Thermodynamics graphs (P-V, T-S) → diagram_type: "graph", suggested_tikz_agent: "graph"
-- Ray optics (lenses, mirrors, prisms) → diagram_type: "optics", suggested_tikz_agent: "optics"
-- Wave optics (slits, interference) → diagram_type: "optics", suggested_tikz_agent: "optics"
+- Ray optics (lenses, mirrors, prisms, ray tracing) → diagram_type: "optics", suggested_tikz_agent: "optics"
+- Wave optics (Young's double slit, diffraction grating, interference) → diagram_type: "optics", suggested_tikz_agent: "optics"
+- Force analysis (isolated body with force arrows ONLY) → diagram_type: "fbd", suggested_tikz_agent: "fbd"
 {agent_guide}
 
 Chapter/Topic taxonomy (pick the BEST match from this list):

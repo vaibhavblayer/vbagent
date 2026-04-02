@@ -10,7 +10,7 @@ from vbagent.models.classification import DiagramAnalysis, PrimaryClassification
 
 
 # All agent types
-AgentType = Literal["fbd", "circuit", "gates", "graph", "optics", "organic_structure", "reaction_mechanism", "orbital", "lewis_structure", "chemical_equation", "energy_diagram", "function_graph", "coordinate_geometry", "geometric_figure", "number_line", "venn_diagram", "generic"]
+AgentType = Literal["fbd", "circuit", "gates", "graph", "optics", "mechanics", "wave", "organic_structure", "reaction_mechanism", "orbital", "lewis_structure", "chemical_equation", "energy_diagram", "function_graph", "coordinate_geometry", "geometric_figure", "number_line", "venn_diagram", "generic"]
 
 
 def route_tikz_agent(
@@ -41,7 +41,7 @@ def route_tikz_agent(
     # Priority 1: Use Agent 2's suggestion
     if diagram and diagram.suggested_tikz_agent:
         agent = diagram.suggested_tikz_agent.lower()
-        valid_agents = ["fbd", "circuit", "gates", "graph", "optics", "organic_structure", "reaction_mechanism", "orbital", "generic"]
+        valid_agents = ["fbd", "circuit", "gates", "graph", "optics", "mechanics", "wave", "organic_structure", "reaction_mechanism", "orbital", "generic"]
         if agent in valid_agents:
             # Priority 1.5: Override circuit → gates if elements clearly indicate logic gates
             # (classifier may not know about the gates agent and suggest "circuit" instead)
@@ -96,6 +96,10 @@ def route_tikz_agent(
             return "fbd"
         if "circuit" in dtype:
             return "circuit"
+        if "mechanics" in dtype or "pulley" in dtype or "spring" in dtype or "incline" in dtype:
+            return "mechanics"
+        if "wave" in dtype or "reflection" in dtype or "transmission" in dtype or "standing" in dtype:
+            return "wave"
         if "graph" in dtype or "plot" in dtype:
             return "graph"
         if "optic" in dtype or "ray" in dtype:
@@ -221,6 +225,23 @@ def route_tikz_agent(
                 if any(x in dtype for x in ["free_body", "fbd", "force", "forces"]):
                     return "fbd"
                 
+                # Mechanics (pulley, spring, incline systems)
+                if any(x in dtype for x in [
+                    "pulley", "spring", "incline", "inclined_plane",
+                    "atwood", "spring_mass", "shm", "oscillation",
+                    "rotation", "torque", "angular", "projectile",
+                    "trajectory", "kinematics", "work_energy",
+                ]):
+                    return "mechanics"
+                
+                # Wave mechanics (wave propagation, reflection, transmission)
+                if any(x in dtype for x in [
+                    "wave", "standing_wave", "reflection", "transmission",
+                    "superposition", "interference", "node", "antinode",
+                    "harmonic", "wave_front", "doppler", "beats",
+                ]):
+                    return "wave"
+                
                 # Circuits (includes EMI, AC, current electricity)
                 if any(x in dtype for x in [
                     "circuit", "electrical", "resistor", "capacitor",
@@ -244,7 +265,11 @@ def route_tikz_agent(
                 category = str(diagram.diagram_category).lower()
                 
                 if category == "mechanics":
-                    return "fbd"
+                    return "mechanics"
+                elif category == "kinematics":
+                    return "mechanics"
+                elif category == "waves":
+                    return "wave"
                 elif category == "circuits":
                     return "circuit"
                 elif category == "graphs":
@@ -271,10 +296,28 @@ def route_tikz_agent(
                 ]
                 if any(kw in elements_str for kw in circuit_keywords):
                     return "circuit"
+                mechanics_keywords = [
+                    "pulley", "spring", "incline", "inclined plane",
+                    "atwood", "rope hanging", "string attached",
+                    "rotation", "torque", "angular", "projectile",
+                    "trajectory", "shm", "oscillation", "pivot",
+                    "ceiling", "support", "frame", "kinematikz",
+                ]
+                if any(kw in elements_str for kw in mechanics_keywords):
+                    return "mechanics"
+                wave_keywords = [
+                    "wave", "wavelength", "amplitude", "frequency",
+                    "reflection", "transmission", "standing wave",
+                    "node", "antinode", "harmonic", "superposition",
+                    "interference", "phase", "wave front", "doppler",
+                    "tztos", "incident wave", "reflected wave",
+                ]
+                if any(kw in elements_str for kw in wave_keywords):
+                    return "wave"
                 fbd_keywords = [
-                    "block", "pulley", "spring", "incline", "wedge",
-                    "string", "rope", "mass", "weight", "friction",
-                    "hinge", "pivot", "plank", "sphere", "cylinder",
+                    "force vector", "normal force", "friction force",
+                    "tension force", "applied force", "force arrow",
+                    "force diagram", "isolated body",
                 ]
                 if any(kw in elements_str for kw in fbd_keywords):
                     return "fbd"
@@ -406,6 +449,30 @@ def generate_tikz_with_routing(
     elif agent_type == "optics":
         from vbagent.agents.diagram.physics import generate_optics
         tikz_code = generate_optics(
+            image_path=image_path,
+            description=description,
+            use_context=use_context,
+            show_spinner=show_spinner,
+            problem_text=problem_text,
+            solution_context=solution_context,
+            values=values,
+            labels=labels,
+        )
+    elif agent_type == "mechanics":
+        from vbagent.agents.diagram.physics import generate_mechanics
+        tikz_code = generate_mechanics(
+            image_path=image_path,
+            description=description,
+            use_context=use_context,
+            show_spinner=show_spinner,
+            problem_text=problem_text,
+            solution_context=solution_context,
+            values=values,
+            labels=labels,
+        )
+    elif agent_type == "wave":
+        from vbagent.agents.diagram.physics import generate_wave
+        tikz_code = generate_wave(
             image_path=image_path,
             description=description,
             use_context=use_context,
@@ -693,6 +760,49 @@ def get_agent_capabilities(agent_type: AgentType) -> dict:
                 "Image properties"
             ],
             "best_for": ["optics", "light", "lenses", "mirrors"]
+        },
+        "mechanics": {
+            "name": "Mechanics Diagram Agent",
+            "subject": "physics",
+            "specializes_in": [
+                "Pulley systems",
+                "Spring-mass systems",
+                "Inclined planes",
+                "Rotational systems",
+                "Kinematics",
+                "Projectile motion",
+                "Work-energy scenarios",
+                "SHM diagrams"
+            ],
+            "strengths": [
+                "Accurate mechanical systems",
+                "Proper pulley arrangements",
+                "Spring conventions",
+                "Kinematic notation",
+                "Clean system diagrams"
+            ],
+            "best_for": ["mechanics", "pulleys", "springs", "inclines", "rotation", "kinematics"]
+        },
+        "wave": {
+            "name": "Wave Mechanics Agent",
+            "subject": "physics",
+            "specializes_in": [
+                "Wave propagation",
+                "Reflection and transmission",
+                "Standing waves",
+                "Superposition",
+                "Interference patterns",
+                "Wave properties",
+                "Doppler effect"
+            ],
+            "strengths": [
+                "Smooth wave curves with tztos",
+                "Boundary conditions",
+                "Phase relationships",
+                "Amplitude and wavelength marking",
+                "Clean wave diagrams"
+            ],
+            "best_for": ["waves", "reflection", "transmission", "standing waves", "interference", "superposition"]
         },
         # Chemistry agents
         "organic_structure": {
