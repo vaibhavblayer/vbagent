@@ -44,13 +44,17 @@ CombinationStrategy = Literal["sequential", "parallel", "nested"]
 class PrimaryClassification(BaseModel):
     """Output from Agent 1 (Image Classifier) or Agent 4 (LaTeX Classifier)
     
-    Simplified to 3 core fields for classification.
+    Simplified to core fields for classification.
     """
     model_config = ConfigDict(extra='forbid')
     
     subject: Subject
     question_type: QuestionType
     has_diagram: bool
+    
+    # Topic classification (from unified classifier)
+    chapter: Optional[str] = None
+    topic: Optional[str] = None
     
     # Metadata
     confidence: float = Field(ge=0.0, le=1.0, default=1.0)

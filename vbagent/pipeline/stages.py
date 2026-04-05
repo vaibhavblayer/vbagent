@@ -65,6 +65,8 @@ def generate_solution_orchestrated(
         problem_latex=problem_latex,
         subject=primary.subject,
         question_type=primary.question_type,
+        chapter=primary.chapter,
+        topic=primary.topic,
         has_diagram=primary.has_diagram,
         image_path=image_path,
     )

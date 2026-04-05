@@ -47,7 +47,7 @@ SYSTEM_PROMPT = r"""
 
 \begin{center}
     \renewcommand{\arraystretch}{2}
-    \begin{tabular}{p{0.25cm}p{8cm}|p{0.25cm}p{5cm}}
+    \begin{tabular}{p{0.25cm}p{4cm}|p{0.25cm}p{3cm}}
     \hline
     & Column I & & Column II \\
     \hline

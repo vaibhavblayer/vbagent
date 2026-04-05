@@ -52,31 +52,40 @@ def _wrap_part(preamble: str, body: str, part_type: str = "question") -> str:
     return doc
 
 
-def _compile_to_pdf(tex_content: str, output_pdf: Path, console=None) -> bool:
-    """Compile LaTeX string to PDF via pdflatex + pdfcrop."""
+def _compile_to_svg(tex_content: str, output_svg: Path, console=None) -> bool:
+    """Compile LaTeX string to SVG via latex + dvisvgm."""
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp = Path(tmpdir)
-        (tmp / "doc.tex").write_text(tex_content)
+        (tmp / "doc.tex").write_text(tex_content, encoding='utf-8')
         try:
+            # Step 1: latex → DVI
             subprocess.run(
-                ["pdflatex", "-interaction=nonstopmode", "-halt-on-error", "doc.tex"],
-                cwd=tmpdir, capture_output=True, text=True, timeout=30,
+                ["latex", "-interaction=nonstopmode", "-halt-on-error", "doc.tex"],
+                cwd=tmpdir, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30,
             )
-            pdf = tmp / "doc.pdf"
-            if not pdf.exists():
+            dvi = tmp / "doc.dvi"
+            if not dvi.exists():
                 if console:
-                    log = (tmp / "doc.log").read_text() if (tmp / "doc.log").exists() else ""
-                    errs = [l for l in log.split("\n") if l.startswith("!")][:3]
-                    if errs:
-                        console.print(f"[dim red]  {'  '.join(errs)}[/dim red]")
+                    log_file = tmp / "doc.log"
+                    if log_file.exists():
+                        log = log_file.read_text(encoding='utf-8', errors='replace')
+                        errs = [l for l in log.split("\n") if l.startswith("!")][:3]
+                        if errs:
+                            console.print(f"[dim red]  {'  '.join(errs)}[/dim red]")
                 return False
-            # Crop whitespace
-            cropped = tmp / "doc-crop.pdf"
+            
+            # Step 2: dvisvgm → SVG (with tight bounding box)
             subprocess.run(
-                ["pdfcrop", "--margins", "5", str(pdf), str(cropped)],
-                cwd=tmpdir, capture_output=True, timeout=15,
+                ["dvisvgm", "--bbox=min", "--optimize", "--exact", "doc.dvi", "-o", "doc.svg"],
+                cwd=tmpdir, capture_output=True, encoding='utf-8', errors='replace', timeout=15,
             )
-            shutil.copy2(cropped if cropped.exists() else pdf, output_pdf)
+            svg = tmp / "doc.svg"
+            if not svg.exists():
+                if console:
+                    console.print(f"[dim red]  dvisvgm failed to generate SVG[/dim red]")
+                return False
+            
+            shutil.copy2(svg, output_svg)
             return True
         except (subprocess.TimeoutExpired, FileNotFoundError) as e:
             if console:
@@ -85,7 +94,12 @@ def _compile_to_pdf(tex_content: str, output_pdf: Path, console=None) -> bool:
 
 
 def _parse_tex(content: str) -> dict[str, str]:
-    """Split a scan .tex file into named parts."""
+    """Split a scan .tex file into named parts.
+    
+    For question.svg: removes \\ans markers but keeps all options.
+    For combined.svg: keeps everything including \\ans markers.
+    Handles multiple alternatesolution blocks (alternate-1, alternate-2, etc.)
+    """
     parts: dict[str, str] = {"combined": content.strip()}
     sol = re.search(r"(\\begin\{solution\}.*?\\end\{solution\})", content, re.DOTALL)
     if sol:
@@ -93,16 +107,26 @@ def _parse_tex(content: str) -> dict[str, str]:
     idea = re.search(r"(\\begin\{idea\}.*?\\end\{idea\})", content, re.DOTALL)
     if idea:
         parts["idea"] = idea.group(1)
-    alt = re.search(r"(\\begin\{alternatesolution\}.*?\\end\{alternatesolution\})", content, re.DOTALL)
-    if alt:
-        parts["alternate"] = alt.group(1)
+    
+    # Extract all alternatesolution blocks (can be multiple)
+    alt_matches = list(re.finditer(r"(\\begin\{alternatesolution\}.*?\\end\{alternatesolution\})", content, re.DOTALL))
+    if alt_matches:
+        for idx, match in enumerate(alt_matches, start=1):
+            parts[f"alternate-{idx}"] = match.group(1)
+    
     # Question = everything before first environment
     first = None
     for env in [r"\begin{solution}", r"\begin{idea}", r"\begin{alternatesolution}"]:
         idx = content.find(env)
         if idx != -1 and (first is None or idx < first):
             first = idx
-    parts["question"] = content[:first].strip() if first else content.strip()
+    
+    question_content = content[:first].strip() if first else content.strip()
+    
+    # For question.svg: remove \ans markers but keep all options
+    question_without_ans = re.sub(r"\\ans\b", "", question_content)
+    parts["question"] = question_without_ans.strip()
+    
     return parts
 
 
@@ -152,6 +176,47 @@ def _extract_topics(classification: dict, tex_content: str, scans_dir: Path = No
     return [t.lower().strip() for t in topics if t and t.lower() != "none"]
 
 
+def _extract_mcq_correct_option(tex_content: str) -> Optional[str]:
+    """Extract the correct MCQ option letter from \\ans marker.
+    
+    Returns:
+        Single letter (A, B, C, D) or comma-separated for multiple correct (A,C)
+        None if not an MCQ or no answer found
+    """
+    # Find tasks environment
+    tasks_match = re.search(r"\\begin\{tasks\}.*?\\end\{tasks\}", tex_content, re.DOTALL)
+    if not tasks_match:
+        return None
+    
+    tasks_content = tasks_match.group(0)
+    
+    # Find all \task positions and \ans positions
+    task_positions = [(m.start(), 'task') for m in re.finditer(r'\\task\b', tasks_content)]
+    ans_positions = [(m.start(), 'ans') for m in re.finditer(r'\\ans\b', tasks_content)]
+    
+    if not ans_positions:
+        return None
+    
+    # Sort all markers by position
+    all_markers = sorted(task_positions + ans_positions, key=lambda x: x[0])
+    
+    correct_options: list[str] = []
+    task_count = 0
+    
+    # Track which tasks have \ans immediately after them
+    for i, (pos, marker_type) in enumerate(all_markers):
+        if marker_type == 'task':
+            task_count += 1
+            # Check if next marker is \ans
+            if i + 1 < len(all_markers) and all_markers[i + 1][1] == 'ans':
+                correct_options.append(chr(65 + task_count - 1))  # A=65, B=66, etc.
+    
+    if correct_options:
+        return ','.join(correct_options)
+    
+    return None
+
+
 def _natural_sort_key(path: Path):
     return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", path.stem)]
 
@@ -179,7 +244,7 @@ def _discover_tex_files(scans_dir: Path, from_num=None, to_num=None) -> list[Pat
 
 
 def _render_parts(tex_file: Path, preamble: str, out_dir: Path, console=None) -> dict[str, bool]:
-    """Parse tex, compile each part to PDF. Returns {part_name: success}."""
+    """Parse tex, compile each part to SVG. Returns {part_name: success}."""
     content = tex_file.read_text()
     # Strip metadata comments
     content_clean = "\n".join(
@@ -189,20 +254,24 @@ def _render_parts(tex_file: Path, preamble: str, out_dir: Path, console=None) ->
     parts = _parse_tex(content_clean)
 
     # Check for alternate in separate alternates/ directory
+    # This adds to any alternates already found in the main file
     alt_file = tex_file.parent.parent / "alternates" / f"{tex_file.stem}.tex"
-    if "alternate" not in parts and alt_file.exists():
+    if alt_file.exists():
         alt_content = alt_file.read_text().strip()
         if alt_content:
-            parts["alternate"] = alt_content
+            # Find the next available alternate number
+            existing_alts = [k for k in parts.keys() if k.startswith("alternate-")]
+            next_num = len(existing_alts) + 1
+            parts[f"alternate-{next_num}"] = alt_content
 
     results: dict[str, bool] = {}
     for name, body in parts.items():
         if not body.strip():
             continue
         tex_doc = _wrap_part(preamble, body, part_type=name)
-        # Use alternate_1.pdf naming for platform compatibility
-        pdf_name = "alternate_1.pdf" if name == "alternate" else f"{name}.pdf"
-        ok = _compile_to_pdf(tex_doc, out_dir / pdf_name, console=console)
+        # All parts use their name directly as the SVG filename
+        svg_name = f"{name}.svg"
+        ok = _compile_to_svg(tex_doc, out_dir / svg_name, console=console)
         results[name] = ok
     return results
 
@@ -276,8 +345,11 @@ def _build_pyq_metadata(
         difficulty = 5
     difficulty = max(1, min(difficulty, 10))
     problem_type = classification.get("question_type", "mcq_sc")
+    
+    # Extract correct MCQ option
+    mcq_correct_option = _extract_mcq_correct_option(tex_content)
 
-    return {
+    metadata = {
         "subject": subject,
         "exam": exam,
         "year": int(year),
@@ -286,6 +358,12 @@ def _build_pyq_metadata(
         "difficulty": difficulty,
         "problem_type": problem_type,
     }
+    
+    # Add mcq_correct_option only if it's an MCQ
+    if mcq_correct_option and problem_type.startswith("mcq"):
+        metadata["mcq_correct_option"] = mcq_correct_option
+    
+    return metadata
 
 
 @click.command("pyq", context_settings=CONTEXT_SETTINGS)
@@ -304,7 +382,13 @@ def pyq(scans_dir, output, subject, exam, year, chapter, difficulty, images_dir,
     """Export scans as PYQ bulk upload ZIP.
 
     \b
-    Output: problem-N/ folders with question.pdf, solution.pdf, idea.pdf, metadata.json
+    Output structure per problem:
+    - problem-N/
+      ├── combined.svg          (full problem with options and \\ans markers)
+      ├── question.svg          (question with options, \\ans markers removed)
+      ├── solution.svg
+      ├── idea.svg              (optional)
+      └── metadata.json         (includes mcq_correct_option for MCQs)
     
     \b
     Examples:
@@ -387,6 +471,9 @@ def pyq(scans_dir, output, subject, exam, year, chapter, difficulty, images_dir,
         zip_path = output_path.parent / f"{output_path.name}.zip"
         shutil.make_archive(str(output_path), "zip", str(output_path.parent), output_path.name)
         console.print(f"\n[green]✓[/green] {zip_path} ({_human_size(zip_path)})")
+    elif output_path.exists():
+        console.print(f"\n[dim]To create a zip file, run:[/dim]")
+        console.print(f"[dim]  cd {output_path.parent} && zip -r {output_path.name}.zip {output_path.name}[/dim]")
 
     console.print(f"\n[cyan]Done:[/cyan] {ok_count} ok, {fail_count} with errors")
 
@@ -476,9 +563,9 @@ def _generate_thumbnail(tikz_dir: Path, output_png: Path, preamble: str, console
             return False
 
 
-def _compile_concatenated_pdf(tex_files: list[Path], preamble: str, output_pdf: Path,
+def _compile_concatenated_svg(tex_files: list[Path], preamble: str, output_svg: Path,
                                part_name: str, console=None) -> bool:
-    """Compile all problems into a single concatenated PDF for standard tier."""
+    """Compile all problems into a single concatenated SVG for standard tier."""
     bodies = []
     for tf in tex_files:
         content = tf.read_text()
@@ -501,8 +588,60 @@ def _compile_concatenated_pdf(tex_files: list[Path], preamble: str, output_pdf: 
         doc += combined + "\n"
     doc += "\\end{document}\n"
 
-    return _compile_to_pdf(doc, output_pdf, console)
+    return _compile_to_svg(doc, output_svg, console)
 
+
+
+
+# ===================================================================
+# Zip subcommand (for zipping existing archive folders)
+# ===================================================================
+
+@click.command("zip", context_settings=CONTEXT_SETTINGS)
+@click.argument("archive_dir", type=click.Path(exists=True), default="archive")
+@click.option("--output", "-o", help="Output zip filename (default: <archive_dir>.zip)")
+def zip_archive(archive_dir, output):
+    """Create a ZIP file from an existing archive directory.
+
+    \b
+    Examples:
+        vbagent archive zip                    # zips ./archive to archive.zip
+        vbagent archive zip my-archive         # zips ./my-archive to my-archive.zip
+        vbagent archive zip archive -o pyq.zip # zips ./archive to pyq.zip
+    """
+    console = _get_console()
+    archive_path = Path(archive_dir)
+    
+    if not archive_path.is_dir():
+        console.print(f"[red]Error: {archive_dir} is not a directory[/red]")
+        return
+    
+    # Determine output zip name
+    if output:
+        zip_name = output if output.endswith('.zip') else f"{output}.zip"
+        zip_path = archive_path.parent / zip_name
+    else:
+        zip_path = archive_path.parent / f"{archive_path.name}.zip"
+    
+    # Remove existing zip if present
+    if zip_path.exists():
+        console.print(f"[yellow]Removing existing {zip_path.name}[/yellow]")
+        zip_path.unlink()
+    
+    console.print(f"[cyan]Creating {zip_path.name}...[/cyan]")
+    shutil.make_archive(
+        str(zip_path.with_suffix('')),  # without .zip extension
+        "zip",
+        str(archive_path.parent),
+        archive_path.name
+    )
+    
+    console.print(f"[green]✓[/green] {zip_path} ({_human_size(zip_path)})")
+
+
+# ===================================================================
+# Product subcommand
+# ===================================================================
 
 @click.command("product", context_settings=CONTEXT_SETTINGS)
 @click.argument("scans_dir", type=click.Path(exists=True), default="agentic/scans")
@@ -523,7 +662,7 @@ def product(scans_dir, output, title, subject, exam, chapter, price_standard, pr
     """Export scans as product upload ZIP.
 
     \b
-    Output: standard/ (concatenated PDFs) + premium/problems/ (per-problem PDFs)
+    Output: standard/ (concatenated SVGs) + premium/problems/ (per-problem SVGs)
     
     \b
     Examples:
@@ -585,20 +724,20 @@ def product(scans_dir, output, title, subject, exam, chapter, price_standard, pr
         "problem_count": len(tex_files),
     }
 
-    # --- Standard tier: concatenated PDFs ---
+    # --- Standard tier: concatenated SVGs ---
     std_dir = output_path / "standard"
     std_dir.mkdir(parents=True, exist_ok=True)
     console.print("[dim]Compiling standard tier...[/dim]")
     for part in ["problem", "solution", "combined"]:
         # Map part names: "problem" → "question" in _parse_tex
         parse_key = "question" if part == "problem" else part
-        ok = _compile_concatenated_pdf(tex_files, preamble, std_dir / f"{part}.pdf", parse_key, console)
+        ok = _compile_concatenated_svg(tex_files, preamble, std_dir / f"{part}.svg", parse_key, console)
         if ok:
-            console.print(f"  [green]✓[/green] standard/{part}.pdf")
+            console.print(f"  [green]✓[/green] standard/{part}.svg")
         else:
-            console.print(f"  [yellow]⚠[/yellow] standard/{part}.pdf failed")
+            console.print(f"  [yellow]⚠[/yellow] standard/{part}.svg failed")
 
-    # --- Premium tier: per-problem PDFs ---
+    # --- Premium tier: per-problem SVGs ---
     prem_dir = output_path / "premium" / "problems"
     console.print("[dim]Compiling premium tier...[/dim]")
     ok_count, fail_count = 0, 0
@@ -658,14 +797,17 @@ def archive():
     Subcommands:
         pyq      — PYQ bulk upload (per-problem folders + metadata)
         product  — Product upload (standard + premium tiers)
+        zip      — Create ZIP from existing archive directory
 
     \b
     Examples:
         vbagent archive pyq --exam neet --year 2024 --chapter "atoms and nuclei"
         vbagent archive product --title "Kinematics" --price-standard 299 --price-premium 499
+        vbagent archive zip                    # zip the archive folder
     """
     pass
 
 
 archive.add_command(pyq)
+archive.add_command(zip_archive)
 archive.add_command(product)

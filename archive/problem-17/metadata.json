@@ -1,0 +1,12 @@
+{
+  "subject": "physics",
+  "exam": "neet",
+  "year": 2026,
+  "chapter": "magnetism",
+  "topics": [
+    "magnetism"
+  ],
+  "difficulty": 5,
+  "problem_type": "mcq_sc",
+  "mcq_correct_option": "D"
+}

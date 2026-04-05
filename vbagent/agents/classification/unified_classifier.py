@@ -115,6 +115,8 @@ def to_primary(result: UnifiedClassificationResult) -> PrimaryClassification:
         subject=result.subject,
         question_type=result.question_type,
         has_diagram=result.has_diagram,
+        chapter=result.chapter,
+        topic=result.topic,
         confidence=result.confidence,
         classified_from="image",
     )

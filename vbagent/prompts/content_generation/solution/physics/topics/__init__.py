@@ -131,21 +131,37 @@ TOPIC_MODULES = {
 }
 
 
-def get_topic_prompt(topic: str, question_type: str) -> str:
+def get_topic_prompt(chapter: str, topic: str, question_type: str) -> str:
     """Get topic-specific solution prompt.
     
     Args:
-        topic: Topic from classification (e.g., "mechanics", "shm", "wave_optics")
+        chapter: Chapter from classification (e.g., "Mechanics", "Waves")
+        topic: Topic from classification (e.g., "kinematics", "shm", "wave_optics")
         question_type: Question type (subjective, mcq_sc, mcq_mc, etc.)
     
     Returns:
-        System prompt for that topic + question type combination
+        System prompt for that topic + question type combination, or None if not found
     """
-    # Normalize topic
-    topic_lower = topic.lower().replace(" ", "_") if topic else ""
+    # Try topic first, then chapter
+    search_term = topic or chapter
+    if not search_term:
+        return None
+    
+    # Normalize search term
+    search_lower = search_term.lower().replace(" ", "_")
     
     # Find module name
-    module_name = TOPIC_MODULES.get(topic_lower, "mechanics")  # Default to mechanics
+    module_name = TOPIC_MODULES.get(search_lower)
+    
+    if not module_name:
+        # Try searching in chapter if topic didn't match
+        if topic and chapter:
+            chapter_lower = chapter.lower().replace(" ", "_")
+            module_name = TOPIC_MODULES.get(chapter_lower)
+    
+    if not module_name:
+        # No matching topic agent found
+        return None
     
     # Import the appropriate topic module and get prompt
     try:
@@ -182,25 +198,13 @@ def get_topic_prompt(topic: str, question_type: str) -> str:
         elif module_name == "gravitation":
             from .gravitation import get_prompt
         else:
-            # Fallback to mechanics
-            from .mechanics import get_prompt
+            return None
         
         return get_prompt(question_type)
     
-    except ImportError:
-        # If topic module doesn't exist yet, fall back to generic
-        from ..subjective import SYSTEM_PROMPT as SUBJECTIVE_PROMPT
-        from ..mcq_sc import SYSTEM_PROMPT as MCQ_SC_PROMPT
-        from ..mcq_mc import SYSTEM_PROMPT as MCQ_MC_PROMPT
-        
-        if question_type in ["subjective", "integer"]:
-            return SUBJECTIVE_PROMPT
-        elif question_type == "mcq_sc":
-            return MCQ_SC_PROMPT
-        elif question_type == "mcq_mc":
-            return MCQ_MC_PROMPT
-        else:
-            return SUBJECTIVE_PROMPT
+    except (ImportError, AttributeError):
+        # If topic module doesn't exist or get_prompt not found, return None
+        return None
 
 
 __all__ = [

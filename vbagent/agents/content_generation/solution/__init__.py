@@ -15,6 +15,8 @@ def generate_solution(
     problem_text: str,
     question_type: str,
     subject: str,
+    chapter: Optional[str] = None,
+    topic: Optional[str] = None,
     image_path: Optional[str] = None,
     show_spinner: bool = True,
 ) -> SolutionOutput:
@@ -24,13 +26,15 @@ def generate_solution(
         problem_text: Scanned problem LaTeX from ProblemOrchestrator.
         question_type: mcq_sc, mcq_mc, subjective, assertion_reason, match, passage.
         subject: physics, chemistry, mathematics.
+        chapter: Chapter/topic area for topic-specific routing (optional).
+        topic: Specific topic for topic-specific routing (optional).
         image_path: Pass only when the problem contains a diagram the solver needs to see.
         show_spinner: Show progress spinner.
 
     Returns:
         SolutionOutput with solution_latex, diagram_requirements, answer_type, answer_value.
     """
-    system_prompt = get_solution_prompt(question_type, subject)
+    system_prompt = get_solution_prompt(question_type, subject, chapter, topic)
 
     from agents import AgentOutputSchema
 

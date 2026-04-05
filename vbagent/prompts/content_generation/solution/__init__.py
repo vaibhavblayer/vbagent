@@ -13,12 +13,14 @@ Unlike scanner prompts (which focus on OCR), solution prompts focus on:
 from typing import Optional
 
 
-def get_solution_prompt(question_type: str, subject: str) -> str:
+def get_solution_prompt(question_type: str, subject: str, chapter: Optional[str] = None, topic: Optional[str] = None) -> str:
     """Get solution generation prompt for a question type and subject.
     
     Args:
         question_type: The type of question (mcq_sc, mcq_mc, subjective, etc.)
         subject: The subject (physics, chemistry, mathematics)
+        chapter: Chapter/topic area for topic-specific routing (optional)
+        topic: Specific topic for topic-specific routing (optional)
         
     Returns:
         The system prompt for solution generation
@@ -28,10 +30,13 @@ def get_solution_prompt(question_type: str, subject: str) -> str:
     """
     if subject == "physics":
         from .physics import get_prompt
+        return get_prompt(question_type, chapter, topic)
     elif subject == "chemistry":
         from .chemistry import get_prompt
+        return get_prompt(question_type)
     elif subject == "mathematics":
         from .mathematics import get_prompt
+        return get_prompt(question_type)
     else:
         raise ValueError(f"Unsupported subject: {subject}")
     

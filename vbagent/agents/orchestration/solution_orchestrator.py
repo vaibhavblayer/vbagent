@@ -51,6 +51,8 @@ class SolutionOrchestrator:
         problem_latex: str,
         subject: str,
         question_type: str,
+        chapter: Optional[str] = None,
+        topic: Optional[str] = None,
         has_diagram: bool = False,
         image_path: Optional[str] = None,
     ) -> SolutionResult:
@@ -60,6 +62,8 @@ class SolutionOrchestrator:
             problem_latex: Scanned problem LaTeX from ProblemOrchestrator.
             subject: physics, chemistry, mathematics.
             question_type: mcq_sc, mcq_mc, subjective, etc.
+            chapter: Chapter/topic area for topic-specific routing.
+            topic: Specific topic for topic-specific routing.
             has_diagram: Whether the original problem has a diagram.
             image_path: Path to original image (passed to solver only if has_diagram).
 
@@ -69,7 +73,7 @@ class SolutionOrchestrator:
         # Step 1: Call subject agent
         self.console.print(f"[bold green]Generating {subject} solution...[/bold green]")
         solution_output = self._call_subject_agent(
-            problem_latex, subject, question_type,
+            problem_latex, subject, question_type, chapter, topic,
             image_path=image_path if has_diagram else None,
         )
         self.console.print("[green]✓[/green] Solution generated")
@@ -123,7 +127,7 @@ class SolutionOrchestrator:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _call_subject_agent(self, problem_latex, subject, question_type, image_path=None):
+    def _call_subject_agent(self, problem_latex, subject, question_type, chapter, topic, image_path=None):
         """Call the subject-specific solution agent."""
         from vbagent.agents.content_generation.solution import generate_solution
 
@@ -131,6 +135,8 @@ class SolutionOrchestrator:
             problem_text=problem_latex,
             question_type=question_type,
             subject=subject,
+            chapter=chapter,
+            topic=topic,
             image_path=image_path,
             show_spinner=True,
         )

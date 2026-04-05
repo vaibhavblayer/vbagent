@@ -7,6 +7,8 @@ Solution prompts for physics questions focusing on:
 - Proper physics notation and formatting
 """
 
+from typing import Optional
+
 from .mcq_sc import SYSTEM_PROMPT as MCQ_SC_PROMPT
 from .mcq_mc import SYSTEM_PROMPT as MCQ_MC_PROMPT
 from .subjective import SYSTEM_PROMPT as SUBJECTIVE_PROMPT
@@ -33,15 +35,32 @@ SOLUTION_PROMPTS = {
 }
 
 
-def get_prompt(question_type: str) -> str:
+def get_prompt(question_type: str, chapter: Optional[str] = None, topic: Optional[str] = None) -> str:
     """Get physics solution generation prompt for a question type.
+    
+    Supports topic-specific routing when chapter/topic are provided.
+    Falls back to generic physics prompt if topic agent not found.
     
     Args:
         question_type: The type of question (mcq_sc, mcq_mc, subjective, etc.)
+        chapter: Chapter/topic area for topic-specific routing (optional)
+        topic: Specific topic for topic-specific routing (optional)
         
     Returns:
         The system prompt for solution generation
     """
+    # Try topic-specific prompt first if chapter or topic provided
+    if chapter or topic:
+        from .topics import get_topic_prompt
+        topic_prompt = get_topic_prompt(chapter, topic, question_type)
+        if topic_prompt:  # If topic agent found
+            # Log which topic agent is being used (for debugging)
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.debug(f"Using topic-specific agent for chapter='{chapter}', topic='{topic}'")
+            return topic_prompt
+    
+    # Fall back to generic physics prompt
     if question_type not in SOLUTION_PROMPTS:
         # Fall back to subjective for unknown types
         return SOLUTION_PROMPTS["subjective"]
