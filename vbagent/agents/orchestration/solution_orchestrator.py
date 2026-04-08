@@ -179,7 +179,7 @@ class SolutionOrchestrator:
                     diagram=None,
                     primary=primary,
                     use_context=True,
-                    show_spinner=False,
+                    show_spinner=True,  # Show status like other agents
                     subject=subject,
                     diagram_type=diagram_type,
                     solution_context=context,

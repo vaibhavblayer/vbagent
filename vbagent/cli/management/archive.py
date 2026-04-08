@@ -30,14 +30,26 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 # ===================================================================
 
 def _get_preamble(subject: str) -> str:
-    """Build a tight-crop preamble — 7in wide, 5mm margins, no page numbers."""
+    """Build a tight-crop preamble using standalone class with custom borders."""
     from vbagent.cli.compilation.compile_main import generate_preamble
+    # Get the standard preamble content (packages and settings)
     preamble = generate_preamble(subject=subject, title="", include_all=True)
+    
+    # Replace article class with standalone
     preamble = re.sub(
-        r"\\geometry\{[^}]*\}",
-        r"\\geometry{paperwidth=7in, paperheight=50in, margin=5mm, noheadfoot}",
+        r"\\documentclass\{article\}",
+        r"\\documentclass[preview, border={10mm, 5mm, 10mm, 10mm}]{standalone}",
         preamble,
     )
+    
+    # Remove geometry package settings (not needed with standalone)
+    preamble = re.sub(
+        r"\\usepackage\{geometry\}.*?\\geometry\{[^}]*\}",
+        "",
+        preamble,
+        flags=re.DOTALL,
+    )
+    
     return preamble
 
 
@@ -48,15 +60,52 @@ def _wrap_part(preamble: str, body: str, part_type: str = "question") -> str:
         doc += "\\begin{enumerate}[leftmargin=*]\n" + body.strip() + "\n\\end{enumerate}\n"
     else:
         doc += body.strip() + "\n"
+    # Add spacing element to prevent right-side cropping
+    doc += "\\noindent\\makebox[\\linewidth]{\\hfill $\\_\\_$}\n"
     doc += "\\end{document}\n"
     return doc
 
 
-def _compile_to_svg(tex_content: str, output_svg: Path, console=None) -> bool:
-    """Compile LaTeX string to SVG via latex + dvisvgm."""
+def _create_main_tex(preamble: str, parts: dict[str, str]) -> str:
+    """Create a main.tex file that uses \\input{} for each part.
+    
+    This allows easy recompilation by commenting/uncommenting \\input lines.
+    """
+    doc = preamble + "\n\\pagestyle{empty}\n\\begin{document}\n\n"
+    
+    # Add each part as an \input command
+    for name in sorted(parts.keys()):
+        if name == "combined" or not parts[name].strip():
+            continue
+        
+        doc += f"% ========== {name.upper()} ==========\n"
+        doc += f"% Uncomment to compile this part:\n"
+        doc += f"% \\input{{{name}-content.tex}}\n\n"
+    
+    doc += "\\noindent\\makebox[\\linewidth]{\\hfill $\\_\\_$}\n"
+    doc += "\\end{document}\n"
+    return doc
+
+
+def _compile_to_svg(tex_content: str, output_svg: Path, console=None, save_source: Path = None, bbox: str = "min") -> bool:
+    """Compile LaTeX string to SVG via latex + dvisvgm.
+    
+    Args:
+        tex_content: LaTeX document content
+        output_svg: Path where the SVG should be saved
+        console: Rich console for output
+        save_source: Optional path to save the .tex source file for debugging
+        bbox: Bounding box mode - 'min' (tight crop) or 'papersize' (full page)
+    """
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp = Path(tmpdir)
         (tmp / "doc.tex").write_text(tex_content, encoding='utf-8')
+        
+        # Save source file if requested
+        if save_source:
+            save_source.parent.mkdir(parents=True, exist_ok=True)
+            save_source.write_text(tex_content, encoding='utf-8')
+        
         try:
             # Step 1: latex → DVI
             subprocess.run(
@@ -72,11 +121,18 @@ def _compile_to_svg(tex_content: str, output_svg: Path, console=None) -> bool:
                         errs = [l for l in log.split("\n") if l.startswith("!")][:3]
                         if errs:
                             console.print(f"[dim red]  {'  '.join(errs)}[/dim red]")
+                        # Save log file for debugging if source was saved
+                        if save_source:
+                            log_path = save_source.with_suffix('.log')
+                            log_path.write_text(log, encoding='utf-8', errors='replace')
                 return False
             
-            # Step 2: dvisvgm → SVG (with tight bounding box)
+            # Step 2: dvisvgm → SVG (device-independent)
+            # --no-fonts: converts fonts to paths for device independence
+            # --bbox: 'min' for tight crop or 'papersize' for full page
+            # --exact: precise positioning
             subprocess.run(
-                ["dvisvgm", "--bbox=min", "--optimize", "--exact", "doc.dvi", "-o", "doc.svg"],
+                ["dvisvgm", "--no-fonts", f"--bbox={bbox}", "--exact", "doc.dvi", "-o", "doc.svg"],
                 cwd=tmpdir, capture_output=True, encoding='utf-8', errors='replace', timeout=15,
             )
             svg = tmp / "doc.svg"
@@ -99,8 +155,13 @@ def _parse_tex(content: str) -> dict[str, str]:
     For question.svg: removes \\ans markers but keeps all options.
     For combined.svg: keeps everything including \\ans markers.
     Handles multiple alternatesolution blocks (alternate-1, alternate-2, etc.)
+    Only the top-level \\item (question start) uses \\item[$\\Omega.$].
     """
-    parts: dict[str, str] = {"combined": content.strip()}
+    # Replace only the FIRST \item (top-level question) with \item[$\Omega.$]
+    # This avoids replacing \item inside nested itemize/enumerate environments
+    content_with_omega = re.sub(r"^(.*?)\\item\b", r"\1\\item[$\\Omega.$]", content, count=1, flags=re.DOTALL)
+    
+    parts: dict[str, str] = {"combined": content_with_omega.strip()}
     sol = re.search(r"(\\begin\{solution\}.*?\\end\{solution\})", content, re.DOTALL)
     if sol:
         parts["solution"] = sol.group(1)
@@ -125,6 +186,10 @@ def _parse_tex(content: str) -> dict[str, str]:
     
     # For question.svg: remove \ans markers but keep all options
     question_without_ans = re.sub(r"\\ans\b", "", question_content)
+    
+    # Replace only the FIRST \item (top-level) with \item[$\Omega.$]
+    question_without_ans = re.sub(r"^(.*?)\\item\b", r"\1\\item[$\\Omega.$]", question_without_ans, count=1, flags=re.DOTALL)
+    
     parts["question"] = question_without_ans.strip()
     
     return parts
@@ -243,8 +308,16 @@ def _discover_tex_files(scans_dir: Path, from_num=None, to_num=None) -> list[Pat
     return files
 
 
-def _render_parts(tex_file: Path, preamble: str, out_dir: Path, console=None) -> dict[str, bool]:
-    """Parse tex, compile each part to SVG. Returns {part_name: success}."""
+def _render_parts(tex_file: Path, preamble: str, out_dir: Path, console=None, save_sources: bool = True, bbox: str = "min") -> dict[str, bool]:
+    """Parse tex, compile each part to SVG. Returns {part_name: success}.
+    
+    Args:
+        tex_file: Source .tex file
+        preamble: LaTeX preamble
+        out_dir: Output directory for SVGs
+        console: Rich console for output
+        save_sources: If True, save LaTeX source files in src/ subdirectory
+    """
     content = tex_file.read_text()
     # Strip metadata comments
     content_clean = "\n".join(
@@ -264,15 +337,42 @@ def _render_parts(tex_file: Path, preamble: str, out_dir: Path, console=None) ->
             next_num = len(existing_alts) + 1
             parts[f"alternate-{next_num}"] = alt_content
 
+    # Create src directory if saving sources
+    src_dir = out_dir / "src" if save_sources else None
+    if src_dir:
+        src_dir.mkdir(parents=True, exist_ok=True)
+        # Save the original combined content
+        (src_dir / "original.tex").write_text(content, encoding='utf-8')
+
     results: dict[str, bool] = {}
     for name, body in parts.items():
         if not body.strip():
             continue
+        
+        # Save content file (without preamble) for use with \input
+        if src_dir:
+            content_file = src_dir / f"{name}-content.tex"
+            if name in ("question", "combined"):
+                content_text = "\\begin{enumerate}[leftmargin=*]\n" + body.strip() + "\n\\end{enumerate}\n"
+            else:
+                content_text = body.strip() + "\n"
+            content_file.write_text(content_text, encoding='utf-8')
+        
+        # Create full document for compilation
         tex_doc = _wrap_part(preamble, body, part_type=name)
-        # All parts use their name directly as the SVG filename
         svg_name = f"{name}.svg"
-        ok = _compile_to_svg(tex_doc, out_dir / svg_name, console=console)
+        
+        # Save full document (with preamble) for standalone compilation
+        source_path = src_dir / f"{name}.tex" if src_dir else None
+        
+        ok = _compile_to_svg(tex_doc, out_dir / svg_name, console=console, save_source=source_path, bbox=bbox)
         results[name] = ok
+    
+    # Create a main.tex that uses \input for each part
+    if src_dir:
+        main_tex = _create_main_tex(preamble, parts)
+        (src_dir / "main.tex").write_text(main_tex, encoding='utf-8')
+    
     return results
 
 
@@ -375,10 +475,12 @@ def _build_pyq_metadata(
 @click.option("--chapter", "-c", default="", help="Chapter name")
 @click.option("--difficulty", "-d", type=int, help="Difficulty 1-10")
 @click.option("--images-dir", default=None, help="Directory with original images (for exam/year extraction)")
-@click.option("--zip/--no-zip", "make_zip", default=True)
+@click.option("--zip/--no-zip", "make_zip", default=False)
+@click.option("--save-sources/--no-save-sources", default=True, help="Save LaTeX source files in src/ for debugging")
+@click.option("--bbox", type=click.Choice(["min", "papersize"]), default="min", help="SVG bounding box: 'min' (tight crop) or 'papersize' (full page)")
 @click.option("--from", "from_num", type=int, default=None)
 @click.option("--to", "to_num", type=int, default=None)
-def pyq(scans_dir, output, subject, exam, year, chapter, difficulty, images_dir, make_zip, from_num, to_num):
+def pyq(scans_dir, output, subject, exam, year, chapter, difficulty, images_dir, make_zip, save_sources, bbox, from_num, to_num):
     """Export scans as PYQ bulk upload ZIP.
 
     \b
@@ -423,7 +525,13 @@ def pyq(scans_dir, output, subject, exam, year, chapter, difficulty, images_dir,
     ok_count, fail_count = 0, 0
 
     for tex_file in tex_files:
-        num_match = re.search(r"(\d+)", tex_file.stem)
+        # Extract problem number from filename (e.g., problem_1.tex -> 1)
+        # Use the stem directly, removing common prefixes
+        stem = tex_file.stem
+        # Remove common prefixes like "problem_", "problem-", "q_", etc.
+        stem_clean = re.sub(r"^(problem[_-]?|q[_-]?|question[_-]?)", "", stem, flags=re.IGNORECASE)
+        # Extract the number
+        num_match = re.search(r"(\d+)", stem_clean)
         prob_num = int(num_match.group(1)) if num_match else 0
         prob_dir = output_path / f"problem-{prob_num}"
         prob_dir.mkdir(parents=True, exist_ok=True)
@@ -456,7 +564,7 @@ def pyq(scans_dir, output, subject, exam, year, chapter, difficulty, images_dir,
                                     scans_dir=scans_path, stem=tex_file.stem)
         (prob_dir / "metadata.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False))
 
-        results = _render_parts(tex_file, preamble, prob_dir, console)
+        results = _render_parts(tex_file, preamble, prob_dir, console, save_sources=save_sources, bbox=bbox)
         rendered = [k for k, v in results.items() if v]
         failed = [k for k, v in results.items() if not v]
 

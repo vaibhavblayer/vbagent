@@ -1,0 +1,43 @@
+\begin{enumerate}[leftmargin=*]
+\item A model for quantized motion of an electron in a uniform magnetic field $B$ states that the flux passing through the orbit of the electron is $n\left(\frac{h}{e}\right)$ where $n$ is an integer, $h$ is Planck's constant, and $e$ is the magnitude of the electron's charge. According to the model, the magnetic moment of an electron in its lowest energy state will be ($m$ is the mass of the electron)
+\begin{tasks}(2)
+    \task $\frac{heB}{\pi m}$
+    \task $\frac{heB}{2\pi m}$
+    \task $\frac{he}{\pi m}$
+    \task $\frac{he}{2\pi m}$ \ans
+\end{tasks}
+\begin{solution}
+\begin{align*}
+B\pi r^2 &= n\left(\frac{h}{e}\right) \\
+r^2 &= \frac{nh}{\pi eB} \\
+\intertext{For circular motion of the electron in the magnetic field,}
+e v B &= \frac{mv^2}{r} \\
+v &= \frac{eBr}{m} \\
+\intertext{Magnetic moment of the revolving electron is}
+\mu &= IA = \left(\frac{ev}{2\pi r}\right)\left(\pi r^2\right) \\
+      &= \frac{evr}{2} \\
+      &= \frac{e}{2}\left(\frac{eBr}{m}\right)r \\
+      &= \frac{e^2Br^2}{2m} \\
+      &= \frac{e^2B}{2m}\cdot \frac{nh}{\pi eB} \\
+      &= \frac{nhe}{2\pi m} \\
+\intertext{In the lowest energy state, the smallest allowed integer is $n = 1$. Hence,}
+\mu &= \frac{he}{2\pi m} \\
+\intertext{Therefore, the correct option is (d).}
+\end{align*}
+\end{solution}
+
+\begin{idea}
+    \begin{align*}
+    \intertext{\textbf{Concept:} Flux quantization for a circular electron orbit in a uniform magnetic field}
+    \Phi &= BA \\
+    B\pi r^2 &= n\left(\frac{h}{e}\right) \\
+    evB &= \frac{mv^2}{r} \\
+    \mu &= IA \\
+    &= \left(\frac{ev}{2\pi r}\right)\left(\pi r^2\right) \\
+    &= \frac{evr}{2} \\
+    &= \frac{e^2Br^2}{2m} \\
+    &= \frac{nhe}{2\pi m} \\
+    \intertext{\textbf{Technique:} Use flux quantization to relate $r$ and $n$, use magnetic force for circular motion to relate $v$ and $r$, then choose the smallest allowed $n$ for the lowest state.}
+    \end{align*}
+\end{idea}
+\end{enumerate}

@@ -1,0 +1,51 @@
+\documentclass[preview, border={10mm, 5mm, 10mm, 10mm}]{standalone}
+\usepackage{tikz, tasks, geometry, xcolor}
+\usetikzlibrary{arrows.meta, patterns, calc, intersections, quotes, angles}
+\usepackage{amsmath, amssymb, amsfonts, mathtools}
+\setlength{\columnsep}{10pt}
+\setlength{\columnseprule}{0.4pt}
+\usepackage[upright]{fourier}
+\usepackage{enumitem}
+\geometry{a4paper, margin=1in}
+\usepackage{tzplot, pgfplots, kinematikz}
+\usepackage{circuitikz}
+\ctikzset{resistors/scale=0.75,capacitors/scale=0.75,inductors/scale=0.75}
+\usepackage{chemfig}
+\usepackage[version=4]{mhchem}
+\usepackage[modules=all]{chemmacros}
+\usepackage{tkz-euclide}
+\usepackage{venndiagram}
+\pgfplotsset{compat=1.18}
+\everymath{\displaystyle}
+\newcommand{\ans}{\textcolor{blue!20!red}{\textit{\quad Ans.}}}
+% \renewcommand{\ans}{}  % Uncomment to hide answers
+\newenvironment{solution}{\par\noindent\color{red!80!black}$\Rightarrow$\enspace\ignorespaces}{\par}
+\newenvironment{alternatesolution}{\par\noindent\color{blue!80!black}$\Rrightarrow$\enspace\ignorespaces}{\par}
+\newenvironment{hint}{\par\noindent\color{red!50!black}$\looparrowright$\enspace\ignorespaces}{\par}
+\newenvironment{idea}{\par\noindent\color{violet!80!black}$\diamond$\enspace\ignorespaces}{\par}
+\newenvironment{remark}{\par\noindent\color{teal!80!black}$\circ$\enspace\ignorespaces}{\par}
+
+% --- Global TikZ style (design uniformity across all diagrams) ---
+\tikzset{
+    >=latex,
+    thick,
+    every node/.append style={font=\small},
+}
+\title{\textsc{}}
+\pagestyle{empty}
+\begin{document}
+
+% ========== IDEA ==========
+% Uncomment to compile this part:
+% \input{idea-content.tex}
+
+% ========== QUESTION ==========
+% Uncomment to compile this part:
+% \input{question-content.tex}
+
+% ========== SOLUTION ==========
+% Uncomment to compile this part:
+% \input{solution-content.tex}
+
+\hfill $\_\_$
+\end{document}
