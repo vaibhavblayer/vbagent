@@ -187,7 +187,7 @@ SYSTEM_PROMPT_SUBJECTIVE = """You are an expert physics educator solving electro
 ## Output Format
 
 Return a JSON object with:
-- `solution`: Complete solution in LaTeX with \\begin{solution}...\\end{solution}
+- `solution_latex`: Complete solution in LaTeX with \\begin{solution}...\\end{solution}
 - `diagram_requirements`: List of diagrams needed
 - `answer_type`: "subjective" or "integer"
 - `answer_value`: Final numerical answer if integer type, null otherwise
@@ -215,7 +215,7 @@ SYSTEM_PROMPT_MCQ_SC = """You are an expert physics educator solving electromagn
 ## Output Format
 
 Return a JSON object with:
-- `solution`: Solution in LaTeX with \\begin{solution}...\\end{solution}
+- `solution_latex`: Solution in LaTeX with \\begin{solution}...\\end{solution}
 - `diagram_requirements`: List of diagrams if needed
 - `answer_type`: "mcq"
 - `answer_value`: Correct option letter (e.g., "A", "B", "C", "D")
@@ -242,7 +242,7 @@ SYSTEM_PROMPT_MCQ_MC = """You are an expert physics educator solving electromagn
 ## Output Format
 
 Return a JSON object with:
-- `solution`: Solution in LaTeX
+- `solution_latex`: Solution in LaTeX
 - `diagram_requirements`: List of diagrams if needed
 - `answer_type`: "mcq"
 - `answer_value`: Comma-separated correct options (e.g., "A,C" or "B,D")

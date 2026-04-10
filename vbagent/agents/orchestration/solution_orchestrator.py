@@ -78,7 +78,7 @@ class SolutionOrchestrator:
         )
         self.console.print("[green]✓[/green] Solution generated")
 
-        solution_latex = solution_output.solution
+        solution_latex = solution_output.solution_latex
         diagram_reqs = solution_output.diagram_requirements
 
         # Step 2: Dispatch diagram agents (parallel)

@@ -819,9 +819,10 @@ def apply_provider_config() -> None:
     platform.openai.com and fail with non-OpenAI keys).
     
     Resolution order for API key:
-    1. api_key in config (explicit)
-    2. Provider-specific env var (XAI_API_KEY, GOOGLE_API_KEY, etc.)
-    3. OPENAI_API_KEY env var (fallback)
+    1. Key manager (if enabled and configured)
+    2. api_key in config (explicit)
+    3. Provider-specific env var (XAI_API_KEY, GOOGLE_API_KEY, etc.)
+    4. OPENAI_API_KEY env var (fallback)
     """
     config = get_config()
     
@@ -834,6 +835,20 @@ def apply_provider_config() -> None:
         # OpenAI provider — tracing works fine
         os.environ.pop("OPENAI_AGENTS_DISABLE_TRACING", None)
         os.environ.pop("OPENAI_BASE_URL", None)
+    
+    # Try key manager first (only for OpenAI provider)
+    if not config.base_url:
+        try:
+            from vbagent.api_keys import KeyManager
+            manager = KeyManager.get_instance()
+            if manager.is_enabled():
+                # Key manager will select appropriate key when agent runs
+                # For now, just verify it's enabled - actual key selection
+                # happens per-request based on model
+                return
+        except Exception:
+            # Key manager not available or failed - fall through to other methods
+            pass
     
     if config.api_key:
         # Explicit key in config takes priority

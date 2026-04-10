@@ -135,8 +135,14 @@ def extract_ideas_stage(
         if console:
             console.print("[dim]Loading cached ideas...[/dim]")
         from vbagent.models.content import IdeaResult
-        ideas = IdeaResult(**cache.get(problem_id, "ideas"))
-    else:
+        cached_ideas = cache.get(problem_id, "ideas")
+        if cached_ideas is None:
+            if console:
+                console.print("[dim yellow]Cache returned None, regenerating ideas...[/dim yellow]")
+        else:
+            ideas = IdeaResult(**cached_ideas)
+    
+    if ideas is None:
         if console:
             with console.status("[bold green]Stage 4: Extracting ideas..."):
                 ideas = extract_ideas(problem, solution)
@@ -274,7 +280,13 @@ def classify_unified(
     if cache and problem_id and cache.has(problem_id, "classification"):
         if console:
             console.print("[dim]Loading cached classification...[/dim]")
-        return UnifiedClassificationResult(**cache.get(problem_id, "classification"))
+        cached_data = cache.get(problem_id, "classification")
+        if cached_data is None:
+            # Cache returned None despite has() check - regenerate
+            if console:
+                console.print("[dim yellow]Cache returned None, regenerating...[/dim yellow]")
+        else:
+            return UnifiedClassificationResult(**cached_data)
 
     if console:
         with console.status("[bold green]Stage 1: Classifying & analyzing..."):

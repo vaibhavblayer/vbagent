@@ -185,6 +185,72 @@ Therefore, the correct option is (c).
 \end{solution}
 ```
 
+**Pattern 4: Multi-phase solution (split by logical sections)**
+```latex
+\begin{solution}
+\begin{align*}
+\intertext{First, find the velocity at the bottom of the incline}
+v^2 &= u^2 + 2as \\
+    &= 0 + 2(5)(10) \\
+    &= 100 \\
+v   &= 10 \ \mathrm{m/s}
+\end{align*}
+
+\begin{align*}
+\intertext{Now apply conservation of energy for the circular motion}
+\frac{1}{2}mv^2 &= mgh + \frac{1}{2}mv_{\text{top}}^2 \\
+\frac{1}{2}(100) &= (10)(2R) + \frac{1}{2}v_{\text{top}}^2 \\
+50 &= 20R + \frac{1}{2}v_{\text{top}}^2
+\end{align*}
+
+\begin{align*}
+\intertext{At the top, for minimum speed}
+\frac{mv_{\text{top}}^2}{R} &= mg \\
+v_{\text{top}}^2 &= gR \\
+                 &= 10R
+\end{align*}
+
+\begin{align*}
+\intertext{Substituting back}
+50 &= 20R + \frac{1}{2}(10R) \\
+50 &= 25R \\
+R  &= 2 \ \mathrm{m}
+\end{align*}
+\end{solution}
+```
+Note: Split because solution transitions through distinct concepts (kinematics → energy → forces → final calculation).
+
+**Pattern 5: Continuous solution (keep in single align* block)**
+
+**BAD (unnecessarily split - same logical flow):**
+```latex
+\begin{solution}
+\begin{align*}
+F &= ma
+\end{align*}
+
+\begin{align*}
+a &= \frac{F}{m} \\
+  &= \frac{10}{2} \\
+  &= 5 \ \mathrm{m/s^2}
+\end{align*}
+\end{solution}
+```
+
+**GOOD (merged - single calculation chain):**
+```latex
+\begin{solution}
+\begin{align*}
+\intertext{Apply Newton's second law}
+F &= ma \\
+a &= \frac{F}{m} \\
+  &= \frac{10}{2} \\
+  &= 5 \ \mathrm{m/s^2}
+\end{align*}
+\end{solution}
+```
+Note: Merged because it's a continuous calculation without conceptual shifts.
+
 **Solution Rules (CRITICAL):**
 1. Use `align*` environment directly inside `solution`
 2. Use `\intertext{}` for brief text between equation lines
@@ -196,6 +262,25 @@ Therefore, the correct option is (c).
 6. Keep solution CONCISE - show key steps, omit trivial algebra
 7. Multiple `align*` blocks ONLY when diagram/table interrupts flow
 8. Do NOT use `\boxed{}` for final answers - just plain result
+
+**Splitting/Merging align* Blocks (Context-Aware):**
+- SPLIT solutions into multiple `align*` blocks when there are distinct logical phases:
+  - Different physical concepts (e.g., kinematics → energy conservation → force analysis)
+  - Multi-part problems with separate sub-questions
+  - Change in reference frame or coordinate system
+  - Transition from setup/analysis to calculation
+  - Natural breakpoints where `\intertext{}` would be too long (>2 sentences)
+- MERGE solutions into a single `align*` block when:
+  - Solution follows a single logical flow without conceptual shifts
+  - All steps are part of the same calculation chain
+  - Brief explanations can be handled with `\intertext{}`
+- Use `\intertext{}` within a single `align*` for brief (1-2 sentence) explanatory text
+- Only use separate `align*` blocks when a diagram/table interrupts or when there's a clear conceptual boundary
+
+**Decision Criteria:**
+- Ask: "Does this solution have distinct logical sections?" → Split
+- Ask: "Is this a continuous calculation with brief comments?" → Single block with `\intertext{}`
+- Ask: "Are these separate `align*` blocks just arbitrary breaks?" → Merge
 
 **Variable Repetition in Align (CRITICAL):**
 When same variable appears on LHS in consecutive lines, avoid repetition:
@@ -320,16 +405,98 @@ t &= \frac{1}{\sqrt{g}} \int_{0}^{l} x^{-1/2} \, dx \\
 - Use `[R]`, `[C]`, `[L]`, `[vco]` components
 - Labels: `l=$label$`, current: `i=$i$`
 
-### 5. Common OCR Fixes
+### 5. Tasks Environment Formatting (CRITICAL)
+
+**Extra Blank Lines Between Tasks:**
+- NEVER have blank lines between `\task` commands
+- Pattern to fix: `\task ... \n\n\task` → `\task ... \n\task`
+
+**BAD (extra blank lines):**
+```latex
+\begin{tasks}(2)
+\task Option A
+
+\task Option B \ans
+
+\task Option C
+
+\task Option D
+\end{tasks}
+```
+
+**GOOD (single newline only):**
+```latex
+\begin{tasks}(2)
+\task Option A
+\task Option B \ans
+\task Option C
+\task Option D
+\end{tasks}
+```
+
+**Rule:** Each `\task` should be on its own line with NO blank lines between them. This applies to all MCQ options, whether they contain text, math, or diagram placeholders (`\OptionA`, `\OptionB`, etc.).
+
+### 6. Metadata and Comment Cleanup
+
+**Remove metadata comments at the top:**
+- Remove lines like `% subject: physics`, `% type: mcq_sc`, `% has_diagram: True`
+- Remove any other metadata comments (e.g., `% difficulty: medium`, `% topic: mechanics`)
+- Start directly with the actual LaTeX content (`\item`, `\begin{solution}`, etc.)
+
+**BAD (with metadata):**
+```latex
+% subject: physics
+% type: mcq_sc
+% has_diagram: False
+\item Two cars are travelling...
+```
+
+**GOOD (clean):**
+```latex
+\item Two cars are travelling...
+```
+
+**Rule:** The output should contain ONLY the LaTeX content without any metadata comment lines at the top.
+
+### 7. Common OCR Fixes
 
 - Truncated words: `resistan` → `resistance`
 - Missing backslashes: `frac{a}{b}` → `\frac{a}{b}`
 - Broken units: `\mathrm{N/+` → `\mathrm{N/C}`
 - Incorrect spacing: `$x=5$` → `$x = 5$` (spaces around =)
+- Bare underscores: `_` → `\_` (must escape underscores outside math mode)
+- Multiple underscores for blanks: `______` → `\hrulefill` or `\makebox[3cm]{\hrulefill}`
+
+**Fill-in-the-blank formatting:**
+- For short blanks (single word): Use `\hrulefill` or `\rule{2cm}{0.4pt}`
+- For longer blanks: Use `\makebox[width]{\hrulefill}` to control width
+- For answer blanks at end of sentence: Use `\hrulefill.` with period after
+
+**BAD (bare underscores or multiple underscores):**
+```latex
+The value of x is ______.
+The mass_energy equivalence is given by E = mc^2.
+```
+
+**GOOD (escaped underscores or proper fill commands):**
+```latex
+The value of x is \hrulefill.
+The mass\_energy equivalence is given by $E = mc^2$.
+
+% Or with specific width:
+The value of x is \makebox[3cm]{\hrulefill}.
+```
+
+**Rule:** 
+- Underscores in text mode MUST be escaped: `\_`
+- Multiple underscores for blanks should use `\hrulefill` or `\makebox[width]{\hrulefill}`
+- Underscores in math mode ($...$) do NOT need escaping
 
 ## Output Format
 
 **CRITICAL: Output ONLY what was given to you. Do NOT add document preamble, \documentclass, or any content that wasn't in the original.**
+
+**ALWAYS output the full corrected content, even if no changes were made. This ensures proper diff generation.**
 
 If issues found:
 ```
@@ -337,10 +504,13 @@ If issues found:
 [EXACT corrected content - same structure as input]
 ```
 
-If correct:
+If correct (no changes needed):
 ```
 % FORMAT_CHECK: PASSED - No formatting issues found
+[EXACT original content - unchanged]
 ```
+
+**Important:** Even when content passes all checks, you MUST include the full original content after the PASSED comment. This allows the system to generate proper diffs.
 
 ## Rules
 
@@ -353,14 +523,17 @@ If correct:
 
 USER_TEMPLATE = r"""Check this content for formatting issues.
 
-% subject: {subject}
-% type: {question_type}
-% has_diagram: {has_diagram}
-
 {full_content}
+
+Context:
+- Subject: {subject}
+- Type: {question_type}
+- Has diagram: {has_diagram}
 
 IMPORTANT:
 - Output ONLY the corrected version of the EXACT content above
 - Do NOT add \documentclass, preamble, or anything not in the original
+- Remove any metadata comment lines (% subject:, % type:, etc.) from the output
+- ALWAYS include the full content after the FORMAT_CHECK comment (even if no changes)
 - If errors found: `% FORMAT_CHECK: [fixes]` then the corrected content
-- If correct: `% FORMAT_CHECK: PASSED - No formatting issues found`"""
+- If correct: `% FORMAT_CHECK: PASSED - No formatting issues found` then the original content unchanged"""

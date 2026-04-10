@@ -85,11 +85,10 @@ class SolutionOutput(BaseModel):
     and step-by-step solution support.
     """
     
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra='ignore')
     
-    solution: str = Field(
-        description="Complete solution in LaTeX format (\\begin{solution}...\\end{solution})",
-        alias="solution_latex"  # Support both names for backward compatibility
+    solution_latex: str = Field(
+        description="Complete solution in LaTeX format (\\begin{solution}...\\end{solution})"
     )
     diagram_requirements: List[DiagramRequirement] = Field(
         default_factory=list,
@@ -120,10 +119,15 @@ class SolutionOutput(BaseModel):
         description="Key concepts used in this solution"
     )
     
-    @property
-    def solution_latex(self) -> str:
-        """Backward compatibility property."""
-        return self.solution
+    @classmethod
+    def model_validate(cls, obj, **kwargs):
+        """Custom validation to handle both 'solution' and 'solution_latex' field names."""
+        if isinstance(obj, dict):
+            # If 'solution' is present but 'solution_latex' is not, copy it
+            if 'solution' in obj and 'solution_latex' not in obj:
+                obj = obj.copy()
+                obj['solution_latex'] = obj.pop('solution')
+        return super().model_validate(obj, **kwargs)
 
 
 __all__ = ["DiagramRequirement", "SolutionOutput"]

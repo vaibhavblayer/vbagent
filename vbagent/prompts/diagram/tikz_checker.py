@@ -35,6 +35,7 @@ _REVIEW_CHECKLIST = r"""## Review Checklist
 5. Use `node[midway]` for labels on lines/springs - NO position calculations
 6. Use SCOPES for repeated structures - avoids coordinate bloat
 7. NO variable bloat - don't create a variable for every position
+8. PREFER INTEGER VALUES - use 1, 2, 3 instead of 1.2, 2.8, 3.5 when possible
 
 **Check for:**
 - Too many variables when inline expressions would be cleaner
@@ -42,33 +43,39 @@ _REVIEW_CHECKLIST = r"""## Review Checklist
 - Absolute positioning instead of `$(node.anchor)+(x,y)$` or `below of=`
 - Repeated code that should use `\begin{scope}[xshift=...]`
 - Hardcoded shift values like `(5.2, 0)` instead of scope
+- Decimal values like 1.2, 3.8 when integers like 1, 4 would work
+- 7-8+ variables when 2-3 would suffice
 
-BAD - variable bloat, absolute coordinates, separate label positions:
+BAD - variable bloat, absolute coordinates, separate label positions, decimals:
 ```
 \pgfmathsetmacro{\boxOneX}{0}
 \pgfmathsetmacro{\boxOneY}{-2.5}
+\pgfmathsetmacro{\boxTwoX}{3.8}  % Too many variables!
+\pgfmathsetmacro{\boxTwoY}{-2.5}
 \pgfmathsetmacro{\labelX}{0.3}
-\pgfmathsetmacro{\labelY}{-1.25}  % Too many variables!
+\pgfmathsetmacro{\labelY}{-1.25}
+\pgfmathsetmacro{\springLength}{2.3}  % Decimal when 2 would work
 \node[block] (box1) at (\boxOneX, \boxOneY) {$m$};
+\node[block] (box2) at (\boxTwoX, \boxTwoY) {$m$};
 \draw[spring] (0,0) -- (0,-2);
 \node at (\labelX, \labelY) {$k$};  % BAD - separate label!
 ```
 
-GOOD - calc-based positioning and node[midway] for labels (PREFERRED):
+GOOD - calc-based positioning, node[midway] for labels, integers (PREFERRED):
 ```
 \tikzset{
     pulley/.style={draw, thick, circle, minimum size=1cm, fill=white},
     block/.style={draw, thick, fill=white, minimum width=1.2cm, minimum height=0.8cm}
 }
 
-% BEST - use calc library: $(node.anchor)+(x,y)$
+% BEST - use calc library: $(node.anchor)+(x,y)$ with integer offsets
 \pic[rotate=180] (ceiling) at (0,0) {frame=2cm};
 \node[pulley] (pulley) at ($(ceiling-center)+(0,-1)$) {};
 \node[block] (block_right) at ($(pulley.east)+(0,-2)$) {$m_1$};
-\node[block] (block_left) at ($(pulley.west)+(0,-2.5)$) {$m_2$};
+\node[block] (block_left) at ($(pulley.west)+(0,-3)$) {$m_2$};  % Use -3 not -2.5
 
-% Also OK - use below of=, xshift, yshift
-\node[block] (box1) [below of=pulley1, yshift=-1.5cm] {$m_1$};
+% Also OK - use below of=, xshift, yshift with integers
+\node[block] (box1) [below of=pulley1, yshift=-2cm] {$m_1$};  % Use -2cm not -1.5cm
 
 % Use node[midway] for labels on lines/springs - MUCH cleaner!
 \draw[spring] (ceiling-center) -- (pulley.north) node[midway, right=2mm] {$k$};
@@ -78,6 +85,7 @@ GOOD - calc-based positioning and node[midway] for labels (PREFERRED):
 **When to create variable vs inline:**
 - Create variable: used 3+ times OR very complex expression
 - Use inline: used 1-2 times, keeps code readable
+- ALWAYS prefer integers: use 2 instead of 1.8, use 3 instead of 3.2
 
 - Use `\pgfmathsetmacro` (NOT `\def`)
 - Use camelCase for variable names
@@ -269,16 +277,21 @@ SYSTEM_PROMPT = r"""You are an expert TikZ/PGF code reviewer. Check TikZ code fo
 
 **CRITICAL: Output ONLY what was given to you. Do NOT add document preamble, \documentclass, or any content that wasn't in the original.**
 
+**ALWAYS output the full corrected content, even if no changes were made. This ensures proper diff generation.**
+
 If issues found:
 ```
 % TIKZ_CHECK: [Brief fixes description]
 [EXACT corrected content - same structure as input]
 ```
 
-If correct:
+If correct (no changes needed):
 ```
 % TIKZ_CHECK: PASSED - No TikZ errors found
+[EXACT original content - unchanged]
 ```
+
+**Important:** Even when content passes all checks, you MUST include the full original content after the PASSED comment. This allows the system to generate proper diffs.
 
 ## Rules
 
@@ -286,6 +299,7 @@ If correct:
 2. Preserve EXACT file structure - do NOT add preamble or packages not in original
 3. Do NOT wrap in markdown code blocks
 4. Keep the same content, just fix errors
+5. ALWAYS output full content after the TIKZ_CHECK comment
 """
 
 USER_TEMPLATE = r"""Check this TikZ code for errors.
@@ -295,8 +309,9 @@ USER_TEMPLATE = r"""Check this TikZ code for errors.
 IMPORTANT:
 - Output ONLY the corrected version of the EXACT content above
 - Do NOT add \documentclass, preamble, or anything not in the original
+- ALWAYS include the full content after the TIKZ_CHECK comment (even if no changes)
 - If errors found: `% TIKZ_CHECK: [fixes]` then the corrected content
-- If correct: `% TIKZ_CHECK: PASSED - No TikZ errors found`"""
+- If correct: `% TIKZ_CHECK: PASSED - No TikZ errors found` then the original content unchanged"""
 
 
 # =============================================================================

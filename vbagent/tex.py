@@ -182,9 +182,13 @@ def extract_answer(content: str) -> Optional[str]:
     Returns:
         Answer string or None if not found
     """
-    # Remove comments
+    # Remove comments (but preserve escaped percent signs \%)
+    # Replace \% temporarily with a placeholder
+    content = content.replace(r'\%', '<<<PERCENT>>>')
     lines = [line.split('%')[0] for line in content.split('\n')]
     content = '\n'.join(lines)
+    # Restore escaped percent signs
+    content = content.replace('<<<PERCENT>>>', r'\%')
 
     # Integer answer takes priority
     ansint_match = re.search(r'\\ansint\{([^}]+)\}', content)
@@ -271,9 +275,11 @@ def _parse_tex_recursive(
     current_dir = tex_path.parent
     problem_files: list[Path] = []
 
-    # Remove comments
+    # Remove comments (but preserve escaped percent signs \%)
+    content = content.replace(r'\%', '<<<PERCENT>>>')
     lines = [line.split('%')[0] for line in content.split('\n')]
     content = '\n'.join(lines)
+    content = content.replace('<<<PERCENT>>>', r'\%')
 
     # Pattern 1: \foreach \i in {1,...,10}
     foreach_range = re.finditer(

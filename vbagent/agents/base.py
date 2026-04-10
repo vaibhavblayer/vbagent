@@ -118,6 +118,7 @@ def create_agent(
     Returns:
         Configured Agent instance
     """
+    import os
     Agent = _get_agent_class()
     
     # Apply provider config (base_url, api_key) before creating agent
@@ -128,6 +129,24 @@ def create_agent(
         model = get_model(agent_type or "default")
     if model_settings is None:
         model_settings = get_model_settings(agent_type or "default")
+    
+    # Try to get API key from key manager if enabled
+    try:
+        from vbagent.api_keys import KeyManager
+        from vbagent.config import get_config
+        config = get_config()
+        
+        # Only use key manager for OpenAI provider (no base_url)
+        if not config.base_url:
+            manager = KeyManager.get_instance()
+            if manager.is_enabled():
+                api_key = manager.get_key_for_model(model)
+                if api_key:
+                    # Set the API key in environment for the SDK to use
+                    os.environ["OPENAI_API_KEY"] = api_key
+    except Exception:
+        # Key manager not available or failed - use existing env var
+        pass
     
     return Agent(
         name=name,
@@ -180,6 +199,17 @@ def _extract_response_id(result) -> Optional[str]:
     return None
 
 
+def _extract_actual_model(result) -> Optional[str]:
+    """Extract the actual model used from raw_responses."""
+    try:
+        if result.raw_responses:
+            last = result.raw_responses[-1]
+            return getattr(last, "model", None)
+    except (AttributeError, IndexError):
+        pass
+    return None
+
+
 async def run_agent(agent: "Agent", input_text: str | list) -> Any:
     """Run an agent asynchronously and return the final output.
     
@@ -206,11 +236,27 @@ async def run_agent(agent: "Agent", input_text: str | list) -> Any:
         result = await Runner.run(agent, input=input_text)
         duration = time.time() - start_time
         
-        # Extract usage and response ID
+        # Extract usage, response ID, and actual model
         usage = result.context_wrapper.usage if result.context_wrapper else None
         response_id = _extract_response_id(result)
+        actual_model = _extract_actual_model(result) or model
         
-        log_agent_usage(agent.name, model=model, duration=duration,
+        # Track usage with key manager if enabled
+        if usage and hasattr(usage, 'total_tokens'):
+            try:
+                from vbagent.api_keys import KeyManager
+                from vbagent.config import get_config
+                config = get_config()
+                
+                # Only track for OpenAI provider
+                if not config.base_url:
+                    manager = KeyManager.get_instance()
+                    if manager.is_enabled():
+                        manager.track_usage(actual_model, usage.total_tokens)
+            except Exception:
+                pass
+        
+        log_agent_usage(agent.name, model=actual_model, duration=duration,
                         usage=usage, response_id=response_id,
                         has_image=has_image, reasoning=reasoning)
         log_agent_output(agent.name, result.final_output, duration)
@@ -330,8 +376,30 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
     usage = run_result.context_wrapper.usage if run_result.context_wrapper else None
     response_id = _extract_response_id(run_result)
     
+    # Get the actual model used (from API response)
+    actual_model = _extract_actual_model(run_result) or model
+    
+    # Track usage with key manager if enabled
+    if usage and hasattr(usage, 'total_tokens'):
+        try:
+            from vbagent.api_keys import KeyManager
+            from vbagent.config import get_config
+            config = get_config()
+            
+            # Only track for OpenAI provider
+            if not config.base_url:
+                manager = KeyManager.get_instance()
+                if manager.is_enabled():
+                    # Use actual_model from API response for accurate categorization
+                    manager.track_usage(actual_model, usage.total_tokens)
+        except Exception as e:
+            # Key manager tracking failed - not critical, continue
+            # But log it for debugging
+            import sys
+            print(f"[DEBUG] Key manager tracking failed: {e}", file=sys.stderr)
+    
     # Always show compact completion line with token usage
-    log_agent_usage(agent.name, model=model, duration=duration,
+    log_agent_usage(agent.name, model=actual_model, duration=duration,
                     usage=usage, response_id=response_id,
                     has_image=has_image, reasoning=reasoning)
     

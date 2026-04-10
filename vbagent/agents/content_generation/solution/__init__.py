@@ -56,7 +56,7 @@ def generate_solution(
 
     if isinstance(result, SolutionOutput):
         return result
-    return SolutionOutput(solution=str(result))
+    return SolutionOutput(solution_latex=str(result))
 
 
 __all__ = [
