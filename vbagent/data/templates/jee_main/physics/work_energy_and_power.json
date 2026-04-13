@@ -1,0 +1,244 @@
+{
+  "chapter": "WORK, ENERGY, AND POWER",
+  "description": "Work, energy methods, power, conservation principles, and motion in vertical circular systems",
+  "note": "Do not treat this as a separate chapter. It is not a collection of formulas. It is a framework. Mechanics, at its core, is about tracking how energy flows through a system. Instead of focusing on forces and motion at every instant, shift perspective: Where is the energy? How is it being transferred? Is it being conserved, transformed, or dissipated? Work is simply the mechanism of energy transfer. In systems dominated by conservative forces, energy continuously transforms between potential and kinetic forms. It remains within the system, just changing its representation. Nothing is lost. In the presence of non-conservative forces, energy is no longer fully recoverable. A part of it leaves the system, typically as heat. That loss is what you account for. Most problems reduce to identifying this flow correctly. So instead of memorizing isolated results, observe the system as a whole. Track energy, and the solution often reveals itself with less effort than force-based analysis.",
+  "topics": [
+    {
+      "topic_name": "Work done by a constant force and a variable force",
+      "concepts": [
+        "Work as dot product of force and displacement",
+        "Angle dependence of work",
+        "Positive, negative and zero work",
+        "Variable force and infinitesimal work",
+        "Work as area under force-displacement graph"
+      ],
+      "formulas": [
+        {
+          "latex": "W = \\vec{F} \\cdot \\vec{S} = FS\\cos\\theta",
+          "description": "Work by constant force"
+        },
+        {
+          "latex": "dW = \\vec{F} \\cdot d\\vec{r}",
+          "description": "Infinitesimal work element"
+        },
+        {
+          "latex": "dW = F\\,dx",
+          "description": "Work in one dimension"
+        },
+        {
+          "latex": "W = \\int_{x_1}^{x_2} F(x)\\,dx",
+          "description": "Work by variable force"
+        }
+      ],
+      "techniques": [
+        "Resolve vectors along direction of motion",
+        "Use integration for variable forces",
+        "Interpret area under $F$-$x$ graph with sign",
+        "Break motion into differential elements"
+      ]
+    },
+    {
+      "topic_name": "Kinetic and potential energies, work-energy theorem, power",
+      "concepts": [
+        "Kinetic energy as work equivalent",
+        "Potential energy for conservative forces",
+        "Work-energy theorem",
+        "Frame dependence of kinetic energy",
+        "Instantaneous and average power"
+      ],
+      "formulas": [
+        {
+          "latex": "K = \\frac{1}{2}mv^2",
+          "description": "Kinetic energy"
+        },
+        {
+          "latex": "W_{\\text{net}} = \\Delta K = K_f - K_i",
+          "description": "Work-energy theorem"
+        },
+        {
+          "latex": "U = -\\int \\vec{F} \\cdot d\\vec{r}",
+          "description": "Potential energy definition"
+        },
+        {
+          "latex": "\\Delta U = U_f - U_i = -\\int_{r_i}^{r_f} \\vec{F} \\cdot d\\vec{r}",
+          "description": "Change in potential energy"
+        },
+        {
+          "latex": "F = -\\frac{dU}{dr}",
+          "description": "Force from potential gradient"
+        },
+        {
+          "latex": "P = \\frac{dW}{dt}",
+          "description": "Instantaneous power"
+        },
+        {
+          "latex": "P = \\vec{F} \\cdot \\vec{v} = Fv\\cos\\theta",
+          "description": "Power as force dot velocity"
+        },
+        {
+          "latex": "P_{\\text{avg}} = \\frac{W_{\\text{total}}}{t_{\\text{total}}}",
+          "description": "Average power"
+        }
+      ],
+      "techniques": [
+        "Use work-energy theorem to bypass kinematics",
+        "Choose appropriate reference for potential energy",
+        "Relate force with potential using derivative",
+        "Use dot product to determine sign of power"
+      ]
+    },
+    {
+      "topic_name": "Potential energy of spring, conservation of mechanical energy",
+      "concepts": [
+        "Hooke's law and restoring force",
+        "Elastic potential energy",
+        "Conversion between kinetic and potential energy",
+        "Total mechanical energy",
+        "Energy conservation in absence of non-conservative forces"
+      ],
+      "formulas": [
+        {
+          "latex": "F = -kx",
+          "description": "Hooke's law for spring"
+        },
+        {
+          "latex": "W = \\int_0^x (-kx)\\,dx = -\\frac{1}{2}kx^2",
+          "description": "Work done by spring force"
+        },
+        {
+          "latex": "U = \\frac{1}{2}kx^2",
+          "description": "Elastic potential energy"
+        },
+        {
+          "latex": "E = K + U",
+          "description": "Total mechanical energy"
+        },
+        {
+          "latex": "K + U = \\text{constant}",
+          "description": "Energy conservation"
+        },
+        {
+          "latex": "U_f + K_f = U_i + K_i",
+          "description": "Energy conservation between states"
+        }
+      ],
+      "techniques": [
+        "Use energy conservation instead of force analysis",
+        "Track transformation between $KE$ and $PE$",
+        "Apply symmetry about equilibrium position",
+        "Avoid solving differential equations when energy works"
+      ]
+    },
+    {
+      "topic_name": "Conservative and non-conservative forces",
+      "concepts": [
+        "Path independence of work",
+        "Work done in closed path",
+        "Energy conservation vs dissipation",
+        "Potential energy defined only for conservative forces"
+      ],
+      "formulas": [
+        {
+          "latex": "W = \\int_{\\vec{r}_i}^{\\vec{r}_f} \\vec{F} \\cdot d\\vec{r}",
+          "description": "Work by force along path"
+        },
+        {
+          "latex": "W_{\\text{closed}} = 0",
+          "description": "Conservative force in closed path"
+        },
+        {
+          "latex": "W_c = -\\Delta U",
+          "description": "Conservative work equals negative potential change"
+        },
+        {
+          "latex": "W_{nc} + W_{ext} = \\Delta E = E_f - E_i",
+          "description": "Non-conservative work changes total energy"
+        }
+      ],
+      "techniques": [
+        "Identify force type before applying conservation",
+        "Use potential energy only for conservative forces",
+        "Account for energy loss in friction problems",
+        "Switch to work-energy when forces are complex"
+      ]
+    },
+    {
+      "topic_name": "Motion in a vertical circle",
+      "concepts": [
+        "Energy variation with height",
+        "Centripetal force requirement",
+        "Role of tension or normal reaction",
+        "Conditions for looping, leaving, and oscillation",
+        "Loss of contact in circular motion"
+      ],
+      "formulas": [
+        {
+          "latex": "h = R(1 - \\cos\\theta)",
+          "description": "Height in circular path"
+        },
+        {
+          "latex": "\\frac{1}{2}m(u^2 - v^2) = mgh",
+          "description": "Energy conservation in vertical circle"
+        },
+        {
+          "latex": "v^2 = u^2 - 2gh",
+          "description": "Speed at height $h$"
+        },
+        {
+          "latex": "T - mg\\cos\\theta = \\frac{mv^2}{R}",
+          "description": "Radial force equation with tension"
+        },
+        {
+          "latex": "mg - N = \\frac{mv^2}{R}",
+          "description": "Radial force on outer surface"
+        },
+        {
+          "latex": "N = mg - \\frac{mv^2}{R}",
+          "description": "Normal force on sphere"
+        },
+        {
+          "latex": "u_{\\min} = \\sqrt{5gR}",
+          "description": "Minimum speed at bottom for looping"
+        },
+        {
+          "latex": "v_{\\text{top}} = \\sqrt{gR}",
+          "description": "Minimum speed at top"
+        },
+        {
+          "latex": "T_{\\text{bottom}} = 6mg",
+          "description": "Tension at bottom for minimum looping"
+        },
+        {
+          "latex": "\\sqrt{2gR} < u < \\sqrt{5gR}",
+          "description": "Leaving condition range"
+        },
+        {
+          "latex": "u \\le \\sqrt{2gR}",
+          "description": "Oscillation condition"
+        },
+        {
+          "latex": "v^2 = 2gh",
+          "description": "Speed from free fall height"
+        },
+        {
+          "latex": "\\cos\\theta = \\frac{2}{3}",
+          "description": "Loss of contact angle on sphere"
+        }
+      ],
+      "techniques": [
+        "Step 1: Apply conservation of energy",
+        "Step 2: Apply radial force equation",
+        "Step 3: Check constraint ($T \\ge 0$ or $N \\ge 0$)",
+        "Identify regime: looping, leaving, or oscillation",
+        "Use top point as critical condition",
+        "Combine geometry with energy relations"
+      ]
+    },
+    {
+      "topic_name": "Elastic and inelastic collisions in one and two dimensions",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

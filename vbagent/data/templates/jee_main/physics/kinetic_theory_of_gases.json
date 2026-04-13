@@ -1,0 +1,42 @@
+{
+  "chapter": "KINETIC THEORY OF GASES",
+  "description": "Kinetic theory and gas laws",
+  "topics": [
+    {
+      "topic_name": "Equation of state of a perfect gas, work done on compressing a gas",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Kinetic theory of gases: assumptions, concept of pressure",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Kinetic interpretation of temperature, RMS speed of gas molecules",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Degrees of freedom, Law of equipartition of energy",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Applications to specific heat capacities of gases",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Mean free path, Avogadro's number",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

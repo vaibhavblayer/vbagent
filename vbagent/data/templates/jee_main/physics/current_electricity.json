@@ -1,0 +1,72 @@
+{
+  "chapter": "CURRENT ELECTRICITY",
+  "description": "Current, resistance, circuits, and Kirchhoff's laws",
+  "topics": [
+    {
+      "topic_name": "Electric current, Drift velocity, mobility and their relation with electric current",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Ohm's law, Electrical resistance",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "V-I characteristics of Ohmic and non-ohmic conductors",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Electrical energy and power",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Electrical resistivity and conductivity",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Series and parallel combinations of resistors",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Temperature dependence of resistance",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Internal resistance, potential difference and emf of a cell",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Combination of cells in series and parallel",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Kirchhoff's laws and their applications",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Wheatstone bridge, Metre Bridge",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

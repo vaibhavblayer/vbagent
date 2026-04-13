@@ -1,0 +1,30 @@
+{
+  "chapter": "THERMODYNAMICS",
+  "description": "Laws of thermodynamics and thermodynamic processes",
+  "topics": [
+    {
+      "topic_name": "Thermal equilibrium, zeroth law of thermodynamics, concept of temperature",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Heat, work, and internal energy",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "First law of thermodynamics, isothermal and adiabatic processes",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Second law of thermodynamics: reversible and irreversible processes",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

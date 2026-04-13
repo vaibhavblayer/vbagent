@@ -1,0 +1,66 @@
+{
+  "chapter": "OSCILLATIONS AND WAVES",
+  "description": "Simple harmonic motion and wave phenomena",
+  "topics": [
+    {
+      "topic_name": "Oscillations and periodic motion: time period, frequency, displacement as a function of time",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Periodic functions, Simple harmonic motion (S.H.M.) and its equation, phase",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Oscillations of a spring: restoring force and force constant",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Energy in S.H.M.: Kinetic and potential energies",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Simple pendulum: derivation of expression for its time period",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Wave motion, Longitudinal and transverse waves, speed of travelling wave",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Displacement relation for a progressive wave",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Principle of superposition of waves, reflection of waves",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Standing waves in strings and organ pipes, fundamental mode and harmonics",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Beats",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

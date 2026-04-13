@@ -1,0 +1,42 @@
+{
+  "chapter": "ATOMS AND NUCLEI",
+  "description": "Atomic structure and nuclear physics",
+  "topics": [
+    {
+      "topic_name": "Alpha-particle scattering experiment, Rutherford's model of atom",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Bohr model, energy levels, hydrogen spectrum",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Composition and size of nucleus, atomic masses",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Mass-energy relation, mass defect",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Binding energy per nucleon and its variation with mass number",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Nuclear fission and fusion",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

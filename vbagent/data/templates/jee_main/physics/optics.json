@@ -1,0 +1,96 @@
+{
+  "chapter": "OPTICS",
+  "description": "Geometrical and wave optics",
+  "topics": [
+    {
+      "topic_name": "Reflection of light, spherical mirrors, mirror formula",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Refraction of light at plane and spherical surfaces",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Thin lens formula and lens maker formula",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Total internal reflection and its applications",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Magnification, Power of a Lens",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Combination of thin lenses in contact",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Refraction of light through a prism",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Microscope and Astronomical Telescope (reflecting and refracting) and their magnifying powers",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Wave optics: wavefront and Huygens' principle",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Laws of reflection and refraction using Huygens principle",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Interference, Young's double-slit experiment and expression for fringe width",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Coherent sources and sustained interference of light",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Diffraction due to a single slit, width of central maximum",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Polarization, plane-polarized light, Brewster's law",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Uses of plane-polarized light and Polaroid",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

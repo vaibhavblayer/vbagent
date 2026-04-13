@@ -1,0 +1,102 @@
+{
+  "chapter": "ELECTROSTATICS",
+  "description": "Electric charges, fields, potential, and capacitance",
+  "topics": [
+    {
+      "topic_name": "Electric charges, Conservation of charge",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Coulomb's law: forces between two point charges, forces between multiple charges",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Superposition principle and continuous charge distribution",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Electric field: Electric field due to a point charge, Electric field lines",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Electric dipole, Electric field due to a dipole, Torque on a dipole in a uniform electric field",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Electric flux, Gauss's law and its applications",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Field due to infinitely long uniformly charged straight wire",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Field due to uniformly charged infinite plane sheet",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Field due to uniformly charged thin spherical shell",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Electric potential and its calculation for a point charge, electric dipole and system of charges",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Potential difference, Equipotential surfaces",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Electrical potential energy of a system of two point charges and of electric dipole",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Conductors and insulators, Dielectrics and electric polarization",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Capacitors and capacitances, combination of capacitors in series and parallel",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Capacitance of a parallel plate capacitor with and without dielectric medium",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Energy stored in a capacitor",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

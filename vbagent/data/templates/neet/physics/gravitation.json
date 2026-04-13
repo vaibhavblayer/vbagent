@@ -1,0 +1,42 @@
+{
+  "chapter": "GRAVITATION",
+  "description": "Gravitation, satellites, and planetary motion",
+  "topics": [
+    {
+      "topic_name": "Universal law of gravitation",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Acceleration due to gravity and its variation with altitude and depth",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Kepler's law of planetary motion",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Gravitational potential energy, gravitational potential",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Escape velocity",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Motion of a satellite, orbital velocity, time period and energy of satellite",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

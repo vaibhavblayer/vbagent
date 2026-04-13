@@ -324,6 +324,8 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
                 TextColumn("[dim]{task.fields[model]}[/dim]"),
                 TextColumn("│"),
                 TextColumn("[dim]{task.fields[reasoning]} reasoning[/dim]"),
+                TextColumn("│"),
+                TextColumn("[dim]{task.fields[elapsed]}[/dim]"),
                 console=console,
                 transient=True,
                 refresh_per_second=10
@@ -334,6 +336,7 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
                     agent.name,
                     model=model,
                     reasoning=reasoning,
+                    elapsed="0s",
                     total=None
                 )
                 
@@ -342,7 +345,10 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
                 
                 while thread.is_alive():
                     thread.join(timeout=0.1)
-                    if timeout and (time.time() - start_time) > timeout:
+                    # Update elapsed time
+                    elapsed = time.time() - start_time
+                    progress.update(task, elapsed=f"{elapsed:.0f}s")
+                    if timeout and elapsed > timeout:
                         progress.stop()
                         raise TimeoutError(
                             f"{agent.name} timed out after {timeout:.0f}s (model: {model})"

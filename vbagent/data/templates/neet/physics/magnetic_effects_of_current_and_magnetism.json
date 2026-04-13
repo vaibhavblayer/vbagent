@@ -1,0 +1,84 @@
+{
+  "chapter": "MAGNETIC EFFECTS OF CURRENT AND MAGNETISM",
+  "description": "Magnetic fields, forces, and magnetic materials",
+  "topics": [
+    {
+      "topic_name": "Biot-Savart law and its application to current carrying circular loop",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Ampere's law and its applications to infinitely long current carrying straight wire and solenoid",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Force on a moving charge in uniform magnetic and electric fields",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Force on a current-carrying conductor in a uniform magnetic field",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Force between two parallel current carrying conductors, definition of ampere",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Torque experienced by a current loop in a uniform magnetic field",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Moving coil galvanometer, its sensitivity, and conversion to ammeter and voltmeter",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Current loop as a magnetic dipole and its magnetic dipole moment",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Bar magnet as an equivalent solenoid, magnetic field lines",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Magnetic field due to a magnetic dipole (bar magnet) along its axis and perpendicular to its axis",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Torque on a magnetic dipole in a uniform magnetic field",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Para-, dia- and ferromagnetic substances with examples",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Effect of temperature on magnetic properties",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

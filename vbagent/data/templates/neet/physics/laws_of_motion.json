@@ -1,0 +1,48 @@
+{
+  "chapter": "LAWS OF MOTION",
+  "description": "Newton's laws, friction, and circular motion dynamics",
+  "topics": [
+    {
+      "topic_name": "Force and inertia, Newton's First law of motion",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Momentum, Newton's Second Law of motion, Impulses",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Newton's Third Law of motion, Law of conservation of linear momentum and its applications",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Equilibrium of concurrent forces",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Static and Kinetic friction, laws of friction, rolling friction",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Dynamics of uniform circular motion: centripetal force and its applications",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Vehicle on a level circular road, vehicle on a banked road",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

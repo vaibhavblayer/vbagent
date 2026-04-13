@@ -1,0 +1,54 @@
+{
+  "chapter": "ROTATIONAL MOTION",
+  "description": "Rotational dynamics, moment of inertia, and angular momentum",
+  "topics": [
+    {
+      "topic_name": "Centre of the mass of a two-particle system, Centre of the mass of a rigid body",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Basic concepts of rotational motion: moment of a force, torque, angular momentum",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Conservation of angular momentum and its applications",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Moment of inertia, radius of gyration",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Values of moments of inertia for simple geometrical objects",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Parallel and perpendicular axes theorems and their applications",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Equilibrium of rigid bodies, rigid body rotation and equations of rotational motion",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Comparison of linear and rotational motions",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "chapter": "KINEMATICS",
+  "description": "Motion, vectors, projectiles, and circular motion",
+  "topics": [
+    {
+      "topic_name": "Frame of reference, motion in a straight line, Position-time graph, speed and velocity",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Uniform and non-uniform motion, average speed and instantaneous velocity",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Uniformly accelerated motion, velocity-time, position-time graph, relations for uniformly accelerated motion",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Scalars and Vectors, Vector addition and subtraction, scalar and vector products",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Unit Vector, Resolution of a Vector, Relative Velocity",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Motion in a plane, Projectile Motion",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Uniform Circular Motion",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

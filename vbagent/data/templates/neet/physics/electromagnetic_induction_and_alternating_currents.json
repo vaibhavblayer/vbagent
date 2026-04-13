@@ -1,0 +1,48 @@
+{
+  "chapter": "ELECTROMAGNETIC INDUCTION AND ALTERNATING CURRENTS",
+  "description": "Electromagnetic induction and AC circuits",
+  "topics": [
+    {
+      "topic_name": "Electromagnetic induction: Faraday's law",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Induced emf and current, Lenz's Law, Eddy currents",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Self and mutual inductance",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Alternating currents, peak and RMS value of alternating current/voltage",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Reactance and impedance, LCR series circuit, resonance",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Power in AC circuits, wattless current",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "AC generator and transformer",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

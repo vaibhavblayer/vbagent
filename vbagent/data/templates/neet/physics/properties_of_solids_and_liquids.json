@@ -1,0 +1,78 @@
+{
+  "chapter": "PROPERTIES OF SOLIDS AND LIQUIDS",
+  "description": "Mechanical and thermal properties of matter",
+  "topics": [
+    {
+      "topic_name": "Elastic behaviour, Stress-strain relationship, Hooke's Law",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Young's modulus, bulk modulus, modulus of rigidity",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Pressure due to a fluid column, Pascal's law and its applications",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Effect of gravity on fluid pressure",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Viscosity, Stokes' law, terminal velocity, streamline and turbulent flow, critical velocity",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Bernoulli's principle and its applications",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Surface energy and surface tension, angle of contact",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Excess of pressure across a curved surface",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Application of surface tension: drops, bubbles, and capillary rise",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Heat, temperature, thermal expansion",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Specific heat capacity, calorimetry, change of state, latent heat",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Heat transfer: conduction, convection, and radiation",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

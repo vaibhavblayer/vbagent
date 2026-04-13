@@ -1,0 +1,42 @@
+{
+  "chapter": "ELECTRONIC DEVICES",
+  "description": "Semiconductor devices and logic gates",
+  "topics": [
+    {
+      "topic_name": "Semiconductors, semiconductor diode",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "I-V characteristics in forward and reverse bias",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Diode as a rectifier",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "I-V characteristics of LED, photodiode, solar cell, and Zener diode",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Zener diode as a voltage regulator",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Logic gates: OR, AND, NOT, NAND and NOR",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

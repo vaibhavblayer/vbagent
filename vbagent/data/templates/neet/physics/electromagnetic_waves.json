@@ -1,0 +1,36 @@
+{
+  "chapter": "ELECTROMAGNETIC WAVES",
+  "description": "EM waves and electromagnetic spectrum",
+  "topics": [
+    {
+      "topic_name": "Displacement current",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Electromagnetic waves and their characteristics",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Transverse nature of electromagnetic waves",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Electromagnetic spectrum: radio waves, microwaves, infrared, visible, ultraviolet, X-rays, Gamma rays",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Applications of electromagnetic waves",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}

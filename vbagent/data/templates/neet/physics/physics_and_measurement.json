@@ -1,0 +1,30 @@
+{
+  "chapter": "PHYSICS AND MEASUREMENT",
+  "description": "Units, measurements, errors, and dimensional analysis",
+  "topics": [
+    {
+      "topic_name": "Units of measurements, System of Units, S I Units, fundamental and derived units",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Least count, significant figures",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Errors in measurements",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    },
+    {
+      "topic_name": "Dimensions of Physics quantities, dimensional analysis, and its applications",
+      "concepts": [],
+      "formulas": [],
+      "techniques": []
+    }
+  ]
+}
