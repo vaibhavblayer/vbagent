@@ -23,6 +23,17 @@ Follow this exact structure for your output:
     *   Use inline math mode `$ ... $` for all mathematical symbols and variables as they appear in the image.
     *   Do **not** include exam or year metadata (e.g., `NEET[2022]`, `JEE 2019`, `IIT-JEE 2020`, `(2023)`, `[2021]`).
     *   Do **not** include example/exercise numbering prefixes (e.g., `Example 25.4`, `Ex. 3.2`, `Problem 12`, `Q.5`). Start directly with the actual problem text.
+    *   **Fill-in-the-blank answers (CRITICAL):** For subjective questions that ask for a numerical answer to be filled in, use `\underline{\hfill}` for the blank space. This creates a flexible underline that adapts to the line width.
+        ```latex
+        % GOOD - flexible blank:
+        \item The value of $\alpha$ is \underline{\hfill}.
+        
+        % ALSO ACCEPTABLE - fixed width blank:
+        \item The value of $\alpha$ is \underline{\hspace{2cm}}.
+        
+        % FORBIDDEN - raw underscores (causes rendering errors):
+        \item The value of $\alpha$ is _____.
+        ```
     *   **Multi-part sub-questions:** If the problem has sub-parts like (a), (b), (c), use `\begin{enumerate}` with `\item` for each sub-part instead of manual `(a) ...\\` formatting. Add `\renewcommand{\labelenumi}{(\alph{enumi})}` before enumerate if (a), (b), (c) labels are needed. Example:
         ```latex
         \item In the circuit shown, find

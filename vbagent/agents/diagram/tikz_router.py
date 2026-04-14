@@ -376,6 +376,7 @@ def generate_tikz_with_routing(
     solution_context: Optional[str] = None,
     values: Optional[dict] = None,
     labels: Optional[list] = None,
+    mcq_options: bool = False,
 ) -> tuple[str, AgentType]:
     """Generate TikZ code with automatic agent routing.
     
@@ -392,17 +393,19 @@ def generate_tikz_with_routing(
         solution_context: Optional rich context from solution agent
         values: Optional dict of variable values
         labels: Optional list of labels needed
+        mcq_options: Whether generating MCQ options (use \\def\\OptionA{...} format)
         
     Returns:
         Tuple of (tikz_code, agent_type_used)
     """
-    # Check if this is MCQ with option diagrams
-    is_mcq_options = diagram and diagram.has_option_diagrams
-    
-    # For MCQ options, use the option_diagram_type for routing
-    if is_mcq_options and diagram.option_diagram_type:
+    # IMPORTANT: Only use option_diagram_type when actually generating MCQ options
+    # The mcq_options parameter tells us if we're generating options vs main diagram
+    # Don't confuse has_option_diagrams (classification flag) with mcq_options (generation mode)
+    if mcq_options and diagram and diagram.option_diagram_type:
+        # We're generating option diagrams, use option_diagram_type for routing
         routing_diagram_type = diagram.option_diagram_type
     else:
+        # We're generating the main diagram, use diagram_type (or manual override)
         routing_diagram_type = diagram_type
     
     # Route to appropriate agent
@@ -535,10 +538,9 @@ def generate_tikz_with_routing(
                         if "key_functional_groups" in part:
                             chemistry_context["key_functional_groups"] = part.split(":")[-1].strip()
             
-            # IMPORTANT: Main diagram generation should NOT generate MCQ options
-            # MCQ options are generated separately by generate_mcq_options()
-            # This function only generates the MAIN diagram in the problem
-            mcq_options = False
+            # Use mcq_options parameter from function call
+            # When called from MCQ coordinator, this will be True
+            # When called for main diagram, this will be False
             
             tikz_code = generate_organic_orchestrated(
                 image_path=image_path,
@@ -552,8 +554,7 @@ def generate_tikz_with_routing(
         else:
             # Fallback to original organic structure agent
             from vbagent.agents.diagram.chemistry import generate_organic_structure
-            # IMPORTANT: Main diagram generation should NOT generate MCQ options
-            mcq_options = False
+            # Use mcq_options parameter from function call
             tikz_code = generate_organic_structure(
                 image_path=image_path,
                 description=description,
@@ -591,7 +592,8 @@ def generate_tikz_with_routing(
             image_path=image_path,
             description=description,
             use_context=use_context,
-            show_spinner=show_spinner
+            show_spinner=show_spinner,
+            mcq_options=mcq_options
         )
     elif agent_type == "energy_diagram":
         from vbagent.agents.diagram.chemistry import generate_energy_diagram

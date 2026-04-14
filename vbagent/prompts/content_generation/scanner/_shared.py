@@ -139,6 +139,7 @@ PROBLEM_FORMATTING_RULES = r"""
 - Use `\left( ... \right)` for auto-sized delimiters.
 - Use `\vec{a}` for vectors, `\hat{i}` for unit vectors.
 - Use `\,` for thin space before units: `10\,\mathrm{m/s}`.
+- **Fill-in-the-blank answers:** Use `\underline{\hfill}` or `\underline{\hspace{2cm}}` for blank spaces. NEVER use raw underscores `____` (causes rendering errors).
 """
 
 # Solution-only formatting rules

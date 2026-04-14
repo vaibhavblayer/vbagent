@@ -100,6 +100,7 @@ def generate_mcq_options(
 
     # Route through the standard TikZ router — picks the right
     # specialized agent (gates, circuit, graph, organic_structure, etc.)
+    # IMPORTANT: Pass mcq_options=True so agents generate \def\OptionA{...} format
     tikz_code, _agent_used = generate_tikz_with_routing(
         image_path=image_path,
         description=description,
@@ -109,5 +110,6 @@ def generate_mcq_options(
         show_spinner=show_spinner,
         subject=subject,
         diagram_type=option_diagram_type,
+        mcq_options=True,  # This tells agents to generate \def\OptionA{...} format
     )
     return tikz_code

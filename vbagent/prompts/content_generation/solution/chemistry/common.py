@@ -50,20 +50,24 @@ K_{\\text{eq}} &= 4.17
 
 **3. NO blank lines** inside align*
 
-**4. Use \\intertext{}** for text between steps
+**4. Use \\intertext{}** for text between steps (CRITICAL)
 - Math within \\intertext{} uses $...$
-- NO \\text{...} inside \\intertext{}
+- NO \\text{...} for explanations - ALWAYS use \\intertext{}
+- \\text{} ONLY for units or short labels within equations
 
 ```latex
+% GOOD - using \\intertext{}:
 \\begin{align*}
-\\intertext{Calculate moles of \\ce{NaCl}}
-n &= \\frac{m}{M} \\\\
-  &= \\frac{5.85}{58.5} \\\\
-  &= 0.1 \\ \\text{mol}
-\\intertext{Now find concentration using $V = 100$ mL}
-C &= \\frac{n}{V} \\\\
-  &= \\frac{0.1}{0.1} \\\\
-  &= 1.0 \\ \\text{M}
+\\intertext{Fehling's solution is reduced by aliphatic aldehydes, whereas aromatic aldehydes and ordinary ketones do not react.}
+\\intertext{(I) Benzaldehyde (\\ce{C6H5CHO}) is an aromatic aldehyde and does not react}
+\\intertext{(II) Ethanal (\\ce{CH3CHO}) is an aliphatic aldehyde and reacts}
+\\intertext{(III) Propanal (\\ce{CH3CH2CHO}) is an aliphatic aldehyde and reacts}
+\\end{align*}
+
+% BAD - using \\text{} for explanations:
+\\begin{align*}
+\\text{(I) } \\ce{C6H5CHO} &\\text{: aromatic aldehyde, does not react} \\\\
+\\text{(II) } \\ce{CH3CHO} &\\text{: aliphatic aldehyde, reacts}
 \\end{align*}
 ```
 
@@ -118,11 +122,37 @@ using DIAGRAM_REQUIREMENT placeholders. This produces better, more contextual re
 ### MCQ Solutions
 Must end with: "Therefore, the correct option is (X)."
 
+**Example: Counting/Classification Problem**
 ```latex
 \\begin{solution}
 \\begin{align*}
-\\intertext{Brief analysis}
-% ... steps ...
+\\intertext{Fehling's solution is reduced by aliphatic aldehydes, whereas aromatic aldehydes and ordinary ketones do not react under these conditions.}
+\\intertext{(I) \\ce{C6H5CHO} is benzaldehyde, an aromatic aldehyde, so it does not react}
+\\intertext{(II) \\ce{CH3CHO} is ethanal, an aliphatic aldehyde, so it reacts}
+\\intertext{(III) \\ce{CH3CH2CHO} is propanal, an aliphatic aldehyde, so it reacts}
+\\intertext{(IV) \\ce{C6H5COCH3} is acetophenone, a ketone, so it does not react}
+\\intertext{(V) \\ce{CH3COCH3} is acetone, a ketone, so it does not react}
+\\intertext{(VI) \\ce{C6H5COC6H5} is benzophenone, a ketone, so it does not react}
+\\end{align*}
+
+Thus, only compounds (II) and (III) react with Fehling's solution, so the number of compounds is 2.
+
+Therefore, the correct option is (b).
+\\end{solution}
+```
+
+**Example: Calculation Problem**
+```latex
+\\begin{solution}
+\\begin{align*}
+\\intertext{Calculate moles of \\ce{NaCl}}
+n &= \\frac{m}{M} \\\\
+  &= \\frac{5.85}{58.5} \\\\
+  &= 0.1 \\ \\text{mol}
+\\intertext{Now find concentration using $V = 100$ mL = $0.1$ L}
+C &= \\frac{n}{V} \\\\
+  &= \\frac{0.1}{0.1} \\\\
+  &= 1.0 \\ \\text{M}
 \\end{align*}
 
 Therefore, the correct option is (c).

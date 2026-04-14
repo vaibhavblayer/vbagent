@@ -4,9 +4,19 @@ This agent specializes in creating molecular structures for organic chemistry
 using the chemfig package.
 """
 
-SYSTEM_PROMPT = """You are an expert organic chemist and chemfig specialist.
+SYSTEM_PROMPT = r"""You are an expert organic chemist and chemfig specialist.
 
 Your task is to generate chemfig code for organic molecular structures.
+
+## ⚠️ CRITICAL INSTRUCTION: MAIN DIAGRAM ONLY
+
+**When you see an image with BOTH a main diagram AND MCQ options:**
+- Generate code ONLY for the MAIN diagram (usually at the top)
+- COMPLETELY IGNORE the MCQ options (A, B, C, D) at the bottom
+- DO NOT generate \def\OptionA or any option-related code
+- Output ONLY direct chemfig code for the main structure/reaction
+
+**This is a SYSTEM-LEVEL requirement that MUST be followed.**
 
 ## Phase 3 Enhancement: Rich Context Integration
 
@@ -628,17 +638,72 @@ Output should be pure chemfig commands that can be directly inserted into LaTeX.
 - Test that structure is chemically valid
 """
 
-USER_TEMPLATE = """Generate chemfig code for this organic structure.
+USER_TEMPLATE = r"""Generate chemfig code for the MAIN organic structure or reaction in this problem.
 
-**IMPORTANT**: If this image shows an MCQ with multiple option diagrams (A, B, C, D), IGNORE those options. Generate code ONLY for the main diagram in the problem statement (if any).
+⚠️ ⚠️ ⚠️ CRITICAL: OUTPUT FORMAT ⚠️ ⚠️ ⚠️
+
+**YOU MUST OUTPUT DIRECT CHEMFIG CODE ONLY - NO \\def COMMANDS!**
+
+Example CORRECT output:
+\\chemfig{{*4([:0]-(-[:45]=O)-O--)}}
+
+Example WRONG output (DO NOT DO THIS):
+\\def\\Reactant{{\\chemfig{{*4([:0]-(-[:45]=O)-O--)}}}}
+
+---
+
+⚠️ CRITICAL: LOOK FOR THE MAIN DIAGRAM, NOT THE OPTIONS!
+
+The image typically shows:
+1. **MAIN DIAGRAM** at the TOP: A reaction scheme, starting material, or main structure (THIS IS WHAT YOU NEED!)
+2. **MCQ OPTIONS** at the BOTTOM: Four answer choices labeled A, B, C, D (IGNORE THESE COMPLETELY!)
+
+**Your task: Generate ONLY the main diagram from #1 above. DO NOT generate the options from #2!**
+
+⚠️ CRITICAL OUTPUT FORMAT RULES:
+
+1. **DO NOT use \\def commands** - Output DIRECT chemfig code only
+2. **IGNORE any MCQ options** (A, B, C, D) shown in the image
+3. **Generate ONLY the main diagram** (reaction, reactant, or main structure at the TOP of the image)
+4. **NO \\def\\Reactant{{...}}** - Just output the chemfig code directly
+5. **NO \\def\\OptionA{{...}}** or any other \\def commands
+
+✅ CORRECT OUTPUT (direct chemfig for MAIN diagram):
+```
+\\chemfig{{Ph-[:30](-[:90])-[:-30](-[:270]Br)-[:90](-[:150]Br)-[:30]-[:-30]}}
+```
+
+or for a reaction:
+```
+\\schemestart
+\\chemfig{{...reactant...}}
+\\arrow{{->[\ce{{reagent}}]}}
+\\chemfig{{...product...}}
+\\schemestop
+```
+
+❌ WRONG OUTPUT (no \\def commands):
+```
+\\def\\Reactant{{\\chemfig{{...}}}}
+\\def\\OptionA{{\\chemfig{{...}}}}
+```
+
+❌ WRONG OUTPUT (generating options instead of main):
+```
+\\def\\OptionA{{\\chemfig{{...}}}}
+\\def\\OptionB{{\\chemfig{{...}}}}
+\\def\\OptionC{{\\chemfig{{...}}}}
+\\def\\OptionD{{\\chemfig{{...}}}}
+```
 
 Focus on:
+- The MAIN structure/reaction at the TOP of the image
 - Correct molecular connectivity
 - Proper stereochemistry (if shown)
 - Standard organic chemistry conventions
 - Clean, readable structure
 
-Output ONLY the chemfig code.
+Output ONLY the raw chemfig code for the MAIN diagram that can be directly placed in a \\begin{{center}} environment.
 
 ## Parsing Enhanced Context (Phase 3)
 
@@ -648,8 +713,8 @@ Nucleophilic substitution reaction | show_lone_pairs: yes | show_charges: yes | 
 ```
 
 **Extract and apply:**
-1. **show_lone_pairs: yes** → Use `\\charge{90=\\|,270=\\|}{O}` for oxygen lone pairs
-2. **show_charges: yes** → Add formal charges with `\\chemfig{...^{+}}` or `\\chemfig{...^{-}}`
+1. **show_lone_pairs: yes** → Use `\\charge{{90=\\|,270=\\|}}{{O}}` for oxygen lone pairs
+2. **show_charges: yes** → Add formal charges with `\\chemfig{{...^{{+}}}}` or `\\chemfig{{...^{{-}}}}`
 3. **mechanism_step: nucleophilic attack** → Show curved arrow with `\\chemmove`
 4. **stereochemistry: R configuration** → Use wedge `>:` and dash `<:` bonds correctly
 5. **key_functional_groups: carbonyl, hydroxyl** → Ensure these are clearly visible
@@ -657,23 +722,45 @@ Nucleophilic substitution reaction | show_lone_pairs: yes | show_charges: yes | 
 **Example Application:**
 ```latex
 % Carbonyl with lone pairs and partial charges
-\\chemfig{R-C(=[:90]\\charge{45=\\|,135=\\|}{O}^{\\delta-})-R}
+\\chemfig{{R-C(=[:90]\\charge{{45=\\|,135=\\|}}{{O}}^{{\\delta-}})-R}}
 
 % Chiral center with R configuration
-\\chemfig{H-[:180]C(-[:90]OH)(<:[:225]CH_3)(>:[:315]C_2H_5)}
+\\chemfig{{H-[:180]C(-[:90]OH)(<:[:225]CH_3)(>:[:315]C_2H_5)}}
 
 % Nucleophilic attack with curved arrow
 \\schemestart
-\\chemfig{Nu^{-}}
-\\arrow{->}
-\\chemfig{R-C(=[:90]O)-R}
+\\chemfig{{Nu^{{-}}}}
+\\arrow{{->}}
+\\chemfig{{R-C(=[:90]O)-R}}
 \\schemestop
-\\chemmove{\\draw[->,shorten <=2pt,shorten >=2pt] (Nu) ..controls +(90:1cm) and +(180:1cm).. (C);}
+\\chemmove{{\\draw[->,shorten <=2pt,shorten >=2pt] (Nu) ..controls +(90:1cm) and +(180:1cm).. (C);}}
 ```
 
 This produces structures that precisely match the solution's chemical analysis!"""
 
-USER_TEMPLATE_MCQ_OPTIONS = """Generate chemfig code for ALL FOUR organic structures shown in the MCQ options (A, B, C, D).
+USER_TEMPLATE_MCQ_OPTIONS = r"""Generate chemfig code for ALL FOUR organic structures shown in the MCQ options (A, B, C, D).
+
+⚠️ CRITICAL OUTPUT FORMAT RULES:
+
+1. **MUST use \\def commands** for each option
+2. **Generate ALL FOUR options** (A, B, C, D) in one response
+3. **Each \\def contains ONLY \\chemfig{...}** - NO TikZ commands
+4. **Use chemfig ONLY** - NEVER manual TikZ drawing
+5. **Output format**: \\def\\OptionA{\\chemfig{...}} for each option
+
+✅ CORRECT OUTPUT:
+```
+\\def\\OptionA{\\chemfig{Ph-[:30](-[:90])-[:-30]=[:30]-[:-30]=[:30]-[:-30]}}
+\\def\\OptionB{\\chemfig{Ph-[:30](-[:90])=[:-30]-[:30]=[:-30]-[:30](-[:90])}}
+\\def\\OptionC{\\chemfig{Ph-[:30](-[:90])-[:-30]=[:30]-[:90]=[:150](-[:90])}}
+\\def\\OptionD{\\chemfig{Ph-[:30](-[:90])-[:-30]=[:30]-[:90](=[:150])-[:30]-[:-30]}}
+```
+
+❌ WRONG OUTPUT:
+```
+\\def\\OptionA{\\begin{tikzpicture}...\\end{tikzpicture}}  % NO TikZ!
+\\chemfig{...}  % NO direct chemfig without \\def!
+```
 
 ⚠️ CRITICAL: USE chemfig ONLY - NEVER MANUAL TikZ
 - ✅ CORRECT: \\def\\OptionA{\\chemfig{*6(=-=-=-)}}
@@ -690,14 +777,6 @@ Focus on:
 - Use \\scalebox if needed for size adjustment
 - Use **6 for benzene with circle notation
 
-Output format - generate ALL FOUR definitions:
-```
-\\def\\OptionA{\\chemfig{...}}
-\\def\\OptionB{\\chemfig{...}}
-\\def\\OptionC{\\chemfig{...}}
-\\def\\OptionD{\\chemfig{...}}
-```
-
 CRITICAL RULES:
 1. Generate ALL FOUR options in one response
 2. Use ONLY chemfig commands (\\chemfig{...})
@@ -706,6 +785,7 @@ CRITICAL RULES:
 5. Keep all structures at similar scale
 6. Output ONLY the \\def commands, no explanations
 7. Each \\def must contain a complete \\chemfig{...} command
+8. DO NOT generate \\def\\Reactant{...} - only generate options A, B, C, D
 
 Examples of correct output:
 ```
@@ -715,7 +795,7 @@ Examples of correct output:
 \\def\\OptionD{\\chemfig{*6(-=*6(-=-\\charge{30[circle,anchor=180+\\chargeangle]=$\\oplus$}{}--)-=-=)}}
 ```"""
 
-USER_TEMPLATE_FROM_PROBLEM = """The problem statement contains a description of an organic structure.
+USER_TEMPLATE_FROM_PROBLEM = r"""The problem statement contains a description of an organic structure.
 
 Generate chemfig code for the structure described in the problem.
 

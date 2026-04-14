@@ -8,6 +8,16 @@ SYSTEM_PROMPT = r"""You are an expert chemist specializing in chemical equations
 
 Your task is to generate mhchem code for chemical equations, reactions, and equilibria.
 
+## ⚠️ CRITICAL INSTRUCTION: MAIN EQUATION ONLY
+
+**When you see an image with BOTH a main equation AND MCQ options:**
+- Generate code ONLY for the MAIN equation (usually at the top)
+- COMPLETELY IGNORE the MCQ options (A, B, C, D) at the bottom
+- DO NOT generate \def\OptionA or any option-related code
+- Output ONLY direct \ce{...} code for the main equation/reaction
+
+**This is a SYSTEM-LEVEL requirement that MUST be followed.**
+
 ## mhchem Package Basics
 
 mhchem is the standard LaTeX package for typesetting chemical formulas and equations.
@@ -262,7 +272,26 @@ Output should be pure mhchem commands that can be directly inserted into LaTeX.
 10. Show phases/states when important for the reaction
 """
 
-USER_TEMPLATE = """Generate mhchem code for this chemical equation or reaction.
+USER_TEMPLATE = r"""Generate mhchem code for this chemical equation or reaction.
+
+⚠️ CRITICAL OUTPUT FORMAT RULES:
+
+1. **DO NOT use \def commands** - Output DIRECT \ce{...} code only
+2. **IGNORE any MCQ options** (A, B, C, D) shown in the image
+3. **Generate ONLY the main equation** (main reaction in the problem)
+4. **NO \def\Reactant{...}** - Just output the \ce{...} code directly
+5. **NO \def\OptionA{...}** or any other \def commands
+
+✅ CORRECT OUTPUT:
+```
+\ce{2H2(g) + O2(g) -> 2H2O(l)}
+```
+
+❌ WRONG OUTPUT:
+```
+\def\Reactant{\ce{...}}
+\def\OptionA{\ce{...}}
+```
 
 Focus on:
 - Balanced equation
@@ -270,9 +299,55 @@ Focus on:
 - Proper charges and states
 - Reaction conditions
 
-Output ONLY the mhchem code."""
+Output ONLY the raw mhchem code that can be directly placed in the document."""
 
-USER_TEMPLATE_FROM_PROBLEM = """The problem statement describes a chemical equation or reaction.
+USER_TEMPLATE_MCQ_OPTIONS = r"""Generate mhchem code for ALL FOUR chemical equations shown in the MCQ options (A, B, C, D).
+
+⚠️ CRITICAL OUTPUT FORMAT RULES:
+
+1. **MUST use \def commands** for each option
+2. **Generate ALL FOUR options** (A, B, C, D) in one response
+3. **Each \def contains ONLY \ce{...}** command
+4. **Output format**: \def\OptionA{\ce{...}} for each option
+
+✅ CORRECT OUTPUT:
+```
+\def\OptionA{\ce{C6H5COCH3 ->[(i) LiAlH4][(ii) H3O+] C6H5CH(OH)CH3}}
+\def\OptionB{\ce{C6H5CONH2 ->[Br2/NaOH] C6H5NH2}}
+\def\OptionC{\ce{C6H5CONH2 ->[P4O10] C6H5CN}}
+\def\OptionD{\ce{C6H5COOH ->[SOCl2] C6H5COCl ->[NH3] C6H5CONH2}}
+```
+
+❌ WRONG OUTPUT:
+```
+\ce{...}  % NO direct \ce without \def!
+\def\Reactant{\ce{...}}  % NO reactant definition!
+```
+
+Focus on:
+- Balanced equations for each option
+- Correct formulas and stoichiometry
+- Proper charges and states
+- Reaction conditions above/below arrows
+- Consistent formatting across all options
+
+CRITICAL RULES:
+1. Generate ALL FOUR options in one response
+2. Use ONLY \ce{...} commands inside each \def
+3. Keep equations balanced and chemically correct
+4. Output ONLY the \def commands, no explanations
+5. Each \def must contain a complete \ce{...} command
+6. DO NOT generate \def\Reactant{...} - only generate options A, B, C, D
+
+Examples of correct output:
+```
+\def\OptionA{\ce{2H2 + O2 -> 2H2O}}
+\def\OptionB{\ce{N2 + 3H2 <=> 2NH3}}
+\def\OptionC{\ce{CH4 + 2O2 -> CO2 + 2H2O}}
+\def\OptionD{\ce{CaCO3 ->[\Delta] CaO + CO2}}
+```"""
+
+USER_TEMPLATE_FROM_PROBLEM = r"""The problem statement describes a chemical equation or reaction.
 
 Generate mhchem code for the equation described.
 

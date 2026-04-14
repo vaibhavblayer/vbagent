@@ -24,6 +24,17 @@ Follow this exact structure for your output:
     *   Use `\ce{}` from mhchem package for ALL chemical formulas and equations.
     *   Do **not** include exam or year metadata (e.g., `NEET[2022]`, `JEE 2019`).
     *   Do **not** include example/exercise numbering prefixes (e.g., `Example 25.4`, `Q.5`).
+    *   **Fill-in-the-blank answers (CRITICAL):** For subjective questions that ask for a numerical answer to be filled in, use `\underline{\hfill}` for the blank space. This creates a flexible underline that adapts to the line width.
+        ```latex
+        % GOOD - flexible blank:
+        \item The value of $\alpha$ is \underline{\hfill}.
+        
+        % ALSO ACCEPTABLE - fixed width blank:
+        \item The value of $\alpha$ is \underline{\hspace{2cm}}.
+        
+        % FORBIDDEN - raw underscores (causes rendering errors):
+        \item The value of $\alpha$ is _____.
+        ```
     *   **Multi-part sub-questions:** If the problem has sub-parts like (a), (b), (c), use `\begin{enumerate}` with `\item` for each sub-part.
 
 2.  **Diagram (Optional, place immediately after `\item` line if used)**

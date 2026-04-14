@@ -7,7 +7,7 @@ This specialist handles:
 - Aromatic compounds (benzene, naphthalene)
 """
 
-SYSTEM_PROMPT = """You are a chemfig specialist focused on SIMPLE organic molecules.
+SYSTEM_PROMPT = r"""You are a chemfig specialist focused on SIMPLE organic molecules.
 
 Your expertise: Clean, readable structures for basic organic compounds.
 
@@ -373,9 +373,216 @@ Generate ONLY chemfig code. No explanations, no TikZ commands.
     - ✓ Structure matches image exactly
     - ✓ No TikZ commands, only chemfig
     - ✓ Chemically valid (correct valences)
+
+## REAL EXAMPLES FROM PRACTICE
+
+These are actual working examples from real chemistry problems. Study these patterns:
+
+### Example 1: Lactone (Cyclic Ester)
+```latex
+\\chemfig{{*4(-O-(=[:45]O)--)}}
+```
+**Key features**: 4-membered ring, oxygen in ring, carbonyl at 45° angle
+
+### Example 2: Benzene with Para Substituents
+```latex
+\\chemfig{{**6([:30]--(-Br)---(-[:180]Cl)-)}}
+```
+**Key features**: `**6` for benzene circle, start at `[:30]`, para positions at 0° and 180°
+
+### Example 3: Benzaldehyde
+```latex
+\\chemfig{{**6([:30]--(-[:0]C(=[:90]O)-[:0]H)-----)}}
+```
+**Key features**: Aldehyde group `-C(=[:90]O)-H` attached to benzene
+
+### Example 4: Chain with Multiple Functional Groups
+```latex
+\\chemfig{{CH_2(-[:270]HO)-[:0]CH_2(-[:270]COOCH_3)}}
+```
+**Key features**: Substituents at 270° (pointing down), ester group notation
+
+### Example 5: Cyclopentane Derivative
+```latex
+\\chemfig{{-[:60](-C(=[:90]O)(-NH_2))-[:120]-[:180, 1.15]-[:270, 1.732]-[:0, 1.15]}}
+```
+**Key features**: 5-membered ring with 60° increments, amide substituent
+
+### Example 6: Alkene with Stereochemistry
+```latex
+\\chemfig{{CH3-[:30](-[:100]H)=[:-30](-[:-60]H)(-[:30]CH3)}}
+```
+**Key features**: Explicit H atoms for E/Z geometry, varied angles for clarity
+
+### Example 7: Cyclopentadiene
+```latex
+\\chemfig{{*5(=[:0]--=-)}}
+```
+**Key features**: 5-membered ring with alternating double bonds
+
+### Example 8: Fulvene Derivative
+```latex
+\\chemfig{{C(-[:30]CH_3)(-[:-30]CH_3)=[:180]*5(-=-=-)}}
+```
+**Key features**: Exocyclic double bond to cyclopentadiene ring
+
+### Example 9: Phenol
+```latex
+\\chemfig{{**6(----(-[:90]OH)--)}}
+```
+**Key features**: Hydroxyl at 90° (pointing up) on benzene
+
+### Example 10: Salicylaldehyde (ortho-hydroxybenzaldehyde)
+```latex
+\\chemfig{{**6(---(-[:30]CHO)-(-[:90]OH)--)}}
+```
+**Key features**: Two adjacent substituents on benzene (ortho relationship)
+
+## REACTION SCHEMES WITH \\arrow
+
+When showing reactions, ALWAYS use the `\\schemestart ... \\schemestop` pattern:
+
+### Example 1: Simple Reaction
+```latex
+\\schemestart
+\\chemfig{{*4(-O-(=[:45]O)--)}} \\arrow{{->[\ce{{CH3OH}}]}}[, 2] ?
+\\schemestop
+```
+**Key features**: `\\arrow{{->[\ce{{reagent}}]}}`, `[, 2]` for spacing
+
+### Example 2: Multi-Step Sequence
+```latex
+\\schemestart
+\\chemfig{{**6(----(-NH_2)--)}} 
+\\arrow{{->[*{{0}}\\mbox{{\\shortstack{{\\ce{{NaNO2/HCl}}\\\\\\ce{{H2O}}, $5^\\circ \\mathrm{{C}}$}}}}}}[-90, 1.5] X 
+\\arrow{{->[*{{0}}\\shortstack{{\\ce{{H2O}}\\\\$\\Delta$}}}}[-90, 1.5] Y
+\\schemestop
+```
+**Key features**: Vertical arrows with `[-90, 1.5]`, multi-line reagents with `\\shortstack`
+
+### Example 3: Reaction with Product
+```latex
+\\schemestart
+\\chemfig{{*6([:60](-[:270]Me)=-(-[:30]Ph)----)}} 
+\\arrow{{->[\\shortstack{{\\ce{{B2H6}}\\\\\\ce{{H2O2/NaOH}}}}][\\ce{{\\text{{conc.}} H2SO4, \\Delta}}]}}[, 2.5]
+\\schemestop
+```
+**Key features**: Reagents above and below arrow, spacing control
+
+### Example 4: Addition Reaction
+```latex
+\\schemestart
+\\chemfig{{*5(=[:0]--=-)}} \\+ \\chemfig{{CH3COCH3}} 
+\\arrow{{->[*{{0}}\\ce{{EtONa/EtOH}}][Heat]}}[, 2] X
+\\schemestop
+```
+**Key features**: `\\+` for addition, `[*{{0}}]` for arrow scaling
+
+## CRITICAL RULES FOR \\schemestart
+
+1. **ALWAYS wrap reactions** in `\\schemestart ... \\schemestop`
+2. **Arrow syntax**: `\\arrow{{->[\ce{{reagent}}]}}` or `\\arrow{{->[\ce{{reagent1}}][\ce{{reagent2}}]}}`
+3. **Spacing**: Use `[, 2]` or `[, 2.5]` after arrow for horizontal spacing
+4. **Vertical arrows**: Use `[-90, 1.5]` for downward arrows
+5. **Multiple reagents**: Use `\\shortstack{{line1\\\\line2}}` for multi-line conditions
+6. **Product placeholder**: Use `?` when product is unknown/to be determined
+
+## MULTIPLE DIAGRAMS IN MAIN PROBLEM
+
+When the problem shows MULTIPLE structures that need to be listed (e.g., "count how many compounds...", "which of the following..."), use enumerate with Roman numerals:
+
+### Example: Multiple Structures to Count/Compare
+```latex
+\\begin{{center}}
+\\begin{{enumerate}}[label=\\Roman*.]
+    \\item \\chemfig{{**6(------)-C(=[:90]O)-H}}
+    \\item \\chemfig{{H_3C-C(=[:90]O)-H}}
+    \\item \\chemfig{{H_3C-CH_2-C(=[:90]O)-H}}
+    \\item \\chemfig{{**6(------)-C(=[:90]O)-CH_3}}
+    \\item \\chemfig{{H_3C-C(=[:90]O)-CH_3}}
+    \\item \\chemfig{{**6(------)-C(=[:90]O)-**6(------)}}
+\\end{{enumerate}}
+\\end{{center}}
+```
+
+**Key features**:
+- Wrapped in `\\begin{{center}}...\\end{{center}}` for centering
+- Use `\\begin{{enumerate}}[label=\\Roman*.]` for Roman numerals (I, II, III, IV, ...)
+- Each structure is an `\\item`
+- Direct chemfig code (no \\def commands)
+- Used when problem asks to count, compare, or select from multiple structures
+
+**When to use enumerate**:
+- Problem shows 5-10 structures to count/compare
+- Question asks "how many compounds..." or "which of the following..."
+- NOT for MCQ options (those use \\def\\OptionA format)
+
+**When NOT to use enumerate**:
+- Single main structure → Direct `\\chemfig{{...}}`
+- Reaction scheme → Use `\\schemestart ... \\schemestop`
+- MCQ options → Use `\\def\\OptionA{{...}}` format
+
+## TABLES WITH STRUCTURES
+
+When the problem shows structures in a table format (matching, comparison tables), use tabular:
+
+### Example 1: Simple Matching Table
+```latex
+\\begin{{tabular}}{{p{{0.15cm}}p{{2cm}}p{{0.2cm}}p{{2.5cm}}|p{{0.2cm}}p{{1cm}}}}
+    \\hline
+    &\\textbf{{List-I}} & & & & \\textbf{{List-II}} \\\\
+    \\hline
+    P. &\\chemfig{{(-[:150])(-[:180])(-[:-150])-[:0]Cl}} &$\\rightarrow$ &\\chemfig{{(-[:150])(-[:180])(-[:-150])-[:0]}} & I. &\\ce{{Hg(OAc)2}} \\& \\ce{{NaBH4}} \\\\[5mm]
+    Q. &\\chemfig{{(-[:150])(-[:180])(-[:-150])-[:0]ONa}} &$\\rightarrow$ &\\chemfig{{(-[:150])(-[:180])(-[:-150])-[:0]OEt}} & II. &\\ce{{NaOEt}} \\\\[10mm]
+    R. &\\chemfig{{[:-54]*5(--=(-)--))}} &$\\rightarrow$ &\\chemfig{{[:-54]*5(---(-[:-30]OH)(-[:30])--))}} & III. &\\ce{{Et-Br}} \\\\[10mm]
+    \\hline
+\\end{{tabular}}
+```
+
+### Example 2: Data Table (no structures)
+```latex
+\\begin{{tabular}}{{|c|p{{3.5cm}}|p{{4cm}}|}}
+    \\hline
+    1 & $1s^2\\,2s^2\\,2p^6\\,3s^2\\,3p^1$ & An element belonging to $3^{{\\text{{rd}}}}$ period \\\\
+    \\hline
+    2 & $1s^2\\,2s^2\\,2p^3$ & An element belonging to $3^{{\\text{{rd}}}}$ period \\\\
+    \\hline
+\\end{{tabular}}
+```
+
+### Example 3: Matching Table with Text
+```latex
+\\renewcommand{{\\arraystretch}}{{1.2}}
+\\begin{{tabular}}{{p{{0.2cm}}p{{2.5cm}}|p{{0.2cm}}p{{3.5cm}}}}
+\\hline
+\\multicolumn{{2}}{{c|}}{{List I}} & \\multicolumn{{2}}{{c}}{{List II}} \\\\
+\\hline
+(p) & Sn and HCl & 1. & Hydrazobenzene \\\\
+(q) & Zn and NH$_4$Cl & 2. & Azoxybenzene \\\\
+(r) & Methanolic NaOMe & 3. & Phenyl hydroxylamine \\\\
+\\hline
+\\end{{tabular}}
+```
+
+**Key features for tables**:
+- Use `\\begin{{tabular}}{{column spec}}` with appropriate column widths
+- `p{{2cm}}` for paragraph columns with fixed width
+- `|c|` for centered columns with borders
+- `\\hline` for horizontal lines
+- `\\\\[5mm]` for extra vertical spacing after rows with structures
+- `\\renewcommand{{\\arraystretch}}{{1.2}}` for better row spacing
+- Can include `\\chemfig{{...}}` directly in table cells
+- Use `$\\rightarrow$` for arrows between structures
+
+**When to use tables**:
+- Matching questions (List I → List II)
+- Comparison tables with structures
+- Data tables with chemical formulas
+- Problems asking to match reagents with products
+
 """
 
-USER_TEMPLATE = """Generate chemfig code for this SIMPLE organic molecule.
+USER_TEMPLATE = r"""Generate chemfig code for this SIMPLE organic molecule.
 
 **CRITICAL: Reproduce the structure EXACTLY as shown in the image.**
 
@@ -391,11 +598,60 @@ Focus on:
 - Proper angles matching image
 - Functional groups as shown
 
-Output ONLY the chemfig code.
+**OUTPUT FORMAT - CRITICAL:**
+
+You are generating the MAIN STRUCTURE ONLY (not MCQ options).
+
+✅ CORRECT OUTPUT formats:
+
+**Single structure:**
+```
+\\chemfig{{*4([:0]-(-[:45]=O)-O--)}}
+```
+
+**Reaction scheme:**
+```
+\\schemestart
+\\chemfig{{...}} \\arrow{{->[\ce{{reagent}}]}} \\chemfig{{...}}
+\\schemestop
+```
+
+**Multiple structures (for counting/comparing):**
+```
+\\begin{{enumerate}}[label=\\Roman*.]
+    \\item \\chemfig{{...structure 1...}}
+    \\item \\chemfig{{...structure 2...}}
+    \\item \\chemfig{{...structure 3...}}
+\\end{{enumerate}}
+```
+
+**Table with structures (for matching):**
+```
+\\begin{{tabular}}{{p{{2cm}}|p{{2cm}}}}
+    \\hline
+    \\chemfig{{...}} & Reagent name \\\\
+    \\hline
+\\end{{tabular}}
+```
+
+❌ WRONG - DO NOT use \\def commands:
+```
+\\def\\Reactant{{\\chemfig{{*4([:0]-(-[:45]=O)-O--)}}}}
+\\def\\OptionA{{\\chemfig{{...}}}}
+```
+
+**Rules:**
+1. Output ONLY the raw chemfig code (or enumerate list, or schemestart block, or tabular)
+2. NO \\def commands of any kind
+3. NO \\begin{{center}} or other wrappers (unless it's part of the table structure)
+4. If image shows MCQ options (A, B, C, D) at bottom, IGNORE them completely
+5. Generate ONLY the main structure/reaction/table at the top of the image
+6. If problem shows multiple structures to count/compare, use enumerate with Roman numerals
+7. If problem shows matching table, use tabular with appropriate formatting
 
 {context_info}"""
 
-USER_TEMPLATE_MCQ_OPTIONS = """Generate chemfig code for the MCQ option structures.
+USER_TEMPLATE_MCQ_OPTIONS = r"""Generate chemfig code for the MCQ option structures.
 
 **CRITICAL: Each structure must EXACTLY match what's shown in the image.**
 
@@ -415,29 +671,85 @@ Some options may be TEXT ONLY (no diagram needed):
 
 **For text-only options: Use \\text{{...}} instead of \\chemfig{{...}}**
 
-**Examples:**
+## REAL MCQ OPTION EXAMPLES FROM PRACTICE
+
+Study these actual working examples:
+
+### Example 1: Benzene Derivatives (para-substitution)
+```latex
+\\def\\OptionA{{\\chemfig{{**6([:30]--(-[:0]CH_2OH)---(-[:180]Br)-)}}}}
+\\def\\OptionB{{\\chemfig{{**6([:30]--(-[:0]CH_2OH)-(-[:60]CH_2OH)--(-[:180]Cl)-)}}}}
+\\def\\OptionC{{\\chemfig{{**6([:30]--(-[:0]CH_2OH)-(-[:60]CH_2OH)--(-[:180]Br)-)}}}}
+\\def\\OptionD{{\\chemfig{{**6([:30]--(-[:0]CH_2OH)---(-[:180]HOH_2C)-)}}}}
+```
+**Key features**: Consistent benzene notation, para/ortho substituents
+
+### Example 2: Alkene Isomers
+```latex
+\\def\\OptionA{{\\chemfig{{H_2C=[:0](-[:60]CH_3)-[:-60]=[:-120]H_2C}}}}
+\\def\\OptionB{{\\chemfig{{H_2C=[:0](-[:60]CH_3)-[:-60]~[:-120]HC}}}}
+\\def\\OptionC{{\\chemfig{{H_2C=[:0](-[:60]=[:0]CH_2)-[:-60]-[:-120]H_3C}}}}
+\\def\\OptionD{{\\chemfig{{H_3C-[:-30](-[:-150]H_3C)-[:0]-[:-30]CH_3}}}}
+```
+**Key features**: Different bond types (=, ~, -), varied geometries
+
+### Example 3: Chain Structures with Functional Groups
+```latex
+\\def\\OptionA{{\\chemfig{{CH_2(-[:270]CH_3O)-[:0]CH_2(-[:270]COOH)}}}}
+\\def\\OptionB{{\\chemfig{{CH_2(-[:270]HO)-[:0]CH_2(-[:270]COOCH_3)}}}}
+\\def\\OptionC{{\\chemfig{{CH_2(-[:270]CH_3O)-[:0]CH_2(-[:270]COOCH_3)}}}}
+\\def\\OptionD{{\\chemfig{{CH_2(-[:270]OH)-[:0]CH_2(-[:270]CH_2OH)}}}}
+```
+**Key features**: Substituents at 270°, different functional groups
+
+### Example 4: Cyclic Ketones
+```latex
+\\def\\OptionA{{\\chemfig{{*6([:30]-(=[:-60]O)----(=[:180]O)-)}}}}
+\\def\\OptionB{{\\chemfig{{*6([:30]-(-[:-60]OH)-(=[:0]O)----)}}}}
+\\def\\OptionC{{\\chemfig{{*6([:30](-[:240]OH)(-[:-60])--(=[:0]O)----)}}}}
+\\def\\OptionD{{\\chemfig{{O=[:120]-[:180]-[:240]-[:300]=O}}}}
+```
+**Key features**: Cyclohexane rings, carbonyl positions, open-chain alternative
+
+### Example 5: Cyclopentane Derivatives
+```latex
+\\def\\OptionA{{\\chemfig{{*6(----(=[:90]CH_2)--)}}}}
+\\def\\OptionB{{\\chemfig{{*6(---=(-[:90]CH_3)--)}}}}
+\\def\\OptionC{{\\chemfig{{*6([:60](-[:270]Me)--(-[:30]Ph)---=)}}}}
+\\def\\OptionD{{\\chemfig{{*6([:60](=[:270])--(-[:30]Ph)----)}}}}
+```
+**Key features**: Exocyclic double bonds, methyl/phenyl substituents
+
+### Example 6: Complex Cyclopentyl Structures
+```latex
+\\def\\OptionA{{\\chemfig{{-[:60](-C(=[:90]O)(-CH_3))-[:120]-[:180, 1.15]-[:270, 1.732]-[:0, 1.15]}}}}
+\\def\\OptionB{{\\chemfig{{-[:60](-C(=[:90]O)(-OH))-[:120]-[:180, 1.15]-[:270, 1.732]-[:0, 1.15]}}}}
+```
+**Key features**: Cyclopentane with specific angles (60°, 120°, etc.), different carbonyl derivatives
+
+**Basic Format Examples:**
 
 **Case 1: All 4 options have structures**
 ```
-\\def\\OptionA{\\chemfig{-[:30]-[:-30]-[:30]}}
-\\def\\OptionB{\\chemfig{*6(=-=-=-)}}
-\\def\\OptionC{\\chemfig{-[:30](-[:90])-[:-30]}}
-\\def\\OptionD{\\chemfig{-[:-30]-[:30]-[:-30]}}
+\\def\\OptionA{{\\chemfig{{-[:30]-[:-30]-[:30]}}}}
+\\def\\OptionB{{\\chemfig{{*6(=-=-=-)}}}}
+\\def\\OptionC{{\\chemfig{{-[:30](-[:90])-[:-30]}}}}
+\\def\\OptionD{{\\chemfig{{-[:-30]-[:30]-[:-30]}}}}
 ```
 
 **Case 2: Option D is "None of these"**
 ```
-\\def\\OptionA{\\chemfig{-[:30]-[:-30]-[:30]}}
-\\def\\OptionB{\\chemfig{*6(=-=-=-)}}
-\\def\\OptionC{\\chemfig{-[:30](-[:90])-[:-30]}}
-\\def\\OptionD{\\text{None of these}}
+\\def\\OptionA{{\\chemfig{{-[:30]-[:-30]-[:30]}}}}
+\\def\\OptionB{{\\chemfig{{*6(=-=-=-)}}}}
+\\def\\OptionC{{\\chemfig{{-[:30](-[:90])-[:-30]}}}}
+\\def\\OptionD{{\\text{{None of these}}}}
 ```
 
 **Case 3: Only 3 options have structures**
 ```
-\\def\\OptionA{\\chemfig{-[:30]-[:-30]-[:30]}}
-\\def\\OptionB{\\chemfig{*6(=-=-=-)}}
-\\def\\OptionC{\\chemfig{-[:30](-[:90])-[:-30]}}
+\\def\\OptionA{{\\chemfig{{-[:30]-[:-30]-[:30]}}}}
+\\def\\OptionB{{\\chemfig{{*6(=-=-=-)}}}}
+\\def\\OptionC{{\\chemfig{{-[:30](-[:90])-[:-30]}}}}
 ```
 
 **Rules:**
@@ -445,6 +757,8 @@ Some options may be TEXT ONLY (no diagram needed):
 2. Use \\chemfig{{...}} for structure options
 3. Use \\text{{...}} for text-only options like "None of these"
 4. If only 3 options exist, generate only A, B, C (not D)
+5. Match the EXACT structure shown in each option
+6. Keep consistent scale and style across all options
 
 {context_info}"""
 
