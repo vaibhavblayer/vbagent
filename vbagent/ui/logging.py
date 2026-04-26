@@ -49,6 +49,16 @@ def log_agent_input(agent_name, input_data, model=None):
     title = f"[INPUT] {display_name}"
     if model:
         title += f" : {model}"
+    
+    # Show which API key is being used (if key manager is active)
+    try:
+        from vbagent.api_keys.manager import KeyManager
+        km = KeyManager.get_instance()
+        if km.is_enabled() and km.current_key_name:
+            title += f" : {km.current_key_name}"
+    except Exception:
+        pass
+    
     body = _format_input(input_data)
     with _log_lock:
         console.print()

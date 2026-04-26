@@ -5,7 +5,7 @@ def generate_analysis_latex(
     matched_data: dict,
     aggregated_ideas: dict,
     exam: str,
-    year: int,
+    year: str | int | None,
     subject: str,
     chapter_name: str,
     num_problems: int,
@@ -98,12 +98,17 @@ def _generate_preamble() -> str:
 """
 
 
-def _generate_title(exam: str, year: int, subject: str) -> str:
+def _generate_title(exam: str, year: str | int | None, subject: str) -> str:
     """Generate title section."""
     exam_display = exam.replace('_', ' ').title()
     subject_display = subject.capitalize()
     
-    return f"""\\title{{\\textsc{{{exam_display} : {year} --- {subject_display}}}}}
+    if year:
+        title_text = f"{exam_display} : {year} --- {subject_display}"
+    else:
+        title_text = f"{exam_display} --- {subject_display}"
+    
+    return f"""\\title{{\\textsc{{{title_text}}}}}
 \\begin{{document}}
 \\maketitle
 

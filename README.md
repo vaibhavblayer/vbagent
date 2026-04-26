@@ -20,7 +20,7 @@ pip install -e ".[dev]"
 
 | Provider | Env Variable | Models |
 |----------|-------------|--------|
-| OpenAI | `OPENAI_API_KEY` | gpt-5.4, gpt-5.4-mini, gpt-5.2, gpt-5.1, gpt-5.1-codex |
+| OpenAI | `OPENAI_API_KEY` | gpt-5.5, gpt-5.5-mini, gpt-5.4, gpt-5.4-mini, gpt-5.2, gpt-5.1, gpt-5.1-codex |
 | xAI | `XAI_API_KEY` | grok-4, grok-4-1-fast-reasoning, grok-3, grok-3-mini |
 | Google | `GOOGLE_API_KEY` | gemini-2.5-pro, gemini-2.5-flash, gemini-3-flash-preview |
 

@@ -73,6 +73,8 @@ class PipelineMetadata(BaseModel):
     options: Optional[StageMetadata] = Field(default=None, description="MCQ option diagrams stage")
     ideas: Optional[StageMetadata] = Field(default=None)
     idea_latex: Optional[StageMetadata] = Field(default=None, description="Idea LaTeX block cache")
+    animation_assessment: Optional[StageMetadata] = Field(default=None, description="Animation assessment cache")
+    animation_code: Optional[StageMetadata] = Field(default=None, description="Animation Manim code cache")
     alternates: Dict[int, StageMetadata] = Field(default_factory=dict, description="Alternate solutions by index")
     variants: Dict[str, StageMetadata] = Field(default_factory=dict, description="Variants by type")
     
@@ -102,6 +104,8 @@ class PipelineMetadata(BaseModel):
             self.options,
             self.ideas,
             self.idea_latex,
+            self.animation_assessment,
+            self.animation_code,
         ]
         stages.extend(self.alternates.values())
         stages.extend(self.variants.values())

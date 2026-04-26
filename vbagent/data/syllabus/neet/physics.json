@@ -1,7 +1,7 @@
 {
   "PHYSICS AND MEASUREMENT": {
     "topics": [
-      "Units of measurements, System of Units, S I Units, fundamental and derived units",
+      "Units of measurements, System of Units, SI Units, fundamental and derived units",
       "Least count, significant figures",
       "Errors in measurements",
       "Dimensions of Physics quantities, dimensional analysis, and its applications"
@@ -14,7 +14,8 @@
       "Uniform and non-uniform motion, average speed and instantaneous velocity",
       "Uniformly accelerated motion, velocity-time, position-time graph, relations for uniformly accelerated motion",
       "Scalars and Vectors, Vector addition and subtraction, scalar and vector products",
-      "Unit Vector, Resolution of a Vector, Relative Velocity",
+      "Unit Vector, Resolution of a Vector",
+      "Relative Velocity",
       "Motion in a plane, Projectile Motion",
       "Uniform Circular Motion"
     ],
@@ -24,7 +25,8 @@
     "topics": [
       "Force and inertia, Newton's First law of motion",
       "Momentum, Newton's Second Law of motion, Impulses",
-      "Newton's Third Law of motion, Law of conservation of linear momentum and its applications",
+      "Newton's Third Law of motion",
+      "Law of conservation of linear momentum and its applications",
       "Equilibrium of concurrent forces",
       "Static and Kinetic friction, laws of friction, rolling friction",
       "Dynamics of uniform circular motion: centripetal force and its applications",
@@ -109,9 +111,9 @@
       "Oscillations and periodic motion: time period, frequency, displacement as a function of time",
       "Periodic functions, Simple harmonic motion (S.H.M.) and its equation, phase",
       "Oscillations of a spring: restoring force and force constant",
-      "Energy in S.H.M.: Kinetic and potential energies",
+      "Energy in S.H.M.: kinetic and potential energies",
       "Simple pendulum: derivation of expression for its time period",
-      "Wave motion, Longitudinal and transverse waves, speed of travelling wave",
+      "Wave motion, longitudinal and transverse waves, speed of travelling wave",
       "Displacement relation for a progressive wave",
       "Principle of superposition of waves, reflection of waves",
       "Standing waves in strings and organ pipes, fundamental mode and harmonics",
@@ -121,29 +123,29 @@
   },
   "ELECTROSTATICS": {
     "topics": [
-      "Electric charges, Conservation of charge",
+      "Electric charges, conservation of charge",
       "Coulomb's law: forces between two point charges, forces between multiple charges",
       "Superposition principle and continuous charge distribution",
-      "Electric field: Electric field due to a point charge, Electric field lines",
-      "Electric dipole, Electric field due to a dipole, Torque on a dipole in a uniform electric field",
+      "Electric field: electric field due to a point charge, electric field lines",
+      "Electric dipole, electric field due to a dipole, torque on a dipole in a uniform electric field",
       "Electric flux, Gauss's law and its applications",
       "Field due to infinitely long uniformly charged straight wire",
       "Field due to uniformly charged infinite plane sheet",
       "Field due to uniformly charged thin spherical shell",
       "Electric potential and its calculation for a point charge, electric dipole and system of charges",
-      "Potential difference, Equipotential surfaces",
-      "Electrical potential energy of a system of two point charges and of electric dipole",
-      "Conductors and insulators, Dielectrics and electric polarization",
+      "Potential difference, equipotential surfaces",
+      "Electrical potential energy of a system of two point charges and of electric dipole in an electrostatic field",
+      "Conductors and insulators, dielectrics and electric polarization",
       "Capacitors and capacitances, combination of capacitors in series and parallel",
-      "Capacitance of a parallel plate capacitor with and without dielectric medium",
+      "Capacitance of a parallel plate capacitor with and without dielectric medium between the plates",
       "Energy stored in a capacitor"
     ],
     "description": "Electric charges, fields, potential, and capacitance"
   },
   "CURRENT ELECTRICITY": {
     "topics": [
-      "Electric current, Drift velocity, mobility and their relation with electric current",
-      "Ohm's law, Electrical resistance",
+      "Electric current, drift velocity, mobility and their relation with electric current",
+      "Ohm's law, electrical resistance",
       "V-I characteristics of Ohmic and non-ohmic conductors",
       "Electrical energy and power",
       "Electrical resistivity and conductivity",
@@ -202,16 +204,16 @@
       "Refraction of light at plane and spherical surfaces",
       "Thin lens formula and lens maker formula",
       "Total internal reflection and its applications",
-      "Magnification, Power of a Lens",
+      "Magnification, power of a lens",
       "Combination of thin lenses in contact",
       "Refraction of light through a prism",
-      "Microscope and Astronomical Telescope (reflecting and refracting) and their magnifying powers",
+      "Microscope and astronomical telescope (reflecting and refracting) and their magnifying powers",
       "Wave optics: wavefront and Huygens' principle",
       "Laws of reflection and refraction using Huygens principle",
-      "Interference, Young's double-slit experiment and expression for fringe width",
+      "Interference: Young's double-slit experiment and expression for fringe width",
       "Coherent sources and sustained interference of light",
       "Diffraction due to a single slit, width of central maximum",
-      "Polarization, plane-polarized light, Brewster's law",
+      "Polarization: plane-polarized light, Brewster's law",
       "Uses of plane-polarized light and Polaroid"
     ],
     "description": "Geometrical and wave optics"
@@ -246,5 +248,28 @@
       "Logic gates: OR, AND, NOT, NAND and NOR"
     ],
     "description": "Semiconductor devices and logic gates"
+  },
+  "EXPERIMENTAL SKILLS": {
+    "topics": [
+      "Vernier calipers: measurement of internal and external diameter and depth of a vessel",
+      "Screw gauge: determination of thickness/diameter of thin sheet/wire",
+      "Simple pendulum: dissipation of energy by plotting graph between square of amplitude and time",
+      "Metre scale: mass of a given object by principle of moments",
+      "Young's modulus of elasticity of the material of a metallic wire",
+      "Surface tension of water by capillary rise and effect of detergents",
+      "Coefficient of viscosity of a given viscous liquid by measuring terminal velocity of a given spherical body",
+      "Speed of sound in air at room temperature using a resonance tube",
+      "Specific heat capacity of a given solid and liquid by method of mixtures",
+      "Resistivity of the material of a given wire using a metre bridge",
+      "Resistance of a given wire using Ohm's law",
+      "Resistance and figure of merit of a galvanometer by half deflection method",
+      "Focal length of convex mirror, concave mirror, and convex lens using parallax method",
+      "Plot of angle of deviation vs angle of incidence for a triangular prism",
+      "Refractive index of a glass slab using a travelling microscope",
+      "Characteristic curves of a p-n junction diode in forward and reverse bias",
+      "Characteristic curves of a Zener diode and finding reverse breakdown voltage",
+      "Identification of diode, LED, resistor, capacitor from a mixed collection"
+    ],
+    "description": "Experimental methods, instruments, and laboratory techniques"
   }
 }

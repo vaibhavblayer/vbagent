@@ -66,6 +66,8 @@ SUBJECTS = ["physics", "chemistry", "mathematics", "biology"]
 # Available model presets
 MODELS = {
     # OpenAI
+    "gpt-5.5": "gpt-5.5",
+    "gpt-5.5-mini": "gpt-5.5-mini",
     "gpt-5.4": "gpt-5.4",
     "gpt-5.4-mini": "gpt-5.4-mini",
     "gpt-5.2": "gpt-5.2",
@@ -199,8 +201,10 @@ MODEL_GROUPS: dict[str, dict[str, str]] = {
 #   Google: low, medium, high (2.5 models also support none/minimal)
 REASONING_SUPPORT: dict[str, Optional[set[str]]] = {
     # OpenAI models
-    "gpt-5.4": {"low", "medium", "high"},
-    "gpt-5.4-mini": {"low", "medium", "high"},
+    "gpt-5.5": {"low", "medium", "high", "xhigh"},
+    "gpt-5.5-mini": {"low", "medium", "high", "xhigh"},
+    "gpt-5.4": {"low", "medium", "high", "xhigh"},
+    "gpt-5.4-mini": {"low", "medium", "high", "xhigh"},
     "gpt-5.2": {"low", "medium", "high", "xhigh"},
     "gpt-5.1": {"none", "low", "medium", "high"},
     "gpt-5-mini": {"low", "medium", "high"},
@@ -452,6 +456,16 @@ class VBAgentConfig:
         if "tikz_checker" not in self.agents:
             self.agents["tikz_checker"] = AgentModelConfig(
                 model=light, reasoning_effort="low"
+            )
+
+        # Animation agents
+        if "animation_assessor" not in self.agents:
+            self.agents["animation_assessor"] = AgentModelConfig(
+                model=light, reasoning_effort="medium"
+            )
+        if "animation_coder" not in self.agents:
+            self.agents["animation_coder"] = AgentModelConfig(
+                model=heavy, reasoning_effort="xhigh"
             )
 
         # Generation agents: high reasoning

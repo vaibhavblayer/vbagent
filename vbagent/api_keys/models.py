@@ -46,8 +46,8 @@ class KeyManagerConfig(BaseModel):
     )
     model_categories: dict[str, list[str]] = Field(
         default_factory=lambda: {
-            "standard": ["gpt-5.4", "gpt-4o", "gpt-4-turbo", "gpt-4"],
-            "mini": ["gpt-5.4-mini", "gpt-4o-mini", "gpt-3.5-turbo"],
+            "standard": ["gpt-5.5", "gpt-5.4", "gpt-4o", "gpt-4-turbo", "gpt-4"],
+            "mini": ["gpt-5.5-mini", "gpt-5.4-mini", "gpt-4o-mini", "gpt-3.5-turbo"],
         },
         description="Model name patterns for each category",
     )

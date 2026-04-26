@@ -544,6 +544,7 @@ def format_latex(content: str) -> str:
     formatted_lines: list[str] = []
     indent_level = 0
     indent_str = "    "  # 4 spaces
+    in_tasks = False  # Track tasks environment to suppress blank lines
 
     begin_pattern = re.compile(r'^\s*\\begin\{(\w+\*?)\}')
     end_pattern = re.compile(r'^\s*\\end\{(\w+\*?)\}')
@@ -553,6 +554,9 @@ def format_latex(content: str) -> str:
         stripped = line.strip()
 
         if not stripped:
+            # Suppress blank lines inside tasks environment
+            if in_tasks:
+                continue
             # Preserve blank lines but avoid consecutive blanks
             if formatted_lines and formatted_lines[-1] != '':
                 formatted_lines.append('')
@@ -562,6 +566,8 @@ def format_latex(content: str) -> str:
         end_match = end_pattern.match(stripped)
         if end_match:
             indent_level = max(0, indent_level - 1)
+            if end_match.group(1) == 'tasks':
+                in_tasks = False
 
         # Apply current indentation
         if stripped.startswith('\\item') and indent_level == 0:
@@ -575,6 +581,8 @@ def format_latex(content: str) -> str:
         begin_match = begin_pattern.match(stripped)
         if begin_match:
             indent_level += 1
+            if begin_match.group(1) == 'tasks':
+                in_tasks = True
 
     # --- Phase 3: ensure blank line between major blocks ---
     result = '\n'.join(formatted_lines)

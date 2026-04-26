@@ -4,6 +4,7 @@ import click
 
 from vbagent.cli.analysis.exam_analysis import analysis as exam_analysis_cmd
 from vbagent.cli.analysis.syllabus import syllabus as syllabus_cmd
+from vbagent.cli.analysis.check import check as check_cmd
 
 
 @click.group()
@@ -18,3 +19,4 @@ def analysis():
 # Register subcommands
 analysis.add_command(exam_analysis_cmd, name="generate")
 analysis.add_command(syllabus_cmd, name="syllabus")
+analysis.add_command(check_cmd, name="check")

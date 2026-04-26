@@ -20,22 +20,24 @@ from vbagent.agents.analysis.concept_organizer import organize_concepts
 @click.option('--chapter', required=True, help='Chapter name (e.g., "KINEMATICS")')
 @click.option('--exam', type=click.Choice(['jee_main', 'neet', 'jee_advanced']), 
               default='jee_main', help='Exam type')
-@click.option('--year', type=int, default=2026, help='Exam year')
+@click.option('--year', type=int, default=None, help='Exam year (auto-detected from paths if omitted)')
 @click.option('--subject', type=click.Choice(['physics', 'chemistry', 'mathematics', 'biology']),
               default='physics', help='Subject')
-@click.option('--input-dir', type=click.Path(exists=True), default='agentic/scans',
-              help='Directory with problem files')
+@click.option('--input-dir', '-i', type=click.Path(exists=True), multiple=True,
+              help='Directory with problem files (repeatable, auto-discovers recursively)')
 @click.option('-o', '--output', type=click.Path(), default='analysis.tex',
               help='Output LaTeX file')
 @click.option('--no-cache', is_flag=True, help='Force regeneration without using cache')
+@click.option('--brief', is_flag=True, help='Generate concise revision sheet instead of full analysis')
 def analysis(
     chapter: str,
     exam: str,
     year: int,
     subject: str,
-    input_dir: str,
+    input_dir: tuple[str, ...],
     output: str,
     no_cache: bool,
+    brief: bool,
 ):
     """Generate exam analysis with topic-wise concept aggregation.
     
@@ -49,23 +51,71 @@ def analysis(
     - All problems in two-column format
     
     \b
+    Use --brief for a compact last-minute revision sheet that distills
+    core ideas with derived expressions (no per-problem verbosity).
+    
+    \b
+    --input-dir can be repeated for multiple directories. If a directory
+    doesn't contain problem_*.tex directly, it auto-discovers them
+    recursively (handles year-wise layouts). Defaults to ./agentic/scans.
+    
+    \b
     Examples:
-        vbagent exam analysis --chapter "KINEMATICS" --exam jee_main --year 2026
-        vbagent exam analysis --chapter "ELECTROSTATICS" --exam neet -o electro.tex
+        vbagent analysis generate --chapter "KINEMATICS" --brief
+        vbagent analysis generate --chapter "GRAVITATION" --brief -i 2024/agentic/scans -i 2025/agentic/scans
+        vbagent analysis generate --chapter "GRAVITATION" --brief -i .
+        vbagent analysis generate --chapter "ELECTROSTATICS" -o analysis.tex
     """
     console = Console()
     
     try:
-        # Step 1: Scan problem directory
-        console.print(f"[cyan]Scanning problems from:[/cyan] {input_dir}")
-        input_path = Path(input_dir)
-        problems = scan_problem_directory(input_path)
+        # Step 1: Scan problem directories
+        # Default to agentic/scans if none provided
+        dirs = input_dir if input_dir else ('agentic/scans',)
+        
+        problems = []
+        for d in dirs:
+            input_path = Path(d)
+            if not input_path.exists():
+                console.print(f"[yellow]Skipping non-existent directory:[/yellow] {d}")
+                continue
+            console.print(f"[cyan]Scanning:[/cyan] {d}")
+            found = scan_problem_directory(input_path)
+            problems.extend(found)
+        
+        # Deduplicate by file path (in case recursive discovery overlaps)
+        seen_files = set()
+        unique_problems = []
+        for p in problems:
+            if p['file'] not in seen_files:
+                seen_files.add(p['file'])
+                unique_problems.append(p)
+        problems = sorted(unique_problems, key=lambda x: x['number'])
         
         if not problems:
             console.print("[red]No problem files found![/red]")
             return
         
         console.print(f"[green]Found {len(problems)} problem(s)[/green]")
+        
+        # Auto-detect years from file paths (e.g. 2024/agentic/scans/problem_1.tex)
+        import re
+        detected_years = set()
+        for p in problems:
+            year_match = re.search(r'(?:^|/)(\d{4})/', p['file'])
+            if year_match:
+                detected_years.add(int(year_match.group(1)))
+        
+        if year is not None:
+            year_label = str(year)
+        elif detected_years:
+            sorted_years = sorted(detected_years)
+            if len(sorted_years) == 1:
+                year_label = str(sorted_years[0])
+            else:
+                year_label = f"{sorted_years[0]}--{sorted_years[-1]}"
+        else:
+            year_label = None
         
         # Step 2: Load syllabus
         console.print(f"[cyan]Loading syllabus:[/cyan] {exam}/{subject}")
@@ -131,63 +181,93 @@ def analysis(
         console.print(f"[green]Extracted data from {len(all_problems)} problem(s)[/green]")
         
         # Step 5: Organize concepts using AI agent
-        console.print("[cyan]Organizing concepts with AI agent...[/cyan]")
+        mode_label = "revision sheet" if brief else "full analysis"
+        console.print(f"[cyan]Generating {mode_label} with AI agent...[/cyan]")
         
         import time
         t_start = time.time()
         
-        # Run agent to organize concepts
-        aggregated_ideas = organize_concepts(
-            raw_ideas={'all_problems': {'problems': all_problems}},  # Send all problem data
-            syllabus_topics=syllabus_topics,
-            chapter_name=actual_chapter_name,
-            exam=exam,
-            subject=subject,
-            show_spinner=True,
-            no_cache=no_cache,
-        )
-        
-        elapsed = time.time() - t_start
-        console.print(f"[green]✓ Concepts organized in {elapsed:.1f}s[/green]")
-        
-        # Step 6: Generate LaTeX
-        console.print("[cyan]Generating LaTeX document...[/cyan]")
-        
-        # Load template to get note
-        from vbagent.analysis.templates import load_chapter_template
-        template = load_chapter_template(exam, subject, actual_chapter_name)
-        chapter_note = template.get('note') if template else None
-        
-        # Build matched_data structure for generator
-        matched_data = {
-            actual_chapter_name: {
-                'topics': [{'topic': t, 'problems': []} for t in syllabus_topics],
-                'all_problems': [p['number'] for p in problems],
-                'description': chapter_info.get('description', ''),
+        if brief:
+            # --- Brief revision sheet path ---
+            from vbagent.agents.analysis.revision_sheet import generate_revision_sheet
+            
+            revision_data = generate_revision_sheet(
+                raw_ideas={'all_problems': {'problems': all_problems}},
+                syllabus_topics=syllabus_topics,
+                chapter_name=actual_chapter_name,
+                exam=exam,
+                subject=subject,
+                show_spinner=True,
+                no_cache=no_cache,
+            )
+            
+            elapsed = time.time() - t_start
+            console.print(f"[green]✓ Revision sheet generated in {elapsed:.1f}s[/green]")
+            
+            # Generate compact LaTeX
+            console.print("[cyan]Generating LaTeX revision sheet...[/cyan]")
+            
+            from vbagent.analysis.brief_generator import generate_brief_latex
+            
+            latex_content = generate_brief_latex(
+                revision_data=revision_data,
+                exam=exam.replace('_', ' ').title(),
+                year_label=year_label,
+                subject=subject,
+                chapter_name=actual_chapter_name,
+                num_problems=len(problems),
+            )
+        else:
+            # --- Full analysis path (existing) ---
+            aggregated_ideas = organize_concepts(
+                raw_ideas={'all_problems': {'problems': all_problems}},
+                syllabus_topics=syllabus_topics,
+                chapter_name=actual_chapter_name,
+                exam=exam,
+                subject=subject,
+                show_spinner=True,
+                no_cache=no_cache,
+            )
+            
+            elapsed = time.time() - t_start
+            console.print(f"[green]✓ Concepts organized in {elapsed:.1f}s[/green]")
+            
+            # Generate full LaTeX
+            console.print("[cyan]Generating LaTeX document...[/cyan]")
+            
+            from vbagent.analysis.templates import load_chapter_template
+            template = load_chapter_template(exam, subject, actual_chapter_name)
+            chapter_note = template.get('note') if template else None
+            
+            matched_data = {
+                actual_chapter_name: {
+                    'topics': [{'topic': t, 'problems': []} for t in syllabus_topics],
+                    'all_problems': [p['number'] for p in problems],
+                    'description': chapter_info.get('description', ''),
+                }
             }
-        }
-        
-        latex_content = generate_analysis_latex(
-            matched_data=matched_data,
-            aggregated_ideas=aggregated_ideas,
-            exam=exam.replace('_', ' ').title(),
-            year=year,
-            subject=subject,
-            chapter_name=actual_chapter_name,
-            num_problems=len(problems),
-            chapter_note=chapter_note
-        )
+            
+            latex_content = generate_analysis_latex(
+                matched_data=matched_data,
+                aggregated_ideas=aggregated_ideas,
+                exam=exam.replace('_', ' ').title(),
+                year=year_label,
+                subject=subject,
+                chapter_name=actual_chapter_name,
+                num_problems=len(problems),
+                chapter_note=chapter_note,
+            )
         
         # Step 7: Write output
         output_path = Path(output)
         output_path.write_text(latex_content, encoding='utf-8')
         
-        console.print(f"\n[green]✓ Analysis complete![/green]")
+        console.print(f"\n[green]✓ {'Revision sheet' if brief else 'Analysis'} complete![/green]")
         console.print(f"[cyan]Output:[/cyan] {output_path}")
         console.print(f"\n[dim]Summary:[/dim]")
+        console.print(f"  • Mode: {'brief revision sheet' if brief else 'full analysis'}")
         console.print(f"  • Chapter: {actual_chapter_name}")
         console.print(f"  • Problems analyzed: {len(problems)}")
-        console.print(f"  • Problems with data: {len(all_problems)}")
         console.print(f"  • Topics in syllabus: {len(syllabus_topics)}")
         
     except FileNotFoundError as e:

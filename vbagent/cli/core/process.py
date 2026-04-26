@@ -221,9 +221,10 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 @click.option("--verbose-compile", "verbose_compile", is_flag=True, help="Show full LaTeX document before each compile")
 @click.option("--assess-difficulty/--no-assess-difficulty", "assess_difficulty", default=False, help="Assess difficulty [default: off]")
 @click.option("--solve/--no-solve", "solve", default=True, help="Generate solution [default: on]")
-@click.option("--merge-metadata/--no-merge-metadata", "merge_metadata", default=True, help="Merge classification metadata [default: on]")
+@click.option("--merge-metadata/--no-merge-metadata", "merge_metadata", default=False, help="Merge classification metadata into .tex [default: off]")
 @click.option("--no-cache", is_flag=True, help="Disable pipeline cache")
 @click.option("--clear-cache", is_flag=True, help="Clear pipeline cache before processing")
+@click.option("--animate", is_flag=True, help="Generate Manim animations for suitable problems")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose output")
 def run(
     input_path: Optional[str],
@@ -244,6 +245,7 @@ def run(
     merge_metadata: bool,
     no_cache: bool,
     clear_cache: bool,
+    animate: bool,
     verbose: bool,
 ):
     """Full pipeline: Classify → Scan → TikZ → Solve.
@@ -365,6 +367,58 @@ def run(
         if results:
             _generate_context_file(output_path, len(results))
             console.print(f"\n[dim]Generated CONTEXT.md for external AI agents[/dim]")
+
+        # Animation step (if --animate)
+        if animate and results:
+            console.print(f"\n[cyan]Running animation pipeline for {len(results)} result(s)...[/cyan]")
+            from vbagent.agents.animation.assessor import assess_animation
+            from vbagent.agents.animation.coder import generate_animation
+
+            anim_dir = Path(output) / "animations"
+            anim_dir.mkdir(parents=True, exist_ok=True)
+            anim_count = 0
+
+            for result in results:
+                base_name = get_base_name(result.source_path)
+                console.print(f"\n[dim]  Assessing {base_name}...[/dim]")
+
+                # Use image if available, otherwise use scanned LaTeX
+                img = result.source_path if Path(result.source_path).suffix in ('.png', '.jpg', '.jpeg', '.webp', '.gif') else None
+                problem_tex = result.latex or ""
+                solution_tex = ""
+                if hasattr(result, 'solution_latex') and result.solution_latex:
+                    solution_tex = result.solution_latex
+
+                try:
+                    assessment = assess_animation(
+                        problem_latex=problem_tex,
+                        image_path=img,
+                        solution_latex=solution_tex,
+                        show_spinner=False,
+                    )
+
+                    if not assessment.should_animate:
+                        console.print(f"  [yellow]Skip {base_name}[/yellow] — {assessment.reason[:80]}")
+                        continue
+
+                    console.print(f"  [green]Animating {base_name}[/green] — {assessment.mode}: {assessment.animation_type}")
+
+                    code_result = generate_animation(
+                        assessment=assessment,
+                        problem_latex=problem_tex,
+                        image_path=img,
+                        solution_latex=solution_tex,
+                        show_spinner=False,
+                    )
+
+                    out_file = anim_dir / f"{base_name}.py"
+                    out_file.write_text(code_result.code, encoding="utf-8")
+                    console.print(f"  [cyan]→ {out_file}[/cyan]")
+                    anim_count += 1
+                except Exception as e:
+                    console.print(f"  [red]Animation failed for {base_name}: {e}[/red]")
+
+            console.print(f"\n[green]✓ Generated {anim_count} animation(s) in {anim_dir}[/green]")
 
         # Summary
         console.print(f"\n[bold green]Pipeline complete![/bold green]")

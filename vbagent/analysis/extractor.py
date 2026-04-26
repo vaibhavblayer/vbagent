@@ -222,16 +222,25 @@ def parse_idea_block(content: str) -> dict:
 def scan_problem_directory(directory: Path) -> list[dict]:
     """Scan a directory for all problem files and extract their data.
     
+    Discovery logic:
+    1. If directory directly contains problem_*.tex → use those.
+    2. Otherwise, recursively search for **/problem_*.tex (handles
+       year-wise layouts like 2024/agentic/scans/problem_1.tex).
+    
     Args:
-        directory: Path to directory containing problem_*.tex files
+        directory: Path to directory (or parent) containing problem .tex files
         
     Returns:
         List of problem data dictionaries
     """
     problems = []
     
-    # Find all problem_*.tex files
+    # Try direct match first
     problem_files = sorted(directory.glob('problem_*.tex'))
+    
+    # If nothing found, auto-discover recursively
+    if not problem_files:
+        problem_files = sorted(directory.rglob('problem_*.tex'))
     
     for problem_file in problem_files:
         data = extract_problem_data(problem_file)
