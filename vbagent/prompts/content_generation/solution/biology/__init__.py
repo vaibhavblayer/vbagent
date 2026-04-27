@@ -10,6 +10,7 @@ Currently supports: mcq_sc (all other types fall back to mcq_sc)
 """
 
 from .mcq_sc import SYSTEM_PROMPT as MCQ_SC_PROMPT
+from .match import SYSTEM_PROMPT as MATCH_PROMPT
 from .common import (
     LATEX_FORMATTING_RULES,
     SOLUTION_QUALITY,
@@ -20,14 +21,14 @@ from .common import (
 # Mapping from question type to prompt
 SOLUTION_PROMPTS = {
     "mcq_sc": MCQ_SC_PROMPT,
-    # All other types fall back to mcq_sc for now
+    "match": MATCH_PROMPT,
+    "matrix_match": MATCH_PROMPT,
+    # Other types fall back to mcq_sc for now
     "mcq_mc": MCQ_SC_PROMPT,
     "subjective": MCQ_SC_PROMPT,
     "integer": MCQ_SC_PROMPT,
     "assertion_reason": MCQ_SC_PROMPT,
     "passage": MCQ_SC_PROMPT,
-    "match": MCQ_SC_PROMPT,
-    "matrix_match": MCQ_SC_PROMPT,
 }
 
 
@@ -47,6 +48,7 @@ __all__ = [
     "SOLUTION_PROMPTS",
     "get_prompt",
     "MCQ_SC_PROMPT",
+    "MATCH_PROMPT",
     # Common components
     "LATEX_FORMATTING_RULES",
     "SOLUTION_QUALITY",
