@@ -70,6 +70,9 @@ MODELS = {
     "gpt-5.5-mini": "gpt-5.5-mini",
     "gpt-5.4": "gpt-5.4",
     "gpt-5.4-mini": "gpt-5.4-mini",
+    # Image generation models (fixed — not swappable via config set default)
+    "gpt-image-2": "gpt-image-2",
+    "gpt-image-1": "gpt-image-1",
     "gpt-5.2": "gpt-5.2",
     "gpt-5.1": "gpt-5.1",
     "gpt-5-mini": "gpt-5-mini",

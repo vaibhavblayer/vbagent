@@ -1,12 +1,19 @@
-"""Biology diagram generation using gpt-image-2 via the Responses API.
+"""Biology diagram generation using gpt-image-2 directly via the Images API.
 
 Biology diagrams (cells, organisms, anatomical structures, life cycles, etc.)
-are organic and curved — TikZ is the wrong tool. This agent calls the
-OpenAI Responses API with the image_generation tool (backed by gpt-image-2)
-to generate a PNG and returns a \\includegraphics LaTeX snippet.
+are organic and curved — TikZ is the wrong tool. This agent calls
+client.images.generate(model="gpt-image-2") directly and returns a
+\\includegraphics LaTeX snippet.
 
-API: client.responses.create(model="gpt-5.5", tools=[{"type": "image_generation"}])
-The image_generation tool uses gpt-image-2 internally.
+Model is fixed to gpt-image-2 regardless of vbagent config — this is an
+image generation model, not a chat model, and cannot be swapped via
+`vbagent config set default`.
+
+API: POST /v1/images/generations
+  model: gpt-image-2
+  quality: high | medium | low
+  size: 1024x1024 (or other valid sizes)
+  Returns: response.data[0].b64_json (base64-encoded PNG)
 """
 
 from __future__ import annotations
@@ -17,11 +24,16 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+# gpt-image-2 is the fixed model for biology diagrams.
+# It cannot be changed via vbagent config — image generation requires
+# a dedicated image model, not a chat/reasoning model.
+BIOLOGY_DIAGRAM_MODEL = "gpt-image-2"
+
 
 @dataclass
 class BiologyDiagramResult:
     """Result from biology diagram generation."""
-    image_path: str          # Absolute path to saved PNG
+    image_path: str          # Path to saved PNG
     latex_include: str       # Ready-to-use LaTeX snippet
     description: str         # What was generated
     success: bool = True
@@ -36,12 +48,15 @@ def generate_biology_diagram(
     context: Optional[str] = None,
     show_spinner: bool = True,
 ) -> BiologyDiagramResult:
-    """Generate a biology diagram using gpt-image-2 via the Responses API.
+    """Generate a biology diagram using gpt-image-2.
+
+    Uses the OpenAI Images API directly. The model is fixed to gpt-image-2
+    regardless of the vbagent config setting.
 
     Args:
         description: What to draw (e.g. "cross-section of a mitochondrion")
         output_path: Where to save the PNG (e.g. agentic/diagrams/problem_10.png)
-        image_path: Optional source image for reference
+        image_path: Optional source image for reference (not used currently)
         labels: List of labels that must appear in the diagram
         context: Additional biological context
         show_spinner: Show progress indicator
@@ -62,47 +77,37 @@ def generate_biology_diagram(
     if show_spinner:
         from rich.console import Console
         console = Console()
-        console.print(f"[cyan]Generating biology diagram:[/cyan] {description[:80]}...")
+        console.print(
+            f"[cyan]Generating biology diagram[/cyan] "
+            f"[dim](model: {BIOLOGY_DIAGRAM_MODEL})[/dim]"
+        )
+        console.print(f"[dim]{description[:100]}[/dim]")
 
     t0 = time.time()
 
     try:
-        # Use the Responses API with image_generation tool.
-        # gpt-image-2 is the model behind the image_generation tool.
-        # The mainline model (gpt-5.5) orchestrates; the tool generates the image.
-        response = client.responses.create(
-            model="gpt-5.5",
-            input=prompt,
-            tools=[{
-                "type": "image_generation",
-                "quality": "high",
-                "size": "1024x1024",
-                "moderation": "low",
-            }],
+        # Direct Images API call — gpt-image-2 returns b64_json by default.
+        # Do NOT pass response_format — it is not supported by gpt-image-2.
+        response = client.images.generate(
+            model=BIOLOGY_DIAGRAM_MODEL,
+            prompt=prompt,
+            size="1024x1024",
+            quality="high",
+            n=1,
         )
 
-        # Extract the generated image from the response output
-        image_data = None
-        for output in response.output:
-            if output.type == "image_generation_call":
-                image_data = output.result
-                break
-
+        image_data = response.data[0].b64_json
         if not image_data:
-            # Log what was actually returned for debugging
-            output_types = [o.type for o in response.output]
-            raise ValueError(
-                f"No image_generation_call found in response output. "
-                f"Got output types: {output_types}"
-            )
+            raise ValueError("gpt-image-2 returned no image data")
 
-        # Decode and save the PNG
         png_bytes = base64.b64decode(image_data)
         output_path.write_bytes(png_bytes)
 
         elapsed = time.time() - t0
         if show_spinner:
-            console.print(f"[green]✓ Biology diagram saved in {elapsed:.1f}s:[/green] {output_path}")
+            console.print(
+                f"[green]✓ Biology diagram saved in {elapsed:.1f}s:[/green] {output_path}"
+            )
 
         latex_include = _build_latex_include(output_path)
 
@@ -133,32 +138,40 @@ def _build_prompt(
     context: Optional[str] = None,
 ) -> str:
     """Build an optimized image generation prompt for biology diagrams."""
-
     prompt = (
-        "Create a clean scientific biology textbook illustration. "
+        "Clean scientific biology textbook illustration. "
         "White background, thin black outlines, clear sans-serif labels. "
-        "Anatomically accurate, textbook quality for NEET/JEE biology students. "
+        "Anatomically accurate, textbook quality for NEET/JEE biology. "
         "No artistic style, no shadows, no gradients. "
-        f"Subject: {description}."
+        f"Draw: {description}."
     )
 
     if labels:
-        label_str = ", ".join(labels)
-        prompt += f" Clearly label: {label_str}."
+        prompt += f" Label clearly: {', '.join(labels)}."
 
     if context:
-        prompt += f" Additional context: {context}."
+        prompt += f" Context: {context}."
 
     return prompt
 
 
 def _build_latex_include(image_path: Path) -> str:
-    """Build a \\includegraphics LaTeX snippet for the saved image."""
+    """Build a \\includegraphics LaTeX snippet.
+
+    Uses a path relative to the agentic/ directory so the .tex file
+    compiles correctly when run from agentic/.
+    """
+    # Try to make path relative to agentic/ (where .tex files live)
+    agentic_dir = Path("agentic")
     try:
-        rel_path = image_path.relative_to(Path.cwd())
+        rel_path = image_path.relative_to(agentic_dir)
         path_str = str(rel_path)
     except ValueError:
-        path_str = str(image_path)
+        # Fall back to relative to cwd
+        try:
+            path_str = str(image_path.relative_to(Path.cwd()))
+        except ValueError:
+            path_str = str(image_path)
 
     return (
         "\\begin{center}\n"
