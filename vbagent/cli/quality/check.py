@@ -3357,6 +3357,41 @@ def _run_tikz_patch_session(
         console.print(f"\n[dim]Session {session_id[:8]} saved. View with: vbagent check history[/dim]")
 
 
+def _detect_subject_for_file(tex_file: Path) -> str:
+    """Detect the subject for a .tex file from its classification JSON.
+
+    Looks for agentic/classifications/{stem}.json next to the scans dir.
+    Falls back to 'physics' if not found.
+    """
+    import json
+
+    stem = tex_file.stem  # e.g. "problem_21"
+
+    # Try sibling classifications/ directory
+    for candidate_dir in [
+        tex_file.parent.parent / "classifications",  # agentic/scans/../classifications
+        tex_file.parent / "classifications",          # same dir
+        Path("agentic") / "classifications",          # from cwd
+    ]:
+        json_path = candidate_dir / f"{stem}.json"
+        if json_path.exists():
+            try:
+                data = json.loads(json_path.read_text())
+                return data.get("subject", "physics")
+            except Exception:
+                pass
+
+    # Fallback: scan the tex file for % subject: comment
+    try:
+        for line in tex_file.read_text().split("\n")[:10]:
+            if line.startswith("% subject:"):
+                return line.split(":", 1)[1].strip()
+    except Exception:
+        pass
+
+    return "physics"
+
+
 def _run_checker_session(
     output_dir: str,
     count: int,
@@ -3644,6 +3679,12 @@ def _run_checker_session(
                 # Pass image to tikz checker if available
                 if checker_name == "tikz" and image_path:
                     passed, summary, corrected_content = check_func(check_content, image_path=str(image_path))
+                elif checker_name == "format":
+                    # Detect subject from classification JSON for subject-aware formatting
+                    subject = _detect_subject_for_file(tex_file)
+                    if subject and subject != "physics":
+                        console.print(f"[dim]Subject: {subject}[/dim]")
+                    passed, summary, corrected_content = check_func(check_content, subject=subject)
                 else:
                     passed, summary, corrected_content = check_func(check_content)
                 stats["processed"] += 1

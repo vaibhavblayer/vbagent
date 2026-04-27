@@ -331,7 +331,9 @@ Note: Merged because it's a continuous calculation without conceptual shifts.
 
 **Solution Rules (CRITICAL):**
 1. Use `align*` environment directly inside `solution`
-2. Use `\intertext{}` for brief text between equation lines
+2. Use `\intertext{}` for brief text between equation lines — **ALWAYS prefer `\intertext{}` over `&\text{...}\\`**
+   - `\intertext{}` is the correct LaTeX idiom for prose inside `align*`
+   - `&\text{long sentence}\\` is wrong — it creates misaligned text
    - Math within `\intertext{}` must use `$ ... $`
    - NO `\text{...}` inside `\intertext{}`
 3. Align equations at `=` using `&` and end lines with `\\`
