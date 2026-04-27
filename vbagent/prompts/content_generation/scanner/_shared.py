@@ -114,6 +114,11 @@ OPTIONS_WITH_DIAGRAMS_MATHEMATICS = options_with_diagrams(r"""    ❌ \begin{tik
     ❌ Any actual TikZ/diagram code for options
     ❌ Extracting the diagram code yourself""")
 
+OPTIONS_WITH_DIAGRAMS_BIOLOGY = options_with_diagrams(r"""    ❌ \begin{tikzpicture}...\end{tikzpicture}
+    ❌ \def\OptionA{\begin{tikzpicture}...}
+    ❌ Any actual TikZ/diagram code for options
+    ❌ Extracting the diagram code yourself""")
+
 
 __all__ = [
     "DIAGRAM_PLACEHOLDER",
@@ -122,6 +127,7 @@ __all__ = [
     "OPTIONS_WITH_DIAGRAMS_PHYSICS",
     "OPTIONS_WITH_DIAGRAMS_CHEMISTRY",
     "OPTIONS_WITH_DIAGRAMS_MATHEMATICS",
+    "OPTIONS_WITH_DIAGRAMS_BIOLOGY",
     "PROBLEM_FORMATTING_RULES",
     "SOLUTION_FORMATTING_RULES",
 ]

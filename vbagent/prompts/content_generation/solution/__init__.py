@@ -37,6 +37,9 @@ def get_solution_prompt(question_type: str, subject: str, chapter: Optional[str]
     elif subject == "mathematics":
         from .mathematics import get_prompt
         return get_prompt(question_type)
+    elif subject == "biology":
+        from .biology import get_prompt
+        return get_prompt(question_type)
     else:
         raise ValueError(f"Unsupported subject: {subject}")
     
