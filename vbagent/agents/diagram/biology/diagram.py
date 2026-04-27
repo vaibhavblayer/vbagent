@@ -1,9 +1,12 @@
-"""Biology diagram generation using gpt-image-2.
+"""Biology diagram generation using gpt-image-2 via the Responses API.
 
 Biology diagrams (cells, organisms, anatomical structures, life cycles, etc.)
 are organic and curved — TikZ is the wrong tool. This agent calls the
-OpenAI Images API (gpt-image-2) to generate a PNG and returns a
-\\includegraphics LaTeX snippet that the pipeline can use directly.
+OpenAI Responses API with the image_generation tool (backed by gpt-image-2)
+to generate a PNG and returns a \\includegraphics LaTeX snippet.
+
+API: client.responses.create(model="gpt-5.5", tools=[{"type": "image_generation"}])
+The image_generation tool uses gpt-image-2 internally.
 """
 
 from __future__ import annotations
@@ -33,7 +36,7 @@ def generate_biology_diagram(
     context: Optional[str] = None,
     show_spinner: bool = True,
 ) -> BiologyDiagramResult:
-    """Generate a biology diagram using gpt-image-2.
+    """Generate a biology diagram using gpt-image-2 via the Responses API.
 
     Args:
         description: What to draw (e.g. "cross-section of a mitochondrion")
@@ -51,7 +54,6 @@ def generate_biology_diagram(
 
     client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-    # Build the image generation prompt
     prompt = _build_prompt(description, labels, context)
 
     output_path = Path(output_path)
@@ -65,17 +67,30 @@ def generate_biology_diagram(
     t0 = time.time()
 
     try:
-        response = client.images.generate(
-            model="gpt-image-2",
-            prompt=prompt,
-            size="1024x1024",
-            quality="high",
-            n=1,
-            response_format="b64_json",
+        # Use the Responses API with image_generation tool.
+        # gpt-image-2 is the model behind the image_generation tool.
+        # The mainline model (gpt-5.5) orchestrates; the tool generates the image.
+        response = client.responses.create(
+            model="gpt-5.5",
+            input=prompt,
+            tools=[{
+                "type": "image_generation",
+                "quality": "high",
+                "size": "1024x1024",
+            }],
         )
 
+        # Extract the generated image from the response output
+        image_data = None
+        for output in response.output:
+            if output.type == "image_generation_call":
+                image_data = output.result
+                break
+
+        if not image_data:
+            raise ValueError("No image_generation_call found in response output")
+
         # Decode and save the PNG
-        image_data = response.data[0].b64_json
         png_bytes = base64.b64decode(image_data)
         output_path.write_bytes(png_bytes)
 
@@ -83,8 +98,6 @@ def generate_biology_diagram(
         if show_spinner:
             console.print(f"[green]✓ Biology diagram saved in {elapsed:.1f}s:[/green] {output_path}")
 
-        # Build the LaTeX include snippet
-        # Use relative path from the agentic/ directory for portability
         latex_include = _build_latex_include(output_path)
 
         return BiologyDiagramResult(
@@ -135,7 +148,6 @@ def _build_prompt(
     prompt += (
         " Use thin black outlines. "
         "Organelles and structures should be anatomically accurate. "
-        "Include a scale bar if relevant. "
         "No decorative elements."
     )
 
@@ -143,11 +155,7 @@ def _build_prompt(
 
 
 def _build_latex_include(image_path: Path) -> str:
-    """Build a \\includegraphics LaTeX snippet for the saved image.
-
-    Uses a relative path so the .tex file is portable.
-    """
-    # Try to make the path relative to the current working directory
+    """Build a \\includegraphics LaTeX snippet for the saved image."""
     try:
         rel_path = image_path.relative_to(Path.cwd())
         path_str = str(rel_path)
