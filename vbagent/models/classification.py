@@ -96,6 +96,12 @@ class DiagramAnalysis(BaseModel):
     suggested_tikz_agent: str = "generic"
     confidence: float = Field(ge=0.0, le=1.0, default=1.0)
     analyzed_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+
+    # Biology-specific: description for image generation (gpt-image-2 prompt)
+    diagram_draw_description: str = Field(
+        default="",
+        description="For biology diagrams: what to draw as a scientific illustration (used as gpt-image-2 prompt)"
+    )
     
     # MCQ option diagrams detection
     has_option_diagrams: bool = Field(

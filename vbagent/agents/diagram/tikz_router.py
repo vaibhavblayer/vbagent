@@ -430,8 +430,18 @@ def generate_tikz_with_routing(
 
         output_png = Path("agentic/diagrams") / f"{stem}.png"
 
+        # Use diagram_draw_description if available (biology-specific field from DiagramAnalysis)
+        # This is a proper "what to draw" description, not a description of the source image
+        draw_description = description or "Biology diagram"
+        if diagram and hasattr(diagram, 'diagram_draw_description') and diagram.diagram_draw_description:
+            draw_description = diagram.diagram_draw_description
+        elif diagram and diagram.diagram_elements:
+            # Build from elements if no draw description
+            elements_str = ", ".join(diagram.diagram_elements)
+            draw_description = f"Scientific biology illustration showing: {elements_str}"
+
         result = generate_biology_diagram(
-            description=description or "Biology diagram",
+            description=draw_description,
             output_path=output_png,
             image_path=image_path,
             labels=labels,

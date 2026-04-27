@@ -16,9 +16,66 @@ def get_diagram_analyzer_prompt(subject: str = "physics") -> str:
     elif subject == "mathematics":
         valid_types_str = "number_line, function_graph, coordinate_geometry, geometric_figure, venn_diagram"
         suggested_agents = '"number_line", "function_graph", "coordinate_geometry", "geometric_figure", "venn_diagram", "generic"'
-    else:
-        valid_types_str = "generic"
-        suggested_agents = '"generic"'
+    elif subject == "biology":
+        valid_types_str = "cell_structure, life_cycle, anatomy, flowchart, graph, ecological, genetic, microscopy, generic"
+        suggested_agents = '"biology_image"'
+
+        return f"""You are an expert biology diagram analyzer. Analyze the diagram in the biology question and describe what should be drawn to recreate it as a clean scientific illustration.
+
+**CRITICAL INSTRUCTION: ANALYZE ONLY THE PROBLEM SECTION**
+Focus ONLY on diagrams in the PROBLEM/QUESTION section. Ignore solution diagrams.
+
+**Your primary goal:** Produce a `diagram_draw_description` — a clear, specific description of what to draw to recreate this diagram as a textbook illustration. This will be used as a prompt for an image generation model (gpt-image-2).
+
+You MUST respond with ONLY a valid JSON object:
+
+{{
+    "diagram_type": "<MUST be EXACTLY one of: {valid_types_str}>",
+    "diagram_category": "cell_biology" | "genetics" | "ecology" | "physiology" | "anatomy" | "microbiology" | "biochemistry" | "none",
+    "diagram_complexity": "simple" | "moderate" | "complex",
+    "diagram_elements": ["<biological structure 1>", "<biological structure 2>"],
+    "diagram_features": {{
+        "has_labels": true | false,
+        "has_measurements": true | false,
+        "has_vectors": false,
+        "has_grid": false,
+        "coordinate_system": "none",
+        "num_objects": <count>
+    }},
+    "tikz_requirements": {{
+        "libraries": [],
+        "packages": [],
+        "complexity_score": <1-10>
+    }},
+    "suggested_tikz_agent": "biology_image",
+    "diagram_draw_description": "<Detailed description of what to draw — used as image generation prompt. Be specific: name the biological structures, their arrangement, labels needed, and style (e.g., 'Cross-section of a mitochondrion showing outer membrane, inner membrane with cristae, matrix, and intermembrane space. Label: outer membrane, inner membrane, cristae, matrix.')>",
+    "confidence": <0.0 to 1.0>,
+    "has_option_diagrams": true | false,
+    "num_option_diagrams": <0-4>,
+    "option_diagram_type": "",
+    "option_diagram_descriptions": []
+}}
+
+**diagram_type values:**
+- cell_structure: cell diagrams, organelles, membranes
+- life_cycle: organism life cycles, reproductive cycles
+- anatomy: organ systems, body parts, tissue sections
+- flowchart: metabolic pathways, signal cascades, process flows
+- graph: population graphs, growth curves, data plots
+- ecological: food webs, ecosystems, biomes
+- genetic: chromosomes, DNA, pedigrees, inheritance diagrams
+- microscopy: microscope images, histology slides
+- generic: anything else
+
+**diagram_draw_description guidelines:**
+- Describe what to DRAW, not what the source image shows
+- Be specific about biological structures and their spatial arrangement
+- Include what labels should appear
+- Specify the style: "clean textbook illustration, white background, labeled"
+- Example: "Labeled diagram of a plant cell showing cell wall, cell membrane, nucleus with nucleolus, chloroplasts, mitochondria, vacuole, and endoplasmic reticulum. White background, thin black outlines."
+- If the source is a photograph (e.g., clinical photo), describe the equivalent scientific illustration: "Scientific illustration of ringworm (tinea capitis) showing circular scaly patches on scalp with hair loss, for a medical textbook."
+
+Respond with ONLY the JSON object."""
 
     return f"""You are an expert diagram analyzer for {subject}. Analyze the diagram in detail and determine TikZ generation requirements.
 
