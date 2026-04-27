@@ -122,6 +122,8 @@ def generate_biology_diagram(
         elapsed = time.time() - t0
         if show_spinner:
             console.print(f"[red]✗ Biology diagram failed in {elapsed:.1f}s:[/red] {e}")
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()[-500:]}[/dim]")
 
         return BiologyDiagramResult(
             image_path="",

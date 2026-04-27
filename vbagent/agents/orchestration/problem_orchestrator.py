@@ -243,6 +243,11 @@ class ProblemOrchestrator:
                 desc = (f"Generate TikZ for {diagram_analysis.diagram_type}"
                         if diagram_analysis and diagram_analysis.diagram_type
                         else "Generate diagram")
+                # For biology: use diagram_draw_description if available
+                if (diagram_analysis
+                        and hasattr(diagram_analysis, 'diagram_draw_description')
+                        and diagram_analysis.diagram_draw_description):
+                    desc = diagram_analysis.diagram_draw_description
                 code, agent = generate_tikz_with_routing(
                     image_path=image_path,
                     description=desc,
