@@ -10,7 +10,7 @@ from vbagent.models.classification import DiagramAnalysis, PrimaryClassification
 
 
 # All agent types
-AgentType = Literal["fbd", "circuit", "gates", "graph", "optics", "mechanics", "wave", "organic_structure", "reaction_mechanism", "orbital", "lewis_structure", "chemical_equation", "energy_diagram", "function_graph", "coordinate_geometry", "geometric_figure", "number_line", "venn_diagram", "generic"]
+AgentType = Literal["fbd", "circuit", "gates", "graph", "optics", "mechanics", "wave", "organic_structure", "reaction_mechanism", "orbital", "lewis_structure", "chemical_equation", "energy_diagram", "function_graph", "coordinate_geometry", "geometric_figure", "number_line", "venn_diagram", "generic", "biology_image"]
 
 
 def route_tikz_agent(
@@ -38,6 +38,11 @@ def route_tikz_agent(
     Returns:
         Agent type to use
     """
+    # Biology: always route to image generation (not TikZ)
+    # Return a sentinel value that generate_tikz_with_routing handles
+    _subject = subject or (primary.subject if primary and hasattr(primary, 'subject') else None)
+    if _subject and _subject.lower() == "biology":
+        return "biology_image"
     # Priority 1: Use Agent 2's suggestion
     if diagram and diagram.suggested_tikz_agent:
         agent = diagram.suggested_tikz_agent.lower()
@@ -410,6 +415,31 @@ def generate_tikz_with_routing(
     
     # Route to appropriate agent
     agent_type = route_tikz_agent(diagram, primary, diagram_type=routing_diagram_type, subject=subject)
+    
+    # Biology: use gpt-image-2 instead of TikZ
+    if agent_type == "biology_image":
+        from vbagent.agents.diagram.biology import generate_biology_diagram
+        from pathlib import Path
+
+        # Derive output path from source image path (same stem, diagrams/ dir)
+        if image_path:
+            stem = Path(image_path).stem  # e.g. "problem_10"
+        else:
+            import hashlib
+            stem = "bio_" + hashlib.sha256((description or "diagram").encode()).hexdigest()[:8]
+
+        output_png = Path("agentic/diagrams") / f"{stem}.png"
+
+        result = generate_biology_diagram(
+            description=description or "Biology diagram",
+            output_path=output_png,
+            image_path=image_path,
+            labels=labels,
+            context=solution_context or problem_text,
+            show_spinner=show_spinner,
+        )
+        # Return the latex_include as the "tikz_code" — Option A
+        return result.latex_include, "biology_image"
     
     # Generate with specialized agent
     # Physics agents
