@@ -35,21 +35,25 @@ _BIOLOGY_ADDENDUM = r"""
 - Do NOT flag `\includegraphics` as a formatting error
 
 ### Biology Solution Pattern
-- Use `\intertext{}` to explain each option in MCQ solutions:
+- Biology solutions are **text-heavy**. Use `\intertext{}` for ALL prose — never `&\text{...}\\` inside `align*`.
+- The correct pattern:
   ```latex
   \begin{solution}
   \begin{align*}
-  \intertext{The disease is ringworm (dermatophytosis).}
-  \intertext{Option (a): Correct — \textit{Microsporum} is also a causative genus.}
-  \intertext{Option (b): Incorrect — ringworm is not an allergic disease.}
-  \intertext{Option (c): Incorrect — \textit{Wuchereria bancrofti} causes filariasis, not ringworm.}
-  \intertext{Option (d): Correct — heat and moisture favour fungal growth.}
+  \intertext{The concept tested is \textbf{assisted reproductive technologies (ART)}.}
+  \intertext{Statement (a): Correct — \textbf{GIFT} (gamete intrafallopian transfer) transfers an ovum into the fallopian tube for natural fertilisation.}
+  \intertext{Statement (b): Incorrect — \textbf{AI} (artificial insemination) introduces semen into the female tract; it does not collect ova.}
+  \intertext{Statement (c): Incorrect — \textbf{ICSI} injects a sperm into the ovum, not the reverse.}
+  \intertext{Only statement (a) is correct.}
   \end{align*}
-  Therefore, the correct option is (c).
+  Therefore, the correct option is (b).
   \end{solution}
   ```
-- End MCQ solutions with "Therefore, the correct option is (X)."
-- No physics-specific macros (`\vec{}`, `\hat{}`, `\mathrm{m/s}`, etc.) in biology solutions
+- **NEVER** use `&\text{long sentence}\\` — this is wrong for text-heavy solutions.
+- Use `\intertext{}` for every prose line. Reserve `align*` equations for actual mathematical expressions.
+- End MCQ solutions with "Therefore, the correct option is (X)." **outside** the `align*` block.
+- Use `—` (em dash) directly in text, not `---` (three hyphens). Fix `---` → `—` in biology solutions.
+- No physics-specific macros (`\vec{}`, `\hat{}`, `\mathrm{m/s}`, etc.) in biology solutions.
 
 ### Units in Biology
 - Temperature: `$37\,^\circ\text{C}$`
