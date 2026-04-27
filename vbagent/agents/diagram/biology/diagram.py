@@ -77,6 +77,7 @@ def generate_biology_diagram(
                 "type": "image_generation",
                 "quality": "high",
                 "size": "1024x1024",
+                "moderation": "low",
             }],
         )
 
@@ -88,7 +89,12 @@ def generate_biology_diagram(
                 break
 
         if not image_data:
-            raise ValueError("No image_generation_call found in response output")
+            # Log what was actually returned for debugging
+            output_types = [o.type for o in response.output]
+            raise ValueError(
+                f"No image_generation_call found in response output. "
+                f"Got output types: {output_types}"
+            )
 
         # Decode and save the PNG
         png_bytes = base64.b64decode(image_data)
@@ -129,27 +135,19 @@ def _build_prompt(
     """Build an optimized image generation prompt for biology diagrams."""
 
     prompt = (
-        "Scientific biology textbook illustration. "
-        "Clean white background. "
-        "Accurate biological structures with smooth organic curves. "
-        "Clear sans-serif labels in black. "
+        "Create a clean scientific biology textbook illustration. "
+        "White background, thin black outlines, clear sans-serif labels. "
+        "Anatomically accurate, textbook quality for NEET/JEE biology students. "
         "No artistic style, no shadows, no gradients. "
-        "Textbook quality, suitable for NEET/JEE biology. "
-        f"Draw: {description}."
+        f"Subject: {description}."
     )
 
     if labels:
         label_str = ", ".join(labels)
-        prompt += f" Label the following structures clearly: {label_str}."
+        prompt += f" Clearly label: {label_str}."
 
     if context:
-        prompt += f" Context: {context}."
-
-    prompt += (
-        " Use thin black outlines. "
-        "Organelles and structures should be anatomically accurate. "
-        "No decorative elements."
-    )
+        prompt += f" Additional context: {context}."
 
     return prompt
 
