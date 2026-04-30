@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 def _get_config_dir() -> Path:
     """Get the platform-specific config directory.
-    
+
     Returns:
         Path to config directory:
         - Windows: %APPDATA%/vbagent
@@ -234,7 +234,7 @@ REASONING_SUPPORT: dict[str, Optional[set[str]]] = {
 
 def get_reasoning_support(model: str) -> Optional[set[str]]:
     """Get the set of valid reasoning_effort values for a model.
-    
+
     Returns:
         Set of valid effort strings, or None if reasoning_effort is not supported.
     """
@@ -251,7 +251,7 @@ def get_reasoning_support(model: str) -> Optional[set[str]]:
 
 def _provider_from_base_url(base_url: Optional[str]) -> Optional[str]:
     """Detect provider name from a base_url.
-    
+
     Returns:
         Provider name ('openai', 'xai', 'google') or None if unknown.
     """
@@ -265,25 +265,25 @@ def _provider_from_base_url(base_url: Optional[str]) -> Optional[str]:
 
 def apply_model_group(config: "VBAgentConfig", provider_name: str) -> None:
     """Apply a model group to a config, setting all agent models AND the base_url.
-    
+
     This ensures the provider URL and models are always in sync.
-    
+
     Args:
         config: The VBAgentConfig to update.
         provider_name: Provider key in MODEL_GROUPS (openai, xai, google).
     """
     from vbagent.config import AgentModelConfig
-    
+
     group = MODEL_GROUPS.get(provider_name)
     if not group:
         return
-    
+
     # Update base_url to match the provider
     if provider_name in PROVIDERS:
         config.base_url = PROVIDERS[provider_name]["base_url"]
-    
+
     config.default_model = group["default_model"]
-    
+
     # Update agent configs
     for agent_type, model in group.items():
         if agent_type != "default_model":
@@ -297,10 +297,6 @@ def _get_model_settings_class():
     """Lazy import of ModelSettings to avoid heavy import at module load."""
     from agents import ModelSettings
     return ModelSettings
-
-
-
-
 
 
 @dataclass
@@ -358,7 +354,7 @@ class AgentModelConfig:
 @dataclass
 class VBAgentConfig:
     """Main configuration for all vbagent agents.
-    
+
     Simplified structure:
     - Global defaults apply to all agents
     - Per-agent overrides in 'agents' dict
@@ -368,31 +364,31 @@ class VBAgentConfig:
     # Global defaults for all agents
     default_model: str = "gpt-5.4-mini"
     default_reasoning_effort: str = "high"
-    
+
     # Single-model mode: when set, ALL agents use this model
     # (per-category reasoning tiers are preserved)
     # Set to None to use the normal two-tier default/heavy split.
     single_model: Optional[str] = None
-    
+
     # Subject for prompts (physics, chemistry, mathematics, biology)
     subject: str = "physics"
-    
+
     # Debug mode
     debug: bool = True
     log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
-    
+
     # Provider settings
     base_url: Optional[str] = None  # None = OpenAI default
     api_key: Optional[str] = None   # None = use OPENAI_API_KEY env var
 
     # Per-agent model overrides (only specify what differs from defaults)
     agents: dict[str, AgentModelConfig] = field(default_factory=dict)
-    
+
     # Pipeline settings
     enable_taxonomy: bool = True
     enable_difficulty: bool = True
     run_metadata_parallel: bool = True
-    
+
     # Confidence thresholds for fallback
     classifier_confidence_threshold: float = 0.7
     taxonomy_confidence_threshold: float = 0.8
@@ -413,7 +409,8 @@ class VBAgentConfig:
             self._apply_reasoning_tiers(light=m, heavy=m)
         else:
             # Two-tier mode
-            heavy = self.default_model.replace("-mini", "") if "-mini" in self.default_model else self.default_model
+            heavy = self.default_model.replace(
+                "-mini", "") if "-mini" in self.default_model else self.default_model
             self._apply_reasoning_tiers(light=self.default_model, heavy=heavy)
 
     def _apply_reasoning_tiers(self, light: str, heavy: str):
@@ -425,7 +422,7 @@ class VBAgentConfig:
         """
         # Classification agents: low reasoning
         for name in ["classifier", "image_classifier", "diagram_analyzer",
-                      "taxonomy_classifier", "difficulty_assessor", "latex_classifier"]:
+                     "taxonomy_classifier", "difficulty_assessor", "latex_classifier"]:
             if name not in self.agents:
                 self.agents[name] = AgentModelConfig(
                     model=light, reasoning_effort="low"
@@ -471,6 +468,30 @@ class VBAgentConfig:
                 model=heavy, reasoning_effort="xhigh"
             )
 
+        # Solution video agents
+        if "script_writer" not in self.agents:
+            self.agents["script_writer"] = AgentModelConfig(
+                model=heavy, reasoning_effort="high"
+            )
+        if "video_coder" not in self.agents:
+            self.agents["video_coder"] = AgentModelConfig(
+                model=heavy, reasoning_effort="high"
+            )
+        if "video_fixer" not in self.agents:
+            self.agents["video_fixer"] = AgentModelConfig(
+                model=light, reasoning_effort="medium"
+            )
+
+        # Concept notes agents
+        if "notes_planner" not in self.agents:
+            self.agents["notes_planner"] = AgentModelConfig(
+                model=heavy, reasoning_effort="high"
+            )
+        if "notes_writer" not in self.agents:
+            self.agents["notes_writer"] = AgentModelConfig(
+                model=heavy, reasoning_effort="high"
+            )
+
         # Generation agents: high reasoning
         for name in ["idea", "alternate", "variant", "solution"]:
             if name not in self.agents:
@@ -480,7 +501,7 @@ class VBAgentConfig:
 
         # Quality agents: default reasoning
         for name in ["reviewer", "solution_checker", "grammar_checker",
-                      "clarity_checker", "latex_fixer", "format_checker"]:
+                     "clarity_checker", "latex_fixer", "format_checker"]:
             if name not in self.agents:
                 self.agents[name] = AgentModelConfig(
                     model=light,
@@ -489,7 +510,7 @@ class VBAgentConfig:
 
     def get_agent_config(self, agent_type: str) -> AgentModelConfig:
         """Get configuration for a specific agent type.
-        
+
         When single_model is active, overrides the model on every agent
         (including explicitly configured ones) while preserving their
         reasoning_effort and max_tokens.
@@ -501,7 +522,7 @@ class VBAgentConfig:
                 model=self.default_model,
                 reasoning_effort=self.default_reasoning_effort
             )
-        
+
         # Single-model override: swap model, keep reasoning
         if self.single_model:
             return AgentModelConfig(
@@ -510,12 +531,13 @@ class VBAgentConfig:
                 max_tokens=cfg.max_tokens,
             )
         return cfg
+
     def get_model(self, agent_type: str) -> str:
         """Get model name for a specific agent type.
-        
+
         Args:
             agent_type: Agent type name
-            
+
         Returns:
             Model name for the agent
         """
@@ -524,10 +546,10 @@ class VBAgentConfig:
 
     def get_model_settings(self, agent_type: str) -> "ModelSettings":
         """Get ModelSettings for a specific agent type.
-        
+
         Args:
             agent_type: Agent type name
-            
+
         Returns:
             ModelSettings for the agent
         """
@@ -565,7 +587,8 @@ class VBAgentConfig:
         """Create from dictionary."""
         config = cls(
             default_model=data.get("default_model", "gpt-5.4-mini"),
-            default_reasoning_effort=data.get("default_reasoning_effort", "high"),
+            default_reasoning_effort=data.get(
+                "default_reasoning_effort", "high"),
             single_model=data.get("single_model"),
             subject=data.get("subject", "physics"),
             debug=data.get("debug", True),
@@ -575,27 +598,30 @@ class VBAgentConfig:
             enable_taxonomy=data.get("enable_taxonomy", True),
             enable_difficulty=data.get("enable_difficulty", True),
             run_metadata_parallel=data.get("run_metadata_parallel", True),
-            classifier_confidence_threshold=data.get("classifier_confidence_threshold", 0.7),
-            taxonomy_confidence_threshold=data.get("taxonomy_confidence_threshold", 0.8),
+            classifier_confidence_threshold=data.get(
+                "classifier_confidence_threshold", 0.7),
+            taxonomy_confidence_threshold=data.get(
+                "taxonomy_confidence_threshold", 0.8),
         )
-        
+
         # Load agent overrides
         if "agents" in data:
             for agent_type, agent_data in data["agents"].items():
-                config.agents[agent_type] = AgentModelConfig.from_dict(agent_data)
-        
+                config.agents[agent_type] = AgentModelConfig.from_dict(
+                    agent_data)
+
         return config
-    
+
     def merge_with(self, other: "VBAgentConfig") -> "VBAgentConfig":
         """Merge another config into this one (other takes precedence).
-        
+
         Used for workspace config overriding global config.
         """
         # Start with a copy of self
         merged = VBAgentConfig.from_dict(self.to_dict())
-        
+
         other_dict = other.to_dict()
-        
+
         # Override top-level settings if specified in other
         if other_dict.get("default_model"):
             merged.default_model = other_dict["default_model"]
@@ -610,20 +636,21 @@ class VBAgentConfig:
         # single_model: workspace can set or clear it
         if "single_model" in other_dict:
             merged.single_model = other_dict.get("single_model")
-        
+
         # Merge agent configs
         for agent_type, agent_config in other_dict.get("agents", {}).items():
-            merged.agents[agent_type] = AgentModelConfig.from_dict(agent_config)
-        
+            merged.agents[agent_type] = AgentModelConfig.from_dict(
+                agent_config)
+
         return merged
 
     def save(self, workspace: bool = False) -> Path:
         """Save configuration to file.
-        
+
         Args:
             workspace: If True, save to .vbagent.json in current directory.
                       If False, save to global config.
-        
+
         Returns:
             Path to the saved config file.
         """
@@ -632,19 +659,19 @@ class VBAgentConfig:
         else:
             CONFIG_DIR.mkdir(parents=True, exist_ok=True)
             config_path = CONFIG_FILE
-        
+
         config_path.write_text(json.dumps(self.to_dict(), indent=2))
         return config_path
 
     @classmethod
     def load(cls, workspace_path: Optional[Path] = None) -> "VBAgentConfig":
         """Load configuration with workspace override.
-        
+
         Loads global config first, then merges workspace config if present.
-        
+
         Args:
             workspace_path: Path to look for .vbagent.json. Defaults to cwd.
-        
+
         Returns:
             Merged configuration (workspace overrides global).
         """
@@ -656,11 +683,11 @@ class VBAgentConfig:
                 global_config = cls.from_dict(data)
             except (json.JSONDecodeError, KeyError):
                 pass
-        
+
         # Check for workspace config
         if workspace_path is None:
             workspace_path = Path.cwd()
-        
+
         workspace_config_file = workspace_path / WORKSPACE_CONFIG_FILE
         if workspace_config_file.exists():
             try:
@@ -670,9 +697,9 @@ class VBAgentConfig:
                 return global_config.merge_with(workspace_config)
             except (json.JSONDecodeError, KeyError):
                 pass
-        
+
         return global_config
-    
+
     @classmethod
     def load_global(cls) -> "VBAgentConfig":
         """Load only global configuration (ignores workspace config)."""
@@ -718,10 +745,10 @@ def set_config(config: VBAgentConfig) -> None:
 
 def save_config(workspace: bool = False) -> Path:
     """Save current configuration to file.
-    
+
     Args:
         workspace: If True, save to .vbagent.json in current directory.
-    
+
     Returns:
         Path to the saved config file.
     """
@@ -731,12 +758,12 @@ def save_config(workspace: bool = False) -> Path:
 
 def reset_config(workspace: bool = False) -> None:
     """Reset configuration to defaults.
-    
+
     Args:
         workspace: If True, delete workspace config. If False, delete global config.
     """
     global _config
-    
+
     if workspace:
         workspace_config = Path.cwd() / WORKSPACE_CONFIG_FILE
         if workspace_config.exists():
@@ -749,28 +776,29 @@ def reset_config(workspace: bool = False) -> None:
 
 def init_workspace(subject: str = "physics", force: bool = False) -> Path:
     """Initialize workspace config from global defaults.
-    
+
     Creates .vbagent.json in current directory with settings from global config.
-    
+
     Args:
         subject: Subject for this workspace (physics, chemistry, etc.)
         force: If True, overwrite existing workspace config.
-    
+
     Returns:
         Path to created config file.
-    
+
     Raises:
         FileExistsError: If workspace config exists and force=False.
     """
     workspace_config = Path.cwd() / WORKSPACE_CONFIG_FILE
-    
+
     if workspace_config.exists() and not force:
-        raise FileExistsError(f"Workspace config already exists: {workspace_config}")
-    
+        raise FileExistsError(
+            f"Workspace config already exists: {workspace_config}")
+
     # Load global config as base
     config = VBAgentConfig.load_global()
     config.subject = subject
-    
+
     return config.save(workspace=True)
 
 
@@ -812,7 +840,7 @@ def _get_default_model_settings() -> "ModelSettings":
 class _LazyModelSettings:
     """Lazy wrapper for DEFAULT_MODEL_SETTINGS."""
     _instance = None
-    
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = _get_default_model_settings()
@@ -830,11 +858,11 @@ def get_default_model_settings() -> "ModelSettings":
 
 def apply_provider_config() -> None:
     """Apply base_url and api_key from config to the OpenAI client.
-    
+
     Sets environment variables so the openai-agents SDK picks them up.
     Also disables tracing for non-OpenAI providers (traces go to
     platform.openai.com and fail with non-OpenAI keys).
-    
+
     Resolution order for API key:
     1. Key manager (if enabled and configured)
     2. api_key in config (explicit)
@@ -842,7 +870,7 @@ def apply_provider_config() -> None:
     4. OPENAI_API_KEY env var (fallback)
     """
     config = get_config()
-    
+
     if config.base_url:
         os.environ["OPENAI_BASE_URL"] = config.base_url
         # Disable tracing for non-OpenAI providers — the SDK sends traces
@@ -852,7 +880,7 @@ def apply_provider_config() -> None:
         # OpenAI provider — tracing works fine
         os.environ.pop("OPENAI_AGENTS_DISABLE_TRACING", None)
         os.environ.pop("OPENAI_BASE_URL", None)
-    
+
     # Try key manager first (only for OpenAI provider)
     if not config.base_url:
         try:
@@ -866,7 +894,7 @@ def apply_provider_config() -> None:
         except Exception:
             # Key manager not available or failed - fall through to other methods
             pass
-    
+
     if config.api_key:
         # Explicit key in config takes priority
         os.environ["OPENAI_API_KEY"] = config.api_key

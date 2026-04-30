@@ -11,7 +11,10 @@ from vbagent.storage import MetadataManager, ContentCache
 from vbagent.models.metadata import PipelineMetadata, StageMetadata, StageStatus
 
 # Stages whose cached content is JSON (not raw TeX)
-_JSON_STAGES = frozenset({"classification", "diagram", "ideas", "animation_assessment"})
+_JSON_STAGES = frozenset({
+    "classification", "diagram", "ideas",
+    "animation_assessment", "solution_script", "solution_voice",
+})
 
 # Simple stage name → PipelineMetadata attribute name
 _STAGE_ATTR = {
@@ -25,6 +28,9 @@ _STAGE_ATTR = {
     "idea_latex": "idea_latex",
     "animation_assessment": "animation_assessment",
     "animation_code": "animation_code",
+    "solution_script": "solution_script",
+    "solution_video_code": "solution_video_code",
+    "solution_voice": "solution_voice",
 }
 
 

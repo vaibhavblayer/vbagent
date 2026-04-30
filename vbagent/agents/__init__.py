@@ -87,6 +87,11 @@ if TYPE_CHECKING:
         ReviewError,
         ReviewErrorType,
     )
+    from .solution_video.script_writer import generate_script
+    from .solution_video.video_coder import generate_video_code
+    from .solution_video.video_fixer import fix_video_code
+    from .solution_video.voice import generate_voice, generate_voice_combined
+    from .solution_video.composer import compose_video, compose_with_segments
 
 
 __all__ = [
@@ -168,6 +173,14 @@ __all__ = [
     "ReviewAgentError",
     "ReviewError",
     "ReviewErrorType",
+    # Solution video pipeline
+    "generate_script",
+    "generate_video_code",
+    "fix_video_code",
+    "generate_voice",
+    "generate_voice_combined",
+    "compose_video",
+    "compose_with_segments",
 ]
 
 
@@ -176,35 +189,35 @@ def __getattr__(name: str):
     if name in ("encode_image", "create_image_message", "create_agent", "run_agent", "run_agent_sync"):
         from . import base
         return getattr(base, name)
-    
+
     if name in ("classifier_agent", "classify"):
         from . import classifier
         return getattr(classifier, name)
-    
+
     if name in ("scan", "scan_with_type", "create_scanner_agent"):
         from .content_generation import scanner
         return getattr(scanner, name)
-    
+
     if name in ("classify_taxonomy", "create_taxonomy_classifier_agent"):
         from .classification import taxonomy_classifier
         return getattr(taxonomy_classifier, name)
-    
+
     if name in ("assess_difficulty", "create_difficulty_assessor_agent"):
         from .classification import difficulty_assessor
         return getattr(difficulty_assessor, name)
-    
+
     if name in ("enrich_metadata", "enrich_metadata_sync", "enrich_metadata_parallel"):
         from .metadata import enricher
         return getattr(enricher, name)
-    
+
     if name in ("idea_agent_json", "idea_agent_latex", "extract_ideas", "generate_idea_latex"):
         from .content_generation import idea
         return getattr(idea, name)
-    
+
     if name in ("alternate_agent", "generate_alternate", "extract_answer"):
         from .content_generation import alternate
         return getattr(alternate, name)
-    
+
     if name in (
         "generate_variant", "generate_numerical_variant", "generate_context_variant",
         "generate_conceptual_variant", "generate_calculus_variant",
@@ -212,37 +225,58 @@ def __getattr__(name: str):
     ):
         from .variants import variant
         return getattr(variant, name)
-    
+
     if name in ("ProblemContext", "discover_problems", "select_random", "load_problem_context"):
         from .selection import selector
         return getattr(selector, name)
-    
+
     if name in ("solution_checker_agent", "check_solution", "has_solution_passed"):
         from .quality import solution_checker
         return getattr(solution_checker, name)
-    
+
     if name in ("grammar_checker_agent", "check_grammar", "has_grammar_passed"):
         from .quality import grammar_checker
         return getattr(grammar_checker, name)
-    
+
     if name in ("clarity_checker_agent", "check_clarity", "has_clarity_passed"):
         from .quality import clarity_checker
         return getattr(clarity_checker, name)
-    
+
     if name in ("tikz_checker_agent", "check_tikz", "check_tikz_with_patch", "has_tikz_passed", "has_tikz_environment", "PatchResult"):
         from .diagram import tikz_checker
         return getattr(tikz_checker, name)
-    
+
     if name in ("generate_tikz", "create_tikz_agent", "validate_tikz_output", "search_tikz_reference"):
         from .diagram import tikz
         return getattr(tikz, name)
-    
+
     if name in ("generate_fbd", "create_fbd_agent", "validate_fbd_output", "search_fbd_reference"):
         from .diagram import fbd
         return getattr(fbd, name)
-    
+
     if name in ("review_problem", "review_problem_sync", "ReviewAgentError", "ReviewError", "ReviewErrorType"):
         from .quality import reviewer
         return getattr(reviewer, name)
-    
+
+    # Solution video pipeline
+    if name in ("generate_script",):
+        from .solution_video import script_writer
+        return getattr(script_writer, name)
+
+    if name in ("generate_video_code",):
+        from .solution_video import video_coder
+        return getattr(video_coder, name)
+
+    if name in ("fix_video_code",):
+        from .solution_video import video_fixer
+        return getattr(video_fixer, name)
+
+    if name in ("generate_voice", "generate_voice_combined"):
+        from .solution_video import voice
+        return getattr(voice, name)
+
+    if name in ("compose_video", "compose_with_segments"):
+        from .solution_video import composer
+        return getattr(composer, name)
+
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

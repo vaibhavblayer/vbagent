@@ -24,7 +24,7 @@ COMMAND_SECTIONS = {
         "run", "scan", "classify", "batch",
     ],
     "Generate": [
-        "generate", "regenerate", "combine", "ideas", "tikz", "fbd", "idea", "concepts", "alternate", "variant", "convert", "animate",
+        "generate", "regenerate", "combine", "ideas", "tikz", "fbd", "idea", "concepts", "alternate", "variant", "convert", "animate", "solve_video", "notes",
     ],
     "Quality": [
         "check", "compile",
@@ -140,6 +140,8 @@ LAZY_SUBCOMMANDS = {
     "variant": "vbagent.cli.generation.variant",
     "convert": "vbagent.cli.generation.convert",
     "animate": "vbagent.cli.generation.animate",
+    "solve_video": "vbagent.cli.generation.solve_video",
+    "notes": "vbagent.cli.generation.notes",
     # Quality
     "check": "vbagent.cli.quality.check",
     "compile": "vbagent.cli.compilation.compile_main",
