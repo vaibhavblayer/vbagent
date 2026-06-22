@@ -96,6 +96,7 @@ def generate_preamble(subject: str = "physics", title: str = "Problems", include
     custom_commands = r"""
 \everymath{\displaystyle}
 \newcommand{\ans}{\textcolor{blue!20!red}{\textit{\quad Ans.}}}
+\newcommand{\ansint}[1]{\textcolor{red!95}{#1}}
 % \renewcommand{\ans}{}  % Uncomment to hide answers
 \newenvironment{solution}{\par\noindent\color{red!80!black}$\Rightarrow$\enspace\ignorespaces}{\par}
 \newenvironment{alternatesolution}{\par\noindent\color{blue!80!black}$\Rrightarrow$\enspace\ignorespaces}{\par}

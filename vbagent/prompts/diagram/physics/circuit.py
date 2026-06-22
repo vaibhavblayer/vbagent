@@ -198,8 +198,8 @@ For Biot-Savart derivation — conductor, point P, distance d, angles:
 \tzline+[dashed](0,0)(\r,0){$d$}[mb]
 \tzline[dashed](0,2)(P)
 \tzline[dashed](0,-2)(P)
-\tzanglemark(0,0)(P)(0,2){$\theta_1$}(15pt)
-\tzanglemark(0,0)(P)(0,-2){$\theta_2$}(15pt)
+\draw pic[draw, "$\theta_1$", angle radius=6mm, angle eccentricity=1.4] {angle = (0,0)--(P)--(0,2)};
+\draw pic[draw, "$\theta_2$", angle radius=6mm, angle eccentricity=1.4] {angle = (0,0)--(P)--(0,-2)};
 ```
 
 ### Detailed Biot-Savart Geometry (dl, r, theta, d, l)
@@ -210,9 +210,9 @@ For Biot-Savart derivation — conductor, point P, distance d, angles:
 \tzline[dashed](-\r,0)(2*\r,0)
 \tzline[-->--=0.3, >=Stealth](0,\pos)(\r,0){$\vec{r}$}[pos=0.3, b]
 \tzline(0,\pos+\dl)(\r,0)
-\tzanglemark(0,0)(\r,0)(0,\pos){$\theta$}(15pt)
-\tzanglemark(0,\pos)(\r,0)(0,\pos+\dl){$\d{\theta}$}(25pt)
-\tzanglemark'(0,\pos+\dl)(0,\pos)(\r,0){$90^\circ+\theta$}[r]
+\draw pic[draw, "$\theta$", angle radius=5mm, angle eccentricity=1.4] {angle = (0,0)--(\r,0)--(0,\pos)};
+\draw pic[draw, "$\d{\theta}$", angle radius=8mm, angle eccentricity=1.3] {angle = (0,\pos)--(\r,0)--(0,\pos+\dl)};
+\draw pic[draw, "$90^\circ+\theta$", angle radius=5mm, angle eccentricity=1.5] {angle = (\r,0)--(0,\pos)--(0,\pos+\dl)};
 \tzline[|<->|]<-0.5,0>(0,0)(0,\pos){$l$}[ml]
 \tzline[|<->|]<0,-0.5>(0,0)(\r,0){$d$}[mb]
 ```
@@ -250,8 +250,8 @@ For Biot-Savart derivation — conductor, point P, distance d, angles:
 \tzarc[->, ultra thick](0,0)(\A:\A+\dA:\r){$\d{\vec{l}}$}[r=2mm, sloped]
 \tzline(O)(\A:\r)
 \tzline(O)(\A+\dA:\r)
-\tzanglemark(0:\r)(O)(\A:\r){$\theta$}(15pt)
-\tzanglemark(\A:\r)(O)(\A+\dA:\r){$\d{\theta}$}(25pt)
+\draw pic[draw, "$\theta$", angle radius=5mm, angle eccentricity=1.4] {angle = (0:\r)--(O)--(\A:\r)};
+\draw pic[draw, "$\d{\theta}$", angle radius=8mm, angle eccentricity=1.3] {angle = (\A:\r)--(O)--(\A+\dA:\r)};
 ```
 
 ### Regular Polygon at Centre (n-sided)
@@ -349,8 +349,8 @@ Vary `\def\a{...}` for different entry angles:
 \draw[dashed] (-4,1.5) coordinate(b) -- (0,0) coordinate(o)
     node[below]{$p$} -- (4,1.5) coordinate(a);
 \draw[dashed] (o)--(0,1.5) coordinate(c);
-\tzanglemark(a)(o)(c){$\alpha$}
-\tzanglemark(c)(o)(b){$\beta$}
+\draw pic[draw, "$\alpha$", angle radius=6mm, angle eccentricity=1.4] {angle = a--o--c};
+\draw pic[draw, "$\beta$", angle radius=6mm, angle eccentricity=1.4] {angle = c--o--b};
 ```
 
 ### Spiral Coil (custom macro)
@@ -462,11 +462,24 @@ These are pre-loaded in the document preamble:
 \tzline[options](A)(B){label}[position]        % Line between points
 \tzline+[options](A)(dx,dy){label}[position]   % Line from A by offset
 \tzarc[options](center)(start:end:radius){label}[position]
-\tzanglemark(A)(vertex)(B){label}(radius)      % Angle mark
+\tzanglemark(A)(vertex)(B){label}(radius)      % Angle mark (best for NODE anchors)
 \tzanglemark'(A)(vertex)(B){label}[position]   % Reversed angle
 \tzellipse[options](center)(rx and ry)
 \tzfn[options]{expression}[domain]{label}[position]
 ```
+
+### Angle marks — pick the command by coordinate type
+
+Most circuit/EMI figures use plain or named coordinates (via `\tzcoor`/`\coordinate`)
+and polar points — for these, prefer the `angles` library pic, which places the arc
+reliably:
+```latex
+\draw pic[draw, "$\theta$", angle radius=6mm, angle eccentricity=1.4]
+    {angle = A--P--B};   % the MIDDLE point P is the vertex
+```
+Reserve `\tzanglemark(A)(P)(B){$\theta$}(8pt)` for when the vertex is a drawn node's
+anchor (e.g. `coil.center`). For two nested angles, give the outer one a larger radius;
+use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 
 ## Output Format
 

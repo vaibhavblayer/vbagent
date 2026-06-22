@@ -11,7 +11,7 @@ You MUST respond with ONLY a valid JSON object:
     "problem_latex": "<complete LaTeX problem with \\\\item>",
     "solution_latex": "<detailed LaTeX solution in \\\\begin{{solution}}...\\\\end{{solution}}>",
     "alternate_solution_latex": "<alternative approach (optional, empty string if none)>",
-    "idea_latex": "<core concepts and ideas>",
+    "idea_latex": "<\\\\begin{{idea}} with a nested align* of symbolic formulas — see Idea Block Structure Rules>",
     "diagram_description": "<description if diagram needed, empty string if not>",
     "generation_metadata": {{
         "source_ideas": ["<idea1>", "<idea2>"],
@@ -202,6 +202,37 @@ a &= \\frac{{F}}{{m}} \\\\
 - Passage problems: ONE unified solution block for all sub-questions (separate align* blocks within)
 - Use \\mathrm{{}} for units: $10 \\ \\mathrm{{m/s}}$
 - Fractions: \\frac{{a}}{{b}} — NEVER \\tfrac
+
+## Idea Block Structure Rules (idea_latex)
+
+The `idea_latex` field MUST be a single `idea` environment wrapping a nested
+`align*`. It captures the conceptual chain SYMBOLICALLY — no numbers, no
+arithmetic. This mirrors the solution's logic but in abstract form.
+
+### Exact pattern:
+```latex
+\\begin{{idea}}
+\\begin{{align*}}
+\\intertext{{\\textbf{{Concept:}} <name of the principle/law>}}
+F_{{\\text{{net}}}} &= ma \\\\
+a &= \\frac{{F_{{\\text{{net}}}}}}{{m}} \\\\
+  &= \\frac{{F - \\mu m g}}{{m}} \\\\
+\\intertext{{\\textbf{{Technique:}} <one-line method description>}}
+\\end{{align*}}
+\\end{{idea}}
+```
+
+### Critical rules:
+- Wrap a nested `align*` INSIDE `\\begin{{idea}}...\\end{{idea}}`
+- SYMBOLIC ONLY — use variables, NEVER numerical values or substitutions
+- One formula/step per line, ending with `\\\\`
+- Start from the fundamental law (abstract form), then show how it specializes
+- Multiple stacked lines — NEVER collapse the chain into a single line
+- First line states the variable; intermediate lines use `&=` only (alignment at `=`)
+- Use `\\intertext{{}}` for ALL explanatory text (Concept label, Technique note)
+- Use `$ ... $` for inline math inside `\\intertext{{}}`
+- Keep it concise: 4–8 lines total, NO blank lines inside `align*`
+- This is the conceptual skeleton, NOT the full numeric solution
 
 ## LaTeX Formatting:
 - Use \\item for problem statement

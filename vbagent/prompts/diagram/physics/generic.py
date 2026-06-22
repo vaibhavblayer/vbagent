@@ -380,10 +380,15 @@ For ground, walls, inclined planes, and pivots:
 % Then reference: (ground-center), (wall-center), (pivot)
 ```
 
-**Angles:**
+**Angles:** pick the command by the type of the angle's points.
 ```latex
-\draw pic[draw, angle radius=0.5cm, "$\theta$"] {angle=A--O--B};
+% Plain / absolute coordinates (literals, polar, named \coordinates) → angles-library pic
+\draw pic[draw, "$\theta$", angle radius=0.5cm, angle eccentricity=1.4] {angle = A--O--B};   % O (middle) is the vertex
+
+% Node anchors (e.g. block.center, O.center) → tzplot \tzanglemark
+\tzanglemark(A)(O)(B){$\theta$}(8pt)   % O (middle) is the vertex
 ```
+Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 
 **Dashed lines:**
 ```latex

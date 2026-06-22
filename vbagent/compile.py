@@ -70,6 +70,7 @@ PREAMBLE_TEMPLATE = r"""\documentclass[preview, border=2mm]{{standalone}}
 
 % --- Answer marker ---
 \newcommand{{\ans}}{{\ensuremath{{\checkmark}}}}
+\newcommand{{\ansint}}[1]{{\textcolor{{red!95}}{{#1}}}}
 
 % --- Chemistry (if needed) ---
 {chemistry_packages}
@@ -449,4 +450,3 @@ def _prompt_compile_action(console) -> str:
             return "quit"
         else:
             console.print("[dim]Please enter c, s, or q[/dim]")
-

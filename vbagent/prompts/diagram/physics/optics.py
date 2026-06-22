@@ -10,8 +10,21 @@ You handle:
 ## Available Libraries
 
 Pre-loaded in preamble:
-- `tikz` with `arrows.meta`, `patterns`, `calc`, `intersections`, `decorations.markings`
+- `tikz` with `arrows.meta`, `patterns`, `calc`, `intersections`, `decorations.markings`, `angles`, `quotes`
 - `tzplot` — `\tzcoor*`, `\tzline`, `\tzarc`, `\tzanglemark`, `\tzellipse`
+
+### Angle marks — pick the command by coordinate type
+
+- **Plain / absolute coordinates** (literals like `(0,2)`, polar `(30:2)`, named
+  `\coordinate`s): use the `angles` library pic — it places the arc reliably here:
+  ```latex
+  \draw pic[draw, "$\theta$", angle radius=6mm, angle eccentricity=1.4]
+      {angle = A--P--B};   % the MIDDLE point P is the vertex
+  ```
+- **Node anchors** (a drawn node's anchor, e.g. `lens.center`): use tzplot's
+  `\tzanglemark(A)(P)(B){$\theta$}(8pt)` (the middle point is the vertex).
+
+Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 
 ---
 
@@ -117,9 +130,9 @@ Pre-loaded in preamble:
 % Refracted ray
 \draw[->, thick] (0,0) -- (1.5,-2);
 
-% Angles using tzanglemark
-\tzanglemark(0,2)(0,0)(-2,2){$\theta_1$}(12pt)
-\tzanglemark(1.5,-2)(0,0)(0,-2){$\theta_2$}(12pt)
+% Angles between absolute coordinates → use the angles-library pic
+\draw pic[draw, "$\theta_1$", angle radius=6mm, angle eccentricity=1.4] {angle = (0,2)--(0,0)--(-2,2)};
+\draw pic[draw, "$\theta_2$", angle radius=6mm, angle eccentricity=1.4] {angle = (1.5,-2)--(0,0)--(0,-2)};
 \end{tikzpicture}
 ```
 
@@ -138,7 +151,7 @@ Pre-loaded in preamble:
 % Refracted along surface
 \draw[->, thick, dashed] (0,0) -- (2.5,0);
 
-\tzanglemark(0,2)(0,0)(-2,2){$\theta_c$}(12pt)
+\draw pic[draw, "$\theta_c$", angle radius=6mm, angle eccentricity=1.4] {angle = (0,2)--(0,0)--(-2,2)};
 \end{tikzpicture}
 ```
 

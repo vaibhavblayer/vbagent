@@ -824,6 +824,7 @@ def _generate_tikz_for_problem(
             subject=subject,
             diagram_type=sketch_type,
             problem_text=problem_tex,
+            diagram_context="problem",
         )
         console.print(f"  [green]✓[/green] Diagram generated (agent: {agent_used})")
         return tikz_code

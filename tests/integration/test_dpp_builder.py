@@ -437,5 +437,23 @@ class TestDPPResult:
             assert isinstance(result.created_at, datetime)
 
 
+class TestDPPBuilderPreamble:
+    """Tests for generated DPP LaTeX preamble."""
+
+    def test_ansint_is_defined_in_generated_main_tex(self, sample_questions, temp_db):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "test_dpp.tex"
+            builder = DPPBuilder(object())
+
+            builder._generate_main_tex(
+                questions=sample_questions[:1],
+                output_path=output_path,
+                title="Test DPP",
+            )
+
+            content = output_path.read_text()
+            assert r"\newcommand{\ansint}[1]{\textcolor{red!95}{#1}}" in content
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

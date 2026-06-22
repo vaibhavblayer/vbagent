@@ -10,7 +10,7 @@ from vbagent.models.classification import DiagramAnalysis, PrimaryClassification
 
 
 # All agent types
-AgentType = Literal["fbd", "circuit", "gates", "graph", "optics", "mechanics", "wave", "organic_structure", "reaction_mechanism", "orbital", "lewis_structure", "chemical_equation", "energy_diagram", "function_graph", "coordinate_geometry", "geometric_figure", "number_line", "venn_diagram", "generic", "biology_image"]
+AgentType = Literal["fbd", "setup", "circuit", "gates", "graph", "optics", "mechanics", "wave", "organic_structure", "reaction_mechanism", "orbital", "lewis_structure", "chemical_equation", "energy_diagram", "function_graph", "coordinate_geometry", "geometric_figure", "number_line", "venn_diagram", "generic", "biology_image"]
 
 
 def route_tikz_agent(
@@ -18,6 +18,7 @@ def route_tikz_agent(
     primary: Optional[PrimaryClassification] = None,
     diagram_type: Optional[str] = None,
     subject: Optional[str] = None,
+    diagram_context: str = "solution",
 ) -> AgentType:
     """Route to appropriate TikZ agent based on diagram analysis and subject.
     
@@ -34,10 +35,33 @@ def route_tikz_agent(
         primary: PrimaryClassification from Agent 1
         diagram_type: Manual override
         subject: Subject name (physics, chemistry, etc.)
+        diagram_context: "problem" or "solution". In "problem" context a
+            free-body (force) diagram is not appropriate for the printed
+            figure, so an ``fbd`` route is redirected to the ``setup`` agent
+            (physical scene, no force vectors).
         
     Returns:
         Agent type to use
     """
+    agent = _route_tikz_agent_inner(
+        diagram=diagram,
+        primary=primary,
+        diagram_type=diagram_type,
+        subject=subject,
+    )
+    # Problem figures show the physical scene, not a force diagram.
+    if diagram_context == "problem" and agent == "fbd":
+        return "setup"
+    return agent
+
+
+def _route_tikz_agent_inner(
+    diagram: Optional[DiagramAnalysis] = None,
+    primary: Optional[PrimaryClassification] = None,
+    diagram_type: Optional[str] = None,
+    subject: Optional[str] = None,
+) -> AgentType:
+    """Core routing logic (context-agnostic)."""
     # Biology: always route to image generation (not TikZ)
     # Return a sentinel value that generate_tikz_with_routing handles
     _subject = subject or (primary.subject if primary and hasattr(primary, 'subject') else None)
@@ -65,6 +89,10 @@ def route_tikz_agent(
     # Priority 2: Manual override (diagram_type parameter)
     if diagram_type:
         dtype = diagram_type.lower()
+        # Physics problem setup / schematic (check early: "setup" contains "set"
+        # which would otherwise match the venn/set mathematics route below)
+        if "setup" in dtype or "schematic" in dtype or "apparatus" in dtype:
+            return "setup"
         # Digital logic gates
         if any(kw in dtype for kw in [
             "gate", "logic", "nand", "nor", "xor", "xnor",
@@ -382,6 +410,7 @@ def generate_tikz_with_routing(
     values: Optional[dict] = None,
     labels: Optional[list] = None,
     mcq_options: bool = False,
+    diagram_context: str = "solution",
 ) -> tuple[str, AgentType]:
     """Generate TikZ code with automatic agent routing.
     
@@ -399,6 +428,9 @@ def generate_tikz_with_routing(
         values: Optional dict of variable values
         labels: Optional list of labels needed
         mcq_options: Whether generating MCQ options (use \\def\\OptionA{...} format)
+        diagram_context: "problem" or "solution". When "problem", force/FBD
+            routing is redirected to the neutral ``setup`` agent so the printed
+            problem figure shows the physical scene without force vectors.
         
     Returns:
         Tuple of (tikz_code, agent_type_used)
@@ -414,7 +446,10 @@ def generate_tikz_with_routing(
         routing_diagram_type = diagram_type
     
     # Route to appropriate agent
-    agent_type = route_tikz_agent(diagram, primary, diagram_type=routing_diagram_type, subject=subject)
+    agent_type = route_tikz_agent(
+        diagram, primary, diagram_type=routing_diagram_type, subject=subject,
+        diagram_context=diagram_context,
+    )
     
     # Biology: use gpt-image-2 instead of TikZ
     if agent_type == "biology_image":
@@ -456,6 +491,18 @@ def generate_tikz_with_routing(
     if agent_type == "fbd":
         from vbagent.agents.diagram.physics import generate_fbd
         tikz_code = generate_fbd(
+            image_path=image_path,
+            description=description,
+            use_context=use_context,
+            show_spinner=show_spinner,
+            problem_text=problem_text,
+            solution_context=solution_context,
+            values=values,
+            labels=labels,
+        )
+    elif agent_type == "setup":
+        from vbagent.agents.diagram.physics import generate_setup
+        tikz_code = generate_setup(
             image_path=image_path,
             description=description,
             use_context=use_context,
@@ -725,6 +772,24 @@ def get_agent_capabilities(agent_type: AgentType) -> dict:
                 "Clean, minimal diagrams"
             ],
             "best_for": ["mechanics", "statics", "dynamics", "forces"]
+        },
+        "setup": {
+            "name": "Problem Setup Diagram Agent",
+            "subject": "physics",
+            "specializes_in": [
+                "Physical apparatus and scene",
+                "Bodies, surfaces, supports",
+                "Inclines, pulleys, springs (geometry)",
+                "Given dimensions and angles",
+                "Labels of given quantities",
+            ],
+            "strengths": [
+                "Neutral problem figures (no forces)",
+                "Clean kinematikz surfaces",
+                "Given-data labeling only",
+                "Counterpart to the FBD/force agent",
+            ],
+            "best_for": ["problem figures", "apparatus", "setups without forces"]
         },
         "circuit": {
             "name": "Circuit Diagram Agent",

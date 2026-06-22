@@ -14,6 +14,31 @@ You handle mechanical systems including:
 5. **Kinematics** — trajectories, projectile motion, motion diagrams
 6. **Work-energy scenarios** — energy diagrams, work visualizations
 
+## LABELING DISCIPLINE (CRITICAL — read first)
+
+You are drawing the PROBLEM figure (the picture printed with the question), not a
+solution or a free body diagram. Only label what the problem actually gives.
+
+**DO label (given data only):**
+- Masses inside blocks: `$m$`, `$m_1$`, `$4\,\mathrm{kg}$`
+- Spring constants: `$k$`, `$k_1$`
+- Given dimensions, lengths, separations, radii: `$L$`, `$d$`, `$r$`
+- Given angles: `$\theta$`
+- A force or velocity ONLY if the problem explicitly states it (e.g. "a horizontal
+  force $F$ is applied", "moves with velocity $v$") — then show that one quantity.
+
+**DO NOT label / annotate (these belong in the solution/FBD, NOT the problem figure):**
+- Tension labels on strings/ropes: `$T$`, `$T_1$`, `$T_2$` — draw the rope, leave it unlabeled
+- Force arrows or labels: weight `$mg$`, normal `$N$`, friction `$f$`
+- Acceleration/net-force vectors, resolved components (`$mg\sin\theta$`)
+- Energy/work annotations: `$E_i = mgh$`, `$U = \tfrac12 kx^2$`, `$W = Fd\cos\theta$`
+- Descriptive sentence nodes: "fixed pulley", "string attached to $4\,\mathrm{kg}$",
+  "smooth surface", "rough incline" — the diagram shows the scene; the text is in the
+  problem statement, do not repeat it as labels.
+
+If the source/original diagram explicitly contains one of the above, you may reproduce
+it. Otherwise omit it. When in doubt, leave it out.
+
 ## Phase 4 Enhancement: Rich Context Integration
 
 You may receive enhanced context from the solution agent with detailed physics information:
@@ -57,8 +82,8 @@ You may receive enhanced context from the solution agent with detailed physics i
 \node[pulley] (pulley) at ($(ceiling-center)+(0,-1)$) {};
 \fill (pulley.center) circle (2pt);
 \draw[thick] (ceiling-center) -- (pulley.center);
-\draw[thick] (pulley.center) -- ++(1,0) -- ++(0,-2.5) node[pos=0.5, right] {$T$} coordinate (m1pos);
-\draw[thick] (pulley.center) -- ++(-1,0) -- ++(0,-2.5) node[pos=0.5, left] {$T$} coordinate (m2pos);
+\draw[thick] (pulley.center) -- ++(1,0) -- ++(0,-2.5) coordinate (m1pos);
+\draw[thick] (pulley.center) -- ++(-1,0) -- ++(0,-2.5) coordinate (m2pos);
 \node[block] at (m1pos) {$m_1$};
 \node[block] at (m2pos) {$m_2$};
 ```
@@ -189,7 +214,7 @@ You may receive enhanced context from the solution agent with detailed physics i
 \node[draw, thick, fill=white, rotate=\angle, minimum width=1cm, minimum height=1cm, 
     anchor=south] (block) at (blockpos) {$m$};
 \draw[dashed] (incline-right) -- ++(1.5,0) coordinate (ref);
-\draw pic[draw, angle radius=0.8cm, "$\theta$"] {angle = ref--incline-right--incline-center};
+\draw pic[draw, "$\theta$", angle radius=0.8cm, angle eccentricity=1.4] {angle = ref--incline-right--incline-center};
 ```
 
 ### Two Blocks on Incline
@@ -202,7 +227,7 @@ You may receive enhanced context from the solution agent with detailed physics i
     anchor=south] (m1) at (m1pos) {$m_1$};
 \node[draw, thick, fill=white, rotate=\angle, minimum width=1cm, minimum height=1cm, 
     anchor=south] (m2) at (m2pos) {$m_2$};
-\draw[thick] (m1.east) -- (m2.west) node[midway, above, rotate=\angle] {$T$};
+\draw[thick] (m1.east) -- (m2.west);
 ```
 
 ### Block on Incline with Pulley
@@ -241,7 +266,7 @@ You may receive enhanced context from the solution agent with detailed physics i
 \coordinate (force-point) at ($(pivot-center)+(3,0)$);
 \draw[->, very thick, red] (force-point) -- ++(0,-1.5) node[right] {$\vec{F}$};
 \draw[<->, thin] ($(pivot-center)+(0,-0.5)$) -- ++(3,0) node[midway, below] {$r$};
-\draw pic[draw, angle radius=0.6cm, "$\theta$"] {angle = end--force-point--($(force-point)+(0,-1.5)$)};
+\draw pic[draw, "$\theta$", angle radius=0.6cm, angle eccentricity=1.4] {angle = end--force-point--($(force-point)+(0,-1.5)$)};
 ```
 
 ### Pulley with Moment of Inertia
@@ -252,8 +277,8 @@ You may receive enhanced context from the solution agent with detailed physics i
 \node at (pulley.center) [above=8pt] {$I$};
 \draw[->, thick] ($(pulley.east)+(0.3,0.3)$) arc[start angle=30, end angle=-30, radius=0.4] node[right] {$\alpha$};
 \draw[thick] (ceiling-center) -- (pulley.center);
-\draw[thick] (pulley.west) -- ++(0,-2.5) node[pos=0.5, left] {$T_1$} coordinate (m1pos);
-\draw[thick] (pulley.east) -- ++(0,-2) node[pos=0.5, right] {$T_2$} coordinate (m2pos);
+\draw[thick] (pulley.west) -- ++(0,-2.5) coordinate (m1pos);
+\draw[thick] (pulley.east) -- ++(0,-2) coordinate (m2pos);
 \node[block] at (m1pos) {$m_1$};
 \node[block] at (m2pos) {$m_2$};
 ```
@@ -263,7 +288,7 @@ You may receive enhanced context from the solution agent with detailed physics i
 \pic (pivot) at (0,0) {pivot};
 \draw[very thick] (pivot-center) -- ++(60:3) node[midway, above, sloped] {$L$} coordinate (rod-end);
 \draw[dashed] (pivot-center) -- ++(3,0) coordinate (ref);
-\draw pic[draw, angle radius=0.8cm, "$\theta$"] {angle = ref--pivot-center--rod-end};
+\draw pic[draw, "$\theta$", angle radius=0.8cm, angle eccentricity=1.4] {angle = ref--pivot-center--rod-end};
 \draw[->, thick] ($(rod-end)+(60:0.3)$) arc[start angle=60, end angle=90, radius=3.3] node[above] {$\omega$};
 ```
 
@@ -278,7 +303,7 @@ You may receive enhanced context from the solution agent with detailed physics i
 \draw[->] (origin) -- ++(0,4) node[above] {$y$};
 \draw[thick, domain=0:5.5, samples=50] plot (\x, {3*\x - 0.3*\x*\x});
 \draw[->, very thick, blue] (origin) -- ++(1.5,2.5) node[above] {$\vec{v_0}$} coordinate (v0);
-\draw pic[draw, angle radius=0.8cm, "$\theta$"] {angle = {(2,0)}--origin--v0};
+\draw pic[draw, "$\theta$", angle radius=0.8cm, angle eccentricity=1.4] {angle = {(2,0)}--origin--v0};
 \node at (3,3) [above] {Trajectory};
 ```
 
@@ -357,9 +382,9 @@ You may receive enhanced context from the solution agent with detailed physics i
 % Place ground at intersection point
 \pic (ground) at (I) {frame=5cm};
 
-% Angle marks using tzplot
-\tzanglemark(ground-right)(I)(B){$60^\circ$}(15pt)
-\tzanglemark(ground-left)(I)(A){$30^\circ$}(15pt)
+% Angle marks between plain coordinates → use the angles-library pic
+\draw pic[draw, "$60^\circ$", angle radius=6mm, angle eccentricity=1.4] {angle = ground-right--I--B};
+\draw pic[draw, "$30^\circ$", angle radius=6mm, angle eccentricity=1.4] {angle = ground-left--I--A};
 ```
 
 **Key techniques:**
@@ -410,8 +435,8 @@ You may receive enhanced context from the solution agent with detailed physics i
     anchor=south, dashed] (end) at (endpos) {$m$};
 \draw[<->, thin] ($(startpos)+(\angle-90:0.8)$) -- ($(endpos)+(\angle-90:0.8)$) 
     node[midway, below, rotate=\angle] {$d$};
-\node at ($(start.center)+(\angle+90:1)$) {$E_i = mgh$};
-\node at ($(end.center)+(\angle+90:1)$) {$E_f = \frac{1}{2}mv^2$};
+% NOTE: do NOT annotate energies ($E_i = mgh$, $E_f$) on a problem figure —
+% those are solution quantities. Show only the given displacement $d$.
 ```
 
 ### Spring Potential Energy
@@ -422,17 +447,18 @@ You may receive enhanced context from the solution agent with detailed physics i
 \node[block] at (natural) {$m$};
 \node[block, dashed] at (compressed) {$m$};
 \draw[<->, thin] ($(compressed)+(0.5,0)$) -- ++(0.8,0) node[midway, above] {$x$};
-\node at ($(compressed)+(0,-0.8)$) {$U = \frac{1}{2}kx^2$};
+% NOTE: label the given compression $x$ only — omit $U = \tfrac12 kx^2$ (solution).
 ```
 
 ### Work Done by Force
 ```latex
 \pic (ground) at (0,0) {frame=4cm};
 \node[block] (start) at ($(ground-center)+(0,1.5)$) {$m$};
+% The applied force F is GIVEN by the problem, so show it:
 \draw[->, very thick, blue] (start.east) -- ++(1,0) node[above] {$\vec{F}$};
 \node[block, dashed] at ($(start.east)+(2,0)$) {$m$};
 \draw[<->, thin] ($(start.south)+(0,-0.3)$) -- ++(2,0) node[midway, below] {$d$};
-\node at ($(start.north)+(1,1)$) {$W = Fd\cos\theta$};
+% NOTE: omit $W = Fd\cos\theta$ — that is the solution, not part of the figure.
 ```
 
 ---
@@ -454,6 +480,24 @@ These are pre-loaded in the document preamble:
 
 **Anchors use HYPHEN `-` not DOT `.`**
 - `name-center`, `name-left`, `name-right`
+
+### Angle marks — pick the command by coordinate type
+
+- **Plain / absolute coordinates** (literals like `(2,0)`, polar `(30:2)`, named
+  `\coordinate`s, or kinematikz `name-anchor` points like `incline-center`): use the
+  `angles` library pic — it places the arc reliably for these:
+  ```latex
+  \draw pic[draw, "$\theta$", angle radius=8mm, angle eccentricity=1.5]
+      {angle = A--P--B};   % the MIDDLE point P is the vertex
+  ```
+- **Node anchors** (a drawn node's anchor, e.g. `block.center`, `O.center`): use
+  tzplot's `\tzanglemark`, which aligns to node anchors:
+  ```latex
+  \tzanglemark(A)(P)(B){$\theta$}(8pt)   % the MIDDLE point P is the vertex
+  ```
+
+Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc; give the outer
+of two nested angles a larger radius.
 
 ### Named Paths and Intersections
 ```latex
@@ -603,8 +647,11 @@ Do NOT include `\usepackage`, document preamble, markdown fences, or explanation
 
 ### Use node[midway] for Labels on Lines
 ```latex
-% GOOD - use node[midway]
+% GOOD - use node[midway] for GIVEN quantities (spring constant, dimensions)
 \draw[spring] (ceiling-center) -- (mass.north) node[midway, right=5pt] {$k$};
+\draw[<->, thin] (a.south) -- (b.south) node[midway, below] {$d$};
+
+% BAD - labeling a string with a tension force (belongs in the solution, not the figure)
 \draw[thick] (pulley.west) -- (m1.north) node[midway, left] {$T$};
 
 % BAD - calculating label positions
@@ -691,12 +738,12 @@ USER_TEMPLATE = """Generate a mechanics diagram for the following:
 
 {description}
 
-Use appropriate TikZ patterns for pulleys, springs, blocks, and mechanical systems. Label all components clearly and follow standard physics conventions.
+Use appropriate TikZ patterns for pulleys, springs, blocks, and mechanical systems. Label only the given quantities (masses, spring constants, dimensions, angles). Do not add force/tension labels, energy annotations, or descriptive text unless explicitly described above.
 """
 
 USER_TEMPLATE_FROM_PROBLEM = """Analyze this physics problem and generate the appropriate mechanics diagram:
 
 {problem_text}
 
-Identify the mechanical system (pulley, spring, incline, rotation, etc.) and create a clean diagram with proper labels, dimensions, and force/motion indicators.
+Identify the mechanical system (pulley, spring, incline, rotation, etc.) and create a clean diagram. Label ONLY the given quantities (masses, spring constants, given dimensions/angles). Do NOT add tension/force labels ($T$, $N$, $mg$, $f$), energy/work annotations, or descriptive text nodes ("fixed pulley", "string attached to ...") — unless the problem statement or original diagram explicitly provides them. Show a force or velocity arrow only when the problem explicitly states that quantity.
 """

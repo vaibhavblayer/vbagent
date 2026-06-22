@@ -1,6 +1,6 @@
 [project]
 name = "vbagent"
-version = "0.3.9"
+version = "0.3.10"
 description = "Physics question processing library and CLI - classification, LaTeX extraction, variant generation"
 authors = [
     {name = "vaibhavblayer", email = "vaibhavblayer@gmail.com"}

@@ -91,7 +91,7 @@ def generate_biology_diagram(
         response = client.images.generate(
             model=BIOLOGY_DIAGRAM_MODEL,
             prompt=prompt,
-            size="1024x1024",
+            size="480x480",
             quality="high",
             n=1,
         )

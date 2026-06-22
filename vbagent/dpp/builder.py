@@ -482,7 +482,7 @@ class DPPBuilder:
             r"",
             r"% Custom commands and environments",
             r"\newcommand{\ans}{\quad}",
-            r"\def\ansint#1{\quad}",
+            r"\newcommand{\ansint}[1]{\textcolor{red!95}{#1}}",
             r"\newenvironment{solution}{\par\color{red!85!black}$\Rightarrow$}{}",
             r"\newenvironment{alternatesolution}{\par\color{blue!90!black}$\Rightarrow$}{}",
             r"\newenvironment{idea}{\par\color{purple!90!black}$\Rightarrow$}{}",

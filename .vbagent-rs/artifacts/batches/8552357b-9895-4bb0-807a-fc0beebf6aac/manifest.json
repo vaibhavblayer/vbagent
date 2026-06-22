@@ -1,0 +1,84 @@
+{
+  "batch_id": "8552357b-9895-4bb0-807a-fc0beebf6aac",
+  "failed": 0,
+  "items": [
+    {
+      "error": null,
+      "index": 0,
+      "input_uri": "images/problem_1.png",
+      "result": {
+        "artifacts": [
+          {
+            "content_type": "text/x-tex",
+            "id": "fd5bb343-90c8-4fda-811d-8f5ade5ab25e",
+            "sha256": "ab15458fde9bb4d039bcc9bdae0b9f9faeb680faf75438a1780382deb00204be",
+            "size_bytes": 55,
+            "uri": "file://.vbagent-rs/artifacts/pipeline/problem.tex"
+          }
+        ],
+        "classification": {
+          "chapter": null,
+          "confidence": 0.5,
+          "has_diagram": false,
+          "question_type": "subjective",
+          "subject": "physics",
+          "topic": null
+        },
+        "ideas": {
+          "concepts": [],
+          "raw": "echo:configured-ideas:Extract key ideas from this LaTeX problem:\n\n\\item Generated physics subjective problem placeholder.",
+          "source_chars": 55
+        },
+        "latex": "\\item Generated physics subjective problem placeholder.",
+        "problem_id": "526392ef-def9-4274-b262-e1165004c250",
+        "solution_latex": "\\begin{solution}Placeholder solution.\\end{solution}",
+        "tikz_code": null,
+        "variants": {
+          "numerical": {
+            "latex": "\\item Generated numerical variant placeholder.\n\\begin{solution}Placeholder variant solution.\\end{solution}"
+          }
+        }
+      }
+    },
+    {
+      "error": null,
+      "index": 1,
+      "input_uri": "images/problem_2.png",
+      "result": {
+        "artifacts": [
+          {
+            "content_type": "text/x-tex",
+            "id": "d80a31d8-e9c9-4ef3-9b39-42eec9208025",
+            "sha256": "ab15458fde9bb4d039bcc9bdae0b9f9faeb680faf75438a1780382deb00204be",
+            "size_bytes": 55,
+            "uri": "file://.vbagent-rs/artifacts/pipeline/problem.tex"
+          }
+        ],
+        "classification": {
+          "chapter": null,
+          "confidence": 0.5,
+          "has_diagram": false,
+          "question_type": "subjective",
+          "subject": "physics",
+          "topic": null
+        },
+        "ideas": {
+          "concepts": [],
+          "raw": "echo:configured-ideas:Extract key ideas from this LaTeX problem:\n\n\\item Generated physics subjective problem placeholder.",
+          "source_chars": 55
+        },
+        "latex": "\\item Generated physics subjective problem placeholder.",
+        "problem_id": "2ee3916e-9523-454e-83a6-17010c3a7e41",
+        "solution_latex": "\\begin{solution}Placeholder solution.\\end{solution}",
+        "tikz_code": null,
+        "variants": {
+          "numerical": {
+            "latex": "\\item Generated numerical variant placeholder.\n\\begin{solution}Placeholder variant solution.\\end{solution}"
+          }
+        }
+      }
+    }
+  ],
+  "succeeded": 2,
+  "total": 2
+}
