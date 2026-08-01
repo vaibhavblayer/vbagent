@@ -16,7 +16,10 @@ from typing import Optional
 class SolutionResult:
     """Result from the solution orchestrator."""
 
-    __slots__ = ("latex", "diagram_codes", "answer_type", "answer_value", "metadata")
+    __slots__ = (
+        "latex", "diagram_codes", "answer_type", "answer_value",
+        "alternate_solution_recommended", "alternate_solution_hint", "metadata",
+    )
 
     def __init__(
         self,
@@ -25,11 +28,15 @@ class SolutionResult:
         answer_type: str = "subjective",
         answer_value: str | None = None,
         metadata: dict | None = None,
+        alternate_solution_recommended: bool = False,
+        alternate_solution_hint: str | None = None,
     ):
         self.latex = latex
         self.diagram_codes = diagram_codes or {}
         self.answer_type = answer_type
         self.answer_value = answer_value
+        self.alternate_solution_recommended = alternate_solution_recommended
+        self.alternate_solution_hint = alternate_solution_hint
         self.metadata = metadata or {}
 
 
@@ -45,6 +52,12 @@ class SolutionOrchestrator:
     def __init__(self, console=None):
         from vbagent.cli.common import _get_console
         self.console = console or _get_console()
+        from vbagent.ui.logging import AgentLoggingContext, capture_agent_logging_context
+        captured = capture_agent_logging_context()
+        self._logging_context = AgentLoggingContext(
+            console=self.console,
+            quiet=captured.quiet,
+        )
 
     def run(
         self,
@@ -55,6 +68,7 @@ class SolutionOrchestrator:
         topic: Optional[str] = None,
         has_diagram: bool = False,
         image_path: Optional[str] = None,
+        generate_diagrams: bool = True,
     ) -> SolutionResult:
         """Generate a complete solution.
 
@@ -66,6 +80,7 @@ class SolutionOrchestrator:
             topic: Specific topic for topic-specific routing.
             has_diagram: Whether the original problem has a diagram.
             image_path: Path to original image (passed to solver only if has_diagram).
+            generate_diagrams: Whether to dispatch solution diagram agents.
 
         Returns:
             SolutionResult with final LaTeX including solution block.
@@ -76,27 +91,60 @@ class SolutionOrchestrator:
             problem_latex, subject, question_type, chapter, topic,
             image_path=image_path if has_diagram else None,
         )
-        self.console.print("[green]✓[/green] Solution generated")
+        self.console.print("[green]OK[/green] Solution generated")
 
         solution_latex = solution_output.solution_latex
         diagram_reqs = solution_output.diagram_requirements
 
         # Step 2: Dispatch diagram agents (parallel)
         diagram_codes: dict[str, str] = {}
-        if diagram_reqs:
+        if diagram_reqs and generate_diagrams:
             self.console.print(f"[dim]  → Generating {len(diagram_reqs)} solution diagram(s)...[/dim]")
             diagram_codes = self._dispatch_diagrams(
-                diagram_reqs, image_path, subject,
+                diagram_reqs, image_path if has_diagram else None, subject,
             )
-            self.console.print(f"[green]  ✓ {len(diagram_codes)} diagram(s) rendered[/green]")
+            self.console.print(f"[green]  OK {len(diagram_codes)} diagram(s) generated[/green]")
+        elif diagram_reqs and not generate_diagrams:
+            self.console.print(
+                f"[dim]  → Skipping {len(diagram_reqs)} solution diagram agent(s)[/dim]"
+            )
+            # Do not leave unusable placeholders in a solution when diagram
+            # generation was explicitly disabled. Inline TikZ emitted directly
+            # by the solution agent is intentionally preserved.
+            solution_latex = self._remove_diagram_placeholders(solution_latex)
 
-        # Step 3: Stitch diagrams into placeholders
+        # Step 3: Stitch diagrams into placeholders, with a safe fallback when
+        # the model returned a requirement but forgot its marker.
         if diagram_codes:
-            solution_latex = self._stitch_diagrams(solution_latex, diagram_codes)
+            solution_latex = self._stitch_diagrams(
+                solution_latex,
+                diagram_codes,
+                diagram_requirements=diagram_reqs,
+            )
+            assembled_count = sum(
+                bool(code and code.strip() in solution_latex)
+                for code in diagram_codes.values()
+            )
+            self.console.print(
+                f"[green]  OK {assembled_count}/{len(diagram_codes)} "
+                "diagram(s) assembled into solution[/green]"
+            )
+        else:
+            assembled_count = 0
 
         # Step 4: Answer marking
         answer_type = solution_output.answer_type
         answer_value = solution_output.answer_value
+        alternate_solution_recommended = bool(
+            getattr(solution_output, "alternate_solution_recommended", False)
+        )
+        alternate_solution_hint = getattr(
+            solution_output, "alternate_solution_hint", None
+        )
+        if alternate_solution_hint:
+            alternate_solution_hint = alternate_solution_hint.strip() or None
+        if not alternate_solution_recommended:
+            alternate_solution_hint = None
 
         # Combine problem + solution (strip any existing solution block from problem_latex)
         clean_problem = re.sub(
@@ -114,12 +162,18 @@ class SolutionOrchestrator:
             diagram_codes=diagram_codes,
             answer_type=answer_type,
             answer_value=answer_value,
+            alternate_solution_recommended=alternate_solution_recommended,
+            alternate_solution_hint=alternate_solution_hint,
             metadata={
                 "subject": subject,
                 "question_type": question_type,
                 "diagrams_requested": len(diagram_reqs),
                 "diagrams_rendered": len(diagram_codes),
+                "diagrams_assembled": assembled_count,
                 "image_passed": has_diagram,
+                "alternate_solution_decision_available": True,
+                "alternate_solution_recommended": alternate_solution_recommended,
+                "alternate_solution_hint": alternate_solution_hint,
             },
         )
 
@@ -164,6 +218,8 @@ class SolutionOrchestrator:
         )
 
         def _gen(req):
+            from vbagent.ui.logging import apply_agent_logging_context
+            apply_agent_logging_context(self._logging_context)
             set_task_tag("SolnDiag")
             key = req.diagram_id if hasattr(req, "diagram_id") else f"diagram_{id(req)}"
             try:
@@ -202,23 +258,40 @@ class SolutionOrchestrator:
         for key, h in holders.items():
             if h["code"]:
                 results[key] = h["code"]
-                self.console.print(f"[green]  ✓ {key}[/green] [dim](agent: {h['agent']})[/dim]")
+                self.console.print(f"[green]  OK {key}[/green] [dim](agent: {h['agent']})[/dim]")
             elif h["error"]:
-                self.console.print(f"[yellow]  ⚠ {key} failed: {h['error']}[/yellow]")
+                self.console.print(f"[yellow]  WARN {key} failed: {h['error']}[/yellow]")
 
         return results
 
-    def _stitch_diagrams(self, solution_latex: str, diagram_codes: dict[str, str]) -> str:
+    def _stitch_diagrams(
+        self,
+        solution_latex: str,
+        diagram_codes: dict[str, str],
+        diagram_requirements=None,
+    ) -> str:
         """Replace diagram placeholders with actual TikZ code.
 
         Handles two placeholder formats:
           % DIAGRAM PLACEHOLDER: <id>
           % PLACEHOLDER: <id>
         Also replaces any surrounding empty tikzpicture wrapper.
+
+        A diagram requirement and its generated TikZ are one unit.  If a
+        subject agent forgets to emit the placeholder, do not silently drop
+        the generated diagram: insert it before the closing solution
+        environment (or append it if the environment is malformed).
         """
-        import re
+        requirements = {
+            req.diagram_id: req
+            for req in (diagram_requirements or [])
+            if getattr(req, "diagram_id", None)
+        }
 
         for diagram_id, tikz_code in diagram_codes.items():
+            if not tikz_code or tikz_code.strip() in solution_latex:
+                continue
+
             wrapped = (
                 "\\begin{center}\n"
                 + tikz_code.strip()
@@ -246,7 +319,58 @@ class SolutionOrchestrator:
                     solution_latex = re.sub(pattern, wrapped, solution_latex)
                 else:
                     solution_latex = solution_latex.replace(placeholder2, wrapped)
+                continue
 
+            # The model requested a diagram but omitted its marker.  The
+            # exact semantic location is unavailable in this case, so keep
+            # the diagram inside the solution at the last safe location.
+            # This is preferable to losing a successfully generated asset.
+            solution_end = r"\end{solution}"
+            insert_at = solution_latex.rfind(solution_end)
+            fallback = (
+                f"\n\n% Auto-inserted solution diagram: {diagram_id}\n"
+                f"{wrapped}\n"
+            )
+            if insert_at >= 0:
+                solution_latex = (
+                    solution_latex[:insert_at]
+                    + fallback
+                    + solution_latex[insert_at:]
+                )
+                location = getattr(requirements.get(diagram_id), "location", "inline")
+                self.console.print(
+                    f"[yellow]  WARN {diagram_id}: placeholder missing; "
+                    f"inserted diagram in solution ({location})[/yellow]"
+                )
+            else:
+                solution_latex = solution_latex.rstrip() + fallback
+                self.console.print(
+                    f"[yellow]  WARN {diagram_id}: placeholder missing and "
+                    "solution environment not found; appended diagram[/yellow]"
+                )
+
+        return solution_latex
+
+    def _remove_diagram_placeholders(self, solution_latex: str) -> str:
+        """Remove solution-diagram placeholders when diagram dispatch is disabled."""
+        solution_latex = re.sub(
+            r"%\s*(?:DIAGRAM\s+)?PLACEHOLDER:\s*[^\n]+",
+            "",
+            solution_latex,
+        )
+        # Remove wrappers left empty after the placeholder is removed, while
+        # preserving centers that still contain real content.
+        solution_latex = re.sub(
+            r"\\begin\{center\}\s*\\end\{center\}",
+            "",
+            solution_latex,
+        )
+        solution_latex = re.sub(
+            r"\\begin\{center\}\s*\\begin\{tikzpicture\}\s*"
+            r"\\end\{tikzpicture\}\s*\\end\{center\}",
+            "",
+            solution_latex,
+        )
         return solution_latex
 
     def _mark_answer(self, latex: str, answer_type: str, answer_value: str, question_type: str) -> str:

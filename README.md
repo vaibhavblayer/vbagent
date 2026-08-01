@@ -20,7 +20,7 @@ pip install -e ".[dev]"
 
 | Provider | Env Variable | Models |
 |----------|-------------|--------|
-| OpenAI | `OPENAI_API_KEY` | gpt-5.5, gpt-5.5-mini, gpt-5.4, gpt-5.4-mini, gpt-5.2, gpt-5.1, gpt-5.1-codex |
+| OpenAI | `OPENAI_API_KEY` | gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5, gpt-5.4, gpt-5.4-mini |
 | xAI | `XAI_API_KEY` | grok-4, grok-4-1-fast-reasoning, grok-3, grok-3-mini |
 | Google | `GOOGLE_API_KEY` | gemini-2.5-pro, gemini-2.5-flash, gemini-3-flash-preview |
 
@@ -28,17 +28,19 @@ pip install -e ".[dev]"
 
 | Role | Model |
 |------|-------|
-| Classification, scanning, checking | `gpt-5.4-mini` |
-| Generation (idea, variant, alternate, solution, tikz, fbd) | `gpt-5.4` |
+| Classification and routine checking | `gpt-5.6-luna` |
+| Scanning | `gpt-5.6-luna` |
+| Conversion | `gpt-5.6-terra` |
+| Solution and all diagram generation | `gpt-5.6-sol` |
 
 Switch provider or model easily:
 ```bash
 vbagent config provider xai              # Switch to xAI
 vbagent config provider google           # Switch to Google
 vbagent config provider openai           # Back to OpenAI
-vbagent config set solution -m gpt-5.2   # Override solution model
-vbagent config set tikz -m gpt-5.4       # Override tikz model
-vbagent config set default -m gpt-5.4    # Change global default
+vbagent config set solution -m gpt-5.6-sol    # Override solution model
+vbagent config set tikz -m gpt-5.6-sol        # Override tikz model
+vbagent config set default -m gpt-5.6-luna    # Change global default
 ```
 
 ## CLI Usage
@@ -51,6 +53,8 @@ vbagent scan -i question.png -o out.tex   # Extract LaTeX
 vbagent classify -i question.png          # Classify question type
 vbagent tikz -i diagram.png -o diag.tex   # Generate TikZ
 vbagent run -i question.png               # Full pipeline
+vbagent solve -t scanned.tex -o solved.tex # Generate solutions from scanned TeX
+vbagent solve -t scanned-problems/ -o solved-problems/ --no-diagram
 ```
 
 ### Commands
@@ -59,6 +63,7 @@ vbagent run -i question.png               # Full pipeline
 |---------|---------|-------------|
 | Core | `run` | Full pipeline: classify → scan → tikz → solve |
 | Core | `scan` | Extract LaTeX from question image |
+| Core | `solve` | Generate solutions from an existing TeX project |
 | Core | `classify` | Classify question type |
 | Core | `batch` | Batch process multiple images with resume |
 | Generate | `tikz` | Generate TikZ/PGF diagrams |
@@ -136,16 +141,24 @@ vbagent config models                     # List available models
 vbagent config provider                   # Show current provider
 vbagent config provider xai               # Switch to xAI (auto-applies model group)
 vbagent config provider openai            # Switch back to OpenAI
-vbagent config set scanner -m gpt-5.4     # Override scanner model
-vbagent config set default -m gpt-5.4     # Change global default
+vbagent config set scanner -m gpt-5.6-luna   # Override scanner model
+vbagent config set default -m gpt-5.6-luna   # Change global default
 vbagent config model-group                # List all model groups
 vbagent config model-group openai         # Apply OpenAI model group
 vbagent config subject chemistry          # Set subject
-vbagent config debug on                   # Enable debug mode
+vbagent config log-level INFO             # Verbose JSON input/usage/output logs
+vbagent config debug on                   # Add tracebacks + lifecycle JSONL
 vbagent config reset                      # Reset to defaults
 ```
 
 Config hierarchy: global (`~/.config/vbagent/models.json`) → workspace (`.vbagent.json`).
+
+Agent logging defaults to verbose `INFO` output with JSON input, usage, and
+output panels for every agent. `vbagent config debug on` is an alias for
+`log-level DEBUG`; it adds tracebacks and writes metadata-only lifecycle events
+to `.vbagent/logs/agent-events.jsonl`. Set
+`VBAGENT_LOG_FILE=/path/to/events.jsonl` to persist lifecycle events at any log
+level, or `VBAGENT_LOG_FILE=off` to disable the DEBUG event file.
 
 ### Supported Question Types
 
@@ -208,23 +221,24 @@ vbagent/
 │
 ├── agents/                              # AI agent implementations
 │   ├── base.py                          # Base agent (create, run, encode image)
-│   ├── classifier.py                    # Question type classifier (v1)
-│   ├── classification/                  # Multi-agent classification system
-│   │   ├── unified_classifier.py        # Unified classifier
-│   │   ├── image_classifier.py          # Image classification
-│   │   ├── diagram_analyzer.py          # Diagram analysis
+│   ├── classifier.py                    # Backward-compatible classifier facade
+│   ├── classification/                  # Classification system
+│   │   ├── question_classifier.py       # Canonical image question classifier
+│   │   ├── diagram_classifier.py        # Standalone diagram classification
 │   │   ├── difficulty_assessor.py       # Difficulty assessment
 │   │   ├── latex_classifier.py          # LaTeX classification
-│   │   ├── idea_generator.py            # Idea-to-problem generator
-│   │   ├── problem_combiner.py          # Multi-problem combiner
 │   │   ├── taxonomy_classifier.py       # Taxonomy classification
-│   │   ├── subject_detector.py          # Subject auto-detection
+│   │   ├── subject_classifier.py        # Standalone subject classification
 │   │   └── schema_builder.py            # Schema builder
 │   ├── content_generation/
 │   │   ├── scanner.py                   # LaTeX extraction agent
 │   │   ├── alternate.py                 # Alternate solution agent
 │   │   ├── converter.py                 # Format converter agent
 │   │   ├── idea.py                      # Concept extractor agent
+│   │   ├── idea_generator.py            # Idea-to-problem generator
+│   │   ├── idea_curator.py              # Idea-bank curator
+│   │   ├── idea_combiner.py             # Multi-idea problem designer
+│   │   ├── problem_combiner.py          # Multi-problem combiner
 │   │   └── solution/
 │   │       └── __init__.py              # Solution agent (routes by subject × question_type)
 │   ├── diagram/                         # TikZ diagram agents
@@ -281,16 +295,18 @@ vbagent/
 ├── prompts/                             # LLM prompt templates
 │   ├── classification/
 │   │   ├── classifier.py                # Base classifier prompt
-│   │   ├── unified_classifier.py        # Unified classifier prompt
-│   │   ├── diagram_analyzer.py          # Diagram analyzer prompt
-│   │   ├── idea_generator.py            # Idea generator prompt
-│   │   ├── problem_combiner.py          # Problem combiner prompt
+│   │   ├── question_classifier.py       # Question classifier prompt
+│   │   ├── diagram_classifier.py        # Diagram classifier prompt
 │   │   ├── question_types.py            # Question type definitions
 │   │   └── taxonomy.py                  # Taxonomy definitions
 │   ├── content_generation/
 │   │   ├── alternate.py                 # Alternate solution prompt
 │   │   ├── converter.py                 # Converter prompt
 │   │   ├── idea.py                      # Idea extraction prompt
+│   │   ├── idea_generator.py            # Idea generator prompt
+│   │   ├── idea_curator.py              # Idea curator prompt
+│   │   ├── idea_combiner.py             # Idea combiner prompt
+│   │   ├── problem_combiner.py           # Problem combiner prompt
 │   │   ├── scanner/                     # Scanner prompts (per subject × question type)
 │   │   │   ├── _shared.py               # Shared scanner rules
 │   │   │   ├── physics/

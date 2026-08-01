@@ -21,7 +21,7 @@ def _get_version():
 # Command sections for grouped --help output
 COMMAND_SECTIONS = {
     "Core Pipeline": [
-        "run", "scan", "classify", "batch",
+        "run", "solve", "scan", "classify", "batch",
     ],
     "Generate": [
         "generate", "regenerate", "combine", "ideas", "tikz", "fbd", "idea", "concepts", "alternate", "variant", "convert", "animate", "solve_video", "notes",
@@ -124,6 +124,7 @@ class SectionedGroup(click.Group):
 LAZY_SUBCOMMANDS = {
     # Core pipeline
     "run": "vbagent.cli.core.process",
+    "solve": "vbagent.cli.generation.solve",
     "scan": "vbagent.cli.core.scan",
     "classify": "vbagent.cli.core.classify",
     "batch": "vbagent.cli.core.batch",

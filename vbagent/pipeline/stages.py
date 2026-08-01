@@ -34,7 +34,9 @@ def generate_solution_orchestrated(
     cache: Optional["PipelineCache"] = None,
     problem_id: Optional[str] = None,
     console=None,
-) -> str:
+    return_result: bool = False,
+    generate_diagrams: bool = True,
+):
     """Generate solution using subject-specific agent + diagram dispatch.
 
     Args:
@@ -44,18 +46,44 @@ def generate_solution_orchestrated(
         cache: Optional pipeline cache.
         problem_id: Problem ID for caching.
         console: Rich console.
+        return_result: Return the detailed SolutionResult instead of only
+            the final LaTeX. Existing callers keep the string behavior.
+        generate_diagrams: Whether to dispatch solution diagram agents.
 
     Returns:
         Combined problem + solution LaTeX with answer marking.
     """
-    from vbagent.agents.orchestration.solution_orchestrator import create_solution_orchestrator
+    from vbagent.agents.orchestration.solution_orchestrator import (
+        SolutionResult,
+        create_solution_orchestrator,
+    )
 
     solution_cached = cache and problem_id and cache.has(problem_id, "solution")
 
     if solution_cached:
         if console:
             console.print("[dim]Loading cached solution...[/dim]")
-        return cache.get(problem_id, "solution")
+        cached_latex = cache.get(problem_id, "solution")
+        if not return_result:
+            return cached_latex
+        cached_data = cache.get_stage_data(problem_id, "solution")
+        cached_recommended = bool(
+            cached_data.get("alternate_solution_recommended", False)
+        )
+        cached_hint = cached_data.get("alternate_solution_hint")
+        if not cached_recommended:
+            cached_hint = None
+        return SolutionResult(
+            latex=cached_latex or "",
+            alternate_solution_recommended=cached_recommended,
+            alternate_solution_hint=cached_hint,
+            metadata={
+                **cached_data,
+                "alternate_solution_decision_available": (
+                    "alternate_solution_recommended" in cached_data
+                ),
+            },
+        )
 
     if console:
         console.print("[bold green]Generating solution...[/bold green]")
@@ -69,17 +97,26 @@ def generate_solution_orchestrated(
         topic=primary.topic,
         has_diagram=primary.has_diagram,
         image_path=image_path,
+        generate_diagrams=generate_diagrams,
     )
 
     if console:
         meta = result.metadata
         diag_info = f", {meta.get('diagrams_rendered', 0)} diagram(s)" if meta.get('diagrams_rendered') else ""
-        console.print(f"[green]✓[/green] Solution complete ({primary.subject}{diag_info})")
+        console.print(f"[green]OK[/green] Solution complete ({primary.subject}{diag_info})")
 
     if cache and problem_id:
-        cache.set(problem_id, "solution", result.latex)
+        cache.set(
+            problem_id,
+            "solution",
+            result.latex,
+            stage_data={
+                "alternate_solution_recommended": result.alternate_solution_recommended,
+                "alternate_solution_hint": result.alternate_solution_hint,
+            },
+        )
 
-    return result.latex
+    return result if return_result else result.latex
 
 
 
@@ -99,12 +136,12 @@ def assess_difficulty_stage(
 
     if console:
         with console.status("[bold green]Assessing difficulty..."):
-            result = assess_difficulty_agent(latex, primary, diagram_analysis, show_spinner=False)
+            result = assess_difficulty_agent(latex, primary, diagram_analysis, show_spinner=True)
         console.print(f"[cyan]Difficulty:[/cyan] {result.difficulty} ({result.difficulty_score}/10)")
         console.print(f"[cyan]Cognitive Level:[/cyan] {result.cognitive_level}")
         console.print(f"[cyan]Estimated Time:[/cyan] {result.expected_solve_time_minutes} min")
     else:
-        result = assess_difficulty_agent(latex, primary, diagram_analysis, show_spinner=False)
+        result = assess_difficulty_agent(latex, primary, diagram_analysis, show_spinner=True)
     return result
 
 
@@ -171,7 +208,7 @@ def extract_ideas_stage(
                     cache.set(problem_id, "idea_latex", idea_latex)
             except Exception as e:
                 if console:
-                    console.print(f"[dim yellow]  ⚠ idea LaTeX generation skipped: {e}[/dim yellow]")
+                    console.print(f"[dim yellow]  WARN idea LaTeX generation skipped: {e}[/dim yellow]")
 
     if console and ideas:
         ideas_text = f"[bold]Concepts:[/bold] {', '.join(ideas.concepts)}\n"
@@ -190,6 +227,7 @@ def generate_alternate_stage(
     cache: Optional["PipelineCache"] = None,
     problem_id: Optional[str] = None,
     console=None,
+    alternate_hint: Optional[str] = None,
 ) -> list[str]:
     """Stage 5: Generate alternate solutions."""
     from vbagent.agents.content_generation.alternate import generate_alternate
@@ -202,9 +240,9 @@ def generate_alternate_stage(
 
     if console:
         with console.status("[bold green]Stage 5: Generating alternate solution..."):
-            alt = generate_alternate(problem, solution, ideas)
+            alt = generate_alternate(problem, solution, ideas, hint=alternate_hint)
     else:
-        alt = generate_alternate(problem, solution, ideas)
+        alt = generate_alternate(problem, solution, ideas, hint=alternate_hint)
 
     if cache and problem_id:
         cache.set(problem_id, "alternate", alt)
@@ -257,24 +295,24 @@ def generate_variants_stage(
 
 
 # ============================================================================
-# Unified stages (new architecture — fewer API calls)
+# Canonical question-processing stages
 # ============================================================================
 
 
-def classify_unified(
+def classify_question(
     image_path: str,
     cache: Optional["PipelineCache"] = None,
     problem_id: Optional[str] = None,
     console=None,
 ):
-    """Stage 1 (unified): Classify + analyze diagram in a single API call.
+    """Stage 1: Classify the question and diagram in a single API call.
 
     Returns:
-        UnifiedClassificationResult
+        QuestionClassification
     """
-    from vbagent.agents.classification.unified_classifier import (
-        UnifiedClassificationResult,
-        classify_and_analyze,
+    from vbagent.agents.classification.question_classifier import (
+        QuestionClassification,
+        classify_question_image,
     )
 
     if cache and problem_id and cache.has(problem_id, "classification"):
@@ -286,18 +324,23 @@ def classify_unified(
             if console:
                 console.print("[dim yellow]Cache returned None, regenerating...[/dim yellow]")
         else:
-            return UnifiedClassificationResult(**cached_data)
+            return QuestionClassification(**cached_data)
 
     if console:
         with console.status("[bold green]Stage 1: Classifying & analyzing..."):
-            result = classify_and_analyze(image_path, show_spinner=False)
+            result = classify_question_image(image_path, show_spinner=True)
     else:
-        result = classify_and_analyze(image_path, show_spinner=False)
+        result = classify_question_image(image_path, show_spinner=True)
 
     if cache and problem_id:
         cache.set(problem_id, "classification", result.model_dump())
 
     return result
+
+
+def classify_unified(*args, **kwargs):
+    """Compatibility alias for :func:`classify_question`."""
+    return classify_question(*args, **kwargs)
 
 
 def run_problem_orchestrator(
@@ -308,7 +351,7 @@ def run_problem_orchestrator(
     problem_id: Optional[str] = None,
     console=None,
 ):
-    """Stage 2 (unified): Run ProblemOrchestrator for scan + TikZ.
+    """Stage 2: Run ProblemOrchestrator for scan + TikZ.
 
     Returns:
         ProblemResult

@@ -57,6 +57,25 @@ vbagent process -i question.png -c                 # Compile all outputs
 vbagent process -i question.png --parallel 3       # Use 3 workers
 ```
 
+### solve
+Generate solutions from an already-scanned TeX project without running the
+scanner or classifier.
+
+```bash
+vbagent solve -t scanned.tex --subject physics --type mcq_sc -o solved.tex
+vbagent solve -t scanned.tex --from 1 --to 50 --exclude 5,7,8
+vbagent solve -t biology.tex --subject biology --type mcq_sc --no-diagram
+vbagent solve -t scanned.tex --from 1 --to 50 --exclude "5, 7, 8" --no-cache
+vbagent solve -t scanned-problems/ -o solved-problems/ --from 1 --to 50 --exclude 5,7,8
+```
+
+`--exclude` is repeatable and uses 1-based item numbers. The output preserves
+items outside the selected range and excluded items. `--no-diagram` skips
+solution diagram agents; inline LaTeX emitted directly by the solution agent
+is preserved. With folder input, each top-level `.tex` file is treated as one
+problem and copied to the output directory; selected files are replaced with
+their solved versions.
+
 ## Variant Generation
 
 ### variant
@@ -78,6 +97,11 @@ vbagent variant -t problem.tex --type multi --context ref1.tex ref2.tex
 
 ### alternate
 Generate alternate solutions.
+
+When used through the full solution pipeline with `--alternate`, generation is
+conditional: the solution agent first recommends whether a distinct method is
+worth producing and supplies the method hint. The direct `vbagent alternate`
+command remains an explicit manual generation command.
 
 ```bash
 vbagent alternate -t problem.tex
