@@ -5,7 +5,6 @@ after LaTeX extraction. Uses structured outputs for guaranteed compliance.
 """
 
 from typing import Optional
-import json
 
 from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.config import get_config
@@ -89,8 +88,6 @@ def create_taxonomy_classifier_agent(subject: Optional[str] = None):
         subject = get_config().subject
     
     prompt = get_taxonomy_classifier_prompt(subject)
-    config = get_config()
-    
     # Get JSON schema for structured output
     json_schema = get_taxonomy_json_schema(subject)
     
@@ -156,7 +153,7 @@ def classify_taxonomy(
         hints.append("Requires calculus")
     
     if hints:
-        parts.append(f"\n**Hints:**\n" + "\n".join(f"- {h}" for h in hints))
+        parts.append("\n**Hints:**\n" + "\n".join(f"- {h}" for h in hints))
     
     message = "\n".join(parts)
     

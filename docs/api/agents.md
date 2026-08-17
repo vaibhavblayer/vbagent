@@ -45,30 +45,32 @@ Review and validation:
 
 ---
 
-## Classification Agents (v2 Multi-Agent System)
+## Classification Agents
 
-### Agent 1: Image Classifier
+### Question Classifier
 
-::: vbagent.agents.classification.image_classifier
+::: vbagent.agents.classification.question_classifier
     options:
       show_root_heading: true
       show_source: false
       members:
-        - classify_from_image
-        - create_image_classifier_agent
+        - classify_question_image
+        - classify_primary_image
+        - create_question_classifier
+        - to_primary_classification
 
-### Agent 2: Diagram Analyzer
+### Diagram Classifier
 
-::: vbagent.agents.classification.diagram_analyzer
+::: vbagent.agents.classification.diagram_classifier
     options:
       show_root_heading: true
       show_source: false
       members:
-        - analyze_diagram
-        - analyze_diagram_from_description
-        - create_diagram_analyzer_agent
+        - classify_diagram_image
+        - classify_diagram_description
+        - create_diagram_classifier
 
-### Agent 3: Difficulty Assessor
+### Difficulty Assessor
 
 ::: vbagent.agents.classification.difficulty_assessor
     options:
@@ -78,7 +80,7 @@ Review and validation:
         - assess_difficulty
         - create_difficulty_assessor_agent
 
-### Agent 4: LaTeX Classifier
+### LaTeX Classifier
 
 ::: vbagent.agents.classification.latex_classifier
     options:
@@ -88,9 +90,9 @@ Review and validation:
         - classify_from_latex
         - create_latex_classifier_agent
 
-### Agent 5: Idea Generator
+### Idea Generator
 
-::: vbagent.agents.classification.idea_generator
+::: vbagent.agents.content_generation.idea_generator
     options:
       show_root_heading: true
       show_source: false
@@ -98,9 +100,9 @@ Review and validation:
         - generate_from_idea
         - create_idea_generator_agent
 
-### Agent 6: Problem Combiner
+### Problem Combiner
 
-::: vbagent.agents.classification.problem_combiner
+::: vbagent.agents.content_generation.problem_combiner
     options:
       show_root_heading: true
       show_source: false
@@ -108,7 +110,7 @@ Review and validation:
         - combine_problems
         - create_problem_combiner_agent
 
-### Agent 7: TikZ Checker
+### TikZ Checker
 
 ::: vbagent.agents.classification.tikz_checker
     options:
@@ -131,7 +133,7 @@ Review and validation:
         - run_agent_sync
         - create_image_message
 
-### Classifier Agent (v1)
+### Classifier Compatibility Facade
 
 ::: vbagent.agents.classifier
     options:

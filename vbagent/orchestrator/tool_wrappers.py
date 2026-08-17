@@ -33,7 +33,7 @@ def scan_tool(
             - question_type: Detected or provided question type
             - output_path: Path where output was saved (if output specified)
     """
-    from vbagent.agents.classifier import classify as classify_image
+    from vbagent.agents.classification.question_classifier import classify_primary_image as classify_image
     from vbagent.agents.content_generation.scanner import scan as scan_image, scan_with_type
     from vbagent.compile import compile_and_retry
     from vbagent.agents.quality.latex_fixer import fix_latex
@@ -106,7 +106,7 @@ def classify_tool(
             - key_concepts: List of key physics concepts
             - output_path: Path where output was saved (if output specified)
     """
-    from vbagent.agents.classifier import classify as classify_image
+    from vbagent.agents.classification.question_classifier import classify_primary_image as classify_image
     
     # Validate image path
     image_path = Path(image)
@@ -240,7 +240,7 @@ def variant_tool(
             - output_path: Path where output was saved (if output specified)
     """
     from vbagent.agents.variants.variant import generate_variant as gen_variant
-    from vbagent.agents.classifier import classify
+    from vbagent.agents.classification.question_classifier import classify_primary_image as classify
     from vbagent.agents.content_generation.scanner import scan
     from vbagent.compile import compile_and_retry
     from vbagent.agents.quality.latex_fixer import fix_latex
@@ -331,7 +331,7 @@ def convert_tool(
             - output_path: Path where output was saved (if output specified)
     """
     from vbagent.agents.content_generation.converter import convert_format
-    from vbagent.agents.classifier import classify as classify_image
+    from vbagent.agents.classification.question_classifier import classify_primary_image as classify_image
     from vbagent.agents.content_generation.scanner import scan as scan_image
     import re
     
@@ -1778,7 +1778,7 @@ def generate_problem_tool(
             - saved_to: Path where problem was saved
             - metadata: Classification and difficulty metadata (if run_pipeline=True)
     """
-    from vbagent.agents.classification.idea_generator import generate_from_idea
+    from vbagent.agents.content_generation.idea_generator import generate_from_idea
     from vbagent.pipeline.runner import process_generated_problem
     from pathlib import Path
     

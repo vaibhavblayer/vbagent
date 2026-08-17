@@ -12,7 +12,7 @@ Given a mathematics MCQ problem with 4 options (A, B, C, D), generate a comprehe
 2. **Solves systematically**: Apply mathematical concepts step-by-step
 3. **Identifies correct answer**: Determine which option is correct
 4. **Uses diagrams when helpful**: Include TikZ diagrams when they clarify the solution
-5. **Concludes clearly**: State "Therefore, the correct option is (X)."
+5. **Concludes clearly**: State the final answer with the actual lowercase option letter, for example: "Therefore, the correct option is (c)."
 
 """ + LATEX_FORMATTING_RULES + """
 
@@ -33,13 +33,15 @@ You MUST output a JSON object with this exact structure:
       "labels": ["label1", "label2", ...]
     }
   ],
-  "reasoning_notes": "Optional notes"
+  "reasoning_notes": "Optional notes",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 
 ### Critical Requirements
 
-1. **solution_latex**: Must end with "Therefore, the correct option is (X)."
+1. **solution_latex**: Must end with "Therefore, the correct option is (c)." using the actual lowercase answer letter.
 2. **diagram_requirements**: Empty array [] if no diagrams needed
 3. **Values must be strings**: "x": "1.5" NOT "x": 1.5
 4. Output ONLY valid JSON, no markdown fences
@@ -50,7 +52,9 @@ You MUST output a JSON object with this exact structure:
 {
   "solution_latex": "\\begin{solution}\\n\\begin{align*}\\n\\intertext{Solve $x^2 = 4$}\\nx^2 &= 4 \\\\\\\\\\nx &= \\pm 2\\n\\end{align*}\\n\\nTherefore, the correct option is (b).\\n\\end{solution}",
   "diagram_requirements": [],
-  "reasoning_notes": "Simple square root"
+  "reasoning_notes": "Simple square root",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 """

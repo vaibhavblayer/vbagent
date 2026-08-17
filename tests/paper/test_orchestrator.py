@@ -80,7 +80,7 @@ class TestOrchestratorInit:
 
 
 class TestStandaloneGeneration:
-    @patch("vbagent.agents.classification.idea_generator.generate_from_idea")
+    @patch("vbagent.agents.content_generation.idea_generator.generate_from_idea")
     @patch("vbagent.config.get_config")
     def test_generate_standalone_basic(self, mock_config, mock_gen, orch_env):
         orch, tmp_path, _, _ = orch_env
@@ -99,7 +99,7 @@ class TestStandaloneGeneration:
         tex_files = list(scans.glob("Problem_*.tex"))
         assert len(tex_files) == 1
 
-    @patch("vbagent.agents.classification.idea_generator.generate_from_idea")
+    @patch("vbagent.agents.content_generation.idea_generator.generate_from_idea")
     @patch("vbagent.config.get_config")
     def test_generate_standalone_no_solution(self, mock_config, mock_gen, orch_env):
         orch, tmp_path, _, _ = orch_env
@@ -114,7 +114,7 @@ class TestStandaloneGeneration:
         state = orch.manifest.load()
         assert state.problems[-1].solution_status == "none"
 
-    @patch("vbagent.agents.classification.idea_generator.generate_from_idea")
+    @patch("vbagent.agents.content_generation.idea_generator.generate_from_idea")
     @patch("vbagent.config.get_config")
     def test_generate_standalone_with_tone(self, mock_config, mock_gen, orch_env):
         orch, tmp_path, _, _ = orch_env
@@ -135,7 +135,7 @@ class TestStandaloneGeneration:
         # Should contain the resolved tone description for "energy-methods"
         assert any("energy" in idea.lower() for idea in ideas)
 
-    @patch("vbagent.agents.classification.idea_generator.generate_from_idea")
+    @patch("vbagent.agents.content_generation.idea_generator.generate_from_idea")
     @patch("vbagent.config.get_config")
     def test_generate_standalone_tone_override(self, mock_config, mock_gen, orch_env):
         orch, tmp_path, _, _ = orch_env
@@ -157,7 +157,7 @@ class TestStandaloneGeneration:
         # Should use the override "conceptual" (resolved), not paper-level "energy-methods"
         assert any("Qualitative" in idea or "conceptual" in idea.lower() for idea in ideas)
 
-    @patch("vbagent.agents.classification.idea_generator.generate_from_idea")
+    @patch("vbagent.agents.content_generation.idea_generator.generate_from_idea")
     @patch("vbagent.config.get_config")
     def test_serial_increments(self, mock_config, mock_gen, orch_env):
         orch, tmp_path, _, _ = orch_env
@@ -181,7 +181,7 @@ class TestStatus:
         assert isinstance(state, PaperState)
         assert len(state.problems) == 0
 
-    @patch("vbagent.agents.classification.idea_generator.generate_from_idea")
+    @patch("vbagent.agents.content_generation.idea_generator.generate_from_idea")
     @patch("vbagent.config.get_config")
     def test_get_status_after_generation(self, mock_config, mock_gen, orch_env):
         orch, _, _, _ = orch_env
@@ -195,8 +195,55 @@ class TestStatus:
         assert len(state.problems) == 1
 
 
+class TestIndependentSolutions:
+    @patch("vbagent.agents.orchestration.solution_orchestrator.SolutionOrchestrator.run")
+    def test_generate_solutions_preserves_final_answer(
+        self, mock_run, orch_env,
+    ):
+        from vbagent.agents.orchestration.solution_orchestrator import SolutionResult
+
+        orch, tmp_path, _, _ = orch_env
+        scans = tmp_path / "scans"
+        scans.mkdir()
+        (scans / "Problem_1.tex").write_text(
+            r"\item Find the equilibrium.", encoding="utf-8"
+        )
+        state = orch.manifest.load()
+        state.problems.append(
+            ProblemEntry(
+                serial=1,
+                filename="Problem_1.tex",
+                subject="physics",
+                topic="equilibrium",
+                question_type="subjective",
+                solution_status="none",
+            )
+        )
+        orch.manifest.save(state)
+        answer = r"Stable: $C$; unstable: $A$, $E$."
+        mock_run.return_value = SolutionResult(
+            latex=(
+                r"\item Find the equilibrium."
+                "\n\\begin{solution}\nWork.\n\\end{solution}"
+                f"\n\\begin{{finalanswer}}\n{answer}\n\\end{{finalanswer}}"
+            ),
+            answer_type="subjective",
+            final_answer_latex=answer,
+        )
+
+        report = orch.generate_solutions(problem_ids=[1])
+
+        assert report.solved == 1
+        scan_content = (scans / "Problem_1.tex").read_text(encoding="utf-8")
+        solution_content = (tmp_path / "solutions" / "Problem_1.tex").read_text(
+            encoding="utf-8"
+        )
+        assert f"\\begin{{finalanswer}}\n    {answer}" in scan_content
+        assert r"\begin{finalanswer}" in solution_content
+
+
 class TestQA:
-    @patch("vbagent.agents.classification.idea_generator.generate_from_idea")
+    @patch("vbagent.agents.content_generation.idea_generator.generate_from_idea")
     @patch("vbagent.config.get_config")
     def test_run_qa(self, mock_config, mock_gen, orch_env):
         orch, tmp_path, _, _ = orch_env
@@ -226,7 +273,7 @@ class TestQA:
 class TestHints:
     @patch("vbagent.agents.base.run_agent_sync")
     @patch("vbagent.agents.base.create_agent")
-    @patch("vbagent.agents.classification.idea_generator.generate_from_idea")
+    @patch("vbagent.agents.content_generation.idea_generator.generate_from_idea")
     @patch("vbagent.config.get_config")
     def test_generate_hints(self, mock_config, mock_gen, mock_create, mock_run, orch_env):
         orch, tmp_path, _, _ = orch_env
@@ -254,7 +301,7 @@ class TestHints:
 
 
 class TestPostGenClassification:
-    @patch("vbagent.agents.classification.idea_generator.generate_from_idea")
+    @patch("vbagent.agents.content_generation.idea_generator.generate_from_idea")
     @patch("vbagent.config.get_config")
     def test_standalone_enriches_entry(self, mock_config, mock_gen, orch_env):
         """generate_standalone should classify and fill subtopic/concepts."""
@@ -281,7 +328,7 @@ class TestPostGenClassification:
         assert "Lagrangian" in entry.concepts
         assert entry.difficulty == "hard"
 
-    @patch("vbagent.agents.classification.idea_generator.generate_from_idea")
+    @patch("vbagent.agents.content_generation.idea_generator.generate_from_idea")
     @patch("vbagent.config.get_config")
     def test_standalone_classification_failure_is_graceful(self, mock_config, mock_gen, orch_env):
         """If classification fails, entry should still be saved with defaults."""
@@ -298,7 +345,7 @@ class TestPostGenClassification:
         assert len(state.problems) == 1
         assert state.problems[0].subtopic == ""  # not enriched, but still saved
 
-    @patch("vbagent.agents.classification.idea_generator.generate_from_idea")
+    @patch("vbagent.agents.content_generation.idea_generator.generate_from_idea")
     @patch("vbagent.config.get_config")
     def test_covered_subtopics_collected(self, mock_config, mock_gen, orch_env):
         """_covered_subtopics should return subtopics already in manifest for a topic."""
@@ -320,7 +367,7 @@ class TestPostGenClassification:
         assert "Lagrangian mechanics" in covered
         assert "projectile motion" in covered
 
-    @patch("vbagent.agents.classification.idea_generator.generate_from_idea")
+    @patch("vbagent.agents.content_generation.idea_generator.generate_from_idea")
     @patch("vbagent.config.get_config")
     def test_avoid_subtopics_passed_to_generator(self, mock_config, mock_gen, orch_env):
         """When subtopics are already covered, diversity hint should appear in ideas."""
@@ -351,7 +398,7 @@ class TestPostGenClassification:
 
 
 class TestEnrich:
-    @patch("vbagent.agents.classification.idea_generator.generate_from_idea")
+    @patch("vbagent.agents.content_generation.idea_generator.generate_from_idea")
     @patch("vbagent.config.get_config")
     def test_enrich_fills_empty_subtopics(self, mock_config, mock_gen, orch_env):
         orch, tmp_path, _, _ = orch_env

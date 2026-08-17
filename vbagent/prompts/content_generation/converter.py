@@ -8,6 +8,8 @@ Prompts for converting physics questions between different formats:
 - Passage/Comprehension type
 """
 
+from .mcq_format import MCQ_ANSWER_FORMAT_RULES
+
 SYSTEM_PROMPT = r"""You are an expert physics educator specializing in question format conversion. Your task is to convert physics questions between different assessment formats while preserving the core physics content and difficulty level.
 
 SUPPORTED FORMATS:
@@ -256,6 +258,8 @@ Therefore, the correct option is (a).
 - For integer type: the final answer MUST be a clean integer; work backwards from the answer to choose parameters
 - For MCQ: all four options should be clean expressions, not messy decimals"""
 
+SYSTEM_PROMPT += "\n\n" + MCQ_ANSWER_FORMAT_RULES
+
 USER_TEMPLATE = r"""Convert this physics question from {source_format} to {target_format}.
 
 Source Question:
@@ -279,7 +283,7 @@ FORMAT_INSTRUCTIONS = {
 - Mark the SINGLE correct answer with \ans at the END of its \task line
 - Example: \task $\dfrac{RMg}{B_0L}$ \ans
 - Create plausible distractors based on common errors
-- End solution with "Therefore, the correct option is (X)." """,
+- End solution with the actual lowercase option letter, for example: "Therefore, the correct option is (a)." """,
     
     "mcq_mc": r"""Target Format Instructions (MCQ Multiple Correct):
 - Create exactly 4 options using \begin{tasks}(2)...\end{tasks}
@@ -379,4 +383,7 @@ def get_format_instructions(target_format: str) -> str:
     Returns:
         Format-specific instruction string
     """
-    return FORMAT_INSTRUCTIONS.get(target_format, "")
+    instructions = FORMAT_INSTRUCTIONS.get(target_format, "")
+    if target_format in {"mcq_sc", "mcq_mc", "passage", "match"}:
+        instructions += MCQ_ANSWER_FORMAT_RULES
+    return instructions

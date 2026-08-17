@@ -157,7 +157,9 @@ You MUST output a JSON object with this exact structure:
       }}
     }}
   ],
-  "reasoning_notes": "Optional internal notes"
+  "reasoning_notes": "Optional internal notes",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }}
 ```
 
@@ -239,7 +241,9 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
       }}
     }}
   ],
-  "reasoning_notes": "Markovnikov addition - Br goes to more substituted carbon"
+  "reasoning_notes": "Markovnikov addition - Br goes to more substituted carbon",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }}
 ```
 
@@ -249,7 +253,9 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
 {{
   "solution_latex": "\\begin{{solution}}\\n\\begin{{align*}}\\n\\intertext{{Calculate molarity of \\ce{{NaCl}} solution}}\\nM &= \\frac{{n}}{{V}} \\\\\\\\\\n  &= \\frac{{0.1}}{{0.5}} \\\\\\\\\\n  &= 0.2 \\ \\text{{M}}\\n\\end{{align*}}\\n\\end{{solution}}",
   "diagram_requirements": [],
-  "reasoning_notes": "Simple molarity calculation"
+  "reasoning_notes": "Simple molarity calculation",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }}
 ```
 

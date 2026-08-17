@@ -90,7 +90,7 @@ Therefore, the correct option is (b).
 ### One Unified Solution
 - ALL sub-question solutions go inside ONE \begin{solution}...\end{solution}
 - Use separate align* blocks for each sub-question within the single solution env
-- Each sub-question's answer ends with "Therefore, the correct option is (X)."
+- Each sub-question's answer ends with the actual lowercase option letter, for example: "Therefore, the correct option is (a)."
 - Solutions can reference results from earlier sub-questions
 
 ### Solution Style
@@ -105,7 +105,9 @@ Therefore, the correct option is (b).
 {
   "solution_latex": "\\begin{solution}\n[all sub-question solutions in one block]\n\\end{solution}",
   "diagram_requirements": [],
-  "reasoning_notes": "Optional notes"
+  "reasoning_notes": "Optional notes",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 """
@@ -117,7 +119,7 @@ USER_TEMPLATE = """Generate a complete unified solution for this Physics passage
 Remember:
 1. ONE single \\begin{{solution}}...\\end{{solution}} block for ALL sub-questions
 2. Use separate align* blocks within the single solution for each sub-question
-3. End each sub-question's answer with "Therefore, the correct option is (X)."
+3. End each sub-question's answer with the actual lowercase option letter, for example: "Therefore, the correct option is (a)."
 """
 
 __all__ = ["SYSTEM_PROMPT", "USER_TEMPLATE"]

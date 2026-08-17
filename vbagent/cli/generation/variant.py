@@ -165,7 +165,7 @@ def variant(
     # Lazy imports - only load heavy dependencies when command runs
     from vbagent.agents.variants.variant import generate_variant as gen_variant
     from vbagent.agents.variants.multi_context_variant import generate_multi_context_variant
-    from vbagent.agents.classifier import classify
+    from vbagent.agents.classification.question_classifier import classify_primary_image as classify
     from vbagent.agents.content_generation.scanner import scan
     from vbagent.models.content import IdeaResult
     

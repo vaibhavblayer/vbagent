@@ -6,7 +6,7 @@ scanning, TikZ generation, solution orchestration, and variant generation.
 Modules:
     io      - File I/O helpers (save results, insert TikZ, merge metadata)
     stages  - Individual pipeline stage functions
-    runner  - Pipeline runners (process_image_unified, process_tex_item, etc.)
+    runner  - Pipeline runners (process_image, process_tex_item, etc.)
 """
 
 from vbagent.pipeline.io import (
@@ -17,6 +17,7 @@ from vbagent.pipeline.io import (
     get_base_name,
 )
 from vbagent.pipeline.runner import (
+    process_image,
     process_image_unified,
     process_tex_item,
     process_generated_problem,
@@ -29,6 +30,7 @@ __all__ = [
     "save_pipeline_result",
     "save_pipeline_result_organized",
     "get_base_name",
+    "process_image",
     "process_image_unified",
     "process_tex_item",
     "process_generated_problem",

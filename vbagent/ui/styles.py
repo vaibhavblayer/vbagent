@@ -53,12 +53,12 @@ TABLE_STYLES = {
 
 # Status indicators
 STATUS = {
-    "success": "[#4ade80]✓[/]",
-    "error": "[#f87171]✗[/]",
-    "warning": "[#fbbf24]⚠[/]",
-    "info": "[#60a5fa]ℹ[/]",
-    "pending": "[#6b7280]○[/]",
-    "running": "[#5eead4]◉[/]",
+    "success": "[#4ade80]OK[/]",
+    "error": "[#f87171]ERROR[/]",
+    "warning": "[#fbbf24]WARN[/]",
+    "info": "[#60a5fa]INFO[/]",
+    "pending": "[#6b7280]PENDING[/]",
+    "running": "[#5eead4]RUNNING[/]",
     "skip": "[#6b7280]–[/]",
 }
 

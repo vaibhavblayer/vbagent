@@ -4,6 +4,7 @@ from .common import (
     DIAGRAM_PLACEHOLDER,
     OPTIONS_WITH_DIAGRAMS,
 )
+from .._shared import MCQ_ANSWER_FORMAT_RULES
 
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
@@ -36,7 +37,7 @@ Follow this exact structure for your output:
     *   Provide the options using `\task`.
     *   Based on your analysis in the solution step, mark **every** correct answer by appending ` \ans` to the end of its corresponding `\task` line.
     
-""" + OPTIONS_WITH_DIAGRAMS + r"""
+""" + OPTIONS_WITH_DIAGRAMS + MCQ_ANSWER_FORMAT_RULES + r"""
 
 4.  **Solution (`\begin{solution} ... \end{solution}`)**
     *   Use an `align*` environment directly inside the `solution` environment.

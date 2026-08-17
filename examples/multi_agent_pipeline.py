@@ -1,48 +1,44 @@
-"""Example: Using the Multi-Agent Classification Pipeline
+"""Example: using the question-classification pipeline.
 
-This example demonstrates how to use the new multi-agent classification
-system with all 7 agents.
+This example demonstrates canonical classification and supporting agents.
 """
 
 from vbagent.agents.classification import (
-    classify_from_image,
-    classify_and_analyze,
-    analyze_diagram,
+    classify_primary_image,
+    classify_question_image,
+    classify_diagram_image,
     assess_difficulty,
     validate_tikz,
 )
 
 
 def example_1_basic_classification():
-    """Example 1: Basic image classification (Agent 1)"""
+    """Example 1: Basic image classification."""
     print("=" * 60)
     print("Example 1: Basic Image Classification")
     print("=" * 60)
     
     # Classify an image
-    primary = classify_from_image("question.png", subject="physics")
+    primary = classify_primary_image("question.png", subject="physics")
     
     print(f"Question Type: {primary.question_type}")
     print(f"Topic: {primary.topic}")
-    print(f"Subtopic: {primary.subtopic}")
     print(f"Has Diagram: {primary.has_diagram}")
-    print(f"Key Concepts: {', '.join(primary.key_concepts)}")
-    print(f"Estimated Time: {primary.time_estimate_minutes} min")
     print()
 
 
 def example_2_diagram_analysis():
-    """Example 2: Diagram analysis (Agent 2)"""
+    """Example 2: Standalone diagram classification."""
     print("=" * 60)
     print("Example 2: Diagram Analysis")
     print("=" * 60)
     
     # First classify
-    primary = classify_from_image("question.png")
+    primary = classify_primary_image("question.png")
     
     # Then analyze diagram if present
     if primary.has_diagram:
-        diagram = analyze_diagram("question.png", primary)
+        diagram = classify_diagram_image("question.png", primary)
         
         print(f"Diagram Type: {diagram.diagram_type}")
         print(f"Category: {diagram.diagram_category}")
@@ -54,7 +50,7 @@ def example_2_diagram_analysis():
 
 
 def example_3_difficulty_assessment():
-    """Example 3: Difficulty assessment after scan (Agent 3)"""
+    """Example 3: Difficulty assessment after scanning."""
     print("=" * 60)
     print("Example 3: Difficulty Assessment")
     print("=" * 60)
@@ -65,7 +61,7 @@ def example_3_difficulty_assessment():
     at angle $\theta = 30°$. Find the acceleration of the block.
     """
     
-    primary = classify_from_image("question.png")
+    primary = classify_primary_image("question.png")
     
     # Assess difficulty
     difficulty = assess_difficulty(latex_content, primary)
@@ -76,14 +72,14 @@ def example_3_difficulty_assessment():
     print(f"Error Rate: {difficulty.expected_error_rate:.1%}")
     print(f"\nReasoning: {difficulty.difficulty_reasoning}")
     print(f"\nPrerequisites: {', '.join(difficulty.prerequisite_concepts)}")
-    print(f"\nCommon Mistakes:")
+    print("\nCommon Mistakes:")
     for mistake in difficulty.common_mistakes:
         print(f"  • {mistake}")
     print()
 
 
 def example_4_tikz_validation():
-    """Example 4: TikZ validation and fixing (Agent 7)"""
+    """Example 4: TikZ validation and fixing."""
     print("=" * 60)
     print("Example 4: TikZ Validation")
     print("=" * 60)
@@ -126,15 +122,14 @@ def example_5_complete_pipeline():
     print("Example 5: Complete Pipeline")
     print("=" * 60)
     
-    # Use unified classifier (single API call)
-    result = classify_and_analyze("question.png")
-    primary = result  # or use to_primary(result) for PrimaryClassification
+    # Use the canonical question classifier (single API call)
+    result = classify_question_image("question.png")
 
     # Step 1: Classification
     print("Step 1: Classification...")
     print(f"  ✓ Type: {result.question_type}, Subject: {result.subject}")
 
-    # Step 2: Diagram analysis (already included in unified result)
+    # Step 2: Diagram analysis is already included in the result
     if result.has_diagram:
         print("Step 2: Diagram Analysis...")
         print(f"  ✓ Type: {result.diagram_type}, Agent: {result.suggested_tikz_agent}")
@@ -142,12 +137,12 @@ def example_5_complete_pipeline():
     # Step 3: Scan to LaTeX (simulated)
     print("Step 3: Scanning...")
     latex_content = "\\item Sample problem..."
-    print(f"  ✓ LaTeX extracted")
+    print("  ✓ LaTeX extracted")
     
     # Step 4: Assess difficulty
     print("Step 4: Difficulty Assessment...")
-    from vbagent.agents.classification.unified_classifier import to_primary
-    primary_cls = to_primary(result)
+    from vbagent.agents.classification.question_classifier import to_primary_classification
+    primary_cls = to_primary_classification(result)
     difficulty = assess_difficulty(latex_content, primary_cls)
     print(f"  ✓ Difficulty: {difficulty.difficulty} ({difficulty.difficulty_score}/10)")
 
@@ -200,10 +195,10 @@ if __name__ == "__main__":
     # For demonstration, we show the structure
     
     print("Available Examples:")
-    print("  1. Basic Classification (Agent 1)")
-    print("  2. Diagram Analysis (Agent 2)")
-    print("  3. Difficulty Assessment (Agent 3)")
-    print("  4. TikZ Validation (Agent 7)")
+    print("  1. Basic Classification")
+    print("  2. Diagram Classification")
+    print("  3. Difficulty Assessment")
+    print("  4. TikZ Validation")
     print("  5. Complete Pipeline (All Agents)")
     print("  6. CLI Usage Examples")
     print()

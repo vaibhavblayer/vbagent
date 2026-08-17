@@ -4,6 +4,8 @@ Constants that are identical (or near-identical) across all subjects.
 Subject-specific constants live in each subject's common.py.
 """
 
+from ..mcq_format import MCQ_ANSWER_FORMAT_RULES
+
 # Diagram placeholder instruction - scanner outputs placeholder, TikZ agent generates actual code
 DIAGRAM_PLACEHOLDER = r"""
     **Diagram Handling (IMPORTANT):**
@@ -159,4 +161,4 @@ SOLUTION_FORMATTING_RULES = r"""
 - Keep one calculation step per line.
 - No blank lines inside `align*`.
 - State the final answer clearly (e.g., "Therefore, the correct option is (c).").
-"""
+""" + MCQ_ANSWER_FORMAT_RULES

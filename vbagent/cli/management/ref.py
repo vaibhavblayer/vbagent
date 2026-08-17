@@ -130,7 +130,7 @@ def remove(category: str, name: str):
     store = ContextStore.get_instance()
     
     if store.remove_reference(category, name):
-        console.print(f"[green]✓[/green] Removed '{name}' from {category}")
+        console.print(f"[green]OK[/green] Removed '{name}' from {category}")
     else:
         console.print(f"[yellow]Not found:[/yellow] '{name}' in {category}")
 
@@ -287,7 +287,7 @@ def set_max(max_examples: int):
     
     store = ContextStore.get_instance()
     store.set_max_examples(max_examples)
-    console.print(f"[green]✓[/green] Max examples set to {max_examples}")
+    console.print(f"[green]OK[/green] Max examples set to {max_examples}")
 
 
 # =============================================================================
@@ -397,7 +397,7 @@ def tikz_import(path: str, from_index: Optional[int], to_index: Optional[int], i
                 classification_path=str(Path(class_dir) / f"{path_obj.stem}.json") if class_dir else None,
             )
             if ref:
-                console.print(f"[green]✓[/green] Imported '{ref.id}'")
+                console.print(f"[green]OK[/green] Imported '{ref.id}'")
                 if ref.metadata.diagram_type:
                     console.print(f"  [dim]Diagram type: {ref.metadata.diagram_type}[/dim]")
                 if ref.metadata.topic:
@@ -405,13 +405,13 @@ def tikz_import(path: str, from_index: Optional[int], to_index: Optional[int], i
                 imported += 1
             elif status and status.startswith("duplicate:"):
                 existing_id = status.split(":")[1]
-                console.print(f"[yellow]⚠[/yellow] Duplicate of '{existing_id}', skipping {path_obj.name}")
+                console.print(f"[yellow]WARN[/yellow] Duplicate of '{existing_id}', skipping {path_obj.name}")
                 duplicates += 1
             else:
-                console.print(f"[yellow]⚠[/yellow] No TikZ found in {path_obj.name}")
+                console.print(f"[yellow]WARN[/yellow] No TikZ found in {path_obj.name}")
                 skipped += 1
         except Exception as e:
-            console.print(f"[red]✗[/red] Error importing {path_obj.name}: {e}")
+            console.print(f"[red]ERROR[/red] Error importing {path_obj.name}: {e}")
             errors += 1
     
     elif path_obj.is_dir():
@@ -466,7 +466,7 @@ def tikz_import(path: str, from_index: Optional[int], to_index: Optional[int], i
                     classification_path=class_path,
                 )
                 if ref:
-                    console.print(f"[green]✓[/green] {ref.id}")
+                    console.print(f"[green]OK[/green] {ref.id}")
                     imported += 1
                 elif status and status.startswith("duplicate:"):
                     existing_id = status.split(":")[1]
@@ -476,7 +476,7 @@ def tikz_import(path: str, from_index: Optional[int], to_index: Optional[int], i
                     console.print(f"[dim]- {tex_file.stem} (no TikZ)[/dim]")
                     skipped += 1
             except Exception as e:
-                console.print(f"[red]✗[/red] {tex_file.stem}: {e}")
+                console.print(f"[red]ERROR[/red] {tex_file.stem}: {e}")
                 errors += 1
     
     # Summary
@@ -551,7 +551,7 @@ def tikz_remove(ref_id: str):
     store = TikZReferenceStore.get_instance()
     
     if store.remove_reference(ref_id):
-        console.print(f"[green]✓[/green] Removed '{ref_id}'")
+        console.print(f"[green]OK[/green] Removed '{ref_id}'")
     else:
         console.print(f"[yellow]Not found:[/yellow] '{ref_id}'")
 

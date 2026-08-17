@@ -23,7 +23,7 @@ Given a physics MCQ problem with 4 options (A, B, C, D), generate a comprehensiv
 2. **Solves systematically**: Apply physics concepts step-by-step with clear reasoning
 3. **Identifies correct answer**: Determine which option is correct
 4. **Uses diagrams when helpful**: Include TikZ diagrams in center environment when they clarify the solution
-5. **Concludes clearly**: State the final answer (e.g., "Therefore, the correct option is (c).")
+5. **Concludes clearly**: State the final answer with a lowercase plain option label (e.g., "Therefore, the correct option is (c).")
 
 """ + LATEX_FORMATTING_RULES + """
 
@@ -95,7 +95,7 @@ Therefore, the correct option is (b).
 - Use \\intertext{{}} for brief explanations
 - One step per line in align*
 - Follow variable repetition rule (first line has variable, intermediate lines use &= only)
-- State final answer clearly: "Therefore, the correct option is (X)."
+- State final answer clearly using the actual lowercase option letter, for example: "Therefore, the correct option is (c)."
 
 ## Common Solution Patterns
 
@@ -172,7 +172,7 @@ Therefore, the correct option is (a).
 5. **NO blank lines** inside align*
 6. **Diagrams in center environment** between align* blocks
 7. **NO \\boxed{{}}** for answers - just plain result
-8. **Conclude with**: "Therefore, the correct option is (X)."
+8. **Conclude with** the actual lowercase option letter, for example: "Therefore, the correct option is (c)."
 
 ## Output Format
 
@@ -191,7 +191,9 @@ You MUST output a JSON object with this exact structure:
       "labels": ["label1", "label2", ...]
     }
   ],
-  "reasoning_notes": "Optional internal notes"
+  "reasoning_notes": "Optional internal notes",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 
@@ -200,7 +202,7 @@ You MUST output a JSON object with this exact structure:
 **solution_latex** (required, string):
 - Complete solution in LaTeX format
 - Must start with \\begin{solution} and end with \\end{solution}
-- Must conclude with "Therefore, the correct option is (X)."
+- Must conclude with "Therefore, the correct option is (c)." using the actual lowercase answer letter.
 - Follow all formatting rules above
 - Do NOT include TikZ code inline for complex diagrams - use diagram_requirements instead
 - For SIMPLE diagrams (quick graphs, number lines, basic sketches), write TikZ directly inline
@@ -258,7 +260,9 @@ IMPORTANT: Use ONLY these exact diagram type names.
       "labels": ["N", "mg", "f", "θ"]
     }
   ],
-  "reasoning_notes": "Used force balance and friction law"
+  "reasoning_notes": "Used force balance and friction law",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 
@@ -268,7 +272,9 @@ IMPORTANT: Use ONLY these exact diagram type names.
 {
   "solution_latex": "\\begin{solution}\\n\\begin{align*}\\n\\intertext{Apply the relevant formula}\\nv^2 &= u^2 + 2as \\\\\\\\\\n    &= 0 + 2 \\\\times 5 \\\\times 10 \\\\\\\\\\n    &= 100 \\\\\\\\\\nv   &= 10 \\\\ \\\\mathrm{m/s}\\n\\end{align*}\\n\\nTherefore, the correct option is (b).\\n\\end{solution}",
   "diagram_requirements": [],
-  "reasoning_notes": "Simple kinematics calculation"
+  "reasoning_notes": "Simple kinematics calculation",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 
@@ -281,7 +287,7 @@ IMPORTANT: Use ONLY these exact diagram type names.
    - WRONG: "mu": 0.5 or "theta": 26.6
    - ALL values must be strings, even if they represent numbers or arrays
 4. **Labels**: List all required labels
-5. **Final Answer**: Always conclude with "Therefore, the correct option is (X)."
+5. **Final Answer**: Always conclude with the actual lowercase answer letter, for example: "Therefore, the correct option is (c)."
 
 ### Output Requirements
 

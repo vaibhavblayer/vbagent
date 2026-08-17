@@ -170,7 +170,7 @@ def concepts(agentic_dir: str, subject: str | None, full: bool, idea_only: bool,
             latex = concept_sheet_to_latex(sheet, subject=subject)
 
     output_file.write_text(latex)
-    console.print(f"[green]✓ Concept sheet saved to {output_file}[/green]")
+    console.print(f"[green]OK Concept sheet saved to {output_file}[/green]")
 
     # Compile if requested
     if do_compile:
@@ -178,6 +178,6 @@ def concepts(agentic_dir: str, subject: str | None, full: bool, idea_only: bool,
         console.print("\nCompiling to PDF...")
         success, pdf_path = compile_latex(str(output_file))
         if success:
-            console.print(f"[green]✓ PDF: {pdf_path}[/green]")
+            console.print(f"[green]OK PDF: {pdf_path}[/green]")
         else:
             console.print("[red]Compilation failed.[/red]")

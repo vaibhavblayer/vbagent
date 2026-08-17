@@ -34,6 +34,7 @@ class QuestionRecord:
     solution_latex: Optional[str] = None
     alternate_solution_latex: Optional[str] = None
     idea_latex: Optional[str] = None
+    final_answer_latex: Optional[str] = None
     
     # TikZ & Lists (stored as JSON)
     tikz_diagrams: list[dict] = field(default_factory=list)
@@ -132,6 +133,7 @@ class QuestionDatabase:
                 solution_latex TEXT,
                 alternate_solution_latex TEXT,
                 idea_latex TEXT,
+                final_answer_latex TEXT,
                 
                 tikz_diagrams TEXT,
                 tags TEXT,
@@ -178,6 +180,14 @@ class QuestionDatabase:
                 FOREIGN KEY (parent_question_id) REFERENCES questions(id) ON DELETE CASCADE
             )
         """)
+
+        existing_columns = {
+            row[1] for row in self.conn.execute("PRAGMA table_info(questions)")
+        }
+        if "final_answer_latex" not in existing_columns:
+            self.conn.execute(
+                "ALTER TABLE questions ADD COLUMN final_answer_latex TEXT"
+            )
         
         # Create indexes
         self.conn.execute("CREATE INDEX IF NOT EXISTS idx_question_type ON questions(question_type)")
@@ -196,20 +206,21 @@ class QuestionDatabase:
                 file_path, question_type, is_passage, parent_question_id, passage_order,
                 num_subquestions, subject, chapter, topic, subtopic, difficulty,
                 passage_text, problem_latex, solution_latex, alternate_solution_latex,
-                idea_latex, tikz_diagrams, tags, key_concepts, has_solution, has_alternate,
+                idea_latex, final_answer_latex, tikz_diagrams, tags, key_concepts, has_solution, has_alternate,
                 has_idea, has_tikz, tikz_count, has_diagram, diagram_type, num_options,
                 requires_calculus, confidence, usage_count, metadata_source,
                 diagram_category, diagram_complexity, diagram_elements, suggested_tikz_agent,
                 tikz_libraries, difficulty_score, difficulty_reasoning, expected_solve_time_minutes,
                 expected_error_rate, prerequisite_concepts, common_mistakes, cognitive_level,
                 solution_approach, required_formulas, exam_relevance, learning_objectives, tags_auto
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             record.file_path, record.question_type, record.is_passage, record.parent_question_id,
             record.passage_order, record.num_subquestions, record.subject, record.chapter,
             record.topic, record.subtopic, record.difficulty, record.passage_text,
             record.problem_latex, record.solution_latex, record.alternate_solution_latex,
-            record.idea_latex, json.dumps(record.tikz_diagrams), json.dumps(record.tags),
+            record.idea_latex, record.final_answer_latex,
+            json.dumps(record.tikz_diagrams), json.dumps(record.tags),
             json.dumps(record.key_concepts), record.has_solution, record.has_alternate,
             record.has_idea, record.has_tikz, record.tikz_count, record.has_diagram,
             record.diagram_type, record.num_options, record.requires_calculus, record.confidence,
@@ -401,6 +412,11 @@ class QuestionDatabase:
             solution_latex=row['solution_latex'],
             alternate_solution_latex=row['alternate_solution_latex'],
             idea_latex=row['idea_latex'],
+            final_answer_latex=(
+                row['final_answer_latex']
+                if 'final_answer_latex' in row.keys()
+                else None
+            ),
             tikz_diagrams=json.loads(row['tikz_diagrams']) if row['tikz_diagrams'] else [],
             tags=json.loads(row['tags']) if row['tags'] else [],
             key_concepts=json.loads(row['key_concepts']) if row['key_concepts'] else [],

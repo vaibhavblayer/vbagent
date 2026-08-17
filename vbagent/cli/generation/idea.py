@@ -81,7 +81,7 @@ def idea(tex: str, output: str | None, subject: str | None, as_json: bool, appen
             # Append to file
             with open(tex, "a") as f:
                 f.write("\n\n" + idea_tex + "\n")
-            console.print(f"[green]✓ Appended idea environment to {tex}[/green]")
+            console.print(f"[green]OK Appended idea environment to {tex}[/green]")
         else:
             # JSON mode: extract structured ideas
             problem, solution = parse_tex_file_with_sections(tex)

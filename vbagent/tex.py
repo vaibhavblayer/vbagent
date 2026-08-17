@@ -15,8 +15,9 @@ Previously split across three modules:
 """
 
 import re
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 
 # ---------------------------------------------------------------------------
@@ -168,19 +169,31 @@ def extract_subitems(tex_content: str) -> list[str]:
 # Answer extraction
 # ---------------------------------------------------------------------------
 
-def extract_answer(content: str) -> Optional[str]:
-    """Extract answer from problem content.
+AnswerKind = Literal["mcq", "integer", "subjective"]
+
+
+@dataclass(frozen=True)
+class ExtractedAnswer:
+    """An extracted answer together with its formatting semantics."""
+
+    value: str
+    kind: AnswerKind
+
+
+def extract_answer_details(content: str) -> Optional[ExtractedAnswer]:
+    """Extract a typed answer from problem content.
 
     Handles:
     - MCQ: \\ans marker in tasks environment (returns A, B, C, D, etc.)
     - Integer: \\ansint{value} command
     - Multiple correct: Returns comma-separated (A,C)
+    - Subjective: \\begin{finalanswer}...\\end{finalanswer}
 
     Args:
         content: TeX content containing answer markers
 
     Returns:
-        Answer string or None if not found
+        ExtractedAnswer or None if not found
     """
     # Remove comments (but preserve escaped percent signs \%)
     # Replace \% temporarily with a placeholder
@@ -193,7 +206,7 @@ def extract_answer(content: str) -> Optional[str]:
     # Integer answer takes priority
     ansint_match = re.search(r'\\ansint\{([^}]+)\}', content)
     if ansint_match:
-        return ansint_match.group(1).strip()
+        return ExtractedAnswer(ansint_match.group(1).strip(), "integer")
 
     # MCQ answer in tasks environment
     tasks_match = re.search(r'\\begin\{tasks\}.*?\\end\{tasks\}', content, re.DOTALL)
@@ -218,9 +231,25 @@ def extract_answer(content: str) -> Optional[str]:
                     correct_options.append(chr(65 + task_count - 1))
 
         if correct_options:
-            return ','.join(correct_options)
+            return ExtractedAnswer(','.join(correct_options), "mcq")
+
+    subjective_match = re.search(
+        r'\\begin\{finalanswer\}\s*(.*?)\s*\\end\{finalanswer\}',
+        content,
+        re.DOTALL,
+    )
+    if subjective_match:
+        value = subjective_match.group(1).strip()
+        if value:
+            return ExtractedAnswer(value, "subjective")
 
     return None
+
+
+def extract_answer(content: str) -> Optional[str]:
+    """Extract the answer value while preserving the historical string API."""
+    answer = extract_answer_details(content)
+    return answer.value if answer else None
 
 
 def extract_answer_from_problem(problem_file: Path) -> Optional[str]:
@@ -238,6 +267,16 @@ def extract_answer_from_problem(problem_file: Path) -> Optional[str]:
         return None
     content = problem_file.read_text(encoding="utf-8")
     return extract_answer(content)
+
+
+def extract_answer_details_from_problem(
+    problem_file: Path,
+) -> Optional[ExtractedAnswer]:
+    """Read a problem file and return its typed answer, if present."""
+    if not problem_file.exists():
+        return None
+    content = problem_file.read_text(encoding="utf-8")
+    return extract_answer_details(content)
 
 
 # ---------------------------------------------------------------------------

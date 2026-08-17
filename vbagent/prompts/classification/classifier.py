@@ -17,8 +17,6 @@ def get_classifier_prompt(subject: str = "physics") -> str:
     
     config = get_subject_config(subject)
     
-    diagram_types_str = ", ".join(config.diagram_types)
-    
     return f"""You are an expert {config.display_name.lower()} question classifier. Analyze the provided image of a {config.display_name.lower()} problem and extract structured metadata.
 
 You MUST respond with ONLY a valid JSON object (no markdown, no explanation) with these fields:

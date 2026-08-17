@@ -111,7 +111,7 @@ def fbd(
         output_path = Path(output)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(tikz_code, encoding="utf-8")
-        console.print(f"[green]✓[/green] Saved to {output}")
+        console.print(f"[green]OK[/green] Saved to {output}")
     
     # Compile if requested
     if do_compile or verbose_compile:
@@ -126,10 +126,10 @@ def fbd(
         )
         
         if result.success:
-            console.print("[green]✓ Compilation successful[/green]")
+            console.print("[green]OK Compilation successful[/green]")
             if result.pdf_path:
                 console.print(f"[dim]PDF: {result.pdf_path}[/dim]")
         else:
-            console.print(f"[red]✗ Compilation failed after retries[/red]")
+            console.print(f"[red]ERROR Compilation failed after retries[/red]")
             if result.error:
                 console.print(f"[dim]{result.error}[/dim]")

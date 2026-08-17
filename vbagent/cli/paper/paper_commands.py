@@ -49,7 +49,7 @@ def init(source_dir, subject, target, force, tone, paper_dir):
     if tone:
         state.tone = tone
         orch.manifest.save(state)
-    console.print(f"[green]✓[/green] Paper initialized: {len(state.problems)} problems, subject={state.subject}"
+    console.print(f"[green]OK[/green] Paper initialized: {len(state.problems)} problems, subject={state.subject}"
                   + (f", tone={state.tone}" if state.tone else ""))
 
 

@@ -49,7 +49,7 @@ Given an Assertion-Reason problem with two statements, generate a solution that:
 \\intertext{{[Explain why R does/doesn't explain A]}}
 \\end{{align*}}
 
-Therefore, the correct option is (X).
+Therefore, the correct option is (a), using the actual lowercase answer letter.
 \\end{{solution}}
 ```
 
@@ -75,7 +75,9 @@ Therefore, the correct option is (X).
 {
   "solution_latex": "\\begin{solution}...\\end{solution}",
   "diagram_requirements": [],
-  "reasoning_notes": "Optional notes"
+  "reasoning_notes": "Optional notes",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 

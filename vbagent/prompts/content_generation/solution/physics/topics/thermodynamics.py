@@ -3,7 +3,7 @@
 Covers: Laws of thermodynamics, PV diagrams, thermodynamic processes, cycles, entropy, efficiency.
 """
 
-from ..common import LATEX_FORMATTING_RULES, SOLUTION_QUALITY
+from ..common import build_topic_prompts
 
 # Topic-specific guidance
 TOPIC_CONCEPTS = """
@@ -147,95 +147,24 @@ TYPICAL_MISTAKES = """
 """
 
 # Build system prompts for different question types
-SYSTEM_PROMPT_SUBJECTIVE = """You are an expert physics educator solving thermodynamics problems (laws, processes, cycles, entropy, efficiency).
+_PROMPTS = build_topic_prompts(
+    subjective_intro='You are an expert physics educator solving thermodynamics problems (laws, processes, cycles, entropy, efficiency).',
+    mcq_intro='You are an expert physics educator solving thermodynamics MCQ problems.',
+    mcq_mc_intro='You are an expert physics educator solving thermodynamics MCQ (multiple correct) problems.',
+    topic_concepts=TOPIC_CONCEPTS,
+    common_patterns=COMMON_PATTERNS,
+    diagram_guidance=DIAGRAM_GUIDANCE,
+    typical_mistakes=TYPICAL_MISTAKES,
+)
 
-""" + TOPIC_CONCEPTS + """
-
-""" + COMMON_PATTERNS + """
-
-""" + DIAGRAM_GUIDANCE + """
-
-""" + TYPICAL_MISTAKES + """
-
-""" + LATEX_FORMATTING_RULES + """
-
-""" + SOLUTION_QUALITY + """
-
-## Output Format
-
-Return a JSON object with:
-- `solution_latex`: Complete solution in LaTeX with \\begin{solution}...\\end{solution}
-- `diagram_requirements`: List of diagrams needed
-- `answer_type`: "subjective" or "integer"
-- `answer_value`: Final numerical answer if integer type, null otherwise
-"""
-
-SYSTEM_PROMPT_MCQ_SC = """You are an expert physics educator solving thermodynamics MCQ problems.
-
-""" + TOPIC_CONCEPTS + """
-
-""" + COMMON_PATTERNS + """
-
-""" + DIAGRAM_GUIDANCE + """
-
-""" + TYPICAL_MISTAKES + """
-
-""" + LATEX_FORMATTING_RULES + """
-
-## MCQ-Specific Guidelines
-
-- Show key steps that lead to answer
-- Eliminate obviously wrong options when helpful
-- Verify answer matches one of the given options
-- Keep solution concise but complete
-
-## Output Format
-
-Return a JSON object with:
-- `solution_latex`: Solution in LaTeX with \\begin{solution}...\\end{solution}
-- `diagram_requirements`: List of diagrams if needed
-- `answer_type`: "mcq"
-- `answer_value`: Correct option letter (e.g., "A", "B", "C", "D")
-"""
-
-SYSTEM_PROMPT_MCQ_MC = """You are an expert physics educator solving thermodynamics MCQ (multiple correct) problems.
-
-""" + TOPIC_CONCEPTS + """
-
-""" + COMMON_PATTERNS + """
-
-""" + DIAGRAM_GUIDANCE + """
-
-""" + TYPICAL_MISTAKES + """
-
-""" + LATEX_FORMATTING_RULES + """
-
-## MCQ-MC Specific Guidelines
-
-- Check each option independently
-- Show reasoning for why each is correct/incorrect
-- Multiple options can be correct
-
-## Output Format
-
-Return a JSON object with:
-- `solution_latex`: Solution in LaTeX
-- `diagram_requirements`: List of diagrams if needed
-- `answer_type`: "mcq"
-- `answer_value`: Comma-separated correct options (e.g., "A,C" or "B,D")
-"""
+SYSTEM_PROMPT_SUBJECTIVE = _PROMPTS.subjective
+SYSTEM_PROMPT_MCQ_SC = _PROMPTS.mcq_sc
+SYSTEM_PROMPT_MCQ_MC = _PROMPTS.mcq_mc
 
 
 def get_prompt(question_type: str) -> str:
     """Get thermodynamics prompt for question type."""
-    if question_type in ["subjective", "integer"]:
-        return SYSTEM_PROMPT_SUBJECTIVE
-    elif question_type == "mcq_sc":
-        return SYSTEM_PROMPT_MCQ_SC
-    elif question_type == "mcq_mc":
-        return SYSTEM_PROMPT_MCQ_MC
-    else:
-        return SYSTEM_PROMPT_SUBJECTIVE
+    return _PROMPTS.for_question_type(question_type)
 
 
 __all__ = [

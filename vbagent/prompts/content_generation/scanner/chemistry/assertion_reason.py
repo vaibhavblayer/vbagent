@@ -3,6 +3,8 @@
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
 
+Subject: Chemistry
+
 Analyze the provided image and extract an Assertion–Reason style question. Produce only a LaTeX snippet that starts with a single `\item` containing the assertion and reason on one item, then a worked `solution` block.
 
 **CRITICAL OUTPUT CONSTRAINT:** Return only the raw LaTeX snippet starting precisely with `\item` and ending precisely after `\end{solution}`. Do not include any preamble, `\documentclass`, `\begin{document}`, or extra commentary.

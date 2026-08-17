@@ -65,6 +65,10 @@ SUBJECTS = ["physics", "chemistry", "mathematics", "biology"]
 
 # Available model presets
 MODELS = {
+    "gpt-5.6-sol": "gpt-5.6-sol",
+    "gpt-5.6": "gpt-5.6",
+    "gpt-5.6-terra": "gpt-5.6-terra",
+    "gpt-5.6-luna": "gpt-5.6-luna",
     # OpenAI
     "gpt-5.5": "gpt-5.5",
     "gpt-5.5-mini": "gpt-5.5-mini",
@@ -106,7 +110,7 @@ PROVIDERS = {
 # The flat list is used for validation; the grouped dict for `config show`.
 AGENT_GROUPS: dict[str, list[str]] = {
     "Classification": [
-        "classifier", "image_classifier", "diagram_analyzer",
+        "classifier", "diagram_classifier",
         "taxonomy_classifier", "difficulty_assessor", "latex_classifier",
     ],
     "Content Extraction": [
@@ -114,6 +118,7 @@ AGENT_GROUPS: dict[str, list[str]] = {
     ],
     "Diagram (Physics)": [
         "tikz", "fbd", "circuit", "gates", "graph", "optics",
+        "mechanics", "setup", "wave",
     ],
     "Diagram (Chemistry)": [
         "organic_structure", "reaction_mechanism", "orbital",
@@ -133,6 +138,15 @@ AGENT_GROUPS: dict[str, list[str]] = {
         "reviewer", "solution_checker", "grammar_checker",
         "clarity_checker", "latex_fixer", "format_checker",
     ],
+    "Animation": [
+        "animation_assessor", "animation_coder",
+    ],
+    "Solution Video": [
+        "script_writer", "video_coder", "video_fixer",
+    ],
+    "Notes": [
+        "notes_planner", "notes_writer",
+    ],
 }
 
 # Flat list for validation
@@ -143,28 +157,52 @@ AGENT_TYPES = [agent for agents in AGENT_GROUPS.values() for agent in agents]
 # gets the right model for that provider.
 MODEL_GROUPS: dict[str, dict[str, str]] = {
     "openai": {
-        "default_model": "gpt-5.4-mini",
-        "classifier": "gpt-5.4-mini",
-        "image_classifier": "gpt-5.4-mini",
-        "diagram_analyzer": "gpt-5.4-mini",
-        "taxonomy_classifier": "gpt-5.4-mini",
-        "difficulty_assessor": "gpt-5.4-mini",
-        "latex_classifier": "gpt-5.4-mini",
-        "scanner": "gpt-5.4-mini",
-        "converter": "gpt-5.4",
-        "tikz_checker": "gpt-5.4-mini",
-        "tikz": "gpt-5.4",
-        "fbd": "gpt-5.4",
-        "idea": "gpt-5.4",
-        "alternate": "gpt-5.4",
-        "variant": "gpt-5.4",
-        "solution": "gpt-5.4",
-        "reviewer": "gpt-5.4-mini",
-        "solution_checker": "gpt-5.4-mini",
-        "grammar_checker": "gpt-5.4-mini",
-        "clarity_checker": "gpt-5.4-mini",
-        "latex_fixer": "gpt-5.4-mini",
-        "format_checker": "gpt-5.4-mini",
+        "default_model": "gpt-5.6-luna",
+        "classifier": "gpt-5.6-luna",
+        "diagram_classifier": "gpt-5.6-luna",
+        "taxonomy_classifier": "gpt-5.6-luna",
+        "difficulty_assessor": "gpt-5.6-luna",
+        "latex_classifier": "gpt-5.6-luna",
+        "scanner": "gpt-5.6-luna",
+        "converter": "gpt-5.6-terra",
+        "tikz_checker": "gpt-5.6-terra",
+        "tikz": "gpt-5.6-sol",
+        "fbd": "gpt-5.6-sol",
+        "mechanics": "gpt-5.6-sol",
+        "setup": "gpt-5.6-sol",
+        "wave": "gpt-5.6-sol",
+        "circuit": "gpt-5.6-sol",
+        "gates": "gpt-5.6-sol",
+        "graph": "gpt-5.6-sol",
+        "optics": "gpt-5.6-sol",
+        "organic_structure": "gpt-5.6-sol",
+        "reaction_mechanism": "gpt-5.6-sol",
+        "orbital": "gpt-5.6-sol",
+        "lewis_structure": "gpt-5.6-sol",
+        "chemical_equation": "gpt-5.6-sol",
+        "energy_diagram": "gpt-5.6-sol",
+        "function_graph": "gpt-5.6-sol",
+        "coordinate_geometry": "gpt-5.6-sol",
+        "geometric_figure": "gpt-5.6-sol",
+        "number_line": "gpt-5.6-sol",
+        "venn_diagram": "gpt-5.6-sol",
+        "idea": "gpt-5.6-terra",
+        "alternate": "gpt-5.6-terra",
+        "variant": "gpt-5.6-terra",
+        "solution": "gpt-5.6-sol",
+        "reviewer": "gpt-5.6-luna",
+        "solution_checker": "gpt-5.6-luna",
+        "grammar_checker": "gpt-5.6-luna",
+        "clarity_checker": "gpt-5.6-luna",
+        "latex_fixer": "gpt-5.6-luna",
+        "format_checker": "gpt-5.6-luna",
+        "animation_assessor": "gpt-5.6-luna",
+        "animation_coder": "gpt-5.6-terra",
+        "script_writer": "gpt-5.6-terra",
+        "video_coder": "gpt-5.6-terra",
+        "video_fixer": "gpt-5.6-luna",
+        "notes_planner": "gpt-5.6-terra",
+        "notes_writer": "gpt-5.6-terra",
     },
     "xai": {
         "default_model": "grok-4-1-fast-reasoning",
@@ -179,6 +217,20 @@ MODEL_GROUPS: dict[str, dict[str, str]] = {
         "solution": "grok-4-1-fast-reasoning",
         "converter": "grok-4-1-fast-reasoning",
         "reviewer": "grok-4-1-fast-reasoning",
+        "diagram_classifier": "grok-4-1-fast-reasoning",
+        "taxonomy_classifier": "grok-4-1-fast-reasoning",
+        "difficulty_assessor": "grok-4-1-fast-reasoning",
+        "latex_classifier": "grok-4-1-fast-reasoning",
+        "mechanics": "grok-4-1-fast-reasoning",
+        "setup": "grok-4-1-fast-reasoning",
+        "wave": "grok-4-1-fast-reasoning",
+        "animation_assessor": "grok-4-1-fast-reasoning",
+        "animation_coder": "grok-4-1-fast-reasoning",
+        "script_writer": "grok-4-1-fast-reasoning",
+        "video_coder": "grok-4-1-fast-reasoning",
+        "video_fixer": "grok-4-1-fast-reasoning",
+        "notes_planner": "grok-4-1-fast-reasoning",
+        "notes_writer": "grok-4-1-fast-reasoning",
     },
     "google": {
         "default_model": "gemini-3-flash-preview",
@@ -193,8 +245,30 @@ MODEL_GROUPS: dict[str, dict[str, str]] = {
         "solution": "gemini-3-flash-preview",
         "converter": "gemini-3-flash-preview",
         "reviewer": "gemini-3-flash-preview",
+        "diagram_classifier": "gemini-3-flash-preview",
+        "taxonomy_classifier": "gemini-3-flash-preview",
+        "difficulty_assessor": "gemini-3-flash-preview",
+        "latex_classifier": "gemini-3-flash-preview",
+        "mechanics": "gemini-3-flash-preview",
+        "setup": "gemini-3-flash-preview",
+        "wave": "gemini-3-flash-preview",
+        "animation_assessor": "gemini-3-flash-preview",
+        "animation_coder": "gemini-3-flash-preview",
+        "script_writer": "gemini-3-flash-preview",
+        "video_coder": "gemini-3-flash-preview",
+        "video_fixer": "gemini-3-flash-preview",
+        "notes_planner": "gemini-3-flash-preview",
+        "notes_writer": "gemini-3-flash-preview",
     },
 }
+
+# Keep provider model groups complete as the agent catalog grows.  Explicit
+# entries above retain their specialist assignments; any newly registered
+# agent inherits that provider's default model instead of disappearing from
+# configuration or falling back to the OpenAI default.
+for _provider_group in MODEL_GROUPS.values():
+    for _agent_type in AGENT_TYPES:
+        _provider_group.setdefault(_agent_type, _provider_group["default_model"])
 
 # Per-model reasoning_effort support.
 # Maps model prefix -> set of valid effort values, or None if not supported.
@@ -204,6 +278,10 @@ MODEL_GROUPS: dict[str, dict[str, str]] = {
 #   Google: low, medium, high (2.5 models also support none/minimal)
 REASONING_SUPPORT: dict[str, Optional[set[str]]] = {
     # OpenAI models
+    "gpt-5.6-sol": {"none", "low", "medium", "high", "xhigh", "max"},
+    "gpt-5.6-terra": {"none", "low", "medium", "high", "xhigh", "max"},
+    "gpt-5.6-luna": {"none", "low", "medium", "high", "xhigh", "max"},
+    "gpt-5.6": {"none", "low", "medium", "high", "xhigh", "max"},
     "gpt-5.5": {"low", "medium", "high", "xhigh"},
     "gpt-5.5-mini": {"low", "medium", "high", "xhigh"},
     "gpt-5.4": {"low", "medium", "high", "xhigh"},
@@ -303,7 +381,7 @@ def _get_model_settings_class():
 class AgentModelConfig:
     """Configuration for a specific agent's model settings."""
 
-    model: str = "gpt-5.4-mini"
+    model: str = "gpt-5.6-luna"
     reasoning_effort: str = "high"  # low, medium, high, xhigh
     max_tokens: Optional[int] = None
 
@@ -345,7 +423,7 @@ class AgentModelConfig:
     def from_dict(cls, data: dict) -> "AgentModelConfig":
         """Create from dictionary."""
         return cls(
-            model=data.get("model", "gpt-5.4-mini"),
+            model=data.get("model", "gpt-5.6-luna"),
             reasoning_effort=data.get("reasoning_effort", "high"),
             max_tokens=data.get("max_tokens"),
         )
@@ -362,7 +440,7 @@ class VBAgentConfig:
     """
 
     # Global defaults for all agents
-    default_model: str = "gpt-5.4-mini"
+    default_model: str = "gpt-5.6-luna"
     default_reasoning_effort: str = "high"
 
     # Single-model mode: when set, ALL agents use this model
@@ -374,7 +452,7 @@ class VBAgentConfig:
     subject: str = "physics"
 
     # Debug mode
-    debug: bool = True
+    debug: bool = False
     log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 
     # Provider settings
@@ -409,9 +487,35 @@ class VBAgentConfig:
             self._apply_reasoning_tiers(light=m, heavy=m)
         else:
             # Two-tier mode
-            heavy = self.default_model.replace(
-                "-mini", "") if "-mini" in self.default_model else self.default_model
+            if self.default_model == "gpt-5.6-luna":
+                heavy = "gpt-5.6-terra"
+            else:
+                heavy = self.default_model.replace(
+                    "-mini", "") if "-mini" in self.default_model else self.default_model
             self._apply_reasoning_tiers(light=self.default_model, heavy=heavy)
+            if self.default_model == "gpt-5.6-luna":
+                self.agents["scanner"] = AgentModelConfig(
+                    model="gpt-5.6-luna", reasoning_effort="medium"
+                )
+                self.agents["converter"] = AgentModelConfig(
+                    model="gpt-5.6-terra", reasoning_effort="medium"
+                )
+                self.agents["tikz_checker"] = AgentModelConfig(
+                    model="gpt-5.6-terra", reasoning_effort="low"
+                )
+                # Use Sol for every diagram generator and the solution agent.
+                diagram_agents = [
+                    "tikz", "fbd", "circuit", "gates", "graph", "optics",
+                    "mechanics", "setup", "wave",
+                    "organic_structure", "reaction_mechanism", "orbital",
+                    "lewis_structure", "chemical_equation", "energy_diagram",
+                    "function_graph", "coordinate_geometry", "geometric_figure",
+                    "number_line", "venn_diagram", "solution",
+                ]
+                for name in diagram_agents:
+                    self.agents[name] = AgentModelConfig(
+                        model="gpt-5.6-sol", reasoning_effort="high"
+                    )
 
     def _apply_reasoning_tiers(self, light: str, heavy: str):
         """Populate agent configs with per-category reasoning tiers.
@@ -421,7 +525,7 @@ class VBAgentConfig:
             heavy: Model for diagrams / generation / solution.
         """
         # Classification agents: low reasoning
-        for name in ["classifier", "image_classifier", "diagram_analyzer",
+        for name in ["classifier", "diagram_classifier",
                      "taxonomy_classifier", "difficulty_assessor", "latex_classifier"]:
             if name not in self.agents:
                 self.agents[name] = AgentModelConfig(
@@ -441,6 +545,7 @@ class VBAgentConfig:
         # Diagram agents: high reasoning
         diagram_agents = [
             "tikz", "fbd", "circuit", "gates", "graph", "optics",
+            "mechanics", "setup", "wave",
             "organic_structure", "reaction_mechanism", "orbital",
             "lewis_structure", "chemical_equation", "energy_diagram",
             "function_graph", "coordinate_geometry", "geometric_figure",
@@ -585,14 +690,22 @@ class VBAgentConfig:
     @classmethod
     def from_dict(cls, data: dict) -> "VBAgentConfig":
         """Create from dictionary."""
+        if "log_level" in data:
+            log_level = str(data.get("log_level") or "INFO").upper()
+            debug = log_level == "DEBUG"
+        else:
+            # Migrate legacy configs that only stored the debug boolean.
+            debug = bool(data.get("debug", False))
+            log_level = "DEBUG" if debug else "INFO"
+
         config = cls(
-            default_model=data.get("default_model", "gpt-5.4-mini"),
+            default_model=data.get("default_model", "gpt-5.6-luna"),
             default_reasoning_effort=data.get(
                 "default_reasoning_effort", "high"),
             single_model=data.get("single_model"),
             subject=data.get("subject", "physics"),
-            debug=data.get("debug", True),
-            log_level=data.get("log_level", "INFO"),
+            debug=debug,
+            log_level=log_level,
             base_url=data.get("base_url"),
             api_key=data.get("api_key"),
             enable_taxonomy=data.get("enable_taxonomy", True),
@@ -606,8 +719,16 @@ class VBAgentConfig:
 
         # Load agent overrides
         if "agents" in data:
-            for agent_type, agent_data in data["agents"].items():
-                config.agents[agent_type] = AgentModelConfig.from_dict(
+            legacy_agent_names = {
+                "image_classifier": "classifier",
+                "diagram_analyzer": "diagram_classifier",
+            }
+            source_agents = data["agents"]
+            for agent_type, agent_data in source_agents.items():
+                canonical_name = legacy_agent_names.get(agent_type, agent_type)
+                if agent_type in legacy_agent_names and canonical_name in source_agents:
+                    continue
+                config.agents[canonical_name] = AgentModelConfig.from_dict(
                     agent_data)
 
         return config
@@ -629,6 +750,8 @@ class VBAgentConfig:
             merged.default_reasoning_effort = other_dict["default_reasoning_effort"]
         if other_dict.get("subject"):
             merged.subject = other_dict["subject"]
+        merged.debug = other.debug
+        merged.log_level = other.log_level
         if other_dict.get("base_url"):
             merged.base_url = other_dict["base_url"]
         if other_dict.get("api_key"):

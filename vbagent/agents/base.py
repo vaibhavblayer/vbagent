@@ -1,10 +1,15 @@
 """Base agent utilities using OpenAI Agents SDK."""
 
 import base64
-import json
+import asyncio
+import contextlib
+import logging
+import os
 import threading
+import time
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, TypeVar
 
 # Lazy import for heavy agents SDK - only import at runtime when needed
 if TYPE_CHECKING:
@@ -14,6 +19,35 @@ from vbagent.config import get_model, get_model_settings, apply_provider_config
 
 # Global lock to prevent concurrent spinners
 _spinner_lock = threading.Lock()
+
+# Limit actual model requests across nested pipeline thread pools.  The CLI can
+# process several images concurrently and each image can fan out into scan,
+# TikZ, and option calls.  Keeping the limit here covers library consumers too.
+_max_concurrent_requests = max(
+    1, int(os.environ.get("VBAGENT_MAX_CONCURRENT_REQUESTS", "6"))
+)
+_request_slots = threading.BoundedSemaphore(_max_concurrent_requests)
+
+T = TypeVar("T")
+logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class PinnedRequestCredentials:
+    """Credentials retained for a short server-managed response chain."""
+
+    api_key: Optional[str]
+    base_url: Optional[str]
+    key_name: Optional[str]
+
+
+@dataclass(frozen=True)
+class ContinuedAgentResult:
+    """Output and continuation metadata from a grouped agent request."""
+
+    final_output: Any
+    response_id: Optional[str]
+    credentials: PinnedRequestCredentials
 
 
 def _get_agent_class():
@@ -95,6 +129,34 @@ def create_image_message(image_path: str, text: str) -> list[dict[str, Any]]:
     ]
 
 
+def create_cacheable_image_message(
+    image_path: str,
+    text: str,
+    cache_boundary_text: str,
+) -> list[dict[str, Any]]:
+    """Create a vision input with a stable GPT-5.6 cache breakpoint.
+
+    The developer message is rendered after the agent instructions and before
+    the changing image. In explicit cache mode, its breakpoint therefore
+    caches the reusable instructions without writing a new image-specific
+    prefix for every request.
+    """
+    return [
+        {
+            "type": "message",
+            "role": "developer",
+            "content": [
+                {
+                    "type": "input_text",
+                    "text": cache_boundary_text,
+                    "prompt_cache_breakpoint": {"mode": "explicit"},
+                }
+            ],
+        },
+        *create_image_message(image_path, text),
+    ]
+
+
 def create_agent(
     name: str,
     instructions: str,
@@ -118,7 +180,6 @@ def create_agent(
     Returns:
         Configured Agent instance
     """
-    import os
     Agent = _get_agent_class()
     
     # Apply provider config (base_url, api_key) before creating agent
@@ -130,24 +191,9 @@ def create_agent(
     if model_settings is None:
         model_settings = get_model_settings(agent_type or "default")
     
-    # Try to get API key from key manager if enabled
-    try:
-        from vbagent.api_keys import KeyManager
-        from vbagent.config import get_config
-        config = get_config()
-        
-        # Only use key manager for OpenAI provider (no base_url)
-        if not config.base_url:
-            manager = KeyManager.get_instance()
-            if manager.is_enabled():
-                api_key = manager.get_key_for_model(model)
-                if api_key:
-                    # Set the API key in environment for the SDK to use
-                    os.environ["OPENAI_API_KEY"] = api_key
-    except Exception:
-        # Key manager not available or failed - use existing env var
-        pass
-    
+    # API-key rotation is resolved inside run_agent/run_agent_sync.  Selecting
+    # here would mutate process-global environment state while parallel agents
+    # are being constructed and can attach the wrong key to another request.
     return Agent(
         name=name,
         instructions=instructions,
@@ -156,6 +202,204 @@ def create_agent(
         output_type=output_type,
         tools=tools or [],
     )
+
+
+def _resolve_request_credentials(
+    model: str,
+    affinity_key: str | None = None,
+) -> tuple[Optional[str], Optional[str], Optional[str]]:
+    """Resolve per-request credentials without relying on shared SDK clients.
+
+    Returns ``(api_key, base_url, key_name)``.  ``key_name`` is retained so
+    usage is attributed to the key selected for this request even when other
+    requests run concurrently.
+    """
+    from vbagent.config import PROVIDERS, get_config
+
+    config = get_config()
+    api_key: Optional[str] = None
+    key_name: Optional[str] = None
+
+    if not config.base_url:
+        try:
+            from vbagent.api_keys import KeyManager
+
+            manager = KeyManager.get_instance()
+            if manager.is_enabled():
+                api_key = manager.get_key_for_model(model, affinity_key=affinity_key)
+                if api_key and manager.config:
+                    selected = next(
+                        (item for item in manager.config.keys if item.api_key == api_key),
+                        None,
+                    )
+                    key_name = selected.name if selected else None
+        except Exception as exc:
+            # Preserve the existing fallback to explicit config/environment.
+            logger.warning(
+                "API profile selection failed for %s; falling back to configured credentials: %s",
+                model,
+                exc,
+            )
+            api_key = None
+
+    if api_key is None:
+        api_key = config.api_key
+        if api_key:
+            key_name = "config.api_key"
+
+    if api_key is None and config.base_url:
+        for info in PROVIDERS.values():
+            provider_url = info.get("base_url")
+            if provider_url and config.base_url.rstrip("/") == provider_url.rstrip("/"):
+                api_key = os.environ.get(info["env_key"])
+                if api_key:
+                    key_name = info["env_key"]
+                break
+
+    if api_key is None:
+        api_key = os.environ.get("OPENAI_API_KEY")
+        if api_key:
+            key_name = "OPENAI_API_KEY"
+
+    return api_key, config.base_url, key_name
+
+
+def _create_request_provider(
+    model: str,
+    credentials: PinnedRequestCredentials | None = None,
+    affinity_key: str | None = None,
+):
+    """Create an SDK provider and HTTP client owned by one agent request."""
+    from agents.models.openai_provider import OpenAIProvider
+    from openai import AsyncOpenAI
+
+    if credentials is None:
+        api_key, base_url, key_name = _resolve_request_credentials(
+            model,
+            affinity_key=affinity_key,
+        )
+    else:
+        api_key = credentials.api_key
+        base_url = credentials.base_url
+        key_name = credentials.key_name
+    client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+    provider = OpenAIProvider(openai_client=client)
+    pinned = PinnedRequestCredentials(api_key, base_url, key_name)
+    return provider, client, key_name, pinned
+
+
+async def _execute_agent_run(
+    agent: "Agent",
+    input_text: str | list,
+    timeout: float | None,
+    group_id: str | None = None,
+    previous_response_id: str | None = None,
+    credentials: PinnedRequestCredentials | None = None,
+):
+    """Execute one SDK run with an isolated client and real cancellation."""
+    from agents import RunConfig
+
+    Runner = _get_runner_class()
+    model = str(agent.model or "default")
+    queued_at = time.monotonic()
+    acquired = False
+    while not acquired:
+        acquired = _request_slots.acquire(blocking=False)
+        if not acquired:
+            await asyncio.sleep(0.05)
+
+    queue_duration = time.monotonic() - queued_at
+    request_started = time.monotonic()
+    client = None
+    key_name = None
+    try:
+        if credentials is None:
+            created = _create_request_provider(model, affinity_key=group_id)
+        else:
+            created = _create_request_provider(model, credentials)
+        provider, client, key_name = created[:3]
+        pinned = (
+            created[3]
+            if len(created) > 3
+            else credentials or PinnedRequestCredentials(None, None, key_name)
+        )
+        from ..ui.logging import log_agent_started
+
+        log_agent_started(
+            agent.name,
+            model=model,
+            queue_duration=queue_duration,
+            key_name=key_name,
+            has_image=_input_has_image(input_text),
+            reasoning=_extract_reasoning(agent),
+        )
+        try:
+            run = Runner.run(
+                agent,
+                input=input_text,
+                run_config=RunConfig(
+                    model_provider=provider,
+                    group_id=group_id,
+                ),
+                previous_response_id=previous_response_id,
+            )
+            if timeout is None:
+                result = await run
+            else:
+                try:
+                    result = await asyncio.wait_for(run, timeout=timeout)
+                except TimeoutError as exc:
+                    raise TimeoutError(
+                        f"{agent.name} timed out after {timeout:.0f}s (model: {model})"
+                    ) from exc
+            request_duration = time.monotonic() - request_started
+            return result, key_name, queue_duration, request_duration, pinned
+        finally:
+            # Client cleanup must not turn a successfully received response
+            # into an apparent request failure.
+            if client is not None:
+                with contextlib.suppress(Exception):
+                    await client.close()
+    except BaseException as exc:
+        with contextlib.suppress(Exception):
+            exc._vbagent_metadata = {
+                "model": model,
+                "key_name": key_name,
+                "queue_duration": queue_duration,
+                "request_duration": time.monotonic() - request_started,
+            }
+        raise
+    finally:
+        if acquired:
+            _request_slots.release()
+
+
+def _run_coroutine_sync(factory: Callable[[], Awaitable[T]]) -> T:
+    """Run an async operation from synchronous code, including async callers.
+
+    Normal CLI/library calls execute on the current thread.  If a synchronous
+    API is invoked from a thread that already owns a running event loop, use a
+    helper thread rather than nesting event loops.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(factory())
+
+    holder: dict[str, Any] = {"result": None, "error": None}
+
+    def worker() -> None:
+        try:
+            holder["result"] = asyncio.run(factory())
+        except BaseException as exc:
+            holder["error"] = exc
+
+    thread = threading.Thread(target=worker, daemon=False)
+    thread.start()
+    thread.join()
+    if holder["error"] is not None:
+        raise holder["error"]
+    return holder["result"]
 
 
 def _extract_reasoning(agent: "Agent") -> str:
@@ -191,6 +435,9 @@ def _input_has_image(input_text: str | list) -> bool:
 def _extract_response_id(result) -> Optional[str]:
     """Extract the last response ID from raw_responses."""
     try:
+        last_response_id = getattr(result, "last_response_id", None)
+        if last_response_id:
+            return last_response_id
         if result.raw_responses:
             last = result.raw_responses[-1]
             return getattr(last, "response_id", None)
@@ -210,6 +457,24 @@ def _extract_actual_model(result) -> Optional[str]:
     return None
 
 
+def _track_usage(model: str, usage, key_name: Optional[str]) -> None:
+    """Attribute usage to the key selected for this specific request."""
+    if not usage or not hasattr(usage, "total_tokens"):
+        return
+    try:
+        from vbagent.api_keys import KeyManager
+        from vbagent.config import get_config
+
+        if get_config().base_url:
+            return
+        manager = KeyManager.get_instance()
+        if manager.is_enabled():
+            manager.track_usage(model, usage.total_tokens, key_name=key_name)
+    except Exception:
+        # Usage accounting must never invalidate a completed model response.
+        return
+
+
 async def run_agent(agent: "Agent", input_text: str | list) -> Any:
     """Run an agent asynchronously and return the final output.
     
@@ -223,8 +488,6 @@ async def run_agent(agent: "Agent", input_text: str | list) -> Any:
     import time
     from ..ui.logging import log_agent_input, log_agent_output, log_agent_error, log_agent_usage
     
-    Runner = _get_runner_class()
-    
     model = agent.model or "default"
     reasoning = _extract_reasoning(agent)
     has_image = _input_has_image(input_text)
@@ -233,7 +496,9 @@ async def run_agent(agent: "Agent", input_text: str | list) -> Any:
     
     start_time = time.time()
     try:
-        result = await Runner.run(agent, input=input_text)
+        result, key_name, queue_duration, request_duration, _ = await _execute_agent_run(
+            agent, input_text, timeout=None
+        )
         duration = time.time() - start_time
         
         # Extract usage, response ID, and actual model
@@ -241,24 +506,14 @@ async def run_agent(agent: "Agent", input_text: str | list) -> Any:
         response_id = _extract_response_id(result)
         actual_model = _extract_actual_model(result) or model
         
-        # Track usage with key manager if enabled
-        if usage and hasattr(usage, 'total_tokens'):
-            try:
-                from vbagent.api_keys import KeyManager
-                from vbagent.config import get_config
-                config = get_config()
-                
-                # Only track for OpenAI provider
-                if not config.base_url:
-                    manager = KeyManager.get_instance()
-                    if manager.is_enabled():
-                        manager.track_usage(actual_model, usage.total_tokens)
-            except Exception:
-                pass
+        _track_usage(actual_model, usage, key_name)
         
         log_agent_usage(agent.name, model=actual_model, duration=duration,
                         usage=usage, response_id=response_id,
-                        has_image=has_image, reasoning=reasoning)
+                        has_image=has_image, reasoning=reasoning,
+                        queue_duration=queue_duration,
+                        request_duration=request_duration,
+                        key_name=key_name)
         log_agent_output(agent.name, result.final_output, duration)
         
         return result.final_output
@@ -267,10 +522,19 @@ async def run_agent(agent: "Agent", input_text: str | list) -> Any:
         raise
 
 
-def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = True, timeout: float | None = None) -> Any:
+def _run_agent_sync_impl(
+    agent: "Agent",
+    input_text: str | list,
+    show_spinner: bool,
+    timeout: float | None,
+    group_id: str | None,
+    previous_response_id: str | None = None,
+    credentials: PinnedRequestCredentials | None = None,
+    return_continuation: bool = False,
+) -> Any:
     """Run an agent synchronously and return the final output.
     
-    Uses a thread to allow immediate Ctrl+C interruption.
+    Runs one cancellable async SDK task behind the synchronous API.
     
     Args:
         agent: The Agent instance to run
@@ -286,12 +550,15 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
         KeyboardInterrupt: If user presses Ctrl+C
         TimeoutError: If timeout is exceeded
     """
-    import threading
     import time
-    from ..ui.logging import log_agent_input, log_agent_output, log_agent_error, log_agent_usage, console, _log_lock
-    from rich.progress import Progress, SpinnerColumn, TextColumn
-    
-    Runner = _get_runner_class()
+    from ..ui.logging import (
+        get_agent_console,
+        log_agent_error,
+        log_agent_input,
+        log_agent_output,
+        log_agent_usage,
+    )
+    from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
     
     # Get agent info for display
     model = agent.model or "default"
@@ -300,82 +567,59 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
     
     # Log input (before spinner starts)
     log_agent_input(agent.name, input_text, model)
-    console.file.flush()
+    active_console = get_agent_console()
+    active_console.file.flush()
     
-    # Show spinner during execution (if enabled)
     start_time = time.time()
-    
-    # Use a thread pool to run the agent, allowing Ctrl+C to interrupt
-    result_holder = {"result": None, "error": None}
-    
-    def run_in_thread():
-        try:
-            result_holder["result"] = Runner.run_sync(agent, input=input_text)
-        except Exception as e:
-            result_holder["error"] = e
-    
-    if show_spinner:
-        # Use global lock to prevent concurrent spinners
-        with _spinner_lock:
-            progress = Progress(
-                SpinnerColumn(),
-                TextColumn("[bold cyan]{task.description}[/bold cyan]"),
-                TextColumn("│"),
-                TextColumn("[dim]{task.fields[model]}[/dim]"),
-                TextColumn("│"),
-                TextColumn("[dim]{task.fields[reasoning]} reasoning[/dim]"),
-                TextColumn("│"),
-                TextColumn("[dim]{task.fields[elapsed]}[/dim]"),
-                console=console,
-                transient=True,
-                refresh_per_second=10
-            )
-            
-            with progress:
-                task = progress.add_task(
-                    agent.name,
-                    model=model,
-                    reasoning=reasoning,
-                    elapsed="0s",
-                    total=None
+    try:
+        if show_spinner:
+            with _spinner_lock:
+                progress = Progress(
+                    SpinnerColumn(),
+                    TextColumn("[bold cyan]{task.description}[/bold cyan]"),
+                    TextColumn("│"),
+                    TextColumn("[dim]{task.fields[model]}[/dim]"),
+                    TextColumn("│"),
+                    TextColumn("[dim]{task.fields[reasoning]} reasoning[/dim]"),
+                    TextColumn("│"),
+                    TimeElapsedColumn(),
+                    console=active_console,
+                    transient=True,
+                    refresh_per_second=10,
                 )
-                
-                thread = threading.Thread(target=run_in_thread, daemon=True)
-                thread.start()
-                
-                while thread.is_alive():
-                    thread.join(timeout=0.1)
-                    # Update elapsed time
-                    elapsed = time.time() - start_time
-                    progress.update(task, elapsed=f"{elapsed:.0f}s")
-                    if timeout and elapsed > timeout:
-                        progress.stop()
-                        raise TimeoutError(
-                            f"{agent.name} timed out after {timeout:.0f}s (model: {model})"
+                with progress:
+                    progress.add_task(
+                        agent.name,
+                        model=model,
+                        reasoning=reasoning,
+                        total=None,
+                    )
+                    run_result, key_name, queue_duration, request_duration, pinned = _run_coroutine_sync(
+                        lambda: _execute_agent_run(
+                            agent,
+                            input_text,
+                            timeout,
+                            group_id=group_id,
+                            previous_response_id=previous_response_id,
+                            credentials=credentials,
                         )
-    else:
-        # No spinner — call Runner.run_sync directly on the current thread.
-        # This is critical for parallel pipelines: each worker thread gets its
-        # own asyncio event loop and its own httpx connection, avoiding the
-        # shared-http-client deadlock that occurs when multiple inner threads
-        # all share the same global AsyncClient singleton.
-        try:
-            result_holder["result"] = Runner.run_sync(agent, input=input_text)
-        except Exception as e:
-            result_holder["error"] = e
-        # Check timeout (approximate — we can't interrupt a blocking call,
-        # but we can raise after it returns)
-        if timeout and (time.time() - start_time) > timeout:
-            raise TimeoutError(
-                f"{agent.name} timed out after {timeout:.0f}s (model: {model})"
+                    )
+        else:
+            run_result, key_name, queue_duration, request_duration, pinned = _run_coroutine_sync(
+                lambda: _execute_agent_run(
+                    agent,
+                    input_text,
+                    timeout,
+                    group_id=group_id,
+                    previous_response_id=previous_response_id,
+                    credentials=credentials,
+                )
             )
-    
-    if result_holder["error"]:
-        log_agent_error(agent.name, result_holder["error"])
-        raise result_holder["error"]
+    except BaseException as exc:
+        log_agent_error(agent.name, exc)
+        raise
     
     duration = time.time() - start_time
-    run_result = result_holder["result"]
     final_output = run_result.final_output
     
     # Extract usage and response ID from RunResult
@@ -385,31 +629,82 @@ def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = 
     # Get the actual model used (from API response)
     actual_model = _extract_actual_model(run_result) or model
     
-    # Track usage with key manager if enabled
-    if usage and hasattr(usage, 'total_tokens'):
-        try:
-            from vbagent.api_keys import KeyManager
-            from vbagent.config import get_config
-            config = get_config()
-            
-            # Only track for OpenAI provider
-            if not config.base_url:
-                manager = KeyManager.get_instance()
-                if manager.is_enabled():
-                    # Use actual_model from API response for accurate categorization
-                    manager.track_usage(actual_model, usage.total_tokens)
-        except Exception as e:
-            # Key manager tracking failed - not critical, continue
-            # But log it for debugging
-            import sys
-            print(f"[DEBUG] Key manager tracking failed: {e}", file=sys.stderr)
+    _track_usage(actual_model, usage, key_name)
     
     # Always show compact completion line with token usage
     log_agent_usage(agent.name, model=actual_model, duration=duration,
                     usage=usage, response_id=response_id,
-                    has_image=has_image, reasoning=reasoning)
+                    has_image=has_image, reasoning=reasoning,
+                    queue_duration=queue_duration,
+                    request_duration=request_duration,
+                    key_name=key_name,
+                    cache_group_id=group_id)
     
     # Log full output
     log_agent_output(agent.name, final_output, duration)
     
+    if return_continuation:
+        return ContinuedAgentResult(
+            final_output=final_output,
+            response_id=response_id,
+            credentials=pinned,
+        )
     return final_output
+
+
+def run_agent_sync(agent: "Agent", input_text: str | list, show_spinner: bool = True, timeout: float | None = None) -> Any:
+    """Run an agent synchronously and return the final output."""
+    return _run_agent_sync_impl(
+        agent,
+        input_text,
+        show_spinner=show_spinner,
+        timeout=timeout,
+        group_id=None,
+    )
+
+
+def run_agent_sync_grouped(
+    agent: "Agent",
+    input_text: str | list,
+    group_id: str,
+    *,
+    show_spinner: bool = True,
+    timeout: float | None = None,
+) -> Any:
+    """Run an agent with a stable SDK grouping ID for prompt-cache reuse.
+
+    This is intentionally separate from :func:`run_agent_sync` so existing
+    library consumers keep the same public call signature. Official OpenAI
+    Responses requests derive a stable prompt cache key from ``group_id``;
+    compatible third-party providers continue to run without that optimization.
+    """
+    return _run_agent_sync_impl(
+        agent,
+        input_text,
+        show_spinner=show_spinner,
+        timeout=timeout,
+        group_id=group_id,
+    )
+
+
+def run_agent_sync_continued(
+    agent: "Agent",
+    input_text: str | list,
+    group_id: str,
+    *,
+    previous_response_id: str | None = None,
+    credentials: PinnedRequestCredentials | None = None,
+    show_spinner: bool = True,
+    timeout: float | None = None,
+) -> ContinuedAgentResult:
+    """Run one grouped Responses turn and return state for the next turn."""
+    return _run_agent_sync_impl(
+        agent,
+        input_text,
+        show_spinner=show_spinner,
+        timeout=timeout,
+        group_id=group_id,
+        previous_response_id=previous_response_id,
+        credentials=credentials,
+        return_continuation=True,
+    )

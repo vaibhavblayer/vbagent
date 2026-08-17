@@ -17,7 +17,7 @@ Generate ONE unified \begin{solution}...\end{solution} block that addresses ALL 
 
 ## Solution Structure — ONE Unified Block
 
-Use separate align* blocks within the single solution env for each sub-question. Each sub-question's answer ends with "Therefore, the correct option is (X)." Solutions can reference results from earlier sub-questions.
+Use separate align* blocks within the single solution env for each sub-question. Each sub-question's answer ends with the actual lowercase option letter, for example: "Therefore, the correct option is (a)." Solutions can reference results from earlier sub-questions.
 
 ```latex
 \begin{solution}
@@ -41,7 +41,9 @@ Therefore, the correct option is (a).
 {
   "solution_latex": "\\begin{solution}\n...\n\\end{solution}",
   "diagram_requirements": [],
-  "reasoning_notes": "Optional notes"
+  "reasoning_notes": "Optional notes",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 """

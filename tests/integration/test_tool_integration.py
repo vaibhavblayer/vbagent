@@ -90,7 +90,7 @@ class TestToolIntegration:
             assert "properties" in tool["inputSchema"]
     
     @pytest.mark.asyncio
-    @patch('vbagent.agents.classifier.classify')
+    @patch('vbagent.agents.classification.question_classifier.classify_primary_image')
     @patch('vbagent.orchestrator.tool_wrappers.Path')
     async def test_execute_classify_tool_through_registry(self, mock_path, mock_classify):
         """Test executing classify tool through the registry."""

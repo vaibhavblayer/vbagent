@@ -177,7 +177,12 @@ def _parse_tex(content: str) -> dict[str, str]:
     
     # Question = everything before first environment
     first = None
-    for env in [r"\begin{solution}", r"\begin{idea}", r"\begin{alternatesolution}"]:
+    for env in [
+        r"\begin{solution}",
+        r"\begin{idea}",
+        r"\begin{alternatesolution}",
+        r"\begin{finalanswer}",
+    ]:
         idx = content.find(env)
         if idx != -1 and (first is None or idx < first):
             first = idx
@@ -413,7 +418,7 @@ def _extract_exam_metadata(image_path: Path, cache_dir: Path = None) -> dict:
     )
     msg = create_image_message(str(image_path), "What exam and year is this question from?")
     try:
-        result = run_agent_sync(agent, msg, show_spinner=False, timeout=15)
+        result = run_agent_sync(agent, msg, show_spinner=True, timeout=15)
         data = {"exam": result.exam, "year": result.year}
         # Cache the result
         if cache_dir:
@@ -558,7 +563,7 @@ def pyq(scans_dir, output, subject, exam, year, chapter, difficulty, images_dir,
                 cls_dir = scans_path.parent / "classifications"
                 image_meta = _extract_exam_metadata(img_path, cache_dir=cls_dir)
             else:
-                console.print(f"  [dim yellow]⚠ No image found for {tex_file.stem} — using defaults for exam/year[/dim yellow]")
+                console.print(f"  [dim yellow]WARN No image found for {tex_file.stem} — using defaults for exam/year[/dim yellow]")
 
         meta = _build_pyq_metadata(prob_num, classification, content, cli_overrides, image_meta,
                                     scans_dir=scans_path, stem=tex_file.stem)
@@ -570,15 +575,15 @@ def pyq(scans_dir, output, subject, exam, year, chapter, difficulty, images_dir,
 
         if failed:
             fail_count += 1
-            console.print(f"  [yellow]⚠[/yellow] problem-{prob_num} [dim]({', '.join(rendered)})[/dim] [yellow]✗ {', '.join(failed)}[/yellow]")
+            console.print(f"  [yellow]WARN[/yellow] problem-{prob_num} [dim]({', '.join(rendered)})[/dim] [yellow]ERROR {', '.join(failed)}[/yellow]")
         else:
             ok_count += 1
-            console.print(f"  [green]✓[/green] problem-{prob_num} [dim]({', '.join(rendered)})[/dim]")
+            console.print(f"  [green]OK[/green] problem-{prob_num} [dim]({', '.join(rendered)})[/dim]")
 
     if make_zip and output_path.exists():
         zip_path = output_path.parent / f"{output_path.name}.zip"
         shutil.make_archive(str(output_path), "zip", str(output_path.parent), output_path.name)
-        console.print(f"\n[green]✓[/green] {zip_path} ({_human_size(zip_path)})")
+        console.print(f"\n[green]OK[/green] {zip_path} ({_human_size(zip_path)})")
     elif output_path.exists():
         console.print(f"\n[dim]To create a zip file, run:[/dim]")
         console.print(f"[dim]  cd {output_path.parent} && zip -r {output_path.name}.zip {output_path.name}[/dim]")
@@ -744,7 +749,7 @@ def zip_archive(archive_dir, output):
         archive_path.name
     )
     
-    console.print(f"[green]✓[/green] {zip_path} ({_human_size(zip_path)})")
+    console.print(f"[green]OK[/green] {zip_path} ({_human_size(zip_path)})")
 
 
 # ===================================================================
@@ -841,9 +846,9 @@ def product(scans_dir, output, title, subject, exam, chapter, price_standard, pr
         parse_key = "question" if part == "problem" else part
         ok = _compile_concatenated_svg(tex_files, preamble, std_dir / f"{part}.svg", parse_key, console)
         if ok:
-            console.print(f"  [green]✓[/green] standard/{part}.svg")
+            console.print(f"  [green]OK[/green] standard/{part}.svg")
         else:
-            console.print(f"  [yellow]⚠[/yellow] standard/{part}.svg failed")
+            console.print(f"  [yellow]WARN[/yellow] standard/{part}.svg failed")
 
     # --- Premium tier: per-problem SVGs ---
     prem_dir = output_path / "premium" / "problems"
@@ -857,38 +862,38 @@ def product(scans_dir, output, title, subject, exam, chapter, price_standard, pr
             fail_count += 1
         else:
             ok_count += 1
-    console.print(f"  [green]✓[/green] {ok_count} problems compiled, {fail_count} with errors")
+    console.print(f"  [green]OK[/green] {ok_count} problems compiled, {fail_count} with errors")
 
     # --- Description ---
     if description_file:
         shutil.copy2(description_file, output_path / "description.md")
-        console.print("[green]✓[/green] description.md (provided)")
+        console.print("[green]OK[/green] description.md (provided)")
     else:
         console.print("[dim]Generating description...[/dim]")
         desc = _generate_description_md(metadata)
         (output_path / "description.md").write_text(desc)
-        console.print("[green]✓[/green] description.md (generated)")
+        console.print("[green]OK[/green] description.md (generated)")
 
     # --- Thumbnail ---
     if thumbnail:
         shutil.copy2(thumbnail, output_path / "thumbnail.png")
-        console.print("[green]✓[/green] thumbnail.png (provided)")
+        console.print("[green]OK[/green] thumbnail.png (provided)")
     else:
         tikz_dir = scans_path.parent / "tikz"
         if _generate_thumbnail(tikz_dir, output_path / "thumbnail.png", preamble, console):
-            console.print("[green]✓[/green] thumbnail.png (generated from TikZ)")
+            console.print("[green]OK[/green] thumbnail.png (generated from TikZ)")
         else:
-            console.print("[dim]⚠ No thumbnail generated (no TikZ diagrams found)[/dim]")
+            console.print("[dim]WARN No thumbnail generated (no TikZ diagrams found)[/dim]")
 
     # --- Metadata ---
     (output_path / "metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False))
-    console.print("[green]✓[/green] metadata.json")
+    console.print("[green]OK[/green] metadata.json")
 
     # --- ZIP ---
     if make_zip:
         zip_path = output_path.parent / f"{output_path.name}.zip"
         shutil.make_archive(str(output_path), "zip", str(output_path.parent), output_path.name)
-        console.print(f"\n[green]✓[/green] {zip_path} ({_human_size(zip_path)})")
+        console.print(f"\n[green]OK[/green] {zip_path} ({_human_size(zip_path)})")
 
     console.print(f"\n[cyan]Done:[/cyan] {title} — {len(tex_files)} problems")
 

@@ -7,7 +7,12 @@ from pathlib import Path
 
 import click
 
-from ..common import _get_console, _get_panel, _get_syntax
+from ..common import (
+    _get_console,
+    _get_panel,
+    _get_syntax,
+    configure_cli_verbosity,
+)
 
 
 VALID_QUESTION_TYPES = ["mcq_sc", "mcq_mc", "subjective", "assertion_reason", "passage", "match"]
@@ -19,7 +24,7 @@ def display_scan_result(result, console) -> None:
     console.print(_get_panel(syntax, title="Extracted LaTeX", border_style="green"))
 
     if result.has_diagram:
-        console.print(f"\n[yellow]Has Diagram:[/yellow] Yes")
+        console.print("\n[yellow]Has Diagram:[/yellow] Yes")
         if result.raw_diagram_description:
             console.print(f"[yellow]Diagram Type:[/yellow] {result.raw_diagram_description}")
 
@@ -65,9 +70,10 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     help="Show full LaTeX document before each compile"
 )
 @click.option(
-    "-v", "--verbose",
-    is_flag=True,
-    help="Verbose output with additional details"
+    "-v/-q", "--verbose/--quiet", "verbose",
+    default=True,
+    callback=configure_cli_verbosity,
+    help="Show API profile, token, cache, and processing details [default: verbose]"
 )
 def scan(
     input_path: str | None,
@@ -101,7 +107,6 @@ def scan(
         vbagent run --help         Full pipeline with solution generation
         vbagent classify --help    Classification only
     """
-    from vbagent.agents.classifier import classify as classify_image
     from vbagent.agents.content_generation.scanner import scan as scan_image, scan_with_type
     from vbagent.models.content import ScanResult
 
@@ -133,7 +138,12 @@ def scan(
         else:
             from vbagent.cache import PipelineCache
             from vbagent.models.classification import PrimaryClassification
-            from vbagent.agents.classification import classify_from_image
+            from vbagent.agents.classification.question_classifier import classify_primary_image
+            from vbagent.ui.logging import (
+                apply_agent_logging_context,
+                capture_agent_logging_context,
+                set_task_tag,
+            )
 
             problem_id = input_file.stem
             cache = PipelineCache()
@@ -149,7 +159,7 @@ def scan(
                 )
             else:
                 with console.status("[bold green]Classifying image..."):
-                    classification = classify_from_image(input_path, show_spinner=False)
+                    classification = classify_primary_image(input_path, show_spinner=True)
                 cache.set(problem_id, "classification", classification.model_dump())
 
             from vbagent.cli.interfaces.ui import print_classification
@@ -168,7 +178,7 @@ def scan(
                     console.print("[dim]Loading cached TikZ and scan...[/dim]")
                     tikz_code = cache.get(problem_id, "tikz")
                     scan_latex = cache.get(problem_id, "scan")
-                    console.print(f"[green]✓ Loaded cached TikZ and scan[/green]")
+                    console.print("[green]OK Loaded cached TikZ and scan[/green]")
 
                     result = ScanResult(
                         latex=scan_latex if scan_latex else "",
@@ -183,7 +193,7 @@ def scan(
                         console.print("[dim]  → Combining LaTeX + TikZ...[/dim]")
                         result.latex = insert_tikz_into_latex(result.latex, tikz_code)
                         result.latex = format_latex(result.latex)
-                        console.print("[green]  ✓ Combined[/green]")
+                        console.print("[green]  OK Combined[/green]")
                 else:
                     import threading
                     from vbagent.agents.diagram.tikz import generate_tikz
@@ -199,22 +209,28 @@ def scan(
 
                     image = input_path
 
+                    logging_context = capture_agent_logging_context()
+
                     def run_scan():
+                        apply_agent_logging_context(logging_context)
+                        set_task_tag("Scan")
                         try:
-                            scan_result_holder["result"] = scan_image(image, classification, subject=classification.subject, show_spinner=False)
+                            scan_result_holder["result"] = scan_image(image, classification, subject=classification.subject, show_spinner=True)
                         except Exception as e:
                             scan_result_holder["error"] = e
                         finally:
                             scan_result_holder["done"] = True
 
                     def run_tikz():
+                        apply_agent_logging_context(logging_context)
+                        set_task_tag("TikZ")
                         try:
                             tikz_result_holder["result"] = generate_tikz(
                                 description=tikz_description,
                                 image_path=image,
                                 use_context=True,
                                 classification=classification,
-                                show_spinner=False
+                                show_spinner=True
                             )
                             tikz_result_holder["agent"] = "generic"
                         except Exception as e:
@@ -233,7 +249,7 @@ def scan(
                     )
 
                     with progress:
-                        task = progress.add_task("Processing Scanner + TikZ...", total=None)
+                        progress.add_task("Processing Scanner + TikZ...", total=None)
                         scan_thread.start()
                         tikz_thread.start()
                         while scan_thread.is_alive() or tikz_thread.is_alive():
@@ -268,7 +284,7 @@ def scan(
                             console.print("[dim]  → Combining LaTeX + TikZ...[/dim]")
                             result.latex = insert_tikz_into_latex(result.latex, tikz_code)
                             result.latex = format_latex(result.latex)
-                            console.print("[green]  ✓ Combined[/green]")
+                            console.print("[green]  OK Combined[/green]")
             else:
                 image = input_path
                 with console.status("[bold green]Scanning image..."):

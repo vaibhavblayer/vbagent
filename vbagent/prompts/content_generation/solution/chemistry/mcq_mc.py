@@ -165,7 +165,9 @@ You MUST output a JSON object with this exact structure:
 {
   "solution_latex": "\\begin{solution}...\\end{solution}",
   "diagram_requirements": [...],
-  "reasoning_notes": "Optional internal notes"
+  "reasoning_notes": "Optional internal notes",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 

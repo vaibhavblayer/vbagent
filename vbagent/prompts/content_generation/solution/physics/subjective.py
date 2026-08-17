@@ -248,7 +248,9 @@ You MUST output a JSON object with this exact structure:
       }
     }
   ],
-  "reasoning_notes": "Optional internal notes about solution approach"
+  "reasoning_notes": "Optional internal notes about solution approach",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 
@@ -330,7 +332,9 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
       }
     }
   ],
-  "reasoning_notes": "Used force resolution on incline. Diagram helps visualize component forces."
+  "reasoning_notes": "Used force resolution on incline. Diagram helps visualize component forces.",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 
@@ -340,7 +344,9 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
 {
   "solution_latex": "\\begin{solution}\\n\\begin{align*}\\n\\intertext{Given: $u = 0$, $a = 5 \\\\ \\\\mathrm{m/s^2}$, $t = 10 \\\\ \\\\mathrm{s}$. Find distance traveled}\\ns &= ut + \\\\frac{1}{2}at^2 \\\\\\\\\\n  &= 0 + \\\\frac{1}{2} \\\\times 5 \\\\times 10^2 \\\\\\\\\\n  &= 250 \\\\ \\\\mathrm{m}\\n\\end{align*}\\n\\end{solution}",
   "diagram_requirements": [],
-  "reasoning_notes": "Simple kinematics calculation, no diagram needed"
+  "reasoning_notes": "Simple kinematics calculation, no diagram needed",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 

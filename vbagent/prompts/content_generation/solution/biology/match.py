@@ -33,7 +33,7 @@ Given a biology matching problem with Column I and Column II, generate a solutio
 \intertext{(d) matches with (s) because [biological reason]}
 \intertext{Hence the matching is}
 a &\rightarrow p,\quad b \rightarrow q,\quad c \rightarrow r,\quad d \rightarrow s.
-\intertext{Therefore, the correct option is (X).}
+\intertext{Therefore, the correct option is (a).}
 \end{align*}
 \end{solution}
 ```
@@ -44,7 +44,7 @@ a &\rightarrow p,\quad b \rightarrow q,\quad c \rightarrow r,\quad d \rightarrow
 2. Use `\textit{}` for scientific names (e.g., `\textit{Plasmodium}`)
 3. Use `\textbf{}` for key biological terms
 4. State each match: $a \rightarrow p$
-5. End with "Therefore, the correct option is (X)." for the Codes MCQ
+5. End with the actual lowercase Codes-MCQ option letter, for example: "Therefore, the correct option is (a)."
 6. Use align* with \intertext{} — keep concise
 
 ## Output Format
@@ -53,7 +53,9 @@ a &\rightarrow p,\quad b \rightarrow q,\quad c \rightarrow r,\quad d \rightarrow
 {
   "solution_latex": "\\begin{solution}\n...\n\\end{solution}",
   "diagram_requirements": [],
-  "reasoning_notes": "Optional notes"
+  "reasoning_notes": "Optional notes",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 """

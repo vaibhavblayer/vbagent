@@ -106,7 +106,7 @@ def generate_biology_diagram(
         elapsed = time.time() - t0
         if show_spinner:
             console.print(
-                f"[green]✓ Biology diagram saved in {elapsed:.1f}s:[/green] {output_path}"
+                f"[green]OK Biology diagram saved in {elapsed:.1f}s:[/green] {output_path}"
             )
 
         latex_include = _build_latex_include(output_path)
@@ -121,7 +121,7 @@ def generate_biology_diagram(
     except Exception as e:
         elapsed = time.time() - t0
         if show_spinner:
-            console.print(f"[red]✗ Biology diagram failed in {elapsed:.1f}s:[/red] {e}")
+            console.print(f"[red]ERROR Biology diagram failed in {elapsed:.1f}s:[/red] {e}")
             import traceback
             console.print(f"[dim]{traceback.format_exc()[-500:]}[/dim]")
 

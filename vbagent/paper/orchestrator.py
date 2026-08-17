@@ -175,7 +175,7 @@ class PaperOrchestrator:
             self.console.print(f"[dim]  ↳ classified: {entry.subtopic} | {entry.concepts}[/dim]")
 
         self.manifest.add_problem(state, entry)
-        self.console.print(f"[green]✓[/green] {filename} generated")
+        self.console.print(f"[green]OK[/green] {filename} generated")
         return result
 
     # ------------------------------------------------------------------
@@ -259,7 +259,7 @@ class PaperOrchestrator:
             self.manifest.save(state)
             self.syllabus_mgr.update_after_generation(entry)
             generated.append(entry)
-            self.console.print(f"[green]  ✓ {filename}[/green]")
+            self.console.print(f"[green]  OK {filename}[/green]")
 
         coverage_after = self.syllabus_mgr.analyze_coverage(state.problems).overall_coverage_pct
         return GenerationReport(
@@ -308,24 +308,38 @@ class PaperOrchestrator:
                 )
                 # Extract just the solution block (not the duplicated problem)
                 sol_block = self._extract_env_block(sol.latex, "solution")
-                if not sol_block:
+                final_answer_block = self._extract_env_block(
+                    sol.latex, "finalanswer"
+                )
+                if sol_block:
+                    solution_payload = sol_block
+                    if final_answer_block:
+                        solution_payload += "\n\n" + final_answer_block
+                else:
                     sol_block = sol.latex  # fallback: use full output
+                    solution_payload = sol_block
 
                 # Save standalone copy in solutions/
                 sol_path = self.base_dir / "solutions" / entry.filename
                 sol_path.parent.mkdir(parents=True, exist_ok=True)
-                sol_path.write_text(format_tex(sol_block), encoding="utf-8")
+                sol_path.write_text(
+                    format_tex(solution_payload), encoding="utf-8"
+                )
 
                 # Stitch into the problem file in scans/
                 self._stitch_into_problem(entry, sol_block)
+                if final_answer_block:
+                    self._stitch_into_problem(entry, final_answer_block)
 
                 entry.solution_status = "generated"
-                self._cache_content(f"paper_{entry.serial}", "solution", sol_block)
+                self._cache_content(
+                    f"paper_{entry.serial}", "solution", solution_payload
+                )
                 results.append({"serial": entry.serial, "success": True})
-                self.console.print(f"[green]  ✓ Solution for {entry.filename}[/green]")
+                self.console.print(f"[green]  OK Solution for {entry.filename}[/green]")
             except Exception as e:
                 results.append({"serial": entry.serial, "success": False, "error": str(e)})
-                self.console.print(f"[yellow]  ⚠ Solution failed for {entry.filename}: {e}[/yellow]")
+                self.console.print(f"[yellow]  WARN Solution failed for {entry.filename}: {e}[/yellow]")
 
         self.manifest.save(state)
         return SolutionReport(
@@ -365,7 +379,7 @@ class PaperOrchestrator:
                 # Cache hint
                 self._cache_content(f"paper_{entry.serial}", "hint", hint.hint_text)
                 results.append({"serial": entry.serial, "hint_text": hint.hint_text, "success": True})
-                self.console.print(f"[green]  ✓ Hint for {entry.filename}[/green]")
+                self.console.print(f"[green]  OK Hint for {entry.filename}[/green]")
             except Exception as e:
                 results.append({"serial": entry.serial, "success": False, "error": str(e)})
 
@@ -436,7 +450,7 @@ Respond with JSON: {{"hint_text": "...", "hint_style": "{hint_style}", "key_conc
             self.console.print(f"[dim]  ↳ diagram agent: {agent_type}[/dim]")
             return tikz_code
         except Exception as e:
-            self.console.print(f"[dim yellow]  ⚠ diagram generation skipped: {e}[/dim yellow]")
+            self.console.print(f"[dim yellow]  WARN diagram generation skipped: {e}[/dim yellow]")
             return None
 
     def _inject_tikz(self, result: GeneratedProblemResult, tikz_code: str) -> GeneratedProblemResult:
@@ -505,12 +519,12 @@ Respond with JSON: {{"hint_text": "...", "hint_style": "{hint_style}", "key_conc
                     entry.diagram_status = "generated"
                     entry.diagram_description = desc
                     results.append({"serial": entry.serial, "success": True, "description": desc})
-                    self.console.print(f"[green]  ✓ #{entry.serial}[/green] diagram added")
+                    self.console.print(f"[green]  OK #{entry.serial}[/green] diagram added")
                 else:
                     results.append({"serial": entry.serial, "success": False, "reason": "generation failed"})
             except Exception as e:
                 results.append({"serial": entry.serial, "success": False, "error": str(e)})
-                self.console.print(f"[yellow]  ⚠ #{entry.serial} failed: {e}[/yellow]")
+                self.console.print(f"[yellow]  WARN #{entry.serial} failed: {e}[/yellow]")
 
         self.manifest.save(state)
         return results
@@ -543,7 +557,7 @@ Examples of good descriptions:
                 agent_type="classifier",
             )
             context = f"Topic: {topic}\n\nProblem:\n```latex\n{problem_tex[:3000]}\n```"
-            result = run_agent_sync(agent, context, show_spinner=False)
+            result = run_agent_sync(agent, context, show_spinner=True)
             if result.needs_diagram and result.description:
                 return result.description
             return None
@@ -575,9 +589,9 @@ Be precise and specific. The subtopic should be narrower than the topic "{topic}
                 agent_type="classifier",
             )
             context = f"Topic: {topic}\n\nProblem LaTeX:\n```latex\n{problem_tex[:3000]}\n```"
-            return run_agent_sync(agent, context, show_spinner=False)
+            return run_agent_sync(agent, context, show_spinner=True)
         except Exception as e:
-            self.console.print(f"[dim yellow]  ⚠ classification skipped: {e}[/dim yellow]")
+            self.console.print(f"[dim yellow]  WARN classification skipped: {e}[/dim yellow]")
             return None
 
     def _covered_subtopics(self, state: PaperState, topic: str) -> list[str]:
@@ -606,12 +620,12 @@ Be precise and specific. The subtopic should be narrower than the topic "{topic}
                     entry.concepts = classification.concepts or entry.concepts
                     entry.difficulty = classification.difficulty or entry.difficulty
                     results.append({"serial": entry.serial, "subtopic": entry.subtopic, "concepts": entry.concepts, "success": True})
-                    self.console.print(f"[green]  ✓ #{entry.serial}[/green] → {entry.subtopic} | {entry.concepts}")
+                    self.console.print(f"[green]  OK #{entry.serial}[/green] → {entry.subtopic} | {entry.concepts}")
                 else:
                     results.append({"serial": entry.serial, "success": False, "error": "classification returned None"})
             except Exception as e:
                 results.append({"serial": entry.serial, "success": False, "error": str(e)})
-                self.console.print(f"[yellow]  ⚠ #{entry.serial} failed: {e}[/yellow]")
+                self.console.print(f"[yellow]  WARN #{entry.serial} failed: {e}[/yellow]")
 
         self.manifest.save(state)
         return results
@@ -776,7 +790,7 @@ Be precise and specific. The subtopic should be narrower than the topic "{topic}
                     # Everything before the first \begin{solution/hint/alternatesolution/idea/remark}
                     import re as _re
                     problem_part = _re.split(
-                        r'\s*\\begin\{(?:solution|alternatesolution|hint|idea|remark)\}',
+                        r'\s*\\begin\{(?:solution|alternatesolution|hint|idea|remark|finalanswer)\}',
                         full_content, maxsplit=1,
                     )[0].strip()
                     parts.append(problem_part)
@@ -826,7 +840,7 @@ Be precise and specific. The subtopic should be narrower than the topic "{topic}
         output_path = self.base_dir / output
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(content, encoding="utf-8")
-        self.console.print(f"\n[green]✓[/green] Written {output_path}")
+        self.console.print(f"\n[green]OK[/green] Written {output_path}")
 
         result = {
             "output_path": str(output_path),
@@ -851,10 +865,10 @@ Be precise and specific. The subtopic should be narrower than the topic "{topic}
                 pdf_path = self.base_dir / pdf_name
                 if pdf_path.exists():
                     size_kb = pdf_path.stat().st_size / 1024
-                    self.console.print(f"[green]✓[/green] PDF generated: {pdf_path} ({size_kb:.0f} KB)")
+                    self.console.print(f"[green]OK[/green] PDF generated: {pdf_path} ({size_kb:.0f} KB)")
                     result["pdf_path"] = str(pdf_path)
                 else:
-                    self.console.print(f"[red]✗[/red] pdflatex finished but no PDF produced")
+                    self.console.print(f"[red]ERROR[/red] pdflatex finished but no PDF produced")
                     if proc.stdout:
                         # Show last 15 lines of log for debugging
                         log_lines = proc.stdout.strip().split("\n")
@@ -862,10 +876,10 @@ Be precise and specific. The subtopic should be narrower than the topic "{topic}
                             self.console.print(f"  [dim]{line}[/dim]")
                     result["success"] = False
             except FileNotFoundError:
-                self.console.print("[red]✗[/red] pdflatex not found — install TeX Live or MiKTeX")
+                self.console.print("[red]ERROR[/red] pdflatex not found — install TeX Live or MiKTeX")
                 result["success"] = False
             except subprocess.TimeoutExpired:
-                self.console.print("[red]✗[/red] pdflatex timed out (120s)")
+                self.console.print("[red]ERROR[/red] pdflatex timed out (120s)")
                 result["success"] = False
 
         return result
@@ -990,6 +1004,16 @@ Be precise and specific. The subtopic should be narrower than the topic "{topic}
                     if alt_block:
                         additions.append(alt_block)
 
+            if "\\begin{finalanswer}" not in current:
+                sol_path = self.base_dir / "solutions" / entry.filename
+                if sol_path.exists():
+                    sol_tex = sol_path.read_text(encoding="utf-8")
+                    final_answer_block = self._extract_env_block(
+                        sol_tex, "finalanswer"
+                    )
+                    if final_answer_block:
+                        additions.append(final_answer_block)
+
             # Stitch idea/remark from solutions file if not already present
             for env in ("idea", "remark"):
                 if f"\\begin{{{env}}}" not in current:
@@ -1061,7 +1085,7 @@ Be precise and specific. The subtopic should be narrower than the topic "{topic}
             # Create zip
             zip_path = self.base_dir / output.replace(".zip", "")
             archive = shutil.make_archive(str(zip_path), "zip", tmp, "paper")
-            self.console.print(f"[green]✓[/green] Exported: {archive}")
+            self.console.print(f"[green]OK[/green] Exported: {archive}")
             return archive
 
     def _load_syllabus(self) -> None:

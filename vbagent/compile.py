@@ -65,11 +65,24 @@ PREAMBLE_TEMPLATE = r"""\documentclass[preview, border=2mm]{{standalone}}
 % --- Tasks (MCQ options) ---
 \usepackage{{tasks}}
 
-% --- Solution environment ---
+% --- Content environments and visibility controls ---
+\usepackage{{comment, multicol}}
 \newenvironment{{solution}}{{\par\textbf{{Solution:}}\par}}{{}}
+\newenvironment{{alternatesolution}}{{\par\textbf{{Alternate solution:}}\par}}{{}}
+\newenvironment{{hint}}{{\par\textbf{{Hint:}}\par}}{{}}
+\newenvironment{{idea}}{{\par\textbf{{Idea:}}\par}}{{}}
+\newenvironment{{remark}}{{\par\textbf{{Remark:}}\par}}{{}}
+\newenvironment{{finalanswer}}{{\par\textbf{{Answer:}}\par}}{{}}
+% \excludecomment{{solution}}
+% \excludecomment{{alternatesolution}}
+\excludecomment{{hint}}
+\excludecomment{{idea}}
+\excludecomment{{remark}}
+\excludecomment{{finalanswer}}
 
 % --- Answer marker ---
 \newcommand{{\ans}}{{\ensuremath{{\checkmark}}}}
+\renewcommand{{\ans}}{{}}
 \newcommand{{\ansint}}[1]{{\textcolor{{red!95}}{{#1}}}}
 
 % --- Chemistry (if needed) ---
@@ -353,23 +366,23 @@ def compile_and_retry(
         if result.success:
             if console and attempt > 0:
                 console.print(
-                    f"[green]  ✓ Compile passed (attempt {attempt + 1})[/green]"
+                    f"[green]  OK Compile passed (attempt {attempt + 1})[/green]"
                 )
             elif console:
-                console.print("[green]  ✓ Compile passed[/green]")
+                console.print("[green]  OK Compile passed[/green]")
             return current, result
 
         if attempt < max_retries:
             if console:
                 console.print(
-                    f"[yellow]  ✗ Compile failed (attempt {attempt + 1}/{max_retries + 1}), "
+                    f"[yellow]  ERROR Compile failed (attempt {attempt + 1}/{max_retries + 1}), "
                     f"retrying...[/yellow]"
                 )
             current = retry_fn(result.error_summary, current)
         else:
             if console:
                 console.print(
-                    f"[red]  ✗ Compile failed after {max_retries + 1} attempts[/red]"
+                    f"[red]  ERROR Compile failed after {max_retries + 1} attempts[/red]"
                 )
 
     return current, result

@@ -7,6 +7,7 @@ from rich.console import Console
 from rich.table import Table
 
 from vbagent.api_keys import KeyManager
+from vbagent.api_keys.models import DEFAULT_MODEL_CATEGORIES
 
 
 def _format_tokens(tokens: int) -> str:
@@ -119,7 +120,7 @@ def list():
 
     for serial, (key_name, data) in enumerate(summary.items(), 1):
         enabled = data["enabled"]
-        status = "[green]✓[/green]" if enabled else "[red]✗[/red]"
+        status = "[green]OK[/green]" if enabled else "[red]ERROR[/red]"
 
         for idx, (category, stats) in enumerate(data["categories"].items()):
             used = _format_tokens(stats["used"])
@@ -188,7 +189,7 @@ def add(name: str, api_key: str, standard_limit: int, mini_limit: int):
 
     try:
         manager.add_key(name, api_key, standard_limit, mini_limit)
-        console.print(f"[green]✓[/green] Added key '[cyan]{name}[/cyan]'")
+        console.print(f"[green]OK[/green] Added key '[cyan]{name}[/cyan]'")
         console.print(f"  Standard limit: {_format_tokens(standard_limit)} tokens/day")
         console.print(f"  Mini limit: {_format_tokens(mini_limit)} tokens/day")
     except ValueError as e:
@@ -208,7 +209,7 @@ def update(identifier: str, standard_limit: int, mini_limit: int):
     try:
         name = _resolve_key(manager, identifier)
         manager.update_limits(name, standard_limit, mini_limit)
-        console.print(f"[green]✓[/green] Updated limits for '[cyan]{name}[/cyan]'")
+        console.print(f"[green]OK[/green] Updated limits for '[cyan]{name}[/cyan]'")
         if standard_limit:
             console.print(f"  Standard limit: {_format_tokens(standard_limit)} tokens/day")
         if mini_limit:
@@ -245,7 +246,7 @@ def enable(identifiers: tuple[str, ...], only: bool, enable_all: bool):
         if enable_all:
             for key in manager.config.keys:
                 manager.enable_key(key.name)
-            console.print(f"[green]✓[/green] Enabled all {len(manager.config.keys)} keys")
+            console.print(f"[green]OK[/green] Enabled all {len(manager.config.keys)} keys")
             return
 
         if not identifiers:
@@ -263,7 +264,7 @@ def enable(identifiers: tuple[str, ...], only: bool, enable_all: bool):
 
         for name in names:
             manager.enable_key(name)
-            console.print(f"[green]✓[/green] Enabled '[cyan]{name}[/cyan]'")
+            console.print(f"[green]OK[/green] Enabled '[cyan]{name}[/cyan]'")
 
     except (ValueError, RuntimeError, click.BadParameter) as e:
         console.print(f"[red]Error:[/red] {e}")
@@ -301,7 +302,7 @@ def disable(identifiers: tuple[str, ...], disable_all: bool, except_ids: tuple[s
                     console.print(f"  [dim]Kept {key.name}[/dim]")
                 else:
                     manager.disable_key(key.name)
-                    console.print(f"[yellow]✓[/yellow] Disabled '[cyan]{key.name}[/cyan]'")
+                    console.print(f"[yellow]OK[/yellow] Disabled '[cyan]{key.name}[/cyan]'")
             return
 
         if not identifiers:
@@ -311,7 +312,7 @@ def disable(identifiers: tuple[str, ...], disable_all: bool, except_ids: tuple[s
         names = _resolve_multiple(manager, identifiers)
         for name in names:
             manager.disable_key(name)
-            console.print(f"[yellow]✓[/yellow] Disabled '[cyan]{name}[/cyan]'")
+            console.print(f"[yellow]OK[/yellow] Disabled '[cyan]{name}[/cyan]'")
 
     except (ValueError, RuntimeError, click.BadParameter) as e:
         console.print(f"[red]Error:[/red] {e}")
@@ -329,7 +330,7 @@ def remove(identifier: str):
     try:
         name = _resolve_key(manager, identifier)
         manager.remove_key(name)
-        console.print(f"[green]✓[/green] Removed key '[cyan]{name}[/cyan]'")
+        console.print(f"[green]OK[/green] Removed key '[cyan]{name}[/cyan]'")
     except (ValueError, RuntimeError, click.BadParameter) as e:
         console.print(f"[red]Error:[/red] {e}")
         raise SystemExit(1)
@@ -347,7 +348,7 @@ def reset():
         return
 
     manager.reset_daily_usage()
-    console.print("[green]✓[/green] Reset all daily usage counters")
+    console.print("[green]OK[/green] Reset all daily usage counters")
 
 
 @keys.command()
@@ -375,8 +376,8 @@ def init():
         ],
         "rotation_strategy": "least_used",
         "model_categories": {
-            "standard": ["gpt-5.4", "gpt-4o", "gpt-4-turbo", "gpt-4"],
-            "mini": ["gpt-5.4-mini", "gpt-4o-mini", "gpt-3.5-turbo"],
+            category: list(patterns)
+            for category, patterns in DEFAULT_MODEL_CATEGORIES.items()
         },
         "last_used_index": 0,
     }
@@ -386,7 +387,7 @@ def init():
     with open(manager._config_path, "w") as f:
         json.dump(example_config, f, indent=2)
 
-    console.print(f"[green]✓[/green] Created configuration: [cyan]{manager._config_path}[/cyan]")
+    console.print(f"[green]OK[/green] Created configuration: [cyan]{manager._config_path}[/cyan]")
     console.print("\n[yellow]Next steps:[/yellow]")
     console.print("1. Edit the file and replace 'sk-YOUR-API-KEY-HERE' with your actual API key")
     console.print("2. Add more keys if needed")

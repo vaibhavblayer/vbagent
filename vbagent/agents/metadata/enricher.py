@@ -205,7 +205,7 @@ def enrich_metadata_sequential(
         None,  # diagram
         tikz_code,
         subject,
-        show_spinner=False,
+        show_spinner=True,
     )
     
     return EnrichedMetadata(taxonomy=taxonomy, difficulty=difficulty)

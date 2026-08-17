@@ -164,7 +164,7 @@ Override models for specific agent types:
 vbagent config set classifier --model gpt-5.4-mini --reasoning low
 
 # Use specific model for diagram analysis
-vbagent config set diagram_analyzer --model gpt-5.4 --reasoning medium
+vbagent config set diagram_classifier --model gpt-5.4 --reasoning medium
 ```
 
 ### Diagram Generation Agents

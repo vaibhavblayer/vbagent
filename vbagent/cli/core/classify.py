@@ -4,11 +4,15 @@ Stage 1: Classify question image and detect subject (physics/chemistry/mathemati
 """
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 
-from ..common import _get_console
+from ..common import _get_console, configure_cli_verbosity
 from vbagent.ui.tables import create_table
+
+if TYPE_CHECKING:
+    from rich.table import Table
 
 
 def format_result_table(result) -> "Table":
@@ -49,9 +53,10 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     help="Output format: table (default) or json"
 )
 @click.option(
-    "-v", "--verbose",
-    is_flag=True,
-    help="Verbose output with additional details"
+    "-v/-q", "--verbose/--quiet", "verbose",
+    default=True,
+    callback=configure_cli_verbosity,
+    help="Show API profile, token, cache, and processing details [default: verbose]"
 )
 def classify(input_path: str, output: str | None, output_format: str, verbose: bool):
     """Stage 1: Classify question image and detect subject.
@@ -88,7 +93,7 @@ def classify(input_path: str, output: str | None, output_format: str, verbose: b
         - Mathematics: algebra, calculus, geometry, trigonometry, etc.
     """
     # Lazy imports - only load heavy dependencies when command runs
-    from vbagent.agents.classifier import classify as classify_image
+    from vbagent.agents.classification.question_classifier import classify_primary_image as classify_image
     
     console = _get_console()
     
@@ -119,7 +124,7 @@ def classify(input_path: str, output: str | None, output_format: str, verbose: b
             output_path = Path(output)
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(result.model_dump_json(indent=2))
-            console.print(f"\n[green]✓[/green] Results saved to: {output}")
+            console.print(f"\n[green]OK[/green] Results saved to: {output}")
             
     except FileNotFoundError as e:
         console.print(f"[red]Error:[/red] {e}")

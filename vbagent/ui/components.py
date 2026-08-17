@@ -3,7 +3,6 @@
 from typing import Optional
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
-from rich.console import Console, Group
 from rich.syntax import Syntax
 from rich.text import Text
 from rich.columns import Columns
@@ -60,7 +59,8 @@ def create_progress(show_time: bool = True) -> Progress:
     if show_time:
         cols.append(TimeElapsedColumn())
 
-    return Progress(*cols, console=Console(), transient=True)
+    from vbagent.ui.logging import get_agent_console
+    return Progress(*cols, console=get_agent_console(), transient=True)
 
 
 def create_code_block(

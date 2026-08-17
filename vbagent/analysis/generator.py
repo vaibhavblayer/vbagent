@@ -49,6 +49,7 @@ def _generate_preamble() -> str:
     return r"""\documentclass[8pt]{extarticle}
 \usepackage{tikz, tasks, geometry, xcolor}
 \usepackage[most]{tcolorbox}
+\usepackage{comment}
 \usetikzlibrary{arrows.meta, patterns, calc, intersections, quotes, angles}
 \usepackage{amsmath, amssymb, amsfonts, mathtools}
 \setlength{\columnsep}{10pt}
@@ -75,6 +76,8 @@ def _generate_preamble() -> str:
 \newenvironment{hint}{\par\noindent\color{red!50!black}$\looparrowright$\enspace\ignorespaces}{\par}
 \newenvironment{idea}{\par\noindent\color{violet!80!black}$\diamond$\enspace\ignorespaces}{\par}
 \newenvironment{remark}{\par\noindent\color{teal!80!black}$\circ$\enspace\ignorespaces}{\par}
+\newenvironment{finalanswer}{\par\noindent\textbf{Answer: }\ignorespaces}{\par}
+\excludecomment{finalanswer}
 
 % --- Global TikZ style (design uniformity across all diagrams) ---
 \tikzset{

@@ -1,57 +1,44 @@
-"""Classifier agent for question image classification.
+"""Backward-compatible public facade for question-image classification.
 
-Used by CLI commands (scan, classify, batch, convert) for single-image
-classification. The unified pipeline uses classify_and_analyze() instead.
+New code should import from
+``vbagent.agents.classification.question_classifier``.
 """
 
 from typing import TYPE_CHECKING, Optional
 
-if TYPE_CHECKING:
-    from agents import Agent
-
-from vbagent.agents.base import (
-    create_agent,
-    create_image_message,
-    run_agent_sync,
+from vbagent.agents.classification.question_classifier import (
+    classify_primary_image,
+    create_question_classifier,
 )
 from vbagent.config import get_config
 from vbagent.models.classification import PrimaryClassification
-from vbagent.prompts.classification.classifier import get_classifier_prompt, get_user_template
+
+if TYPE_CHECKING:
+    from agents import Agent
+
+classifier_agent: "Agent"
 
 
 def create_classifier_agent(subject: Optional[str] = None) -> "Agent":
-    """Create classifier agent for image classification."""
-    if subject is None:
-        subject = get_config().subject
-
-    prompt = get_classifier_prompt(subject)
-
-    return create_agent(
-        name=f"Classifier-{subject}",
-        instructions=prompt,
-        output_type=PrimaryClassification,
-        agent_type="classifier",
-    )
+    """Compatibility wrapper for :func:`create_question_classifier`."""
+    return create_question_classifier(subject or get_config().subject)
 
 
-# Default classifier agent (physics)
-classifier_agent = create_classifier_agent("physics")
+def classify(
+    image_path: str,
+    subject: Optional[str] = None,
+) -> PrimaryClassification:
+    """Classify an image using the canonical question classifier."""
+    return classify_primary_image(image_path, subject=subject)
 
 
-def classify(image_path: str, subject: Optional[str] = None) -> PrimaryClassification:
-    """Classify a question image and return structured metadata.
+def __getattr__(name: str):
+    """Create the legacy default agent only when explicitly requested."""
+    if name == "classifier_agent":
+        agent = create_classifier_agent("physics")
+        globals()[name] = agent
+        return agent
+    raise AttributeError(name)
 
-    Args:
-        image_path: Path to the image file to classify
-        subject: Subject override (uses config if not provided)
 
-    Returns:
-        PrimaryClassification with extracted metadata
-    """
-    if subject is None:
-        subject = get_config().subject
-
-    agent = create_classifier_agent(subject)
-    user_template = get_user_template(subject)
-    message = create_image_message(image_path, user_template)
-    return run_agent_sync(agent, message, timeout=60)
+__all__ = ["create_classifier_agent", "classifier_agent", "classify"]

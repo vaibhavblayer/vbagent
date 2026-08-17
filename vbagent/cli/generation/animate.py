@@ -170,7 +170,7 @@ def _process_explain(
     plan = plan_animation(topic=topic)
 
     elapsed = time.time() - t0
-    console.print(f"[green]✓ Plan ready in {elapsed:.1f}s — {len(plan.scenes)} scenes[/green]")
+    console.print(f"[green]OK Plan ready in {elapsed:.1f}s — {len(plan.scenes)} scenes[/green]")
 
     for i, scene in enumerate(plan.scenes, 1):
         console.print(f"  {i}. [bold]{scene.scene_name}[/bold] (~{scene.duration_hint}s) — {scene.key_concept}")
@@ -196,7 +196,7 @@ def _process_explain(
         )
 
         elapsed = time.time() - t0
-        console.print(f"[green]✓ {scene_plan.scene_name} generated in {elapsed:.1f}s[/green]")
+        console.print(f"[green]OK {scene_plan.scene_name} generated in {elapsed:.1f}s[/green]")
 
         scene_codes.append(scene_code)
         previous_summaries.append(scene_plan.key_concept)
@@ -235,7 +235,7 @@ def _process_explain(
                 cwd=out.parent,
             )
 
-    console.print(f"\n[bold green]✓ Explain animation complete: {len(scene_codes)} scenes[/bold green]")
+    console.print(f"\n[bold green]OK Explain animation complete: {len(scene_codes)} scenes[/bold green]")
     console.print(f"[dim]Render all: manim -pq{quality} {out.name} {' '.join(scene_names)}[/dim]")
 
 
@@ -279,7 +279,7 @@ def _process_free_prompt(
     )
 
     elapsed = time.time() - t0
-    console.print(f"[green]✓ Code generated in {elapsed:.1f}s[/green]")
+    console.print(f"[green]OK Code generated in {elapsed:.1f}s[/green]")
 
     # Write output
     if output_path:
@@ -400,7 +400,7 @@ def _process_single(
         )
 
         elapsed = time.time() - t0
-        console.print(f"[green]✓ Assessment in {elapsed:.1f}s[/green]")
+        console.print(f"[green]OK Assessment in {elapsed:.1f}s[/green]")
 
         if not assessment.should_animate:
             console.print(f"[yellow]Skip[/yellow] — {assessment.reason[:80]}")
@@ -430,7 +430,7 @@ def _process_single(
     )
 
     elapsed = time.time() - t0
-    console.print(f"[green]✓ Code generated in {elapsed:.1f}s[/green]")
+    console.print(f"[green]OK Code generated in {elapsed:.1f}s[/green]")
 
     # Write output
     if output_path:
@@ -475,7 +475,7 @@ def _render_with_retries(
         )
 
         if proc.returncode == 0:
-            console.print(f"[green]✓ Rendered![/green]")
+            console.print(f"[green]OK Rendered![/green]")
             media_dir = work_dir / "media"
             if media_dir.exists():
                 videos = sorted(media_dir.rglob("*.mp4"),

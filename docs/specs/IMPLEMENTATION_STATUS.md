@@ -1,4 +1,8 @@
-# Multi-Agent Classification System - Implementation Status
+# Archived Multi-Agent Classification Implementation Status
+
+> Historical snapshot from 2026-02-13. Agent numbering and some module-layout
+> details below describe the earlier architecture. See `docs/api/agents.md` and
+> `docs/api/classification.md` for the current public names and APIs.
 
 **Status:** ✅ Core Implementation Complete (Phases 1-4)  
 **Date:** 2026-02-13  
@@ -77,7 +81,7 @@ Comprehensive 7-agent classification system with multiple input modalities, auto
 - Math: graphs, geometry
 
 **Files:**
-- `vbagent/agents/classification/diagram_analyzer.py`
+- `vbagent/agents/classification/diagram_classifier.py`
 
 #### Agent 3: Difficulty Assessor
 **Purpose:** Post-scan difficulty assessment with metadata  
@@ -244,7 +248,7 @@ ClassificationResult (complete)
 All agents use lazy loading via properties:
 - `pipeline.image_classifier`
 - `pipeline.latex_classifier`
-- `pipeline.diagram_analyzer`
+- `pipeline.diagram_classifier`
 - `pipeline.difficulty_assessor`
 - `pipeline.idea_generator`
 - `pipeline.problem_combiner`
@@ -328,7 +332,7 @@ $ python -c "from vbagent.agents.classification import get_pipeline; \
   p = get_pipeline(); \
   print(p.image_classifier.name, \
         p.latex_classifier.name, \
-        p.diagram_analyzer.name, \
+        p.diagram_classifier.name, \
         p.difficulty_assessor.name, \
         p.idea_generator.name, \
         p.problem_combiner.name, \
@@ -336,7 +340,7 @@ $ python -c "from vbagent.agents.classification import get_pipeline; \
 
 ImageClassifier-physics
 LaTeXClassifier-physics
-DiagramAnalyzer-physics
+DiagramClassifier-physics
 DifficultyAssessor-physics
 IdeaGenerator-physics
 ProblemCombiner
@@ -413,8 +417,8 @@ vbagent/
 │   ├── classification/
 │   │   ├── __init__.py           # Exports ✅
 │   │   ├── pipeline.py           # Orchestrator ✅
-│   │   ├── image_classifier.py   # Agent 1 ✅
-│   │   ├── diagram_analyzer.py   # Agent 2 ✅
+│   │   ├── question_classifier.py # Question classification ✅
+│   │   ├── diagram_classifier.py  # Diagram classification ✅
 │   │   ├── difficulty_assessor.py # Agent 3 ✅
 │   │   ├── latex_classifier.py   # Agent 4 ✅
 │   │   ├── idea_generator.py     # Agent 5 ✅

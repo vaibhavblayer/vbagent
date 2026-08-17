@@ -6,11 +6,15 @@ preamble, packages, and structure.
 
 from pathlib import Path
 from typing import Optional, List
+import os
 import re
 
 import click
 
 from ..common import _get_console
+
+
+_MISSING_DIAGRAM_PREFIX = "VBAGENT MISSING DIAGRAM: "
 
 
 def discover_problem_files(scans_dir: Path) -> List[str]:
@@ -38,6 +42,50 @@ def natural_sort_key(s: str) -> List:
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', s)]
 
 
+def _assemble_problem_for_compile(
+    scans_path: Path,
+    problem: str,
+) -> tuple[str, bool, bool]:
+    """Resolve one scan's generic diagram placeholder for final compilation.
+
+    Returns the problem content, whether a missing-diagram fallback was needed,
+    and whether the scan originally contained a diagram placeholder. Matching
+    TikZ artifacts live beside ``scans`` in ``tikz``.
+    """
+    scan_path = scans_path / f"{problem}.tex"
+    if not scan_path.exists():
+        raise ValueError(f"Problem file not found: {scan_path}")
+
+    content = scan_path.read_text()
+    if r"\input{diagram}" not in content:
+        return content, False, False
+
+    tikz_path = scans_path.parent / "tikz" / f"{problem}.tex"
+    if tikz_path.exists():
+        from vbagent.pipeline.io import insert_tikz_into_latex
+
+        assembled = insert_tikz_into_latex(content, tikz_path.read_text())
+        if r"\input{diagram}" in assembled:
+            raise ValueError(
+                f"Could not assemble diagram placeholder in {scan_path} "
+                f"using {tikz_path}"
+            )
+        return assembled, False, True
+
+    fallback = (
+        "\\fbox{\\texttt{\\detokenize{[DIAGRAM NOT AVAILABLE: "
+        f"{problem}"
+        "]}}}"
+    )
+    return content.replace(r"\input{diagram}", fallback), True, True
+
+
+def _missing_diagram_names(content: str) -> list[str]:
+    """Extract compile-time diagram fallback names from generated main TeX."""
+    pattern = rf"{re.escape(_MISSING_DIAGRAM_PREFIX)}([^\n]+)"
+    return re.findall(pattern, content)
+
+
 def generate_preamble(subject: str = "physics", title: str = "Problems", include_all: bool = False) -> str:
     """Generate LaTeX preamble based on subject.
     
@@ -54,11 +102,12 @@ def generate_preamble(subject: str = "physics", title: str = "Problems", include
 \usepackage{tikz, tasks, geometry, xcolor}
 \usetikzlibrary{arrows.meta, patterns, calc, intersections, quotes, angles}
 \usepackage{amsmath, amssymb, amsfonts, mathtools}
+\usepackage{comment, multicol}
 \setlength{\columnsep}{10pt}
 \setlength{\columnseprule}{0.4pt}
 \usepackage[upright]{fourier}
 \usepackage{enumitem}
-\geometry{a4paper, margin=1in}"""
+\geometry{a4paper, margin=0.65in}"""
     
     # Subject-specific packages
     subject_packages = {
@@ -96,13 +145,20 @@ def generate_preamble(subject: str = "physics", title: str = "Problems", include
     custom_commands = r"""
 \everymath{\displaystyle}
 \newcommand{\ans}{\textcolor{blue!20!red}{\textit{\quad Ans.}}}
+\renewcommand{\ans}{}
 \newcommand{\ansint}[1]{\textcolor{red!95}{#1}}
-% \renewcommand{\ans}{}  % Uncomment to hide answers
 \newenvironment{solution}{\par\noindent\color{red!80!black}$\Rightarrow$\enspace\ignorespaces}{\par}
 \newenvironment{alternatesolution}{\par\noindent\color{blue!80!black}$\Rrightarrow$\enspace\ignorespaces}{\par}
 \newenvironment{hint}{\par\noindent\color{red!50!black}$\looparrowright$\enspace\ignorespaces}{\par}
 \newenvironment{idea}{\par\noindent\color{violet!80!black}$\diamond$\enspace\ignorespaces}{\par}
 \newenvironment{remark}{\par\noindent\color{teal!80!black}$\circ$\enspace\ignorespaces}{\par}
+\newenvironment{finalanswer}{\par\noindent\textbf{Answer: }\ignorespaces}{\par}
+% \excludecomment{solution}
+% \excludecomment{alternatesolution}
+\excludecomment{hint}
+\excludecomment{idea}
+\excludecomment{remark}
+\excludecomment{finalanswer}
 
 % --- Global TikZ style (design uniformity across all diagrams) ---
 \tikzset{
@@ -178,12 +234,38 @@ def generate_main_tex(
     # Generate preamble
     preamble = generate_preamble(subject, title, include_all_packages)
     
+    # Assemble placeholders against sibling tikz/{problem}.tex artifacts.
+    # If at least one scan needs assembly, materialize compile-ready copies so
+    # main.tex retains per-problem \input statements for extans and other tools.
+    assembled_problems: dict[str, str] = {}
+    missing_diagrams: list[str] = []
+    needs_staging = False
+    for problem in problems:
+        assembled, missing, had_placeholder = _assemble_problem_for_compile(
+            scans_path, problem
+        )
+        needs_staging = needs_staging or had_placeholder
+        assembled_problems[problem] = assembled
+        if missing:
+            missing_diagrams.append(problem)
+
     # Generate document body
     body = r"""\begin{document}
 \maketitle
 \begin{enumerate}"""
-    
-    if use_foreach and problem_range:
+
+    if needs_staging:
+        output_path = Path(output_file)
+        staging_dir = output_path.parent / ".vbagent_compile" / output_path.stem
+        staging_dir.mkdir(parents=True, exist_ok=True)
+        for p in problems:
+            staged_path = staging_dir / f"{p}.tex"
+            staged_path.write_text(assembled_problems[p].strip() + "\n")
+            relative_path = Path(
+                os.path.relpath(staged_path.resolve(), output_path.parent.resolve())
+            ).as_posix()
+            body += f"\n\\input{{{relative_path}}}"
+    elif use_foreach and problem_range:
         # Use \foreach loop (compact)
         start, end = problem_range
         # Extract just the numbers
@@ -213,6 +295,13 @@ def generate_main_tex(
     
     # Combine
     content = preamble + "\n" + body
+
+    if missing_diagrams:
+        missing_comments = "\n".join(
+            f"% {_MISSING_DIAGRAM_PREFIX}{problem}"
+            for problem in missing_diagrams
+        )
+        content = f"{missing_comments}\n{content}"
     
     return content
 
@@ -373,13 +462,21 @@ def compile(
             use_foreach=foreach,
             include_all_packages=all_packages,
         )
+
+        missing_diagrams = _missing_diagram_names(content)
+        if missing_diagrams:
+            names = ", ".join(missing_diagrams)
+            console.print(
+                "[yellow]Warning:[/yellow] No matching TikZ artifact for "
+                f"{names}; inserted a compilable placeholder."
+            )
         
         # Write to file
         output_path = Path(output)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(content)
         
-        console.print(f"[green]✓[/green] Generated {output}")
+        console.print(f"[green]OK[/green] Generated {output}")
         
         if verbose:
             console.print(f"\n[dim]Preview:[/dim]")

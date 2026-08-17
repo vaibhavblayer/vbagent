@@ -460,6 +460,21 @@ class TestExtractAnswer:
         # Integer should be found first
         assert answer == "42"
 
+    def test_extract_subjective_final_answer(self):
+        content = r"""
+        \item Find the equilibrium.
+        \begin{solution}
+        Work goes here.
+        \end{solution}
+        \begin{finalanswer}
+        Stable: $C$; unstable: $A$, $E$; $x=\frac{b}{2a}$.
+        \end{finalanswer}
+        """
+
+        answer = extract_answer(content)
+
+        assert answer == r"Stable: $C$; unstable: $A$, $E$; $x=\frac{b}{2a}$."
+
 
 class TestTexParserIntegration:
     """Integration tests for TeX parser utilities."""

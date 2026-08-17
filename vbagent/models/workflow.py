@@ -30,6 +30,18 @@ class PipelineResult(BaseModel):
     ideas: IdeaResult | None = Field(default=None, description="Extracted ideas (JSON)")
     idea_latex: str | None = Field(default=None, description="Idea block LaTeX for inline append")
     alternate_solutions: list[str] = Field(default_factory=list, description="Alternative solutions")
+    alternate_solution_recommended: bool = Field(
+        default=False,
+        description="Whether the solution agent recommended generating an alternate",
+    )
+    alternate_solution_hint: str | None = Field(
+        default=None,
+        description="Method hint passed to the alternate-solution agent",
+    )
+    final_answer_latex: str | None = Field(
+        default=None,
+        description="Concise answer-key-ready LaTeX for subjective problems",
+    )
     variants: dict[str, str] = Field(default_factory=dict, description="Generated variants by type")
 
 

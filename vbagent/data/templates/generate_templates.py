@@ -54,7 +54,7 @@ def generate_templates():
             json.dump(template, f, indent=2, ensure_ascii=False)
         print(f"Created: {neet_file}")
     
-    print(f"\n✓ Generated {len(syllabus)} template files for JEE Main and NEET")
+    print(f"\nOK Generated {len(syllabus)} template files for JEE Main and NEET")
 
 
 if __name__ == '__main__':

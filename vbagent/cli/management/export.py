@@ -87,7 +87,7 @@ def run(files, output, mode, template, title):
         )
         
         # Display results
-        console.print(f"[green]✓[/green] Export completed successfully!")
+        console.print(f"[green]OK[/green] Export completed successfully!")
         console.print(f"  Output directory: {result.output_dir}")
         console.print(f"  Files exported: {result.file_count}")
         console.print(f"  Mode: {result.mode.value}")
@@ -96,7 +96,7 @@ def run(files, output, mode, template, title):
             console.print(f"  Main file: {result.main_tex}")
         
     except Exception as e:
-        console.print(f"[red]✗[/red] Export failed: {str(e)}")
+        console.print(f"[red]ERROR[/red] Export failed: {str(e)}")
         raise click.Abort()
 
 
@@ -185,7 +185,7 @@ def directory(directory, output, mode, pattern, recursive, template, title):
         )
         
         # Display results
-        console.print(f"[green]✓[/green] Export completed successfully!")
+        console.print(f"[green]OK[/green] Export completed successfully!")
         console.print(f"  Output directory: {result.output_dir}")
         console.print(f"  Files exported: {result.file_count}")
         console.print(f"  Mode: {result.mode.value}")
@@ -194,7 +194,7 @@ def directory(directory, output, mode, pattern, recursive, template, title):
             console.print(f"  Main file: {result.main_tex}")
         
     except Exception as e:
-        console.print(f"[red]✗[/red] Export failed: {str(e)}")
+        console.print(f"[red]ERROR[/red] Export failed: {str(e)}")
         raise click.Abort()
 
 

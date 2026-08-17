@@ -46,7 +46,7 @@ def _code_one_segment(
         total_segments=total_segments,
         previous_summaries=previous_summaries,
         dim_config=dim_config,
-        show_spinner=False,  # critical for parallel safety
+        show_spinner=True,
     )
     return segment_index, result
 

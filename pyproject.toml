@@ -1,6 +1,6 @@
 [project]
 name = "vbagent"
-version = "0.3.10"
+version = "0.3.13"
 description = "Physics question processing library and CLI - classification, LaTeX extraction, variant generation"
 authors = [
     {name = "vaibhavblayer", email = "vaibhavblayer@gmail.com"}
@@ -8,7 +8,7 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "openai-agents>=0.6.2",
+    "openai-agents>=0.18.2,<0.19",
     "pydantic>=2.0.0",
     "click>=8.1.0",
     "rich>=13.0.0",
@@ -20,6 +20,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
+    "pytest-asyncio>=1.0.0",
     "hypothesis>=6.0.0",
 ]
 docs = [
@@ -29,7 +30,7 @@ docs = [
 ]
 # Full installation (same as base - kept for backward compatibility)
 all = [
-    "openai-agents>=0.6.2",
+    "openai-agents>=0.18.2,<0.19",
     "pydantic>=2.0.0",
     "click>=8.1.0",
     "rich>=13.0.0",
@@ -47,6 +48,7 @@ build-backend = "poetry.core.masonry.api"
 
 [dependency-groups]
 dev = [
+    "pytest-asyncio (>=1.0.0,<2.0.0)",
     "mkdocs-material (>=9.7.1,<10.0.0)",
     "mkdocstrings (>=1.0.3,<2.0.0)",
     "pymdown-extensions (>=10.20.1,<11.0.0)"

@@ -18,6 +18,7 @@ class SolutionResult:
 
     __slots__ = (
         "latex", "diagram_codes", "answer_type", "answer_value",
+        "final_answer_latex",
         "alternate_solution_recommended", "alternate_solution_hint", "metadata",
     )
 
@@ -27,6 +28,7 @@ class SolutionResult:
         diagram_codes: dict[str, str] | None = None,
         answer_type: str = "subjective",
         answer_value: str | None = None,
+        final_answer_latex: str | None = None,
         metadata: dict | None = None,
         alternate_solution_recommended: bool = False,
         alternate_solution_hint: str | None = None,
@@ -35,6 +37,7 @@ class SolutionResult:
         self.diagram_codes = diagram_codes or {}
         self.answer_type = answer_type
         self.answer_value = answer_value
+        self.final_answer_latex = final_answer_latex
         self.alternate_solution_recommended = alternate_solution_recommended
         self.alternate_solution_hint = alternate_solution_hint
         self.metadata = metadata or {}
@@ -135,6 +138,9 @@ class SolutionOrchestrator:
         # Step 4: Answer marking
         answer_type = solution_output.answer_type
         answer_value = solution_output.answer_value
+        final_answer_latex = getattr(solution_output, "final_answer_latex", None)
+        if final_answer_latex:
+            final_answer_latex = final_answer_latex.strip() or None
         alternate_solution_recommended = bool(
             getattr(solution_output, "alternate_solution_recommended", False)
         )
@@ -151,22 +157,34 @@ class SolutionOrchestrator:
             r'\s*\\begin\{solution\}.*?\\end\{solution\}',
             '', problem_latex, flags=re.DOTALL,
         ).rstrip()
+        clean_problem = re.sub(
+            r'\s*\\begin\{finalanswer\}.*?\\end\{finalanswer\}',
+            '', clean_problem, flags=re.DOTALL,
+        ).rstrip()
         final_latex = clean_problem + "\n\n" + solution_latex
 
         # Mark answer in the combined LaTeX
         if answer_value:
             final_latex = self._mark_answer(final_latex, answer_type, answer_value, question_type)
+        if answer_type == "subjective" and final_answer_latex:
+            final_latex = self._append_subjective_answer(
+                final_latex, final_answer_latex,
+            )
 
         return SolutionResult(
             latex=final_latex,
             diagram_codes=diagram_codes,
             answer_type=answer_type,
             answer_value=answer_value,
+            final_answer_latex=final_answer_latex,
             alternate_solution_recommended=alternate_solution_recommended,
             alternate_solution_hint=alternate_solution_hint,
             metadata={
                 "subject": subject,
                 "question_type": question_type,
+                "answer_type": answer_type,
+                "answer_value": answer_value,
+                "final_answer_latex": final_answer_latex,
                 "diagrams_requested": len(diagram_reqs),
                 "diagrams_rendered": len(diagram_codes),
                 "diagrams_assembled": assembled_count,
@@ -423,6 +441,26 @@ class SolutionOrchestrator:
             insert = f"\n\n\\hrulefill \\ansint{{{answer_value}}}\n"
             latex = latex.replace(end_solution, insert + end_solution)
         return latex
+
+    @staticmethod
+    def _append_subjective_answer(latex: str, final_answer_latex: str) -> str:
+        r"""Append a machine-readable subjective answer after the solution."""
+        answer = final_answer_latex.strip()
+        wrapped_match = re.fullmatch(
+            r"\\begin\{finalanswer\}\s*(.*?)\s*\\end\{finalanswer\}",
+            answer,
+            flags=re.DOTALL,
+        )
+        if wrapped_match:
+            answer = wrapped_match.group(1).strip()
+        if not answer:
+            return latex
+        return (
+            latex.rstrip()
+            + "\n\n\\begin{finalanswer}\n"
+            + answer
+            + "\n\\end{finalanswer}"
+        )
 
 
 def create_solution_orchestrator(console=None) -> SolutionOrchestrator:

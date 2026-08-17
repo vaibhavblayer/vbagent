@@ -1,5 +1,7 @@
 """Common components for biology solution generation prompts."""
 
+from ...mcq_format import MCQ_ANSWER_FORMAT_RULES
+
 # LaTeX formatting rules for biology solutions
 LATEX_FORMATTING_RULES = """
 ## LaTeX Formatting Standards for Biology
@@ -33,8 +35,34 @@ LATEX_FORMATTING_RULES = """
 - Temperature: $37\\,^\\circ\\text{C}$
 - Enzyme reactions: $A \\xrightarrow{\\text{enzyme}} B$
 
+### Diagram Decision (IMPORTANT)
+- Before finalizing, decide whether a visual would materially simplify the
+  reader's understanding of a cell structure, pathway, life cycle, flowchart,
+  graph, or other biological relationship.
+- When a diagram would clarify the reasoning, include one even if the original
+  problem image has no diagram. Prefer a concise, explanatory diagram over
+  adding decorative artwork.
+- For a simple diagram, write the TikZ directly in `solution_latex`. For a
+  complex diagram, use `diagram_requirements` so the specialist can generate
+  it.
+- Every non-empty item in `diagram_requirements` MUST have the exact matching
+  marker `% DIAGRAM PLACEHOLDER: <diagram_id>` in `solution_latex`, at the
+  intended location. Use the same `diagram_id` in both places.
+- Never request a diagram without its marker. A requirement without a marker
+  cannot be positioned reliably in the finished solution.
+
+### Alternate Solution Decision
+- Decide whether a genuinely different and useful solution method would help
+  the learner. Set `alternate_solution_recommended` to `true` only when it
+  would add meaningful pedagogical value; use `false` for routine, direct, or
+  one-method problems.
+- When it is `true`, set `alternate_solution_hint` to one concise instruction
+  naming the preferred alternate method. Do not write the alternate solution
+  itself.
+- When it is `false`, set `alternate_solution_hint` to `null`.
+
 ### MCQ Solutions
-Must end with: "Therefore, the correct option is (X)."
+Must end with the actual lowercase option letter, for example: "Therefore, the correct option is (a)."
 
 **Example: Conceptual MCQ**
 ```latex
@@ -74,6 +102,8 @@ Therefore, the correct option is (c).
 - Use correct biological terminology
 - Show calculations where applicable
 """
+
+LATEX_FORMATTING_RULES += MCQ_ANSWER_FORMAT_RULES
 
 SOLUTION_QUALITY = """
 ## Solution Quality Standards

@@ -1,7 +1,8 @@
 """Solution generation agents — subject-specific.
 
 Routes to the correct subject × question_type prompt, calls the LLM,
-and returns SolutionOutput with solution_latex + diagram_requirements + answer.
+and returns SolutionOutput with solution_latex + diagram_requirements + answer
+plus a conditional alternate-solution recommendation.
 """
 
 from typing import Optional
@@ -32,7 +33,8 @@ def generate_solution(
         show_spinner: Show progress spinner.
 
     Returns:
-        SolutionOutput with solution_latex, diagram_requirements, answer_type, answer_value.
+        SolutionOutput with solution_latex, diagram_requirements, answer fields,
+        and the optional alternate-solution recommendation.
     """
     system_prompt = get_solution_prompt(question_type, subject, chapter, topic)
 
@@ -55,8 +57,20 @@ def generate_solution(
     result = run_agent_sync(agent, message, show_spinner=show_spinner)
 
     if isinstance(result, SolutionOutput):
-        return result
-    return SolutionOutput(solution_latex=str(result))
+        output = result
+    else:
+        output = SolutionOutput(solution_latex=str(result))
+
+    if (
+        question_type == "subjective"
+        and output.answer_type == "subjective"
+        and not (output.final_answer_latex or "").strip()
+    ):
+        raise ValueError(
+            "Subjective solution response is missing required "
+            "final_answer_latex"
+        )
+    return output
 
 
 __all__ = [

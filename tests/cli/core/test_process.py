@@ -205,9 +205,11 @@ def test_property_cli_output_persistence_saves_tikz_when_present(dirname: str):
         tikz_path = Path(saved_files["tikz"])
         assert tikz_path.exists(), "TikZ file should exist"
         
-        # Content should match
+        # Generated TeX is normalized before persistence.
         saved_content = tikz_path.read_text()
-        assert saved_content == tikz_code, "Saved TikZ should match original"
+        assert saved_content == format_latex(tikz_code), (
+            "Saved TikZ should match the normalized original"
+        )
 
 
 @given(dirname=dirname_strategy)
@@ -269,9 +271,11 @@ def test_property_cli_output_persistence_saves_variants(dirname: str, variant_ty
         variant_path = Path(saved_files[variant_key])
         assert variant_path.exists(), f"Variant file for {variant_type} should exist"
         
-        # Content should match
+        # Generated TeX is normalized before persistence.
         saved_content = variant_path.read_text()
-        assert saved_content == variant_latex, "Saved variant should match original"
+        assert saved_content == format_latex(variant_latex), (
+            "Saved variant should match the normalized original"
+        )
 
 
 @given(dirname=dirname_strategy)
@@ -590,6 +594,22 @@ def test_save_organized_creates_tikz_directory():
         assert tikz_path.name == "problem_1.tex"
 
 
+def test_save_organized_defensively_assembles_tikz_placeholder():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        base_dir = Path(tmpdir) / "agentic"
+        result = create_test_pipeline_result(
+            source_path="images/problem_1.png",
+            latex=r"\item Example\begin{center}\input{diagram}\end{center}",
+            tikz_code=r"\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}",
+        )
+
+        saved = save_pipeline_result_organized(result, base_dir, "problem_1")
+        scan_content = Path(saved["scan"]).read_text()
+
+        assert r"\input{diagram}" not in scan_content
+        assert r"\begin{tikzpicture}" in scan_content
+
+
 def test_save_organized_full_structure():
     """Test complete organized directory structure."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -811,12 +831,14 @@ y &= 2
     
     # \item should be at root level
     assert lines[0] == r"\item Test problem"
+    # Major blocks are separated by one blank line.
+    assert lines[1] == ""
     # \begin{solution} should be at root level
-    assert lines[1] == r"\begin{solution}"
+    assert lines[2] == r"\begin{solution}"
     # Content inside solution should be indented (4 spaces)
-    assert lines[2].startswith("    ")  # \begin{align*} indented once
+    assert lines[3].startswith("    ")  # \begin{align*} indented once
     # Content inside align* should be indented (8 spaces = 2 levels)
-    assert "x &= 1" in lines[3]  # Content preserved
+    assert "x &= 1" in lines[4]  # Content preserved
 
 
 def test_format_latex_preserves_content():

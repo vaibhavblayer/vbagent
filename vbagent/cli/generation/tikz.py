@@ -122,7 +122,7 @@ def tikz(
             if cache.has(problem_id, "tikz"):
                 console.print("[dim]Loading cached TikZ...[/dim]")
                 tikz_code = cache.get(problem_id, "tikz")
-                console.print(f"[green]✓ Loaded cached TikZ[/green]")
+                console.print(f"[green]OK Loaded cached TikZ[/green]")
         
         # Generate TikZ code if not cached
         if tikz_code is None:

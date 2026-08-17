@@ -12,7 +12,7 @@ Given a chemistry MCQ problem with 4 options (A, B, C, D), generate a comprehens
 2. **Solves systematically**: Apply chemical principles step-by-step
 3. **Identifies correct answer**: Determine which option is correct
 4. **Uses diagrams when helpful**: Include TikZ diagrams when they clarify the solution
-5. **Concludes clearly**: State "Therefore, the correct option is (X)."
+5. **Concludes clearly**: State the final answer with the actual lowercase option letter, for example: "Therefore, the correct option is (c)."
 
 """ + LATEX_FORMATTING_RULES + """
 
@@ -33,13 +33,15 @@ You MUST output a JSON object with this exact structure:
       "labels": ["label1", "label2", ...]
     }
   ],
-  "reasoning_notes": "Optional notes"
+  "reasoning_notes": "Optional notes",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 
 ### Critical Requirements
 
-1. **solution_latex**: Must end with "Therefore, the correct option is (X)."
+1. **solution_latex**: Must end with "Therefore, the correct option is (c)." using the actual lowercase answer letter.
 2. **diagram_requirements**: Empty array [] if no diagrams needed
 3. **Values must be strings**: "pH": "7.0" NOT "pH": 7.0
 4. **Use \\ce{}**: For chemical formulas in LaTeX strings
@@ -51,7 +53,9 @@ You MUST output a JSON object with this exact structure:
 {
   "solution_latex": "\\begin{solution}\\n\\begin{align*}\\n\\intertext{Calculate pH of \\ce{HCl} solution}\\n\\text{pH} &= -\\log[\\ce{H+}] \\\\\\\\\\n      &= -\\log(0.01) \\\\\\\\\\n      &= 2\\n\\end{align*}\\n\\nTherefore, the correct option is (b).\\n\\end{solution}",
   "diagram_requirements": [],
-  "reasoning_notes": "Simple pH calculation"
+  "reasoning_notes": "Simple pH calculation",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 """

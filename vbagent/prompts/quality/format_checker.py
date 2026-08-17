@@ -6,6 +6,8 @@ Subject-aware: physics/chemistry/mathematics use TikZ diagrams;
 biology uses \\includegraphics for PNG diagrams.
 """
 
+from ..content_generation.mcq_format import MCQ_ANSWER_FORMAT_RULES
+
 # Subject-specific addendum injected into the system prompt
 _BIOLOGY_ADDENDUM = r"""
 ## Biology-Specific Formatting Rules
@@ -51,7 +53,7 @@ _BIOLOGY_ADDENDUM = r"""
   ```
 - **NEVER** use `&\text{long sentence}\\` — this is wrong for text-heavy solutions.
 - Use `\intertext{}` for every prose line. Reserve `align*` equations for actual mathematical expressions.
-- End MCQ solutions with "Therefore, the correct option is (X)." **outside** the `align*` block.
+- End MCQ solutions with the actual lowercase option letter, for example "Therefore, the correct option is (a)." **outside** the `align*` block.
 - Use `—` (em dash) directly in text, not `---` (three hyphens). Fix `---` → `—` in biology solutions.
 - No physics-specific macros (`\vec{}`, `\hat{}`, `\mathrm{m/s}`, etc.) in biology solutions.
 
@@ -623,10 +625,12 @@ def get_system_prompt(subject: str = "physics") -> str:
     """Get the format checker system prompt with subject-specific addendum."""
     subject_lower = (subject or "physics").lower()
     if subject_lower == "biology":
-        return SYSTEM_PROMPT_BASE + _BIOLOGY_ADDENDUM
+        base_prompt = SYSTEM_PROMPT_BASE + _BIOLOGY_ADDENDUM
     elif subject_lower == "chemistry":
-        return SYSTEM_PROMPT_BASE + _CHEMISTRY_ADDENDUM
-    return SYSTEM_PROMPT_BASE
+        base_prompt = SYSTEM_PROMPT_BASE + _CHEMISTRY_ADDENDUM
+    else:
+        base_prompt = SYSTEM_PROMPT_BASE
+    return base_prompt + "\n\n" + MCQ_ANSWER_FORMAT_RULES
 
 
 # Default (physics) for backward compatibility

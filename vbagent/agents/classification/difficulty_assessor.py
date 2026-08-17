@@ -1,4 +1,4 @@
-"""Agent 3: Difficulty Assessor.
+"""Post-solution difficulty assessor.
 
 Assesses difficulty AFTER LaTeX extraction and TikZ generation.
 Provides detailed reasoning and metadata.
@@ -107,7 +107,7 @@ def assess_difficulty(
     subject: Optional[str] = None,
     show_spinner: bool = True
 ) -> DifficultyAssessment:
-    """Assess difficulty after LaTeX extraction (Agent 3).
+    """Assess difficulty after LaTeX extraction.
     
     Args:
         latex_content: Extracted LaTeX content

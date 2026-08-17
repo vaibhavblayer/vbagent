@@ -159,7 +159,7 @@ def convert(
     """
     # Lazy imports - only load heavy dependencies when command runs
     from vbagent.agents.content_generation.converter import convert_format
-    from vbagent.agents.classifier import classify as classify_image
+    from vbagent.agents.classification.question_classifier import classify_primary_image as classify_image
     from vbagent.agents.content_generation.scanner import scan as scan_image
     
     console = _get_console()

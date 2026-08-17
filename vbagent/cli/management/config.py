@@ -36,7 +36,7 @@ def config():
     \b
     Quick Start:
         vbagent config show                  View current config
-        vbagent config set tikz -m gpt-5.4   Set model for an agent
+        vbagent config set tikz -m gpt-5.6-sol   Set model for an agent
         vbagent config provider xai           Switch provider
         vbagent config subject chemistry      Change subject
 
@@ -47,7 +47,7 @@ def config():
 
     \b
     Agent Groups:
-        Classification   classifier, diagram_analyzer, ...
+        Classification   classifier, diagram_classifier, ...
         Extraction       scanner, converter
         Diagram          tikz, fbd, circuit, graph, optics, ...
         Generation       idea, alternate, variant, solution
@@ -82,24 +82,37 @@ def show(compact):
 
     console.print(f"[dim]subject={cfg.subject}  provider={get_provider_name()}  "
                   f"default_model={cfg.default_model}  reasoning={cfg.default_reasoning_effort}  "
-                  f"debug={'on' if cfg.debug else 'off'}[/dim]")
+                  f"log_level={cfg.log_level}[/dim]")
     if cfg.single_model:
         console.print(f"[bold cyan]single_model={cfg.single_model}[/bold cyan] (all agents use this model)")
     console.print()
 
+    displayed_agents: set[str] = set()
+
     if compact:
         # Compact: one line per group showing model(s) used
         for group_name, agent_names in AGENT_GROUPS.items():
+            displayed_agents.update(agent_names)
             models_in_group = set()
             for name in agent_names:
                 ac = cfg.get_agent_config(name)
                 models_in_group.add(f"{ac.model}/{ac.reasoning_effort}")
             models_str = ", ".join(sorted(models_in_group))
             console.print(f"  [cyan]{group_name:<22}[/cyan] {models_str}")
+        extra_agents = sorted(set(cfg.agents) - displayed_agents)
+        if extra_agents:
+            models_in_group = {
+                f"{cfg.get_agent_config(name).model}/{cfg.get_agent_config(name).reasoning_effort}"
+                for name in extra_agents
+            }
+            console.print(
+                f"  [cyan]{'Other Agents':<22}[/cyan] {', '.join(sorted(models_in_group))}"
+            )
         return
 
     # Full grouped table
     for group_name, agent_names in AGENT_GROUPS.items():
+        displayed_agents.update(agent_names)
         table = _get_table(title=group_name)
         table.add_column("Agent", style="cyan", min_width=22)
         table.add_column("Model", style="green")
@@ -120,6 +133,23 @@ def show(compact):
             )
         console.print(table)
 
+    # Include configured agent types not yet assigned to a standard display
+    # group (for example, a newly added plugin or a workspace override).
+    extra_agents = sorted(set(cfg.agents) - displayed_agents)
+    if extra_agents:
+        table = _get_table(title="Other Agents")
+        table.add_column("Agent", style="cyan", min_width=22)
+        table.add_column("Model", style="green")
+        table.add_column("Reasoning", style="yellow")
+        table.add_column("Max Tokens", style="magenta")
+        for name in extra_agents:
+            ac = cfg.get_agent_config(name)
+            table.add_row(
+                name, ac.model, ac.reasoning_effort,
+                str(ac.max_tokens) if ac.max_tokens else "-",
+            )
+        console.print(table)
+
     # Extra info
     if cfg.base_url:
         console.print(f"\n[bold #5eead4]Base URL:[/] {cfg.base_url}")
@@ -130,7 +160,7 @@ def show(compact):
 
 @config.command("set")
 @click.argument("agent_type")
-@click.option("--model", "-m", help="Model to use (e.g., gpt-5.4, gpt-5.4-mini)")
+@click.option("--model", "-m", help="Model to use (e.g., gpt-5.6-terra, gpt-5.6-luna)")
 @click.option(
     "--reasoning", "-r",
     type=click.Choice(["low", "medium", "high", "xhigh"]),
@@ -147,7 +177,7 @@ def set_agent(agent_type: str, model: str, reasoning: str, max_tokens: int, work
     
     \b
     Agent Types (by group):
-        Classification:  classifier, diagram_analyzer, taxonomy_classifier, ...
+        Classification:  classifier, diagram_classifier, taxonomy_classifier, ...
         Extraction:      scanner, converter
         Diagram:         tikz, fbd, circuit, graph, optics, organic_structure, ...
         Generation:      idea, alternate, variant, solution
@@ -155,17 +185,17 @@ def set_agent(agent_type: str, model: str, reasoning: str, max_tokens: int, work
     
     \b
     Examples:
-        vbagent config set default -m gpt-5.4-mini          Global default
-        vbagent config set classifier -m gpt-5.4-mini -r low   Classification
-        vbagent config set scanner -m gpt-5.4-mini -r medium   Extraction
-        vbagent config set tikz -m gpt-5.4 -r high             Diagram
-        vbagent config set circuit -m gpt-5.4 -r high          Diagram (specialist)
-        vbagent config set idea -m gpt-5.4 -r high             Generation
-        vbagent config set alternate -m gpt-5.4 -r high        Generation
-        vbagent config set solution -m gpt-5.4 -r high         Generation
-        vbagent config set variant -m gpt-5.4 -r high          Generation
-        vbagent config set format_checker -m gpt-5.4-mini      Quality
-        vbagent config set scanner -m gpt-5.4 -w               Save to workspace
+        vbagent config set default -m gpt-5.6-luna             Global default
+        vbagent config set classifier -m gpt-5.6-luna -r low   Classification
+        vbagent config set scanner -m gpt-5.6-luna -r medium   Extraction
+        vbagent config set tikz -m gpt-5.6-sol -r high         Diagram
+        vbagent config set circuit -m gpt-5.6-sol -r high      Diagram (specialist)
+        vbagent config set idea -m gpt-5.6-terra -r high       Generation
+        vbagent config set alternate -m gpt-5.6-terra -r high  Generation
+        vbagent config set solution -m gpt-5.6-sol -r high     Generation
+        vbagent config set variant -m gpt-5.6-terra -r high    Generation
+        vbagent config set format_checker -m gpt-5.6-luna      Quality
+        vbagent config set scanner -m gpt-5.6-luna -w          Save to workspace
     """
     from vbagent.cli.interfaces.ui import print_status
     from vbagent.config import AgentModelConfig
@@ -229,7 +259,9 @@ def reset(workspace: bool):
 @click.argument("mode", type=click.Choice(["on", "off", "status"]))
 @click.option("-w", "--workspace", is_flag=True, help="Save to workspace config")
 def debug(mode: str, workspace: bool):
-    """Enable or disable debug mode.
+    """Enable or disable DEBUG agent logging.
+
+    This is an alias for switching log-level between DEBUG and INFO.
     
     Debug mode prints detailed input/output for all agent calls.
     
@@ -245,13 +277,14 @@ def debug(mode: str, workspace: bool):
     
     if mode == "status":
         cfg = get_config()
-        status = "ON" if cfg.debug else "OFF"
+        status = "ON" if cfg.log_level.upper() == "DEBUG" else "OFF"
         config_type = "workspace" if has_workspace_config() else "global"
         console.print(f"Debug mode: [{'green' if cfg.debug else 'red'}]{status}[/] ({config_type} config)")
         return
     
     cfg = get_config()
     cfg.debug = (mode == "on")
+    cfg.log_level = "DEBUG" if cfg.debug else "INFO"
     save_config(workspace=workspace)
     
     status = "enabled" if cfg.debug else "disabled"
@@ -293,6 +326,7 @@ def log_level(level: str, workspace: bool):
     
     cfg = get_config()
     cfg.log_level = level.upper()
+    cfg.debug = cfg.log_level == "DEBUG"
     save_config(workspace=workspace)
     
     config_type = "workspace" if workspace else "global"
@@ -376,7 +410,7 @@ def subject(subject: str, workspace: bool):
     cfg = get_config()
     cfg.subject = subject
     config_path = save_config(workspace=workspace)
-    console.print(f"[green]✓[/green] Subject set to: {subject}")
+    console.print(f"[green]OK[/green] Subject set to: {subject}")
     console.print(f"[dim]Saved to: {config_path}[/dim]")
 
 
@@ -395,10 +429,10 @@ def set_model(model: str, workspace: bool):
 
     \b
     Examples:
-        vbagent config set-model gpt-5.4       # Everything uses gpt-5.4
-        vbagent config set-model gpt-5.4-mini  # Everything uses mini
+        vbagent config set-model gpt-5.6-terra  # Everything uses Terra
+        vbagent config set-model gpt-5.6-luna   # Everything uses Luna
         vbagent config set-model auto           # Revert to two-tier
-        vbagent config set-model gpt-5.4 -w    # Workspace only
+        vbagent config set-model gpt-5.6-terra -w  # Workspace only
     """
     from vbagent.config import AgentModelConfig, set_config, AGENT_GROUPS
     console = _get_console()
@@ -407,7 +441,7 @@ def set_model(model: str, workspace: bool):
     if model.lower() == "auto":
         cfg.single_model = None
         config_path = save_config(workspace=workspace)
-        console.print("[green]✓[/green] Single-model mode [bold]off[/bold] — using two-tier defaults")
+        console.print("[green]OK[/green] Single-model mode [bold]off[/bold] — using two-tier defaults")
         heavy = cfg.default_model.replace("-mini", "") if "-mini" in cfg.default_model else cfg.default_model
         console.print(f"  light: {cfg.default_model}  heavy: {heavy}")
     else:
@@ -417,7 +451,7 @@ def set_model(model: str, workspace: bool):
         cfg.agents.clear()
         cfg._apply_reasoning_tiers(light=model, heavy=model)
         config_path = save_config(workspace=workspace)
-        console.print(f"[green]✓[/green] Single-model mode [bold]on[/bold] — all agents use [cyan]{model}[/cyan]")
+        console.print(f"[green]OK[/green] Single-model mode [bold]on[/bold] — all agents use [cyan]{model}[/cyan]")
         # Show reasoning tiers
         tiers: dict[str, list[str]] = {}
         for group_name, agent_names in AGENT_GROUPS.items():
@@ -467,7 +501,7 @@ def provider(provider: str, base_url: str, api_key: str, no_models: bool, worksp
     if provider and provider in PROVIDERS:
         cfg.base_url = PROVIDERS[provider]["base_url"]
         resolved_provider = provider
-        console.print(f"[green]✓[/green] Provider: {provider}")
+        console.print(f"[green]OK[/green] Provider: {provider}")
         if PROVIDERS[provider]["base_url"]:
             console.print(f"  Base URL: {PROVIDERS[provider]['base_url']}")
             env_key = PROVIDERS[provider]["env_key"]
@@ -479,7 +513,7 @@ def provider(provider: str, base_url: str, api_key: str, no_models: bool, worksp
         # Try to detect provider from custom URL
         from vbagent.config import _provider_from_base_url
         resolved_provider = _provider_from_base_url(base_url)
-        console.print(f"[green]✓[/green] Base URL: {base_url}")
+        console.print(f"[green]OK[/green] Base URL: {base_url}")
     elif provider:
         console.print(f"[yellow]Unknown provider '{provider}'[/yellow]")
         console.print(f"[dim]Known: {', '.join(PROVIDERS.keys())}[/dim]")
@@ -489,12 +523,12 @@ def provider(provider: str, base_url: str, api_key: str, no_models: bool, worksp
     if api_key:
         cfg.api_key = api_key
         masked = api_key[:8] + "..." + api_key[-4:] if len(api_key) > 12 else "***"
-        console.print(f"[green]✓[/green] API Key: {masked}")
+        console.print(f"[green]OK[/green] API Key: {masked}")
     
     # Auto-apply model group when switching providers
     if resolved_provider and not no_models and resolved_provider in MODEL_GROUPS:
         apply_model_group(cfg, resolved_provider)
-        console.print(f"[green]✓[/green] Applied [bold]{resolved_provider}[/bold] model group")
+        console.print(f"[green]OK[/green] Applied [bold]{resolved_provider}[/bold] model group")
         # Show the models that were set
         table = _get_table(title=f"Model Group: {resolved_provider}")
         table.add_column("Agent", style="cyan")
@@ -557,7 +591,7 @@ def model_group(group_name: str, workspace: bool):
     apply_model_group(cfg, group_name)
     config_path = save_config(workspace=workspace)
     
-    console.print(f"[green]✓[/green] Applied [bold]{group_name}[/bold] model group")
+    console.print(f"[green]OK[/green] Applied [bold]{group_name}[/bold] model group")
     if cfg.base_url:
         console.print(f"  Base URL: {cfg.base_url}")
     else:

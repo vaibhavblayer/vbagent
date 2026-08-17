@@ -92,7 +92,7 @@ def check(
         )
 
         elapsed = time.time() - t0
-        console.print(f"[green]✓ Audit complete in {elapsed:.1f}s[/green]\n")
+        console.print(f"[green]OK Audit complete in {elapsed:.1f}s[/green]\n")
 
         # 4. Display report
         table = Table(title=f"Syllabus Audit: {actual_chapter_name}")
@@ -100,25 +100,25 @@ def check(
         table.add_column("Details")
 
         covered_count = len(syllabus_topics) - len(report.missing)
-        table.add_row("✅ Covered", f"{covered_count}/{len(syllabus_topics)} topics")
+        table.add_row("OK Covered", f"{covered_count}/{len(syllabus_topics)} topics")
 
         if report.missing:
             missing_names = ", ".join(m.topic_name for m in report.missing)
-            table.add_row("❌ Missing", missing_names)
+            table.add_row("ERROR Missing", missing_names)
         else:
-            table.add_row("❌ Missing", "None")
+            table.add_row("ERROR Missing", "None")
 
         if report.thin:
             thin_items = ", ".join(f"{t.topic_name} ({t.idea_count} idea{'s' if t.idea_count != 1 else ''})" for t in report.thin)
-            table.add_row("⚠️  Thin", thin_items)
+            table.add_row("WARN  Thin", thin_items)
         else:
-            table.add_row("⚠️  Thin", "None")
+            table.add_row("WARN  Thin", "None")
 
         if report.extra:
             extra_items = ", ".join(f"{e.idea_title}" for e in report.extra)
-            table.add_row("🚫 Extra", extra_items)
+            table.add_row("EXTRA Extra", extra_items)
         else:
-            table.add_row("🚫 Extra", "None")
+            table.add_row("EXTRA Extra", "None")
 
         console.print(table)
 
@@ -135,7 +135,7 @@ def check(
             if report.missing:
                 changes.append(f"added {len(report.missing)} missing topic(s)")
 
-            console.print(f"[green]✓ Fixed:[/green] {', '.join(changes)}")
+            console.print(f"[green]OK Fixed:[/green] {', '.join(changes)}")
             console.print(f"[cyan]Updated:[/cyan] {tex_path}")
         elif fix:
             console.print("\n[green]Nothing to fix — sheet is clean.[/green]")

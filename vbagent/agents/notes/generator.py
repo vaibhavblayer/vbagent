@@ -100,7 +100,7 @@ def generate_notes(
             total_sections=len(plan.sections),
             topic=topic,
             subject=subject,
-            show_spinner=False,
+            show_spinner=True,
         )
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -136,7 +136,7 @@ def generate_notes(
             return generate_diagram(
                 spec=spec,
                 output_dir=diagrams_dir,
-                show_spinner=False,
+                show_spinner=True,
             )
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:

@@ -284,7 +284,7 @@ def curate(auto_accept, include_suggested, store_path, subject, verbose):
         vbagent ideas curate --include-suggested    # Also add suggested ideas
         vbagent ideas curate --auto --include-suggested
     """
-    from vbagent.agents.classification.idea_curator import curate_ideas
+    from vbagent.agents.content_generation.idea_curator import curate_ideas
     from vbagent.ideas.models import Idea
     from vbagent.ideas.store import IdeaStore as IS
     from vbagent.ideas.tagger import tag_lenses
@@ -319,7 +319,7 @@ def curate(auto_accept, include_suggested, store_path, subject, verbose):
     if result.merge_log:
         console.print(f"\n[cyan]Merge decisions:[/cyan]")
         for entry in result.merge_log:
-            console.print(f"  [green]✓ {entry.kept}[/green]")
+            console.print(f"  [green]OK {entry.kept}[/green]")
             for m in entry.merged:
                 console.print(f"    [red]← {m}[/red]")
             if entry.reason:

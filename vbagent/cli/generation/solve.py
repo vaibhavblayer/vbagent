@@ -24,6 +24,21 @@ QUESTION_TYPES = [
 SUBJECTS = ["physics", "chemistry", "mathematics", "biology"]
 
 
+def _natural_tex_file_sort_key(path: Path) -> tuple[tuple[int, object], ...]:
+    """Sort TeX filenames naturally so numeric problem IDs stay numeric."""
+    parts = re.split(r"(\d+)", path.name.casefold())
+    return tuple(
+        (1, int(part)) if part.isdigit() else (0, part)
+        for part in parts
+        if part
+    )
+
+
+def sort_tex_files(files: Iterable[Path]) -> list[Path]:
+    """Return TeX files in human/numeric filename order."""
+    return sorted(files, key=_natural_tex_file_sort_key)
+
+
 def parse_excluded_indices(values: Iterable[str]) -> set[int]:
     """Parse comma- or whitespace-separated 1-based item numbers."""
     excluded: set[int] = set()
@@ -84,6 +99,17 @@ def _item_spans(content: str) -> list[tuple[int, int, str]]:
         spans.append((start, end, item))
         cursor = end
     return spans
+
+
+def has_solution_environment(content: str) -> bool:
+    """Return whether content contains a complete solution environment."""
+    return bool(
+        re.search(
+            r"\\begin\{solution\}.*?\\end\{solution\}",
+            content,
+            flags=re.DOTALL,
+        )
+    )
 
 
 def _replace_items(
@@ -185,6 +211,11 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     help="Items to skip (comma-separated, repeatable; e.g. --exclude 5,7,8)",
 )
 @click.option("--no-diagram", is_flag=True, help="Skip solution diagram agents")
+@click.option(
+    "--in-place",
+    is_flag=True,
+    help="Write successful solutions back into the input file(s)",
+)
 @click.option("--no-cache", is_flag=True, help="Regenerate solutions without using the pipeline cache")
 @click.option(
     "-v/-q",
@@ -206,6 +237,7 @@ def solve(
     item: int | None,
     exclude: tuple[str, ...],
     no_diagram: bool,
+    in_place: bool,
     no_cache: bool,
     verbose: bool,
 ) -> None:
@@ -216,17 +248,24 @@ def solve(
         raise click.UsageError("Use --item or --from/--to, not both")
     if item is not None:
         from_index = to_index = item
+    if in_place and output:
+        raise click.UsageError("Use --in-place or --output, not both")
 
     excluded = parse_excluded_indices(exclude)
 
     if input_path.is_dir():
-        source_files = sorted(input_path.glob("*.tex"))
+        source_files = sort_tex_files(input_path.glob("*.tex"))
         if not source_files:
             raise click.ClickException(f"No .tex files found in {input_path}")
         units = [(index, source_file) for index, source_file in enumerate(source_files, 1)]
-        selected = select_item_indices(len(units), from_index, to_index, excluded)
-        output_dir = _resolve_folder_output_path(input_path, str(output) if output else None)
-        if output_dir.resolve() == input_path.resolve():
+        unit_contents = {
+            index: source_file.read_text(encoding="utf-8")
+            for index, source_file in units
+        }
+        output_dir = input_path if in_place else _resolve_folder_output_path(
+            input_path, str(output) if output else None
+        )
+        if not in_place and output_dir.resolve() == input_path.resolve():
             raise click.ClickException("Output directory must differ from the input directory")
     else:
         content = input_path.read_text(encoding="utf-8")
@@ -234,8 +273,19 @@ def solve(
         if not spans:
             raise click.ClickException("The input TeX file is empty")
         units = [(index, input_path) for index in range(1, len(spans) + 1)]
-        selected = select_item_indices(len(units), from_index, to_index, excluded)
+        unit_contents = {
+            index: item_content
+            for index, (_, _, item_content) in enumerate(spans, 1)
+        }
         output_dir = None
+
+    candidates = select_item_indices(len(units), from_index, to_index, excluded)
+    existing_solution_indices = {
+        index for index, item_content in unit_contents.items()
+        if has_solution_environment(item_content)
+    }
+    skipped_existing = len(set(candidates) & existing_solution_indices)
+    selected = [index for index in candidates if index not in existing_solution_indices]
 
     from vbagent.config import get_config
     from vbagent.models.classification import PrimaryClassification
@@ -251,10 +301,13 @@ def solve(
         cache = PipelineCache()
 
     failures: list[tuple[int, str]] = []
+    excluded_count = len(set(range(1, len(units) + 1)) & excluded)
     console.print(
-        f"[cyan]Selected {len(selected)}/{len(units)} "
+        f"[cyan]Candidates {len(candidates)}/{len(units)} "
         f"{'file(s)' if input_path.is_dir() else 'item(s)'}; "
-        f"excluded {len(set(range(1, len(units) + 1)) & excluded)}[/cyan]"
+        f"excluded {excluded_count}; "
+        f"skipped existing solution {skipped_existing}; "
+        f"to solve {len(selected)}[/cyan]"
     )
 
     def generate_for(source_path: Path, item_number: int, item_content: str):
@@ -302,9 +355,10 @@ def solve(
     if input_path.is_dir():
         import shutil
 
-        output_dir.mkdir(parents=True, exist_ok=True)
-        for _, source_file in units:
-            shutil.copy2(source_file, output_dir / source_file.name)
+        if not in_place:
+            output_dir.mkdir(parents=True, exist_ok=True)
+            for _, source_file in units:
+                shutil.copy2(source_file, output_dir / source_file.name)
 
         for file_number in selected:
             source_file = units[file_number - 1][1]
@@ -313,7 +367,7 @@ def solve(
                 result = generate_for(
                     source_file,
                     file_number,
-                    source_file.read_text(encoding="utf-8"),
+                    unit_contents[file_number],
                 )
                 (output_dir / source_file.name).write_text(
                     result.latex, encoding="utf-8"
@@ -323,11 +377,12 @@ def solve(
                 failures.append((file_number, str(exc)))
                 console.print(f"[red]ERROR[/red] {source_file.name}: {exc}")
 
-        console.print(f"\n[green]Saved solution project:[/green] {output_dir}")
+        action = "Updated input project" if in_place else "Saved solution project"
+        console.print(f"\n[green]{action}:[/green] {output_dir}")
     else:
         replacements: dict[int, str] = {}
         for item_number in selected:
-            _, _, item_content = spans[item_number - 1]
+            item_content = unit_contents[item_number]
             console.print(f"\n[bold]Item {item_number}/{len(spans)}[/bold]")
             try:
                 result = generate_for(input_path, item_number, item_content)
@@ -337,12 +392,15 @@ def solve(
                 failures.append((item_number, str(exc)))
                 console.print(f"[red]ERROR[/red] Item {item_number}: {exc}")
 
-        output_path = _resolve_output_path(input_path, str(output) if output else None)
+        output_path = input_path if in_place else _resolve_output_path(
+            input_path, str(output) if output else None
+        )
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(
             _replace_items(content, spans, replacements), encoding="utf-8"
         )
-        console.print(f"\n[green]Saved solution project:[/green] {output_path}")
+        action = "Updated input project" if in_place else "Saved solution project"
+        console.print(f"\n[green]{action}:[/green] {output_path}")
 
     console.print(
         f"[cyan]Solved {len(selected) - len(failures)}/{len(selected)} "
@@ -357,6 +415,8 @@ def solve(
 
 __all__ = [
     "solve",
+    "has_solution_environment",
+    "sort_tex_files",
     "parse_excluded_indices",
     "select_item_indices",
 ]

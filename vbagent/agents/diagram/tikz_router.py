@@ -1,16 +1,75 @@
 """TikZ Agent Router.
 
 Routes TikZ generation to specialized agents based on diagram analysis.
-Uses Agent 2 (Diagram Analyzer) output for intelligent routing.
+Uses structured diagram-classification output for intelligent routing.
 """
 
-from typing import Optional, Literal
+from dataclasses import dataclass
+from importlib import import_module
+from typing import Literal, Optional
 
 from vbagent.models.classification import DiagramAnalysis, PrimaryClassification
 
 
 # All agent types
 AgentType = Literal["fbd", "setup", "circuit", "gates", "graph", "optics", "mechanics", "wave", "organic_structure", "reaction_mechanism", "orbital", "lewis_structure", "chemical_equation", "energy_diagram", "function_graph", "coordinate_geometry", "geometric_figure", "number_line", "venn_diagram", "generic", "biology_image"]
+
+
+@dataclass(frozen=True)
+class _GeneratorSpec:
+    """Lazy generator import plus the optional arguments it supports."""
+
+    module: str
+    function: str
+    forwards: tuple[str, ...] = ()
+
+
+_PHYSICS_FORWARDS = (
+    "problem_text",
+    "solution_context",
+    "values",
+    "labels",
+)
+
+_GENERATOR_REGISTRY: dict[AgentType, _GeneratorSpec] = {
+    "fbd": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_fbd", _PHYSICS_FORWARDS),
+    "setup": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_setup", _PHYSICS_FORWARDS),
+    "circuit": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_circuit", _PHYSICS_FORWARDS),
+    "gates": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_gates", _PHYSICS_FORWARDS),
+    "graph": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_graph", _PHYSICS_FORWARDS),
+    "optics": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_optics", _PHYSICS_FORWARDS),
+    "mechanics": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_mechanics", _PHYSICS_FORWARDS),
+    "wave": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_wave", _PHYSICS_FORWARDS),
+    "reaction_mechanism": _GeneratorSpec(
+        "vbagent.agents.diagram.chemistry", "generate_reaction_mechanism"
+    ),
+    "orbital": _GeneratorSpec("vbagent.agents.diagram.chemistry", "generate_orbital"),
+    "lewis_structure": _GeneratorSpec(
+        "vbagent.agents.diagram.chemistry", "generate_lewis_structure"
+    ),
+    "chemical_equation": _GeneratorSpec(
+        "vbagent.agents.diagram.chemistry", "generate_chemical_equation", ("mcq_options",)
+    ),
+    "energy_diagram": _GeneratorSpec(
+        "vbagent.agents.diagram.chemistry", "generate_energy_diagram"
+    ),
+    "function_graph": _GeneratorSpec(
+        "vbagent.agents.diagram.mathematics", "generate_function_graph"
+    ),
+    "coordinate_geometry": _GeneratorSpec(
+        "vbagent.agents.diagram.mathematics", "generate_coordinate_geometry"
+    ),
+    "geometric_figure": _GeneratorSpec(
+        "vbagent.agents.diagram.mathematics", "generate_geometric_figure"
+    ),
+    "number_line": _GeneratorSpec(
+        "vbagent.agents.diagram.mathematics", "generate_number_line"
+    ),
+    "venn_diagram": _GeneratorSpec(
+        "vbagent.agents.diagram.mathematics", "generate_venn_diagram"
+    ),
+    "generic": _GeneratorSpec("vbagent.agents.diagram.tikz", "generate_tikz"),
+}
 
 
 def route_tikz_agent(
@@ -23,7 +82,7 @@ def route_tikz_agent(
     """Route to appropriate TikZ agent based on diagram analysis and subject.
     
     Priority:
-    1. diagram.suggested_tikz_agent (from Agent 2)
+    1. diagram.suggested_tikz_agent
     2. Subject-specific routing (chemistry vs physics)
     3. diagram.diagram_type (specific type)
     4. diagram.diagram_category (general category)
@@ -31,8 +90,8 @@ def route_tikz_agent(
     6. Default to generic
     
     Args:
-        diagram: DiagramAnalysis from Agent 2
-        primary: PrimaryClassification from Agent 1
+        diagram: Structured diagram classification
+        primary: Compact question classification
         diagram_type: Manual override
         subject: Subject name (physics, chemistry, etc.)
         diagram_context: "problem" or "solution". In "problem" context a
@@ -55,344 +114,264 @@ def route_tikz_agent(
     return agent
 
 
+_SUGGESTED_AGENTS = {
+    "fbd", "circuit", "gates", "graph", "optics", "mechanics", "wave",
+    "organic_structure", "reaction_mechanism", "orbital", "generic",
+}
+
+_SUGGESTED_GATE_KEYWORDS = (
+    "logic gate", "nand", "nor gate", "xor", "xnor", "inverter",
+    "flip-flop", "latch", "boolean", "truth table", "half adder",
+    "full adder", "multiplexer", "decoder", "combinational",
+)
+
+_MANUAL_TYPE_RULES: tuple[tuple[AgentType, tuple[str, ...]], ...] = (
+    ("setup", ("setup", "schematic", "apparatus")),
+    ("gates", ("gate", "logic", "nand", "nor", "xor", "xnor", "flip_flop", "latch", "boolean", "combinational", "sequential", "multiplexer", "decoder", "adder")),
+    ("number_line", ("number_line", "inequality", "interval")),
+    ("venn_diagram", ("venn", "set")),
+    ("function_graph", ("function", "calculus")),
+    ("coordinate_geometry", ("coordinate", "conic")),
+    ("geometric_figure", ("triangle", "polygon", "geometric")),
+    ("organic_structure", ("organic", "structure")),
+    ("reaction_mechanism", ("mechanism",)),
+    ("orbital", ("orbital",)),
+    ("lewis_structure", ("lewis",)),
+    ("chemical_equation", ("equation", "reaction")),
+    ("energy_diagram", ("energy", "enthalpy")),
+    ("fbd", ("fbd", "force")),
+    ("circuit", ("circuit",)),
+    ("mechanics", ("mechanics", "pulley", "spring", "incline")),
+    ("wave", ("wave", "reflection", "transmission", "standing")),
+    ("graph", ("graph", "plot")),
+    ("optics", ("optic", "ray")),
+)
+
+_CHEMISTRY_TYPE_RULES: tuple[tuple[AgentType, tuple[str, ...]], ...] = (
+    ("energy_diagram", ("energy", "enthalpy", "thermodynamic", "activation", "born_haber", "hess", "coordinate", "potential")),
+    ("lewis_structure", ("lewis", "lone_pair", "electron_dot", "formal_charge")),
+    ("chemical_equation", ("equation", "reaction", "equilibrium", "redox", "ionic", "kinetics")),
+    ("organic_structure", ("structure", "molecular", "molecule", "organic", "compound", "benzene", "alkane", "alkene", "chemfig")),
+    ("reaction_mechanism", ("mechanism", "arrow", "nucleophile", "electrophile", "substitution", "elimination", "scheme")),
+    ("orbital", ("orbital", "electron_config", "configuration", "energy_level", "mo_diagram", "molecular_orbital")),
+)
+
+_MATHEMATICS_TYPE_RULES: tuple[tuple[AgentType, tuple[str, ...]], ...] = (
+    ("number_line", ("number_line", "inequality", "interval", "solution_set", "absolute_value")),
+    ("venn_diagram", ("venn", "set", "union", "intersection", "complement", "subset")),
+    ("function_graph", ("function", "plot", "graph", "calculus", "derivative", "integral", "tangent_line", "normal_line", "limit", "curve")),
+    ("coordinate_geometry", ("coordinate", "line", "circle", "parabola", "ellipse", "hyperbola", "conic", "tangent_to", "locus")),
+    ("geometric_figure", ("triangle", "polygon", "angle", "geometry", "construction", "quadrilateral", "geometric")),
+)
+
+_PHYSICS_TYPE_RULES: tuple[tuple[AgentType, tuple[str, ...]], ...] = (
+    ("gates", ("gate", "logic", "nand", "nor", "xor", "xnor", "flip_flop", "latch", "boolean", "combinational", "sequential", "multiplexer", "decoder", "adder", "digital")),
+    ("fbd", ("free_body", "fbd", "force", "forces")),
+    ("mechanics", ("pulley", "spring", "incline", "inclined_plane", "atwood", "spring_mass", "shm", "oscillation", "rotation", "torque", "angular", "projectile", "trajectory", "kinematics", "work_energy")),
+    ("wave", ("wave", "standing_wave", "reflection", "transmission", "superposition", "interference", "node", "antinode", "harmonic", "wave_front", "doppler", "beats")),
+    ("circuit", ("circuit", "electrical", "resistor", "capacitor", "inductor", "induction", "emf", "battery", "rail", "rod_on_rail", "solenoid", "coil", "wheatstone", "potentiometer", "galvanometer", "ammeter", "voltmeter", "transformer")),
+    ("graph", ("graph", "plot", "function", "curve")),
+    ("optics", ("ray", "lens", "mirror", "optic", "refraction", "reflection")),
+)
+
+_PHYSICS_ELEMENT_RULES: tuple[tuple[AgentType, tuple[str, ...]], ...] = (
+    ("gates", ("gate", "nand", "nor", "xor", "xnor", "and gate", "or gate", "not gate", "inverter", "flip-flop", "latch", "multiplexer", "decoder", "truth table")),
+    ("circuit", ("resistor", "capacitor", "inductor", "battery", "emf", "wire", "switch", "ammeter", "voltmeter", "galvanometer", "rail", "rod", "coil", "solenoid", "transformer", "diode", "bulb", "lamp", "cell", "current")),
+    ("mechanics", ("pulley", "spring", "incline", "inclined plane", "atwood", "rope hanging", "string attached", "rotation", "torque", "angular", "projectile", "trajectory", "shm", "oscillation", "pivot", "ceiling", "support", "frame", "kinematikz")),
+    ("wave", ("wave", "wavelength", "amplitude", "frequency", "reflection", "transmission", "standing wave", "node", "antinode", "harmonic", "superposition", "interference", "phase", "wave front", "doppler", "tztos", "incident wave", "reflected wave")),
+    ("fbd", ("force vector", "normal force", "friction force", "tension force", "applied force", "force arrow", "force diagram", "isolated body")),
+    ("optics", ("lens", "mirror", "prism", "slit", "screen", "ray", "beam", "focal", "aperture")),
+)
+
+_GENERIC_TYPE_RULES: tuple[tuple[AgentType, tuple[str, ...]], ...] = (
+    ("organic_structure", ("chemfig", "organic", "molecule")),
+    ("reaction_mechanism", ("mechanism", "reaction_scheme")),
+    ("orbital", ("orbital", "electron_config")),
+    ("fbd", ("free_body", "fbd", "force")),
+    ("circuit", ("circuit", "electrical", "induction", "emf", "inductor")),
+    ("graph", ("graph", "plot")),
+    ("optics", ("ray", "lens", "mirror", "optic")),
+)
+
+_CHEMISTRY_CATEGORY_ROUTES: dict[str, AgentType] = {
+    "energy": "energy_diagram", "thermodynamics": "energy_diagram",
+    "lewis": "lewis_structure", "electron_dot": "lewis_structure",
+    "equation": "chemical_equation", "reaction": "chemical_equation",
+    "structure": "organic_structure", "molecular": "organic_structure",
+    "mechanism": "reaction_mechanism", "orbital": "orbital",
+}
+_MATHEMATICS_CATEGORY_ROUTES: dict[str, AgentType] = {
+    "number_line": "number_line", "inequality": "number_line",
+    "venn": "venn_diagram", "set_theory": "venn_diagram",
+    "function": "function_graph", "calculus": "function_graph", "plot": "function_graph",
+    "coordinate": "coordinate_geometry", "analytical": "coordinate_geometry",
+    "geometry": "geometric_figure", "figure": "geometric_figure",
+}
+_PHYSICS_CATEGORY_ROUTES: dict[str, AgentType] = {
+    "mechanics": "mechanics", "kinematics": "mechanics", "waves": "wave",
+    "circuits": "circuit", "graphs": "graph", "optics": "optics",
+}
+
+
+def _route_by_keywords(
+    value: str | None,
+    rules: tuple[tuple[AgentType, tuple[str, ...]], ...],
+) -> AgentType | None:
+    if not value:
+        return None
+    normalized = value.lower()
+    return next(
+        (agent for agent, keywords in rules if any(word in normalized for word in keywords)),
+        None,
+    )
+
+
+def _route_by_category(
+    diagram: DiagramAnalysis | None,
+    routes: dict[str, AgentType],
+) -> AgentType | None:
+    if not diagram or not diagram.diagram_category:
+        return None
+    return routes.get(str(diagram.diagram_category).lower())
+
+
+def _route_chemistry(diagram: DiagramAnalysis | None) -> AgentType:
+    route = _route_by_keywords(
+        diagram.diagram_type if diagram else None,
+        _CHEMISTRY_TYPE_RULES,
+    )
+    return route or _route_by_category(diagram, _CHEMISTRY_CATEGORY_ROUTES) or "organic_structure"
+
+
+def _route_mathematics(diagram: DiagramAnalysis | None) -> AgentType:
+    route = _route_by_keywords(
+        diagram.diagram_type if diagram else None,
+        _MATHEMATICS_TYPE_RULES,
+    )
+    return route or _route_by_category(diagram, _MATHEMATICS_CATEGORY_ROUTES) or "function_graph"
+
+
+def _route_physics(diagram: DiagramAnalysis | None) -> AgentType | None:
+    route = _route_by_keywords(
+        diagram.diagram_type if diagram else None,
+        _PHYSICS_TYPE_RULES,
+    )
+    if route:
+        return route
+    route = _route_by_category(diagram, _PHYSICS_CATEGORY_ROUTES)
+    if route or not diagram or not diagram.diagram_elements:
+        return route
+    return _route_by_keywords(" ".join(diagram.diagram_elements), _PHYSICS_ELEMENT_RULES)
+
+
 def _route_tikz_agent_inner(
     diagram: Optional[DiagramAnalysis] = None,
     primary: Optional[PrimaryClassification] = None,
     diagram_type: Optional[str] = None,
     subject: Optional[str] = None,
 ) -> AgentType:
-    """Core routing logic (context-agnostic)."""
-    # Biology: always route to image generation (not TikZ)
-    # Return a sentinel value that generate_tikz_with_routing handles
-    _subject = subject or (primary.subject if primary and hasattr(primary, 'subject') else None)
-    if _subject and _subject.lower() == "biology":
+    """Core routing logic, ordered from explicit hints to broad fallbacks."""
+    resolved_subject = subject or (primary.subject if primary else None)
+    if resolved_subject and resolved_subject.lower() == "biology":
         return "biology_image"
-    # Priority 1: Use Agent 2's suggestion
-    if diagram and diagram.suggested_tikz_agent:
-        agent = diagram.suggested_tikz_agent.lower()
-        valid_agents = ["fbd", "circuit", "gates", "graph", "optics", "mechanics", "wave", "organic_structure", "reaction_mechanism", "orbital", "generic"]
-        if agent in valid_agents:
-            # Priority 1.5: Override circuit → gates if elements clearly indicate logic gates
-            # (classifier may not know about the gates agent and suggest "circuit" instead)
-            if agent == "circuit" and diagram.diagram_elements:
-                elements_str = " ".join(e.lower() for e in diagram.diagram_elements)
-                gate_keywords = [
-                    "logic gate", "nand", "nor gate", "xor", "xnor",
-                    "inverter", "flip-flop", "latch", "boolean",
-                    "truth table", "half adder", "full adder",
-                    "multiplexer", "decoder", "combinational",
-                ]
-                if any(kw in elements_str for kw in gate_keywords):
-                    return "gates"
-            return agent
-    
-    # Priority 2: Manual override (diagram_type parameter)
-    if diagram_type:
-        dtype = diagram_type.lower()
-        # Physics problem setup / schematic (check early: "setup" contains "set"
-        # which would otherwise match the venn/set mathematics route below)
-        if "setup" in dtype or "schematic" in dtype or "apparatus" in dtype:
-            return "setup"
-        # Digital logic gates
-        if any(kw in dtype for kw in [
-            "gate", "logic", "nand", "nor", "xor", "xnor",
-            "flip_flop", "latch", "boolean", "combinational",
-            "sequential", "multiplexer", "decoder", "adder",
-        ]):
-            return "gates"
-        # Mathematics
-        if "number_line" in dtype or "inequality" in dtype or "interval" in dtype:
-            return "number_line"
-        if "venn" in dtype or "set" in dtype:
-            return "venn_diagram"
-        if "function" in dtype or "calculus" in dtype:
-            return "function_graph"
-        if "coordinate" in dtype or "conic" in dtype:
-            return "coordinate_geometry"
-        if "triangle" in dtype or "polygon" in dtype or "geometric" in dtype:
-            return "geometric_figure"
-        # Chemistry
-        if "organic" in dtype or "structure" in dtype:
-            return "organic_structure"
-        if "mechanism" in dtype:
-            return "reaction_mechanism"
-        if "orbital" in dtype:
-            return "orbital"
-        if "lewis" in dtype:
-            return "lewis_structure"
-        if "equation" in dtype or "reaction" in dtype:
-            return "chemical_equation"
-        if "energy" in dtype or "enthalpy" in dtype:
-            return "energy_diagram"
-        # Physics
-        if "fbd" in dtype or "force" in dtype:
-            return "fbd"
-        if "circuit" in dtype:
-            return "circuit"
-        if "mechanics" in dtype or "pulley" in dtype or "spring" in dtype or "incline" in dtype:
-            return "mechanics"
-        if "wave" in dtype or "reflection" in dtype or "transmission" in dtype or "standing" in dtype:
-            return "wave"
-        if "graph" in dtype or "plot" in dtype:
-            return "graph"
-        if "optic" in dtype or "ray" in dtype:
-            return "optics"
-    
-    # Get subject from primary if not provided
-    if not subject and primary and hasattr(primary, 'subject'):
-        subject = primary.subject
-    
-    # Priority 3: Subject-specific routing
-    if subject:
-        subject_lower = subject.lower()
-        
-        # Chemistry routing
-        if subject_lower == "chemistry":
-            if diagram and diagram.diagram_type:
-                dtype = diagram.diagram_type.lower()
-                
-                # Energy diagrams (thermodynamics, reaction coordinates)
-                if any(x in dtype for x in ["energy", "enthalpy", "thermodynamic", "activation", "born_haber", "hess", "coordinate", "potential"]):
-                    return "energy_diagram"
-                
-                # Lewis structures (lone pairs, formal charges)
-                if any(x in dtype for x in ["lewis", "lone_pair", "electron_dot", "formal_charge"]):
-                    return "lewis_structure"
-                
-                # Chemical equations (reactions, equilibria)
-                if any(x in dtype for x in ["equation", "reaction", "equilibrium", "redox", "ionic", "kinetics"]):
-                    return "chemical_equation"
-                
-                # Organic structures
-                if any(x in dtype for x in ["structure", "molecular", "molecule", "organic", "compound", "benzene", "alkane", "alkene", "chemfig"]):
-                    return "organic_structure"
-                
-                # Reaction mechanisms
-                if any(x in dtype for x in ["mechanism", "arrow", "nucleophile", "electrophile", "substitution", "elimination", "scheme"]):
-                    return "reaction_mechanism"
-                
-                # Orbital diagrams
-                if any(x in dtype for x in ["orbital", "electron_config", "configuration", "energy_level", "mo_diagram", "molecular_orbital"]):
-                    return "orbital"
-            
-            # Check diagram category for chemistry
-            if diagram and diagram.diagram_category:
-                category = str(diagram.diagram_category).lower()
-                
-                if category in ["energy", "thermodynamics"]:
-                    return "energy_diagram"
-                elif category in ["lewis", "electron_dot"]:
-                    return "lewis_structure"
-                elif category in ["equation", "reaction"]:
-                    return "chemical_equation"
-                elif category in ["structure", "molecular"]:
-                    return "organic_structure"
-                elif category in ["mechanism"]:
-                    return "reaction_mechanism"
-                elif category in ["orbital"]:
-                    return "orbital"
-            
-            # Default for chemistry: check if it's an equation or structure
-            # If description mentions "reaction" or "equation", use chemical_equation
-            # Otherwise default to organic_structure (most common)
-            return "organic_structure"
-        
-        # Mathematics routing
-        elif subject_lower == "mathematics":
-            if diagram and diagram.diagram_type:
-                dtype = diagram.diagram_type.lower()
-                
-                # Number lines and inequalities
-                if any(x in dtype for x in ["number_line", "inequality", "interval", "solution_set", "absolute_value"]):
-                    return "number_line"
-                
-                # Venn diagrams and set theory
-                if any(x in dtype for x in ["venn", "set", "union", "intersection", "complement", "subset"]):
-                    return "venn_diagram"
-                
-                # Function graphs and calculus
-                if any(x in dtype for x in ["function", "plot", "graph", "calculus", "derivative", "integral", "tangent_line", "normal_line", "limit", "curve"]):
-                    return "function_graph"
-                
-                # Coordinate geometry
-                if any(x in dtype for x in ["coordinate", "line", "circle", "parabola", "ellipse", "hyperbola", "conic", "tangent_to", "locus"]):
-                    return "coordinate_geometry"
-                
-                # Geometric figures
-                if any(x in dtype for x in ["triangle", "polygon", "angle", "geometry", "construction", "quadrilateral", "geometric"]):
-                    return "geometric_figure"
-            
-            # Check diagram category for mathematics
-            if diagram and diagram.diagram_category:
-                category = str(diagram.diagram_category).lower()
-                
-                if category in ["number_line", "inequality"]:
-                    return "number_line"
-                elif category in ["venn", "set_theory"]:
-                    return "venn_diagram"
-                elif category in ["function", "calculus", "plot"]:
-                    return "function_graph"
-                elif category in ["coordinate", "analytical"]:
-                    return "coordinate_geometry"
-                elif category in ["geometry", "figure"]:
-                    return "geometric_figure"
-            
-            # Default for mathematics: function_graph (most common)
-            return "function_graph"
-        
-        # Physics routing
-        elif subject_lower == "physics":
-            if diagram and diagram.diagram_type:
-                dtype = diagram.diagram_type.lower()
-                
-                # Digital logic gates
-                if any(x in dtype for x in [
-                    "gate", "logic", "nand", "nor", "xor", "xnor",
-                    "flip_flop", "latch", "boolean", "combinational",
-                    "sequential", "multiplexer", "decoder", "adder",
-                    "digital",
-                ]):
-                    return "gates"
-                
-                # Free body diagrams
-                if any(x in dtype for x in ["free_body", "fbd", "force", "forces"]):
-                    return "fbd"
-                
-                # Mechanics (pulley, spring, incline systems)
-                if any(x in dtype for x in [
-                    "pulley", "spring", "incline", "inclined_plane",
-                    "atwood", "spring_mass", "shm", "oscillation",
-                    "rotation", "torque", "angular", "projectile",
-                    "trajectory", "kinematics", "work_energy",
-                ]):
-                    return "mechanics"
-                
-                # Wave mechanics (wave propagation, reflection, transmission)
-                if any(x in dtype for x in [
-                    "wave", "standing_wave", "reflection", "transmission",
-                    "superposition", "interference", "node", "antinode",
-                    "harmonic", "wave_front", "doppler", "beats",
-                ]):
-                    return "wave"
-                
-                # Circuits (includes EMI, AC, current electricity)
-                if any(x in dtype for x in [
-                    "circuit", "electrical", "resistor", "capacitor",
-                    "inductor", "induction", "emf", "battery",
-                    "rail", "rod_on_rail", "solenoid", "coil",
-                    "wheatstone", "potentiometer", "galvanometer",
-                    "ammeter", "voltmeter", "transformer",
-                ]):
-                    return "circuit"
-                
-                # Graphs and plots
-                if any(x in dtype for x in ["graph", "plot", "function", "curve"]):
-                    return "graph"
-                
-                # Optics
-                if any(x in dtype for x in ["ray", "lens", "mirror", "optic", "refraction", "reflection"]):
-                    return "optics"
-            
-            # Check diagram category for physics
-            if diagram and diagram.diagram_category:
-                category = str(diagram.diagram_category).lower()
-                
-                if category == "mechanics":
-                    return "mechanics"
-                elif category == "kinematics":
-                    return "mechanics"
-                elif category == "waves":
-                    return "wave"
-                elif category == "circuits":
-                    return "circuit"
-                elif category == "graphs":
-                    return "graph"
-                elif category == "optics":
-                    return "optics"
 
-            # Element-based fallback: check diagram_elements for clues
-            if diagram and diagram.diagram_elements:
-                elements_str = " ".join(e.lower() for e in diagram.diagram_elements)
-                # Logic gates
-                gate_keywords = [
-                    "gate", "nand", "nor", "xor", "xnor", "and gate",
-                    "or gate", "not gate", "inverter", "flip-flop",
-                    "latch", "multiplexer", "decoder", "truth table",
-                ]
-                if any(kw in elements_str for kw in gate_keywords):
-                    return "gates"
-                circuit_keywords = [
-                    "resistor", "capacitor", "inductor", "battery", "emf",
-                    "wire", "switch", "ammeter", "voltmeter", "galvanometer",
-                    "rail", "rod", "coil", "solenoid", "transformer",
-                    "diode", "bulb", "lamp", "cell", "current",
-                ]
-                if any(kw in elements_str for kw in circuit_keywords):
-                    return "circuit"
-                mechanics_keywords = [
-                    "pulley", "spring", "incline", "inclined plane",
-                    "atwood", "rope hanging", "string attached",
-                    "rotation", "torque", "angular", "projectile",
-                    "trajectory", "shm", "oscillation", "pivot",
-                    "ceiling", "support", "frame", "kinematikz",
-                ]
-                if any(kw in elements_str for kw in mechanics_keywords):
-                    return "mechanics"
-                wave_keywords = [
-                    "wave", "wavelength", "amplitude", "frequency",
-                    "reflection", "transmission", "standing wave",
-                    "node", "antinode", "harmonic", "superposition",
-                    "interference", "phase", "wave front", "doppler",
-                    "tztos", "incident wave", "reflected wave",
-                ]
-                if any(kw in elements_str for kw in wave_keywords):
-                    return "wave"
-                fbd_keywords = [
-                    "force vector", "normal force", "friction force",
-                    "tension force", "applied force", "force arrow",
-                    "force diagram", "isolated body",
-                ]
-                if any(kw in elements_str for kw in fbd_keywords):
-                    return "fbd"
-                optics_keywords = [
-                    "lens", "mirror", "prism", "slit", "screen",
-                    "ray", "beam", "focal", "aperture",
-                ]
-                if any(kw in elements_str for kw in optics_keywords):
-                    return "optics"
-    
-    # Priority 3: Specific diagram type (subject-agnostic)
-    if diagram and diagram.diagram_type:
-        dtype = diagram.diagram_type.lower()
-        
-        # Chemistry types
-        if any(x in dtype for x in ["chemfig", "organic", "molecule"]):
-            return "organic_structure"
-        if any(x in dtype for x in ["mechanism", "reaction_scheme"]):
-            return "reaction_mechanism"
-        if any(x in dtype for x in ["orbital", "electron_config"]):
-            return "orbital"
-        
-        # Physics types
-        if any(x in dtype for x in ["free_body", "fbd", "force"]):
-            return "fbd"
-        if any(x in dtype for x in ["circuit", "electrical", "induction", "emf", "inductor"]):
-            return "circuit"
-        if any(x in dtype for x in ["graph", "plot"]):
-            return "graph"
-        if any(x in dtype for x in ["ray", "lens", "mirror", "optic"]):
-            return "optics"
-    
-    # Priority 4: Subject-based fallback
-    if primary:
-        subject = primary.subject
-        if subject == "chemistry":
-            return "organic_structure"
-        if subject == "mathematics":
-            return "function_graph"
-    
-    # Default
+    if diagram and diagram.suggested_tikz_agent:
+        suggested = diagram.suggested_tikz_agent.lower()
+        if suggested in _SUGGESTED_AGENTS:
+            elements = " ".join(diagram.diagram_elements or []).lower()
+            if suggested == "circuit" and any(
+                keyword in elements for keyword in _SUGGESTED_GATE_KEYWORDS
+            ):
+                return "gates"
+            return suggested  # type: ignore[return-value]
+
+    manual_route = _route_by_keywords(diagram_type, _MANUAL_TYPE_RULES)
+    if manual_route:
+        return manual_route
+
+    if resolved_subject:
+        subject_lower = resolved_subject.lower()
+        if subject_lower == "chemistry":
+            return _route_chemistry(diagram)
+        if subject_lower == "mathematics":
+            return _route_mathematics(diagram)
+        if subject_lower == "physics":
+            physics_route = _route_physics(diagram)
+            if physics_route:
+                return physics_route
+
+    generic_route = _route_by_keywords(
+        diagram.diagram_type if diagram else None,
+        _GENERIC_TYPE_RULES,
+    )
+    if generic_route:
+        return generic_route
+
+    if primary and primary.subject == "chemistry":
+        return "organic_structure"
+    if primary and primary.subject == "mathematics":
+        return "function_graph"
     return "generic"
+
+
+def _parse_chemistry_context(solution_context: str | None) -> dict | None:
+    """Extract optional organic-diagram hints from solution context."""
+    if not solution_context:
+        return None
+
+    context = {}
+    for flag in ("show_lone_pairs", "show_charges"):
+        if flag in solution_context:
+            context[flag] = "yes"
+
+    valued_fields = {
+        "mechanism_step",
+        "stereochemistry",
+        "reaction_conditions",
+        "key_functional_groups",
+    }
+    for part in solution_context.split("|"):
+        for field in valued_fields:
+            if field in part:
+                context[field] = part.split(":")[-1].strip()
+
+    return context
+
+
+def _invoke_registered_generator(
+    agent_type: AgentType,
+    *,
+    image_path: str | None,
+    description: str | None,
+    use_context: bool,
+    show_spinner: bool,
+    problem_text: str | None,
+    solution_context: str | None,
+    values: dict | None,
+    labels: list | None,
+    mcq_options: bool,
+) -> str:
+    """Load and invoke a standard generator from the dispatch registry."""
+    spec = _GENERATOR_REGISTRY[agent_type]
+    generator = getattr(import_module(spec.module), spec.function)
+    optional_values = {
+        "problem_text": problem_text,
+        "solution_context": solution_context,
+        "values": values,
+        "labels": labels,
+        "mcq_options": mcq_options,
+    }
+    effective_description = (
+        description or "Diagram" if agent_type == "generic" else description
+    )
+    kwargs = {
+        "image_path": image_path,
+        "description": effective_description,
+        "use_context": use_context,
+        "show_spinner": show_spinner,
+        **{name: optional_values[name] for name in spec.forwards},
+    }
+    return generator(**kwargs)
 
 
 def generate_tikz_with_routing(
@@ -417,8 +396,8 @@ def generate_tikz_with_routing(
     Args:
         image_path: Path to diagram image
         description: Text description of diagram
-        diagram: DiagramAnalysis from Agent 2
-        primary: PrimaryClassification from Agent 1
+        diagram: Structured diagram classification
+        primary: Compact question classification
         use_context: Whether to use reference context
         show_spinner: Whether to show animated spinner (default: True)
         subject: Subject name (physics, chemistry, etc.)
@@ -483,14 +462,26 @@ def generate_tikz_with_routing(
             context=solution_context or problem_text,
             show_spinner=show_spinner,
         )
+        if not result.success:
+            raise RuntimeError(result.error or "Biology diagram generation failed")
         # Return the latex_include as the "tikz_code" — Option A
         return result.latex_include, "biology_image"
     
-    # Generate with specialized agent
-    # Physics agents
-    if agent_type == "fbd":
-        from vbagent.agents.diagram.physics import generate_fbd
-        tikz_code = generate_fbd(
+    if agent_type == "organic_structure":
+        from vbagent.agents.diagram.chemistry import generate_organic_orchestrated
+
+        tikz_code = generate_organic_orchestrated(
+            image_path=image_path,
+            description=description,
+            chemistry_context=_parse_chemistry_context(solution_context),
+            problem_text=problem_text,
+            use_context=use_context,
+            show_spinner=show_spinner,
+            mcq_options=mcq_options,
+        )
+    else:
+        tikz_code = _invoke_registered_generator(
+            agent_type,
             image_path=image_path,
             description=description,
             use_context=use_context,
@@ -499,246 +490,12 @@ def generate_tikz_with_routing(
             solution_context=solution_context,
             values=values,
             labels=labels,
+            mcq_options=mcq_options,
         )
-    elif agent_type == "setup":
-        from vbagent.agents.diagram.physics import generate_setup
-        tikz_code = generate_setup(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner,
-            problem_text=problem_text,
-            solution_context=solution_context,
-            values=values,
-            labels=labels,
-        )
-    elif agent_type == "circuit":
-        from vbagent.agents.diagram.physics import generate_circuit
-        tikz_code = generate_circuit(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner,
-            problem_text=problem_text,
-            solution_context=solution_context,
-            values=values,
-            labels=labels,
-        )
-    elif agent_type == "graph":
-        from vbagent.agents.diagram.physics import generate_graph
-        tikz_code = generate_graph(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner,
-            problem_text=problem_text,
-            solution_context=solution_context,
-            values=values,
-            labels=labels,
-        )
-    elif agent_type == "optics":
-        from vbagent.agents.diagram.physics import generate_optics
-        tikz_code = generate_optics(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner,
-            problem_text=problem_text,
-            solution_context=solution_context,
-            values=values,
-            labels=labels,
-        )
-    elif agent_type == "mechanics":
-        from vbagent.agents.diagram.physics import generate_mechanics
-        tikz_code = generate_mechanics(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner,
-            problem_text=problem_text,
-            solution_context=solution_context,
-            values=values,
-            labels=labels,
-        )
-    elif agent_type == "wave":
-        from vbagent.agents.diagram.physics import generate_wave
-        tikz_code = generate_wave(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner,
-            problem_text=problem_text,
-            solution_context=solution_context,
-            values=values,
-            labels=labels,
-        )
-    elif agent_type == "gates":
-        from vbagent.agents.diagram.physics import generate_gates
-        tikz_code = generate_gates(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner,
-            problem_text=problem_text,
-            solution_context=solution_context,
-            values=values,
-            labels=labels,
-        )
-    # Chemistry agents
-    elif agent_type == "organic_structure":
-        # NEW: Option to use orchestrator for better quality
-        # Check if orchestrator should be used (can be controlled by flag)
-        use_orchestrator = True  # Default to orchestrator for better quality
-        
-        if use_orchestrator:
-            from vbagent.agents.diagram.chemistry import generate_organic_orchestrated
-            
-            # Extract chemistry_context from solution_context if available
-            chemistry_context = None
-            if solution_context:
-                # Parse solution_context string to extract chemistry-specific info
-                chemistry_context = {}
-                if "show_lone_pairs" in solution_context:
-                    chemistry_context["show_lone_pairs"] = "yes"
-                if "show_charges" in solution_context:
-                    chemistry_context["show_charges"] = "yes"
-                if "mechanism_step" in solution_context:
-                    # Extract mechanism step description
-                    parts = solution_context.split("|")
-                    for part in parts:
-                        if "mechanism_step" in part:
-                            chemistry_context["mechanism_step"] = part.split(":")[-1].strip()
-                if "stereochemistry" in solution_context:
-                    # Extract stereochemistry info
-                    parts = solution_context.split("|")
-                    for part in parts:
-                        if "stereochemistry" in part:
-                            chemistry_context["stereochemistry"] = part.split(":")[-1].strip()
-                if "reaction_conditions" in solution_context:
-                    parts = solution_context.split("|")
-                    for part in parts:
-                        if "reaction_conditions" in part:
-                            chemistry_context["reaction_conditions"] = part.split(":")[-1].strip()
-                if "key_functional_groups" in solution_context:
-                    parts = solution_context.split("|")
-                    for part in parts:
-                        if "key_functional_groups" in part:
-                            chemistry_context["key_functional_groups"] = part.split(":")[-1].strip()
-            
-            # Use mcq_options parameter from function call
-            # When called from MCQ coordinator, this will be True
-            # When called for main diagram, this will be False
-            
-            tikz_code = generate_organic_orchestrated(
-                image_path=image_path,
-                description=description,
-                chemistry_context=chemistry_context,
-                problem_text=problem_text,
-                use_context=use_context,
-                show_spinner=show_spinner,
-                mcq_options=mcq_options,
-            )
-        else:
-            # Fallback to original organic structure agent
-            from vbagent.agents.diagram.chemistry import generate_organic_structure
-            # Use mcq_options parameter from function call
-            tikz_code = generate_organic_structure(
-                image_path=image_path,
-                description=description,
-                use_context=use_context,
-                show_spinner=show_spinner,
-                mcq_options=mcq_options
-            )
-    elif agent_type == "reaction_mechanism":
-        from vbagent.agents.diagram.chemistry import generate_reaction_mechanism
-        tikz_code = generate_reaction_mechanism(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner
-        )
-    elif agent_type == "orbital":
-        from vbagent.agents.diagram.chemistry import generate_orbital
-        tikz_code = generate_orbital(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner
-        )
-    elif agent_type == "lewis_structure":
-        from vbagent.agents.diagram.chemistry import generate_lewis_structure
-        tikz_code = generate_lewis_structure(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner
-        )
-    elif agent_type == "chemical_equation":
-        from vbagent.agents.diagram.chemistry import generate_chemical_equation
-        tikz_code = generate_chemical_equation(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner,
-            mcq_options=mcq_options
-        )
-    elif agent_type == "energy_diagram":
-        from vbagent.agents.diagram.chemistry import generate_energy_diagram
-        tikz_code = generate_energy_diagram(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner
-        )
-    # Mathematics agents
-    elif agent_type == "function_graph":
-        from vbagent.agents.diagram.mathematics import generate_function_graph
-        tikz_code = generate_function_graph(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner
-        )
-    elif agent_type == "coordinate_geometry":
-        from vbagent.agents.diagram.mathematics import generate_coordinate_geometry
-        tikz_code = generate_coordinate_geometry(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner
-        )
-    elif agent_type == "geometric_figure":
-        from vbagent.agents.diagram.mathematics import generate_geometric_figure
-        tikz_code = generate_geometric_figure(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner
-        )
-    elif agent_type == "number_line":
-        from vbagent.agents.diagram.mathematics import generate_number_line
-        tikz_code = generate_number_line(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner
-        )
-    elif agent_type == "venn_diagram":
-        from vbagent.agents.diagram.mathematics import generate_venn_diagram
-        tikz_code = generate_venn_diagram(
-            image_path=image_path,
-            description=description,
-            use_context=use_context,
-            show_spinner=show_spinner
-        )
-    else:  # generic
-        from vbagent.agents.diagram.tikz import generate_tikz
-        tikz_code = generate_tikz(
-            image_path=image_path,
-            description=description or "Diagram",
-            use_context=use_context
-        )
-    
+
+    if not isinstance(tikz_code, str) or not tikz_code.strip():
+        raise ValueError(f"{agent_type} agent returned empty diagram output")
+
     return tikz_code, agent_type
 
 

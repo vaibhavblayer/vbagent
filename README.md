@@ -53,8 +53,11 @@ vbagent scan -i question.png -o out.tex   # Extract LaTeX
 vbagent classify -i question.png          # Classify question type
 vbagent tikz -i diagram.png -o diag.tex   # Generate TikZ
 vbagent run -i question.png               # Full pipeline
+vbagent run -i problem_1.png --from 1 --to 50 --parallel 3  # Image batch
+vbagent run -i problems.tex --from 1 --to 50 --parallel 3  # TeX item batch
 vbagent solve -t scanned.tex -o solved.tex # Generate solutions from scanned TeX
 vbagent solve -t scanned-problems/ -o solved-problems/ --no-diagram
+vbagent solve -t scanned-problems/ --in-place --no-diagram --from 1 --to 5 --exclude 4,3
 ```
 
 ### Commands

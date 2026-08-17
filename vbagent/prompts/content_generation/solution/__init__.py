@@ -12,6 +12,8 @@ Unlike scanner prompts (which focus on OCR), solution prompts focus on:
 
 from typing import Optional
 
+from .final_answer import SUBJECTIVE_FINAL_ANSWER_RULES
+
 
 def get_solution_prompt(question_type: str, subject: str, chapter: Optional[str] = None, topic: Optional[str] = None) -> str:
     """Get solution generation prompt for a question type and subject.
@@ -30,20 +32,22 @@ def get_solution_prompt(question_type: str, subject: str, chapter: Optional[str]
     """
     if subject == "physics":
         from .physics import get_prompt
-        return get_prompt(question_type, chapter, topic)
+        prompt = get_prompt(question_type, chapter, topic)
     elif subject == "chemistry":
         from .chemistry import get_prompt
-        return get_prompt(question_type)
+        prompt = get_prompt(question_type)
     elif subject == "mathematics":
         from .mathematics import get_prompt
-        return get_prompt(question_type)
+        prompt = get_prompt(question_type)
     elif subject == "biology":
         from .biology import get_prompt
-        return get_prompt(question_type)
+        prompt = get_prompt(question_type)
     else:
         raise ValueError(f"Unsupported subject: {subject}")
-    
-    return get_prompt(question_type)
+
+    if question_type == "subjective":
+        prompt += "\n\n" + SUBJECTIVE_FINAL_ANSWER_RULES
+    return prompt
 
 
 def get_user_template(subject: str) -> str:
@@ -66,10 +70,13 @@ Provide:
 1. Step-by-step solution with clear reasoning
 2. Identify any diagrams needed in the solution
 3. Final answer (if applicable)
+4. Decide whether a genuinely useful alternate solution method is worth generating;
+   if so, provide a short method hint only
 """
 
 
 __all__ = [
     "get_solution_prompt",
     "get_user_template",
+    "SUBJECTIVE_FINAL_ANSWER_RULES",
 ]

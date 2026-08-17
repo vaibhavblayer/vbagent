@@ -164,7 +164,7 @@ def rename(directory: str, prefix: str, start: int, ext: tuple, dry_run: bool, y
         temp.rename(new)
         renamed_count += 1
     
-    console.print(f"\n[green]✓[/green] Renamed {renamed_count} file(s)")
+    console.print(f"\n[green]OK[/green] Renamed {renamed_count} file(s)")
 
 
 @util.command()
@@ -273,7 +273,7 @@ def clean(output: bool, config: bool, cache: bool, all_: bool, yes: bool):
     
     console.print("[bold]Will remove:[/bold]")
     for name, _ in to_remove:
-        console.print(f"  [red]✗[/red] {name}")
+        console.print(f"  [red]ERROR[/red] {name}")
     
     if not yes:
         if not Confirm.ask("\nProceed?", default=False):
@@ -285,7 +285,7 @@ def clean(output: bool, config: bool, cache: bool, all_: bool, yes: bool):
             shutil.rmtree(path)
         else:
             path.unlink()
-        console.print(f"[green]✓[/green] Removed {name}")
+        console.print(f"[green]OK[/green] Removed {name}")
 
 
 @util.command()

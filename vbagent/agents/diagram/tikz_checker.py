@@ -344,10 +344,7 @@ def check_tikz_with_patch(
     Raises:
         ValueError: If content is empty
     """
-    from agents import Runner
     from vbagent.agents.base import create_image_message
-    from ..ui.logging import log_agent_usage
-    import time
     
     if not full_content.strip():
         raise ValueError("Content cannot be empty")
@@ -368,25 +365,13 @@ def check_tikz_with_patch(
     else:
         message = message_text
     
-    _start = time.time()
-    
-    # Run the agent
-    result = Runner.run_sync(agent, input=message)
-    
-    _duration = time.time() - _start
-    _usage = result.context_wrapper.usage if result.context_wrapper else None
-    _resp_id = None
-    try:
-        if result.raw_responses:
-            _resp_id = getattr(result.raw_responses[-1], "response_id", None)
-    except (AttributeError, IndexError):
-        pass
-    log_agent_usage(agent.name, model=agent.model or "default", duration=_duration,
-                    usage=_usage, response_id=_resp_id,
-                    has_image=bool(image_path), reasoning="none")
-    
     # Check if agent returned text indicating pass
-    final_output = result.final_output or ""
+    final_output = run_agent_sync(
+        agent,
+        message,
+        show_spinner=True,
+        timeout=600,
+    ) or ""
     if "PASSED" in final_output.upper() or "no errors" in final_output.lower():
         return PatchResult(
             passed=True,
@@ -561,6 +546,7 @@ def validate_tikz(
     context: Optional[str] = None,
     auto_fix: bool = True,
     compile_test: bool = True,
+    cache_group_id: Optional[str] = None,
 ):
     """Validate and fix TikZ code, returning structured TikZValidation.
 
@@ -574,7 +560,28 @@ def validate_tikz(
         TikZValidation with errors, fixes, and corrected code
     """
     agent = create_structured_tikz_checker_agent()
+    validation_context = _build_validation_context(
+        tikz_code,
+        context=context,
+        auto_fix=auto_fix,
+        compile_test=compile_test,
+    )
+    result, _ = _validate_tikz_turn(
+        agent,
+        validation_context,
+        compile_test=compile_test,
+        cache_group_id=cache_group_id,
+    )
+    return result
 
+
+def _build_validation_context(
+    tikz_code: str,
+    *,
+    context: Optional[str],
+    auto_fix: bool,
+    compile_test: bool,
+) -> str:
     validation_context = f"""Validate this TikZ code and fix any errors.
 
 **TikZ Code:**
@@ -590,8 +597,32 @@ def validate_tikz(
         f"**Compile test:** {compile_test}\n\n"
         "Analyze the code, identify errors, and provide fixes."
     )
+    return validation_context
 
-    result = run_agent_sync(agent, validation_context)
+
+def _validate_tikz_turn(
+    agent,
+    message: str,
+    *,
+    compile_test: bool,
+    cache_group_id: Optional[str],
+    previous_response_id: Optional[str] = None,
+    credentials=None,
+):
+    continuation = None
+    if cache_group_id:
+        from vbagent.agents.base import run_agent_sync_continued
+
+        continuation = run_agent_sync_continued(
+            agent,
+            message,
+            cache_group_id,
+            previous_response_id=previous_response_id,
+            credentials=credentials,
+        )
+        result = continuation.final_output
+    else:
+        result = run_agent_sync(agent, message)
 
     if compile_test and result.fixed_tikz_code:
         from vbagent.compile import compile_latex
@@ -617,7 +648,7 @@ def validate_tikz(
                     )
                 )
 
-    return result
+    return result, continuation
 
 
 def check_and_fix_tikz(
@@ -634,15 +665,77 @@ def check_and_fix_tikz(
     """
     current_code = tikz_code
     result = None
+    from hashlib import sha256
+
+    problem_hash = sha256(tikz_code.encode("utf-8")).hexdigest()[:20]
+    cache_group_id = f"vbagent:tikz-fix:v1:{problem_hash}"
+    agent = create_structured_tikz_checker_agent()
+    previous_response_id = None
+    credentials = None
+    next_message = _build_validation_context(
+        current_code,
+        context=None,
+        auto_fix=True,
+        compile_test=True,
+    )
 
     for attempt in range(max_retries + 1):
-        result = validate_tikz(current_code, compile_test=True)
+        try:
+            result, continuation = _validate_tikz_turn(
+                agent,
+                next_message,
+                compile_test=True,
+                cache_group_id=cache_group_id,
+                previous_response_id=previous_response_id,
+                credentials=credentials,
+            )
+        except Exception:
+            if previous_response_id is None:
+                raise
+            # A stored response can expire or be unavailable to a different
+            # OpenAI project. Retry this attempt statelessly using the locally
+            # persisted candidate and the already pinned credentials.
+            previous_response_id = None
+            result, continuation = _validate_tikz_turn(
+                agent,
+                next_message,
+                compile_test=True,
+                cache_group_id=cache_group_id,
+                credentials=credentials,
+            )
+
+        if continuation is not None:
+            credentials = continuation.credentials
+            # Server-managed continuation is OpenAI-specific. Custom base URLs
+            # retain grouped prompt caching but receive complete stateless turns.
+            previous_response_id = (
+                continuation.response_id
+                if credentials.base_url is None
+                else None
+            )
 
         if result.is_valid:
             return True, current_code, result
 
         if result.fixed_tikz_code and attempt < max_retries:
             current_code = result.fixed_tikz_code
+            compiler_errors = [
+                error.message
+                for error in getattr(result, "errors_found", [])
+                if getattr(error, "type", "") == "compilation"
+            ]
+            error_text = "\n".join(compiler_errors) or "The candidate is still invalid."
+            next_message = f"""The previous TikZ fix still fails local validation.
+
+**Current candidate:**
+```latex
+{current_code}
+```
+
+**Latest compiler/validation error:**
+{error_text}
+
+Return another minimal corrected candidate. Do not repeat the previous failed approach."""
         else:
             return False, current_code, result
 

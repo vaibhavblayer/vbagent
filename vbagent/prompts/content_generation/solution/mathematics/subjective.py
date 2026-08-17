@@ -141,7 +141,9 @@ You MUST output a JSON object with this exact structure:
       }}
     }}
   ],
-  "reasoning_notes": "Optional internal notes"
+  "reasoning_notes": "Optional internal notes",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }}
 ```
 
@@ -220,7 +222,9 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
       }}
     }}
   ],
-  "reasoning_notes": "Split into cases based on critical points"
+  "reasoning_notes": "Split into cases based on critical points",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }}
 ```
 
@@ -230,7 +234,9 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
 {{
   "solution_latex": "\\begin{{solution}}\\n\\begin{{align*}}\\n\\intertext{{Solve $x^2 - 5x + 6 = 0$}}\\nx^2 - 5x + 6 &= 0 \\\\\\\\\\n(x - 2)(x - 3) &= 0 \\\\\\\\\\nx &= 2 \\text{{ or }} x = 3\\n\\end{{align*}}\\n\\end{{solution}}",
   "diagram_requirements": [],
-  "reasoning_notes": "Simple factoring"
+  "reasoning_notes": "Simple factoring",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }}
 ```
 

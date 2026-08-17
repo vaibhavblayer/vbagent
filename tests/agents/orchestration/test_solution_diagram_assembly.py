@@ -99,3 +99,61 @@ def test_run_skips_diagram_agent_and_removes_solution_placeholder():
     orchestrator._dispatch_diagrams.assert_not_called()
     assert "DIAGRAM PLACEHOLDER" not in result.latex
     assert "\\begin{center}" not in result.latex
+
+
+def test_run_appends_separate_subjective_final_answer():
+    orchestrator = _orchestrator()
+    orchestrator._call_subject_agent = MagicMock(
+        return_value=SimpleNamespace(
+            solution_latex=r"\begin{solution}x=2\end{solution}",
+            diagram_requirements=[],
+            answer_type="subjective",
+            answer_value=None,
+            final_answer_latex=r"$x_{\mathrm{eq}}=2\,\mathrm{m}$, stable.",
+        )
+    )
+
+    result = orchestrator.run(
+        problem_latex=r"\item Find the equilibrium.",
+        subject="physics",
+        question_type="subjective",
+    )
+
+    assert result.final_answer_latex == r"$x_{\mathrm{eq}}=2\,\mathrm{m}$, stable."
+    assert result.latex.endswith(
+        "\\begin{finalanswer}\n"
+        r"$x_{\mathrm{eq}}=2\,\mathrm{m}$, stable."
+        "\n\\end{finalanswer}"
+    )
+    assert result.latex.index(r"\end{solution}") < result.latex.index(
+        r"\begin{finalanswer}"
+    )
+
+
+def test_run_replaces_existing_subjective_final_answer():
+    orchestrator = _orchestrator()
+    orchestrator._call_subject_agent = MagicMock(
+        return_value=SimpleNamespace(
+            solution_latex=r"\begin{solution}New solution.\end{solution}",
+            diagram_requirements=[],
+            answer_type="subjective",
+            answer_value=None,
+            final_answer_latex=(
+                r"\begin{finalanswer}Stable: $C$; unstable: $A,E$."
+                r"\end{finalanswer}"
+            ),
+        )
+    )
+
+    result = orchestrator.run(
+        problem_latex=(
+            r"\item Find equilibrium."
+            "\n\\begin{finalanswer}\nOld answer.\n\\end{finalanswer}"
+        ),
+        subject="physics",
+        question_type="subjective",
+    )
+
+    assert "Old answer" not in result.latex
+    assert result.latex.count(r"\begin{finalanswer}") == 1
+    assert "Stable: $C$; unstable: $A,E$." in result.latex

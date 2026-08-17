@@ -1,9 +1,12 @@
 """Passage/Comprehension question scanner prompt."""
 
 from .common import PASSAGE_DIAGRAM_INLINE
+from .._shared import MCQ_ANSWER_FORMAT_RULES
 
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
+
+Subject: Mathematics
 
 **Goal:** Analyze the provided image and generate a *comprehension-type* LaTeX snippet that contains:
 1.  A centred passage title (if any).
@@ -92,7 +95,7 @@ SYSTEM_PROMPT = r"""
 ---
 
 **Final Check:** Return only the LaTeX snippet from the first line shown above through the last `\end{solution}` with nothing extra.
-"""
+""" + MCQ_ANSWER_FORMAT_RULES
 
 USER_TEMPLATE = "Extract LaTeX from this mathematics question image."
 

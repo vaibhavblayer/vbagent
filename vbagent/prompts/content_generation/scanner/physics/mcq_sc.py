@@ -5,6 +5,7 @@ from .common import (
     LATEX_FORMATTING_RULES,
     OPTIONS_WITH_DIAGRAMS,
 )
+from .._shared import MCQ_ANSWER_FORMAT_RULES
 
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
@@ -53,7 +54,7 @@ Follow this exact structure for your output:
 
 ---
 
-""" + LATEX_FORMATTING_RULES + r"""
+""" + LATEX_FORMATTING_RULES + MCQ_ANSWER_FORMAT_RULES + r"""
 
 ---
 

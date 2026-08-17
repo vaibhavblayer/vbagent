@@ -1,5 +1,7 @@
 """Common components for chemistry solution generation prompts."""
 
+from ...mcq_format import MCQ_ANSWER_FORMAT_RULES
+
 # LaTeX formatting rules for chemistry solutions
 LATEX_FORMATTING_RULES = """
 ## LaTeX Formatting Standards
@@ -73,6 +75,22 @@ K_{\\text{eq}} &= 4.17
 
 **5. Alignment at equals sign** using &
 
+### Diagram Decision (IMPORTANT)
+- Before finalizing, decide whether a visual would materially simplify the
+  reader's understanding of a structure, mechanism, energy profile, phase
+  diagram, graph, or other chemical relationship.
+- When a diagram would clarify the reasoning, include one even if the original
+  problem image has no diagram. Prefer a concise, explanatory diagram over
+  adding decorative artwork.
+- For a simple diagram, write the TikZ directly in `solution_latex`. For a
+  complex diagram, use `diagram_requirements` so the specialist can generate
+  it.
+- Every non-empty item in `diagram_requirements` MUST have the exact matching
+  marker `% DIAGRAM PLACEHOLDER: <diagram_id>` in `solution_latex`, at the
+  intended location. Use the same `diagram_id` in both places.
+- Never request a diagram without its marker. A requirement without a marker
+  cannot be positioned reliably in the finished solution.
+
 ### Chemical Notation
 - Use \\ce{} for chemical formulas: \\ce{H2O}, \\ce{CH3COOH}
 - Use \\ce{->} for reactions: \\ce{A + B -> C}
@@ -119,8 +137,18 @@ using DIAGRAM_REQUIREMENT placeholders. This produces better, more contextual re
 - Use `font=\\tiny` or `font=\\footnotesize` for labels
 - Wrap in `\\begin{center}...\\end{center}`
 
+### Alternate Solution Decision
+- Decide whether a genuinely different and useful solution method would help
+  the learner. Set `alternate_solution_recommended` to `true` only when it
+  would add meaningful pedagogical value; use `false` for routine, direct, or
+  one-method problems.
+- When it is `true`, set `alternate_solution_hint` to one concise instruction
+  naming the preferred alternate method. Do not write the alternate solution
+  itself.
+- When it is `false`, set `alternate_solution_hint` to `null`.
+
 ### MCQ Solutions
-Must end with: "Therefore, the correct option is (X)."
+Must end with the actual lowercase option letter, for example: "Therefore, the correct option is (a)."
 
 **Example: Counting/Classification Problem**
 ```latex
@@ -166,6 +194,8 @@ Therefore, the correct option is (c).
 - NO \\boxed{} for final answers
 - Explain the chemistry, not just the math
 """
+
+LATEX_FORMATTING_RULES += MCQ_ANSWER_FORMAT_RULES
 
 # Diagram identification guidelines
 DIAGRAM_IDENTIFICATION = """

@@ -240,11 +240,11 @@ class ChatInterface:
             status: Status (executing, success, error)
         """
         if status == "executing":
-            self.console.print(f"[yellow]⚙ Executing tool: {tool_name}...[/yellow]")
+            self.console.print(f"[yellow]RUN Executing tool: {tool_name}...[/yellow]")
         elif status == "success":
-            self.console.print(f"[green]✓ Tool completed: {tool_name}[/green]")
+            self.console.print(f"[green]OK Tool completed: {tool_name}[/green]")
         elif status == "error":
-            self.console.print(f"[red]✗ Tool failed: {tool_name}[/red]")
+            self.console.print(f"[red]ERROR Tool failed: {tool_name}[/red]")
 
 
 @click.command()

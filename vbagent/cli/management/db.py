@@ -193,7 +193,7 @@ def insert(path: str, db_path: str, recursive: bool, update_existing: bool, clas
                 console.print(f"[yellow]Warning:[/yellow] {tex_file.name}: {e}")
                 skipped += 1
     
-    console.print(f"\n[green]✓[/green] Inserted: {inserted}, Skipped: {skipped}\n")
+    console.print(f"\n[green]OK[/green] Inserted: {inserted}, Skipped: {skipped}\n")
 
 
 @db.command()
@@ -388,4 +388,4 @@ def delete(question_id: int, db_path: str):
         
         database.delete(question_id)
     
-    console.print(f"[green]✓[/green] Deleted question ID {question_id}")
+    console.print(f"[green]OK[/green] Deleted question ID {question_id}")

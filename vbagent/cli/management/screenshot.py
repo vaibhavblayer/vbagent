@@ -180,7 +180,7 @@ def set(path: str):
         # Restart SystemUIServer to apply changes
         _run_command(["killall", "SystemUIServer"])
         
-        console.print(f"[green]✓ Screenshot location updated:[/green] {expanded_path}")
+        console.print(f"[green]OK Screenshot location updated:[/green] {expanded_path}")
         console.print("[dim]Note: SystemUIServer was restarted to apply changes[/dim]")
     elif _is_linux() and _has_gsettings():
         # Set GNOME screenshot location using gsettings
@@ -193,7 +193,7 @@ def set(path: str):
             console.print("[red]Error:[/red] Failed to set screenshot location")
             raise SystemExit(1)
         
-        console.print(f"[green]✓ Screenshot location updated:[/green] {expanded_path}")
+        console.print(f"[green]OK Screenshot location updated:[/green] {expanded_path}")
         console.print("[dim]Note: This sets the GNOME screenshot tool location[/dim]")
     else:
         # Save to config file for other systems
@@ -201,7 +201,7 @@ def set(path: str):
         config["location"] = str(expanded_path)
         _save_config(config)
         
-        console.print(f"[green]✓ Screenshot location saved:[/green] {expanded_path}")
+        console.print(f"[green]OK Screenshot location saved:[/green] {expanded_path}")
         console.print("[yellow]Note:[/yellow] This only stores the preference. Your OS may not use this location.")
 
 
@@ -220,7 +220,7 @@ def reset():
         _run_command(["killall", "SystemUIServer"])
         
         home = Path.home()
-        console.print(f"[green]✓ Reset to default location:[/green] {home}/Desktop")
+        console.print(f"[green]OK Reset to default location:[/green] {home}/Desktop")
         console.print("[dim]Note: SystemUIServer was restarted to apply changes[/dim]")
     elif _is_linux() and _has_gsettings():
         # Reset GNOME screenshot location to default
@@ -229,7 +229,7 @@ def reset():
         ])
         
         pictures_dir = Path.home() / "Pictures"
-        console.print(f"[green]✓ Reset to default location:[/green] {pictures_dir}")
+        console.print(f"[green]OK Reset to default location:[/green] {pictures_dir}")
         console.print("[dim]Note: GNOME screenshot tool reset to default[/dim]")
     else:
         # Clear config file for other systems
@@ -239,5 +239,5 @@ def reset():
             _save_config(config)
         
         home = Path.home()
-        console.print(f"[green]✓ Reset to default location:[/green] {home}/Desktop")
+        console.print(f"[green]OK Reset to default location:[/green] {home}/Desktop")
 

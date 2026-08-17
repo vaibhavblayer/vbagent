@@ -59,7 +59,7 @@ P &\rightarrow 2,\quad Q \rightarrow 2,\quad R \rightarrow 3,\quad S \rightarrow
 - State each match clearly: $P \rightarrow 2$, etc.
 
 ### Answer Format
-- End with "Therefore, the correct option is (X)." matching the Codes MCQ
+- End with the actual lowercase Codes-MCQ option letter, for example: "Therefore, the correct option is (d)."
 - The answer is one of the code options (a), (b), (c), (d)
 
 ### Solution Style
@@ -74,7 +74,9 @@ P &\rightarrow 2,\quad Q \rightarrow 2,\quad R \rightarrow 3,\quad S \rightarrow
 {
   "solution_latex": "\\begin{solution}\n...\n\\end{solution}",
   "diagram_requirements": [],
-  "reasoning_notes": "Optional notes"
+  "reasoning_notes": "Optional notes",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 """

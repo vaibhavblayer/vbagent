@@ -4,6 +4,9 @@ import pytest
 from vbagent.config import (
     VBAgentConfig,
     AgentModelConfig,
+    AGENT_TYPES,
+    AGENT_GROUPS,
+    MODEL_GROUPS,
 )
 
 
@@ -39,13 +42,40 @@ def test_agent_model_config_from_dict():
 def test_vbagent_config_creation():
     """Test creating VBAgentConfig with simplified structure."""
     config = VBAgentConfig()
-    assert config.default_model == "gpt-5.4-mini"
+    assert config.default_model == "gpt-5.6-luna"
     assert config.subject == "physics"
+    assert config.debug is False
+    assert config.log_level == "INFO"
     assert isinstance(config.agents, dict)
     # Check smart defaults were applied
     assert "classifier" in config.agents
-    assert config.agents["classifier"].model == "gpt-5.4-mini"
+    assert config.agents["classifier"].model == "gpt-5.6-luna"
     assert config.agents["classifier"].reasoning_effort == "low"
+    assert config.agents["scanner"].model == "gpt-5.6-luna"
+    assert config.agents["converter"].model == "gpt-5.6-terra"
+    assert config.agents["solution"].model == "gpt-5.6-sol"
+    diagram_generators = [
+        agent
+        for group, agents in AGENT_GROUPS.items()
+        if group.startswith("Diagram (")
+        for agent in agents
+    ]
+    assert all(config.agents[name].model == "gpt-5.6-sol" for name in diagram_generators)
+    assert set(config.agents) >= set(AGENT_TYPES)
+
+
+def test_model_groups_cover_every_registered_agent():
+    for group in MODEL_GROUPS.values():
+        assert set(AGENT_TYPES) <= set(group)
+
+
+def test_gpt_5_6_supports_all_reasoning_levels():
+    from vbagent.config import get_reasoning_support
+
+    expected = {"none", "low", "medium", "high", "xhigh", "max"}
+    assert get_reasoning_support("gpt-5.6-sol") == expected
+    assert get_reasoning_support("gpt-5.6-terra") == expected
+    assert get_reasoning_support("gpt-5.6-luna") == expected
 
 
 def test_config_from_dict():
@@ -64,6 +94,18 @@ def test_config_from_dict():
     # Check agent configs
     assert config.agents["scanner"].model == "gpt-5.4-mini"
     assert config.agents["tikz"].model == "gpt-5.1-codex"
+
+
+def test_legacy_debug_config_migrates_to_debug_log_level():
+    config = VBAgentConfig.from_dict({"debug": True})
+    assert config.debug is True
+    assert config.log_level == "DEBUG"
+
+
+def test_log_level_is_authoritative_when_both_fields_exist():
+    config = VBAgentConfig.from_dict({"debug": True, "log_level": "INFO"})
+    assert config.debug is False
+    assert config.log_level == "INFO"
 
 
 def test_get_agent_config():
@@ -112,6 +154,8 @@ def test_merge_with():
     workspace_config.default_model = "gpt-5.4-mini"
     workspace_config.agents["scanner"] = AgentModelConfig(model="gpt-5.4-mini")
     workspace_config.agents["tikz"] = AgentModelConfig(model="gpt-5.1-codex")
+    workspace_config.debug = True
+    workspace_config.log_level = "DEBUG"
     
     merged = global_config.merge_with(workspace_config)
     
@@ -119,3 +163,5 @@ def test_merge_with():
     assert merged.default_model == "gpt-5.4-mini"
     assert merged.agents["scanner"].model == "gpt-5.4-mini"
     assert merged.agents["tikz"].model == "gpt-5.1-codex"
+    assert merged.debug is True
+    assert merged.log_level == "DEBUG"

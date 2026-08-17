@@ -1,4 +1,4 @@
-"""Agent 4: LaTeX Classifier.
+"""LaTeX question classifier.
 
 Classifies questions from LaTeX text for batch processing.
 """
@@ -10,7 +10,6 @@ from vbagent.config import get_config
 from vbagent.models.classification import PrimaryClassification
 from vbagent.prompts.subjects import get_subject_config
 from vbagent.prompts.classification.question_types import get_question_type_guidance
-from vbagent.agents.classification.subject_detector import detect_subject_from_latex
 
 
 def get_latex_classifier_prompt(subject: str = "physics") -> str:
@@ -67,7 +66,7 @@ def create_latex_classifier_agent(subject: Optional[str] = None):
 
 
 def classify_from_latex(latex_content: str, subject: Optional[str] = None) -> PrimaryClassification:
-    """Classify question from LaTeX (Agent 4).
+    """Classify a question from LaTeX.
     
     Args:
         latex_content: LaTeX content to classify
@@ -76,11 +75,7 @@ def classify_from_latex(latex_content: str, subject: Optional[str] = None) -> Pr
     Returns:
         PrimaryClassification without difficulty
     """
-    if subject is None:
-        try:
-            subject = detect_subject_from_latex(latex_content)
-        except (ValueError, TimeoutError):
-            subject = get_config().subject
+    subject = subject or get_config().subject
     
     agent = create_latex_classifier_agent(subject)
     

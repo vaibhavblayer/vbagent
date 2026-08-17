@@ -1,6 +1,7 @@
 """Match-the-following question scanner prompt for biology."""
 
 from .common import DIAGRAM_PLACEHOLDER
+from .._shared import MCQ_ANSWER_FORMAT_RULES
 
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
@@ -38,7 +39,7 @@ SYSTEM_PROMPT = r"""
 5.  **Solution (`\begin{solution} ... \end{solution}`)**
     * Use an `align*` environment inside the solution.
     * Explain the matching logic step by step using `\intertext{}`.
-    * End with "Therefore, the correct option is (X)."
+    * End with the actual lowercase option letter, for example "Therefore, the correct option is (a)."
 
 ---
 
@@ -92,7 +93,7 @@ SYSTEM_PROMPT = r"""
 ---
 
 **Final Check:** Ensure your output is ONLY the LaTeX snippet from `\item` to `\end{solution}` with no extra text or comments.
-"""
+""" + MCQ_ANSWER_FORMAT_RULES
 
 USER_TEMPLATE = "Extract LaTeX from this biology match-the-following question image."
 

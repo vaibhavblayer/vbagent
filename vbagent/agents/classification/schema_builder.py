@@ -4,7 +4,7 @@ Creates Pydantic models with Literal types from taxonomy at runtime.
 Used for OpenAI structured outputs to enforce valid chapter/topic selection.
 """
 
-from typing import Type, get_args
+from typing import Type
 from pydantic import BaseModel, Field, create_model
 from functools import lru_cache
 

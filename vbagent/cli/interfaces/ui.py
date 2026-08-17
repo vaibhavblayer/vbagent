@@ -10,10 +10,10 @@ from contextlib import contextmanager
 import time
 
 # Status indicators
-STATUS_SUCCESS = "[✓]"
-STATUS_ERROR = "[✗]"
-STATUS_WARNING = "[!]"
-STATUS_INFO = "[i]"
+STATUS_SUCCESS = "OK"
+STATUS_ERROR = "ERROR"
+STATUS_WARNING = "WARN"
+STATUS_INFO = "INFO"
 
 # Box drawing
 BOX_TOP = "┌─"

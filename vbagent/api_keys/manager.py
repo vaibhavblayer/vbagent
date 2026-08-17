@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import fcntl
+import hashlib
 import json
 import random
-from datetime import date
 from pathlib import Path
 from typing import Optional
 
@@ -45,7 +45,14 @@ class KeyManager:
         try:
             with open(self._config_path, "r") as f:
                 data = json.load(f)
+            original_categories = data.get("model_categories")
             self.config = KeyManagerConfig(**data)
+            if original_categories != self.config.model_categories:
+                # Persist the compatibility normalization (for example,
+                # moving gpt-5.6-terra from standard to mini) so subsequent
+                # processes observe the same routing without relying on
+                # in-memory defaults.
+                self._locked_update(lambda _config: None)
         except Exception as e:
             print(f"Warning: Failed to load API key config: {e}")
             self.config = None
@@ -227,11 +234,31 @@ class KeyManager:
             return None
         return random.choice(keys)
 
-    def get_key_for_model(self, model: str) -> Optional[str]:
+    def _select_key_affinity(
+        self,
+        keys: list[ApiKeyConfig],
+        affinity_key: str,
+    ) -> Optional[ApiKeyConfig]:
+        """Map a stable request group to one currently available API key."""
+        if not keys:
+            return None
+
+        digest = hashlib.sha256(affinity_key.encode("utf-8")).digest()
+        index = int.from_bytes(digest[:8], "big") % len(keys)
+        return keys[index]
+
+    def get_key_for_model(
+        self,
+        model: str,
+        affinity_key: Optional[str] = None,
+    ) -> Optional[str]:
         """Get appropriate API key for the model.
 
         Args:
             model: Model name (e.g., "gpt-5.4", "gpt-5.4-mini")
+            affinity_key: Stable cache/request group. When supplied, requests
+                in the same group reuse one available profile so provider-side
+                prompt caches remain reachable across calls.
 
         Returns:
             API key string, or None if key manager is disabled
@@ -249,17 +276,20 @@ class KeyManager:
                 f"Use 'vbagent keys list' to check usage."
             )
 
-        # Select key based on strategy
-        strategy = self.config.rotation_strategy if self.config else "least_used"
-
-        if strategy == "least_used":
-            selected = self._select_key_least_used(available_keys, category)
-        elif strategy == "round_robin":
-            selected = self._select_key_round_robin(available_keys)
-        elif strategy == "random":
-            selected = self._select_key_random(available_keys)
+        if affinity_key:
+            selected = self._select_key_affinity(available_keys, affinity_key)
         else:
-            selected = available_keys[0]
+            # Ungrouped calls retain the configured per-request rotation.
+            strategy = self.config.rotation_strategy if self.config else "least_used"
+
+            if strategy == "least_used":
+                selected = self._select_key_least_used(available_keys, category)
+            elif strategy == "round_robin":
+                selected = self._select_key_round_robin(available_keys)
+            elif strategy == "random":
+                selected = self._select_key_random(available_keys)
+            else:
+                selected = available_keys[0]
 
         if selected:
             self.current_key_name = selected.name

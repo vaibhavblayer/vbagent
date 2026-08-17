@@ -50,6 +50,11 @@ def _reconstruct_passage(parent: QuestionRecord, children: list[QuestionRecord])
                     tex += f"{tikz['code']}\n\n"
             
             tex += "\\end{solution}\n\n"
+
+        if child.final_answer_latex:
+            tex += "\\begin{finalanswer}\n"
+            tex += f"{child.final_answer_latex}\n"
+            tex += "\\end{finalanswer}\n\n"
         
         # Add alternate solution
         if child.alternate_solution_latex:
@@ -104,6 +109,11 @@ def _reconstruct_standalone(record: QuestionRecord) -> str:
                 tex += f"{tikz['code']}\n\n"
         
         tex += "\\end{solution}\n\n"
+
+    if record.final_answer_latex:
+        tex += "\\begin{finalanswer}\n"
+        tex += f"{record.final_answer_latex}\n"
+        tex += "\\end{finalanswer}\n\n"
     
     # Add alternate solution
     if record.alternate_solution_latex:

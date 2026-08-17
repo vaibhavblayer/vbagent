@@ -149,7 +149,7 @@ def create(
                 )
         
         # Display results
-        console.print(f"\n[green]✓[/green] DPP created successfully!")
+        console.print(f"\n[green]OK[/green] DPP created successfully!")
         console.print(f"  Output: [cyan]{result.main_tex_path}[/cyan]")
         console.print(f"  Strategy: [yellow]{result.strategy_used}[/yellow]")
         console.print(f"  Questions: [yellow]{len(result.questions)}[/yellow]")
@@ -163,10 +163,10 @@ def create(
             success, output_msg = result.compile(verbose=verbose)
             
             if success:
-                console.print(f"[green]✓[/green] Compilation successful!")
+                console.print(f"[green]OK[/green] Compilation successful!")
                 console.print(f"  PDF: [cyan]{output_msg}[/cyan]")
             else:
-                console.print(f"[red]✗[/red] Compilation failed:")
+                console.print(f"[red]ERROR[/red] Compilation failed:")
                 console.print(Panel(output_msg, border_style="red"))
         
     except ValueError as e:
@@ -269,10 +269,10 @@ def compile_dpp(dpp_file: str, output_dir: str, verbose: bool):
             )
         
         if result.success:
-            console.print(f"[green]✓[/green] Compilation successful!")
+            console.print(f"[green]OK[/green] Compilation successful!")
             console.print(f"  PDF: [cyan]{result.pdf_path}[/cyan]")
         else:
-            console.print(f"[red]✗[/red] Compilation failed:")
+            console.print(f"[red]ERROR[/red] Compilation failed:")
             console.print(Panel(result.error_summary, border_style="red"))
             raise click.Abort()
             

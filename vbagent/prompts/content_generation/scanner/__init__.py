@@ -8,6 +8,12 @@ Subject-based organization with specialized prompts for:
 Each subject has its own subdirectory with question-type specific prompts.
 """
 
+# Backward-compatible default prompt mapping. Historically the package-level
+# ``SCANNER_PROMPTS`` API represented the physics prompts; subject-aware callers
+# should use ``get_scanner_prompt`` instead.
+from .physics import SCANNER_PROMPTS
+
+
 # Default user template for all scanner types
 USER_TEMPLATE = "Extract LaTeX from this {subject} question image."
 
@@ -33,6 +39,8 @@ def get_scanner_prompt(question_type: str, subject: str = "physics") -> str:
         from .chemistry import get_prompt
     elif subject_lower == "mathematics":
         from .mathematics import get_prompt
+    elif subject_lower == "biology":
+        from .biology import get_prompt
     else:
         # Fallback to physics for unknown subjects
         from .physics import get_prompt
@@ -56,4 +64,5 @@ __all__ = [
     "get_scanner_prompt",
     "get_user_template",
     "USER_TEMPLATE",
+    "SCANNER_PROMPTS",
 ]

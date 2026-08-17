@@ -96,6 +96,17 @@ def get_base_name(source_path: str) -> str:
     return Path(source_path).stem
 
 
+def _assembled_latex_for_save(result: "PipelineResult") -> str:
+    """Return normalized LaTeX with any available TikZ deterministically merged."""
+    latex = result.latex
+    if result.tikz_code and any(
+        marker in latex
+        for marker in (r"\input{diagram}", r"\OptionA", r"\OptionB")
+    ):
+        latex = insert_tikz_into_latex(latex, result.tikz_code)
+    return format_latex(latex)
+
+
 def insert_tikz_into_latex(latex: str, tikz_code: str) -> str:
     """Replace diagram placeholders with actual TikZ code.
 
@@ -245,7 +256,7 @@ def save_pipeline_result_organized(
     scans_dir.mkdir(parents=True, exist_ok=True)
 
     # Build the scan content — append idea block and alternate inline
-    scan_content = format_latex(result.latex)
+    scan_content = _assembled_latex_for_save(result)
     if result.idea_latex:
         from vbagent.agents.content_generation.idea import has_idea_environment
         if not has_idea_environment(scan_content):
@@ -313,7 +324,7 @@ def save_pipeline_result(result: "PipelineResult", output_dir: Path) -> dict[str
     class_path.write_text(result.classification.model_dump_json(indent=2))
     saved_files["classification"] = str(class_path)
 
-    latex_content = format_latex(result.latex)
+    latex_content = _assembled_latex_for_save(result)
     if result.idea_latex:
         from vbagent.agents.content_generation.idea import has_idea_environment
         if not has_idea_environment(latex_content):

@@ -276,49 +276,47 @@ class ProviderAdapter(ABC):
         pass
 
 
-class OpenAIAdapter(ProviderAdapter):
-    """Adapter for OpenAI API (GPT-5 series)."""
-    
+class _OpenAICompatibleAdapter(ProviderAdapter):
+    """Shared implementation for providers exposing an OpenAI-compatible API."""
+
+    provider_name = "OpenAI"
+    base_url: str | None = None
+
     async def call_with_tools(
         self,
         messages: list[dict],
         tools: list[dict],
     ) -> ProviderResponse:
-        """Call OpenAI API with function calling.
-        
-        Args:
-            messages: Conversation messages
-            tools: Tool definitions in OpenAI format
-            
-        Returns:
-            ProviderResponse with content and tool calls
-        """
+        """Call an OpenAI-compatible chat completions API with function tools."""
         try:
             from openai import AsyncOpenAI
-        except ImportError:
-            raise ImportError("openai package is required for OpenAI provider")
-        
-        client = AsyncOpenAI(api_key=self.api_key)
-        
-        # Call API with tools
+        except ImportError as exc:
+            raise ImportError(
+                f"openai package is required for {self.provider_name} provider"
+            ) from exc
+
+        client_kwargs = {"api_key": self.api_key}
+        if self.base_url is not None:
+            client_kwargs["base_url"] = self.base_url
+        client = AsyncOpenAI(**client_kwargs)
+
         response = await client.chat.completions.create(
             model=self.model,
             messages=messages,
             tools=tools if tools else None,
         )
-        
+
         message = response.choices[0].message
-        
-        # Extract tool calls if present
-        tool_calls = []
-        if message.tool_calls:
-            for tc in message.tool_calls:
-                tool_calls.append({
-                    "id": tc.id,
-                    "name": tc.function.name,
-                    "arguments": json.loads(tc.function.arguments),
-                })
-        
+
+        tool_calls = [
+            {
+                "id": tc.id,
+                "name": tc.function.name,
+                "arguments": json.loads(tc.function.arguments),
+            }
+            for tc in message.tool_calls or []
+        ]
+
         return ProviderResponse(
             content=message.content or "",
             tool_calls=tool_calls,
@@ -327,8 +325,12 @@ class OpenAIAdapter(ProviderAdapter):
                 "prompt_tokens": response.usage.prompt_tokens,
                 "completion_tokens": response.usage.completion_tokens,
                 "total_tokens": response.usage.total_tokens,
-            }
+            },
         )
+
+
+class OpenAIAdapter(_OpenAICompatibleAdapter):
+    """Adapter for OpenAI API (GPT-5 series)."""
 
 
 class AnthropicAdapter(ProviderAdapter):
@@ -405,145 +407,21 @@ class AnthropicAdapter(ProviderAdapter):
         )
 
 
-class XAIAdapter(ProviderAdapter):
+class XAIAdapter(_OpenAICompatibleAdapter):
     """Adapter for xAI API (Grok).
     
     xAI uses OpenAI-compatible API format.
     """
-    
-    def __init__(self, api_key: str, model: str):
-        """Initialize xAI adapter.
-        
-        Args:
-            api_key: xAI API key
-            model: Grok model to use
-        """
-        super().__init__(api_key, model)
-        self.base_url = "https://api.x.ai/v1"
-    
-    async def call_with_tools(
-        self,
-        messages: list[dict],
-        tools: list[dict],
-    ) -> ProviderResponse:
-        """Call xAI API with function calling.
-        
-        Args:
-            messages: Conversation messages
-            tools: Tool definitions in OpenAI format
-            
-        Returns:
-            ProviderResponse with content and tool calls
-        """
-        try:
-            from openai import AsyncOpenAI
-        except ImportError:
-            raise ImportError("openai package is required for xAI provider")
-        
-        client = AsyncOpenAI(
-            api_key=self.api_key,
-            base_url=self.base_url
-        )
-        
-        # Call API with tools
-        response = await client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            tools=tools if tools else None,
-        )
-        
-        message = response.choices[0].message
-        
-        # Extract tool calls if present
-        tool_calls = []
-        if message.tool_calls:
-            for tc in message.tool_calls:
-                tool_calls.append({
-                    "id": tc.id,
-                    "name": tc.function.name,
-                    "arguments": json.loads(tc.function.arguments),
-                })
-        
-        return ProviderResponse(
-            content=message.content or "",
-            tool_calls=tool_calls,
-            finish_reason=response.choices[0].finish_reason,
-            usage={
-                "prompt_tokens": response.usage.prompt_tokens,
-                "completion_tokens": response.usage.completion_tokens,
-                "total_tokens": response.usage.total_tokens,
-            }
-        )
+
+    provider_name = "xAI"
+    base_url = "https://api.x.ai/v1"
 
 
-class GoogleAdapter(ProviderAdapter):
-    """Adapter for Google API (Gemini)."""
-    
-    def __init__(self, api_key: str, model: str):
-        """Initialize Google adapter.
-        
-        Args:
-            api_key: Google API key
-            model: Gemini model to use
-        """
-        super().__init__(api_key, model)
-        self.base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
-    
-    async def call_with_tools(
-        self,
-        messages: list[dict],
-        tools: list[dict],
-    ) -> ProviderResponse:
-        """Call Google API with function calling.
-        
-        Google uses OpenAI-compatible format via their OpenAI compatibility layer.
-        
-        Args:
-            messages: Conversation messages
-            tools: Tool definitions in OpenAI format
-            
-        Returns:
-            ProviderResponse with content and tool calls
-        """
-        try:
-            from openai import AsyncOpenAI
-        except ImportError:
-            raise ImportError("openai package is required for Google provider")
-        
-        client = AsyncOpenAI(
-            api_key=self.api_key,
-            base_url=self.base_url
-        )
-        
-        # Call API with tools
-        response = await client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            tools=tools if tools else None,
-        )
-        
-        message = response.choices[0].message
-        
-        # Extract tool calls if present
-        tool_calls = []
-        if message.tool_calls:
-            for tc in message.tool_calls:
-                tool_calls.append({
-                    "id": tc.id,
-                    "name": tc.function.name,
-                    "arguments": json.loads(tc.function.arguments),
-                })
-        
-        return ProviderResponse(
-            content=message.content or "",
-            tool_calls=tool_calls,
-            finish_reason=response.choices[0].finish_reason,
-            usage={
-                "prompt_tokens": response.usage.prompt_tokens,
-                "completion_tokens": response.usage.completion_tokens,
-                "total_tokens": response.usage.total_tokens,
-            }
-        )
+class GoogleAdapter(_OpenAICompatibleAdapter):
+    """Adapter for Google's OpenAI-compatible Gemini API."""
+
+    provider_name = "Google"
+    base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
 
 
 class Orchestrator:

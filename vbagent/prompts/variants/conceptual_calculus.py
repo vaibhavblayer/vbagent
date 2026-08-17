@@ -35,7 +35,7 @@ Return ONLY the raw LaTeX code snippet, starting exactly with `\item` and ending
 
 3. **Options (`\begin{tasks}(2) ... \end{tasks}`)**: Provide four options via `\task`. Append ` \ans` to the single correct option.
 
-4. **Solution (`\begin{solution} ... \end{solution}`)**: Use `align*` environment, one logical step per line. Incorporate calculus steps cleanly. Use `\intertext{...}` sparingly. End with "Therefore, the correct option is (x)." No blank lines inside `align*`.
+4. **Solution (`\begin{solution} ... \end{solution}`)**: Use `align*` environment, one logical step per line. Incorporate calculus steps cleanly. Use `\intertext{...}` sparingly. End with the actual lowercase option letter, for example "Therefore, the correct option is (c)." No blank lines inside `align*`. Never bold or uppercase the option label.
 
 ## LaTeX Formatting Rules
 

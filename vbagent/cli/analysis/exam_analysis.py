@@ -202,7 +202,7 @@ def analysis(
             )
             
             elapsed = time.time() - t_start
-            console.print(f"[green]✓ Revision sheet generated in {elapsed:.1f}s[/green]")
+            console.print(f"[green]OK Revision sheet generated in {elapsed:.1f}s[/green]")
             
             # Generate compact LaTeX
             console.print("[cyan]Generating LaTeX revision sheet...[/cyan]")
@@ -230,7 +230,7 @@ def analysis(
             )
             
             elapsed = time.time() - t_start
-            console.print(f"[green]✓ Concepts organized in {elapsed:.1f}s[/green]")
+            console.print(f"[green]OK Concepts organized in {elapsed:.1f}s[/green]")
             
             # Generate full LaTeX
             console.print("[cyan]Generating LaTeX document...[/cyan]")
@@ -262,7 +262,7 @@ def analysis(
         output_path = Path(output)
         output_path.write_text(latex_content, encoding='utf-8')
         
-        console.print(f"\n[green]✓ {'Revision sheet' if brief else 'Analysis'} complete![/green]")
+        console.print(f"\n[green]OK {'Revision sheet' if brief else 'Analysis'} complete![/green]")
         console.print(f"[cyan]Output:[/cyan] {output_path}")
         console.print(f"\n[dim]Summary:[/dim]")
         console.print(f"  • Mode: {'brief revision sheet' if brief else 'full analysis'}")

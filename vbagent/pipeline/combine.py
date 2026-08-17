@@ -130,7 +130,7 @@ def generate_combined_problem(
 
     Returns dict with output paths, or None on failure.
     """
-    from vbagent.agents.classification.idea_combiner import combine_ideas, CombinedProblemOutput
+    from vbagent.agents.content_generation.idea_combiner import combine_ideas, CombinedProblemOutput
     from vbagent.config import get_config
 
     if subject is None:
@@ -181,7 +181,7 @@ def generate_combined_problem(
 
     # Check if this combo already exists
     if store.combo_exists(result.selected_idea_ids, lenses_used):
-        _print("[yellow]⚠ This combination already exists (skipping)[/yellow]")
+        _print("[yellow]WARN This combination already exists (skipping)[/yellow]")
         return None
 
     combo_id = store._next_combo_id(primary_topic)
@@ -212,7 +212,7 @@ def generate_combined_problem(
     store.log_combination(record)
     store.save()
 
-    _print(f"  [green]✓[/green] {combo_id}" + (f"-{lens_suffix}" if lens_suffix else ""))
+    _print(f"  [green]OK[/green] {combo_id}" + (f"-{lens_suffix}" if lens_suffix else ""))
     return saved
 
 

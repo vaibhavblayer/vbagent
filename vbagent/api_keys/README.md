@@ -45,8 +45,8 @@ This creates an example configuration file. Edit it to add your actual API keys.
   ],
   "rotation_strategy": "least_used",
   "model_categories": {
-    "standard": ["gpt-5.4", "gpt-4o", "gpt-4-turbo"],
-    "mini": ["gpt-5.4-mini", "gpt-4o-mini", "gpt-3.5-turbo"]
+    "standard": ["gpt-5.6-sol", "gpt-5.6", "gpt-5.4", "gpt-4o"],
+    "mini": ["gpt-5.6-terra", "gpt-5.6-luna", "gpt-5.4-mini", "gpt-4o-mini"]
   }
 }
 ```
@@ -102,12 +102,25 @@ vbagent keys remove mykey
 
 Edit `rotation_strategy` in the config file to change.
 
+### Prompt-cache affinity
+
+Requests without a cache group use the configured rotation strategy on every
+API call. Requests that share a stable prompt-cache group are deterministically
+assigned to one currently available profile. This keeps provider-side prompt
+caches reachable across separate CLI runs while still balancing different
+cache groups across profiles.
+
+The profile is checked on every request. If its key is disabled or reaches its
+daily limit, the group is remapped across the remaining available profiles.
+The selected profile name, cache group, cache reads, and cache writes are shown
+in the agent usage log.
+
 ## Model Categories
 
 Keys track usage separately for two categories:
 
-- **standard**: High-capability models (gpt-5.4, gpt-4o, etc.)
-- **mini**: Efficient models (gpt-5.4-mini, gpt-4o-mini, etc.)
+- **standard**: Sol and other standard-capability models
+- **mini**: Terra, Luna, and other mini-quota models
 
 This allows you to set different limits for different model tiers.
 
@@ -121,7 +134,7 @@ This allows you to set different limits for different model tiers.
 2. If key manager is not enabled or all keys are exhausted:
    - Falls back to `OPENAI_API_KEY` environment variable
 
-3. Usage counters reset automatically at midnight (local time)
+3. Usage counters reset automatically at midnight UTC
 
 ## Backward Compatibility
 

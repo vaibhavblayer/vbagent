@@ -44,7 +44,8 @@ class SyllabusManager:
         self, problem_files: list[Path], subject: str,
     ) -> Syllabus:
         """Build syllabus tree from existing .tex files using classification agents."""
-        from vbagent.agents.classification.unified_classifier import classify_unified
+        from vbagent.agents.classification.latex_classifier import classify_from_latex
+        from vbagent.agents.classification.taxonomy_classifier import classify_taxonomy
         from vbagent.agents.classification.difficulty_assessor import assess_difficulty
 
         topic_map: dict[str, SyllabusTopic] = {}
@@ -52,16 +53,21 @@ class SyllabusManager:
         for file_path in problem_files:
             tex = file_path.read_text(encoding="utf-8")
             try:
-                classification = classify_unified(str(file_path))
-                topic_name = getattr(classification, "topic", None) or "uncategorized"
-                subtopic_name = getattr(classification, "subtopic", None) or "general"
+                primary = classify_from_latex(tex, subject=subject)
+                taxonomy = classify_taxonomy(
+                    tex,
+                    question_type=primary.question_type,
+                    subject=subject,
+                )
+                topic_name = taxonomy.topic or "uncategorized"
+                subtopic_name = taxonomy.subtopic or "general"
                 diff = "medium"
                 try:
-                    d = assess_difficulty(tex, classification)
+                    d = assess_difficulty(tex, primary)
                     diff = getattr(d, "difficulty", "medium")
                 except Exception:
                     pass
-                concepts = getattr(classification, "key_concepts", []) or []
+                concepts = taxonomy.key_concepts or []
             except Exception:
                 topic_name, subtopic_name, diff, concepts = "uncategorized", "general", "medium", []
 

@@ -97,7 +97,23 @@ class PipelineCache:
                 return None
         return content
 
-    def set(self, problem_id: str, stage: str, data: Any):
+    def get_stage_data(self, problem_id: str, stage: str) -> dict:
+        """Return non-content metadata stored for a cached stage."""
+        metadata = self.metadata_manager.load(problem_id)
+        if not metadata:
+            return {}
+        stage_meta = self._get_stage_meta(metadata, stage)
+        if not stage_meta:
+            return {}
+        return dict(stage_meta.data or {})
+
+    def set(
+        self,
+        problem_id: str,
+        stage: str,
+        data: Any,
+        stage_data: Optional[dict] = None,
+    ):
         """Save *data* to cache for *stage*."""
         metadata = self.metadata_manager.load(problem_id)
         if not metadata:
@@ -135,12 +151,14 @@ class PipelineCache:
                 question_type=data.get("question_type"),
                 has_diagram=data.get("has_diagram"),
                 diagram_type=data.get("diagram_type"),
+                data=stage_data or {},
             )
         else:
             stage_meta = StageMetadata(
                 status=StageStatus.COMPLETED,
                 content_hash=content_hash,
                 cache_path=cache_path,
+                data=stage_data or {},
             )
 
         # Assign to the right field

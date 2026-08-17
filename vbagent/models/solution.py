@@ -92,7 +92,11 @@ class SolutionOutput(BaseModel):
     )
     diagram_requirements: List[DiagramRequirement] = Field(
         default_factory=list,
-        description="List of diagrams needed in the solution with detailed specifications"
+        description=(
+            "List of diagrams needed in the solution with detailed specifications. "
+            "For every item, solution_latex must contain the exact marker "
+            "'% DIAGRAM PLACEHOLDER: <diagram_id>' using the same diagram_id."
+        )
     )
     reasoning_notes: str = Field(
         default="",
@@ -106,7 +110,34 @@ class SolutionOutput(BaseModel):
     )
     answer_value: Optional[str] = Field(
         default=None,
-        description="The answer: option letter(s) for MCQ, integer for integer-type, None for subjective"
+        description=(
+            "The answer: lowercase option letter(s) for MCQ, integer for "
+            "integer-type, None for subjective"
+        )
+    )
+    final_answer_latex: Optional[str] = Field(
+        default=None,
+        description=(
+            "Concise answer-key-ready LaTeX for a subjective problem. "
+            "Contains no derivation and no surrounding environment; None for "
+            "MCQ and integer-type problems."
+        ),
+    )
+
+    alternate_solution_recommended: bool = Field(
+        default=False,
+        description=(
+            "Whether a genuinely different and pedagogically useful alternate "
+            "solution method is worth generating. Set false for routine or "
+            "one-method problems."
+        ),
+    )
+    alternate_solution_hint: Optional[str] = Field(
+        default=None,
+        description=(
+            "A short, actionable hint for the alternate-solution agent when "
+            "alternate_solution_recommended is true; null otherwise."
+        ),
     )
     
     # Additional metadata

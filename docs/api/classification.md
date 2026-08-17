@@ -1,20 +1,18 @@
 # Classification API Reference
 
-The v2 multi-agent classification system provides comprehensive metadata extraction through 7 specialized agents.
+The classification system provides one canonical image classifier plus
+specialized LaTeX, diagram, taxonomy, and difficulty classifiers.
 
 ## System Overview
 
 The classification pipeline supports multiple input modalities:
 
-- **Image** → Agent 1 (Image Classifier)
-- **LaTeX** → Agent 4 (LaTeX Classifier)
-- **Idea/Concept** → Agent 5 (Idea Generator)
-- **Multiple Problems** → Agent 6 (Problem Combiner)
+- **Image** → Question Classifier
+- **LaTeX** → LaTeX Classifier
+- **Diagram descriptions** → Diagram Classifier
 
-Additional agents provide:
-- **Agent 2** - Diagram analysis (hierarchical categorization)
-- **Agent 3** - Difficulty assessment (post-scan, detailed metadata)
-- **Agent 7** - TikZ validation (automatic fixing)
+Problem generation and combination live under `agents.content_generation`;
+they are not classification agents.
 
 ## Key Features
 
@@ -30,23 +28,23 @@ Additional agents provide:
 
 ```python
 from vbagent.agents.classification import (
-    classify_from_image,
-    analyze_diagram,
+    classify_primary_image,
+    classify_diagram_image,
     assess_difficulty,
     validate_tikz,
 )
 
-# Agent 1: Classify from image
-classification = classify_from_image("question.png")
+# Classify from image
+classification = classify_primary_image("question.png")
 
-# Agent 2: Analyze diagram (if has_diagram)
+# Classify the diagram separately when needed
 if classification.has_diagram:
-    diagram = analyze_diagram("question.png", classification)
+    diagram = classify_diagram_image("question.png", classification)
 
-# Agent 3: Assess difficulty (after scanning)
+# Assess difficulty after scanning
 difficulty = assess_difficulty(latex_content, classification, diagram)
 
-# Agent 7: Validate TikZ
+# Validate TikZ
 validation = validate_tikz(tikz_code, auto_fix=True)
 ```
 
@@ -54,35 +52,29 @@ validation = validate_tikz(tikz_code, auto_fix=True)
 
 ## Auto-Generated API Documentation
 
-## Pipeline Orchestrator
+## Question Classifier
 
-::: vbagent.agents.classification.pipeline
-    options:
-      show_root_heading: true
-      show_source: false
-
-## Agent 1: Image Classifier
-
-::: vbagent.agents.classification.image_classifier
+::: vbagent.agents.classification.question_classifier
     options:
       show_root_heading: true
       show_source: false
       members:
-        - classify_from_image
-        - create_image_classifier_agent
+        - classify_question_image
+        - classify_primary_image
+        - create_question_classifier
 
-## Agent 2: Diagram Analyzer
+## Diagram Classifier
 
-::: vbagent.agents.classification.diagram_analyzer
+::: vbagent.agents.classification.diagram_classifier
     options:
       show_root_heading: true
       show_source: false
       members:
-        - analyze_diagram
-        - analyze_diagram_from_description
-        - create_diagram_analyzer_agent
+        - classify_diagram_image
+        - classify_diagram_description
+        - create_diagram_classifier
 
-## Agent 3: Difficulty Assessor
+## Difficulty Assessor
 
 ::: vbagent.agents.classification.difficulty_assessor
     options:
@@ -92,7 +84,7 @@ validation = validate_tikz(tikz_code, auto_fix=True)
         - assess_difficulty
         - create_difficulty_assessor_agent
 
-## Agent 4: LaTeX Classifier
+## LaTeX Classifier
 
 ::: vbagent.agents.classification.latex_classifier
     options:
@@ -102,9 +94,9 @@ validation = validate_tikz(tikz_code, auto_fix=True)
         - classify_from_latex
         - create_latex_classifier_agent
 
-## Agent 5: Idea Generator
+## Idea Generator
 
-::: vbagent.agents.classification.idea_generator
+::: vbagent.agents.content_generation.idea_generator
     options:
       show_root_heading: true
       show_source: false
@@ -112,9 +104,9 @@ validation = validate_tikz(tikz_code, auto_fix=True)
         - generate_from_idea
         - create_idea_generator_agent
 
-## Agent 6: Problem Combiner
+## Problem Combiner
 
-::: vbagent.agents.classification.problem_combiner
+::: vbagent.agents.content_generation.problem_combiner
     options:
       show_root_heading: true
       show_source: false
@@ -122,7 +114,7 @@ validation = validate_tikz(tikz_code, auto_fix=True)
         - combine_problems
         - create_problem_combiner_agent
 
-## Agent 7: TikZ Checker
+## TikZ Checker
 
 ::: vbagent.agents.classification.tikz_checker
     options:

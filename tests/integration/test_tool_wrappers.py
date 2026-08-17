@@ -17,7 +17,7 @@ from vbagent.orchestrator.tool_wrappers import (
 class TestScanTool:
     """Tests for scan_tool wrapper."""
     
-    @patch('vbagent.agents.classifier.classify')
+    @patch('vbagent.agents.classification.question_classifier.classify_primary_image')
     @patch('vbagent.agents.content_generation.scanner.scan')
     @patch('vbagent.orchestrator.tool_wrappers.Path')
     def test_scan_tool_basic(self, mock_path, mock_scan, mock_classify):
@@ -84,7 +84,7 @@ class TestScanTool:
 class TestClassifyTool:
     """Tests for classify_tool wrapper."""
     
-    @patch('vbagent.agents.classifier.classify')
+    @patch('vbagent.agents.classification.question_classifier.classify_primary_image')
     @patch('vbagent.orchestrator.tool_wrappers.Path')
     def test_classify_tool_basic(self, mock_path, mock_classify):
         """Test basic classify tool execution."""

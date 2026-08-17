@@ -115,7 +115,7 @@ def _regen_tikz_originals(problem_dir: Path, subject: str, force: bool, console)
     updated_tex = _insert_tikz_into_latex(clean_tex, tikz_code)
     problem_path.write_text(updated_tex)
 
-    console.print(f"  [green]✓[/green] TikZ regenerated ({elapsed:.1f}s)")
+    console.print(f"  [green]OK[/green] TikZ regenerated ({elapsed:.1f}s)")
     return True
 
 
@@ -183,7 +183,7 @@ def _regen_full_originals(problem_dir: Path, subject: str, console) -> bool:
     elapsed = time.time() - t0
 
     if result_dict:
-        console.print(f"  [green]✓[/green] Full regeneration ({elapsed:.1f}s)")
+        console.print(f"  [green]OK[/green] Full regeneration ({elapsed:.1f}s)")
         return True
     else:
         console.print(f"  [yellow]Regeneration returned no result[/yellow]")
@@ -233,7 +233,7 @@ def _regen_tikz_scans(scans_dir: Path, items: list[str], subject: str, force: bo
             updated_tex = _insert_tikz_into_latex(clean_tex, tikz_code)
             tex_file.write_text(updated_tex)
 
-            console.print(f"  [green]✓[/green] TikZ regenerated ({elapsed:.1f}s)")
+            console.print(f"  [green]OK[/green] TikZ regenerated ({elapsed:.1f}s)")
             count += 1
         else:
             console.print(f"  [yellow]TikZ generation returned empty[/yellow]")
@@ -302,7 +302,7 @@ def _regen_full_scans(scans_dir: Path, items: list[str], subject: str, console) 
                     elapsed=elapsed,
                 )
                 _save_generation(result)
-                console.print(f"  [green]✓[/green] Full regeneration ({elapsed:.1f}s)")
+                console.print(f"  [green]OK[/green] Full regeneration ({elapsed:.1f}s)")
                 count += 1
                 break
 
@@ -392,7 +392,7 @@ def _show_diagram_list(entries, tikz_dir: Path, console) -> None:
     console.print()
     for i, (subtopic, slug, entry) in enumerate(entries, 1):
         cached = (tikz_dir / f"{slug}.tex").exists()
-        status = "[green]✓[/green]" if cached else "[red]✗[/red]"
+        status = "[green]OK[/green]" if cached else "[red]ERROR[/red]"
         console.print(f"  {status} {i:>2}. {entry.name}  [dim]({subtopic})[/dim]")
     console.print()
 
@@ -459,7 +459,7 @@ def _regen_tikz_concepts(
             console.print(f"\n  Re-rendering concepts.tex from cached diagrams...")
             latex = _rebuild_concepts_tex(sheet, tikz_dir, subject)
             tex_path.write_text(latex)
-            console.print(f"  [green]✓[/green] concepts.tex updated")
+            console.print(f"  [green]OK[/green] concepts.tex updated")
             return 0
         force_selected = True  # user explicitly picked, so force those
 
@@ -488,7 +488,7 @@ def _regen_tikz_concepts(
         if tikz:
             tikz_dir.mkdir(exist_ok=True)
             tikz_path.write_text(tikz)
-            console.print(f"[green]✓[/green] ({elapsed:.1f}s)")
+            console.print(f"[green]OK[/green] ({elapsed:.1f}s)")
             count += 1
         else:
             console.print(f"[yellow]empty[/yellow]")
@@ -500,7 +500,7 @@ def _regen_tikz_concepts(
     console.print(f"\n  Re-rendering concepts.tex from cached diagrams...")
     latex = _rebuild_concepts_tex(sheet, tikz_dir, subject)
     tex_path.write_text(latex)
-    console.print(f"  [green]✓[/green] concepts.tex updated")
+    console.print(f"  [green]OK[/green] concepts.tex updated")
 
     return count
 

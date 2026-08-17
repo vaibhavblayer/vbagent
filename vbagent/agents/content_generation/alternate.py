@@ -99,6 +99,7 @@ def generate_alternate(
     ideas: Optional[IdeaResult] = None,
     existing_alternates: Optional[list[str]] = None,
     full_content: Optional[str] = None,
+    hint: Optional[str] = None,
 ) -> str:
     """Generate an alternate solution approach for a physics problem.
     
@@ -111,6 +112,7 @@ def generate_alternate(
         ideas: Optional IdeaResult with extracted concepts and techniques
         existing_alternates: List of existing alternate solutions to avoid repeating
         full_content: Full LaTeX file content (preferred - pass entire file)
+        hint: Optional method hint selected by the solution agent
         
     Returns:
         Alternative solution in LaTeX format within alternatesolution environment
@@ -141,6 +143,14 @@ def generate_alternate(
     else:
         message = USER_TEMPLATE.replace('{full_content}', content_to_use)
     
+    if hint and hint.strip():
+        message += (
+            "\n\nThe solution agent recommends this alternate-method direction. "
+            "Use it if it is mathematically valid and genuinely differs from "
+            "the existing solution:\n"
+            + hint.strip()
+        )
+
     raw_result = run_agent_sync(alternate_agent, message)
     
     # Clean up markdown artifacts from LLM output

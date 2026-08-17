@@ -5,7 +5,6 @@
 **Validates: Requirements 2.1, 2.4**
 """
 
-import pytest
 from hypothesis import given, settings, assume
 from hypothesis import strategies as st
 
@@ -22,6 +21,27 @@ VALID_QUESTION_TYPES = ["mcq_sc", "mcq_mc", "subjective", "assertion_reason", "p
 
 # Valid subjects
 VALID_SUBJECTS = ["physics", "chemistry", "mathematics", "biology"]
+
+
+def test_scanner_prompts_public_api_uses_physics_defaults():
+    """The legacy package-level mapping remains the physics default."""
+    from vbagent.prompts import SCANNER_PROMPTS as public_prompts
+    from vbagent.prompts.content_generation.scanner.physics import (
+        SCANNER_PROMPTS as physics_prompts,
+    )
+
+    assert SCANNER_PROMPTS is physics_prompts
+    assert public_prompts is physics_prompts
+
+
+def test_biology_scanner_uses_biology_prompts():
+    """Biology requests must not silently fall back to physics prompts."""
+    from vbagent.prompts.content_generation.scanner.biology import (
+        SCANNER_PROMPTS as biology_prompts,
+    )
+
+    for question_type, prompt in biology_prompts.items():
+        assert get_scanner_prompt(question_type, "biology") == prompt
 
 
 # Strategy for valid question types
@@ -48,7 +68,6 @@ def test_property_scanner_prompt_selection(question_type: str, subject: str):
     assert len(prompt.strip()) > 0, f"Prompt for {question_type} must not be empty"
     
     # Property 2: Prompt must contain the base prompt content
-    base_prompt = SCANNER_PROMPTS[question_type]
     # The base prompt content should be present (possibly with subject substitutions)
     assert "\\item" in prompt, "Prompt must contain LaTeX structure instructions"
     assert "\\end{solution}" in prompt, "Prompt must contain solution structure"

@@ -64,26 +64,51 @@ def generate_solution_orchestrated(
         if console:
             console.print("[dim]Loading cached solution...[/dim]")
         cached_latex = cache.get(problem_id, "solution")
-        if not return_result:
-            return cached_latex
         cached_data = cache.get_stage_data(problem_id, "solution")
         cached_recommended = bool(
             cached_data.get("alternate_solution_recommended", False)
         )
         cached_hint = cached_data.get("alternate_solution_hint")
-        if not cached_recommended:
-            cached_hint = None
-        return SolutionResult(
-            latex=cached_latex or "",
-            alternate_solution_recommended=cached_recommended,
-            alternate_solution_hint=cached_hint,
-            metadata={
-                **cached_data,
-                "alternate_solution_decision_available": (
-                    "alternate_solution_recommended" in cached_data
-                ),
-            },
+        cached_answer_type = cached_data.get("answer_type", "subjective")
+        cached_answer_value = cached_data.get("answer_value")
+        cached_final_answer = cached_data.get("final_answer_latex")
+        if not cached_final_answer and cached_latex:
+            from vbagent.tex import extract_answer_details
+            extracted = extract_answer_details(cached_latex)
+            if extracted and extracted.kind == "subjective":
+                cached_final_answer = extracted.value
+
+        stale_subjective_cache = (
+            primary.question_type == "subjective"
+            and cached_answer_type == "subjective"
+            and not cached_final_answer
         )
+        if stale_subjective_cache:
+            if console:
+                console.print(
+                    "[dim yellow]Cached solution has no subjective final "
+                    "answer; regenerating...[/dim yellow]"
+                )
+        elif not return_result:
+            return cached_latex
+        else:
+            if not cached_recommended:
+                cached_hint = None
+            return SolutionResult(
+                latex=cached_latex or "",
+                answer_type=cached_answer_type,
+                answer_value=cached_answer_value,
+                final_answer_latex=cached_final_answer,
+                alternate_solution_recommended=cached_recommended,
+                alternate_solution_hint=cached_hint,
+                metadata={
+                    **cached_data,
+                    "final_answer_latex": cached_final_answer,
+                    "alternate_solution_decision_available": (
+                        "alternate_solution_recommended" in cached_data
+                    ),
+                },
+            )
 
     if console:
         console.print("[bold green]Generating solution...[/bold green]")
@@ -111,6 +136,9 @@ def generate_solution_orchestrated(
             "solution",
             result.latex,
             stage_data={
+                "answer_type": result.answer_type,
+                "answer_value": result.answer_value,
+                "final_answer_latex": result.final_answer_latex,
                 "alternate_solution_recommended": result.alternate_solution_recommended,
                 "alternate_solution_hint": result.alternate_solution_hint,
             },

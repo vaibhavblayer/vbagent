@@ -12,7 +12,12 @@ from typing import Literal, Optional, Dict, Any, ClassVar
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from datetime import datetime
 
-from .diagram import TikZRequirements, TikZError, TikZFix, TikZValidation
+from .diagram import (
+    TikZError as TikZError,
+    TikZFix as TikZFix,
+    TikZRequirements,
+    TikZValidation as TikZValidation,
+)
 
 
 # Enums
@@ -40,9 +45,9 @@ CognitiveLevel = Literal[
 CombinationStrategy = Literal["sequential", "parallel", "nested"]
 
 
-# Agent 1: Primary Classification (Image or LaTeX)
+# Compact classification view (image or LaTeX)
 class PrimaryClassification(BaseModel):
-    """Output from Agent 1 (Image Classifier) or Agent 4 (LaTeX Classifier)
+    """Compact output from image or LaTeX classification.
     
     Simplified to core fields for classification.
     """
@@ -52,7 +57,7 @@ class PrimaryClassification(BaseModel):
     question_type: QuestionType
     has_diagram: bool
     
-    # Topic classification (from unified classifier)
+    # Topic classification (from the question classifier)
     chapter: Optional[str] = None
     topic: Optional[str] = None
     
@@ -70,7 +75,7 @@ class PrimaryClassification(BaseModel):
         return v
 
 
-# Agent 2: Diagram Analysis
+# Diagram classification
 class DiagramFeatures(BaseModel):
     """Visual features of the diagram"""
     model_config = ConfigDict(extra='forbid')
@@ -84,7 +89,7 @@ class DiagramFeatures(BaseModel):
 
 
 class DiagramAnalysis(BaseModel):
-    """Output from Agent 2: Diagram Analyzer"""
+    """Structured diagram classification and generation requirements."""
     model_config = ConfigDict(extra='forbid')
     
     diagram_type: str
@@ -164,7 +169,7 @@ class DiagramAnalysis(BaseModel):
         return v
 
 
-# Agent 3: Difficulty Assessment
+# Difficulty assessment
 class DifficultyFactors(BaseModel):
     """Factors contributing to difficulty"""
     model_config = ConfigDict(extra='forbid')
@@ -197,7 +202,7 @@ class ExamRelevance(BaseModel):
 
 
 class DifficultyAssessment(BaseModel):
-    """Output from Agent 3: Difficulty Assessor"""
+    """Structured post-solution difficulty assessment."""
     model_config = ConfigDict(extra='forbid')
     
     difficulty: Difficulty
@@ -221,9 +226,9 @@ class DifficultyAssessment(BaseModel):
     assessed_at: str = Field(default_factory=lambda: datetime.now().isoformat())
 
 
-# Agent 5: Idea Generator
+# Idea-to-problem generation
 class GeneratedProblem(BaseModel):
-    """Output from Agent 5: Idea-to-Problem Generator"""
+    """Output from the idea-to-problem generator."""
     model_config = ConfigDict(extra='allow')  # Allow for generation_metadata flexibility
     
     problem_latex: str
@@ -238,9 +243,9 @@ class GeneratedProblem(BaseModel):
     generated_at: str = Field(default_factory=lambda: datetime.now().isoformat())
 
 
-# Agent 6: Problem Combiner
+# Multi-problem combination
 class CombinedProblem(BaseModel):
-    """Output from Agent 6: Multi-Problem Combiner"""
+    """Output from the multi-problem combiner."""
     model_config = ConfigDict(extra='allow')  # Allow for combination_metadata flexibility
     
     combined_problem_latex: str
@@ -262,16 +267,16 @@ class ClassificationResult(BaseModel):
     are stored separately via their own models.
     """
     
-    # From Agent 1/4: Primary Classification
+    # Compact classification fields
     subject: Subject
     question_type: QuestionType
     has_diagram: bool
     
-    # Topic classification (from unified classifier)
+    # Topic classification (from the question classifier)
     chapter: Optional[str] = None
     topic: Optional[str] = None
     
-    # From Agent 2: Diagram Analysis (optional)
+    # Diagram classification (optional)
     diagram_type: Optional[str] = None
     diagram_category: Optional[DiagramCategory] = None
     diagram_complexity: Optional[DiagramComplexity] = None

@@ -68,7 +68,9 @@ Therefore, the correct matches are: A-[X], B-[Y], C-[Z], D-[W].
 {
   "solution_latex": "\\begin{solution}...\\end{solution}",
   "diagram_requirements": [],
-  "reasoning_notes": "Optional notes"
+  "reasoning_notes": "Optional notes",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 """

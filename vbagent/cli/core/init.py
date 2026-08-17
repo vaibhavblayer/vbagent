@@ -131,7 +131,7 @@ def init(force: bool, quick: bool, yes: bool):
     # Check if config already exists
     workspace_config = Path.cwd() / WORKSPACE_CONFIG_FILE
     if workspace_config.exists() and not force:
-        console.print(f"[yellow]⚠[/yellow] Workspace config already exists: {workspace_config}")
+        console.print(f"[yellow]WARN[/yellow] Workspace config already exists: {workspace_config}")
         if not yes:
             overwrite = Prompt.ask(
                 "Overwrite?",
@@ -142,7 +142,7 @@ def init(force: bool, quick: bool, yes: bool):
                 console.print("[dim]Cancelled[/dim]")
                 raise SystemExit(0)
     
-    console.print("\n[bold]🚀 VBAgent Workspace Setup[/bold]\n")
+    console.print("\n[bold] VBAgent Workspace Setup[/bold]\n")
     console.print("[dim]Configure your workspace settings. Press Enter to accept defaults.[/dim]")
     
     # Load global config as base
@@ -232,12 +232,12 @@ def init(force: bool, quick: bool, yes: bool):
                 # Reasoning
                 agent_cfg.reasoning_effort = _select_reasoning(console, agent_type, agent_cfg.reasoning_effort)
                 
-                console.print(f"[green]✓[/green] {agent_type}: {agent_cfg.model} ({agent_cfg.reasoning_effort})")
+                console.print(f"[green]OK[/green] {agent_type}: {agent_cfg.model} ({agent_cfg.reasoning_effort})")
     
     # === Save Config ===
     config_path = config.save(workspace=True)
     
-    console.print(f"\n[bold green]✓ Workspace initialized![/bold green]")
+    console.print(f"\n[bold green]OK Workspace initialized![/bold green]")
     console.print(f"  Config: {config_path}")
     console.print(f"  Subject: {config.subject}")
     console.print(f"  Default model: {config.default_model}")

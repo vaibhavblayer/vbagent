@@ -9,11 +9,12 @@ Tests cover:
 - Provider adapter creation
 """
 
-import json
-import pytest
-from pathlib import Path
+import sys
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from vbagent.orchestrator import (
     Orchestrator,
@@ -477,6 +478,84 @@ class TestProviderAdapters:
         assert adapter.api_key == "test-key"
         assert adapter.model == "gemini-2.5-pro"
         assert adapter.base_url == "https://generativelanguage.googleapis.com/v1beta/openai"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("adapter", "expected_base_url"),
+        [
+            (OpenAIAdapter("test-key", "gpt-5.2"), None),
+            (XAIAdapter("test-key", "grok-4"), "https://api.x.ai/v1"),
+            (
+                GoogleAdapter("test-key", "gemini-2.5-pro"),
+                "https://generativelanguage.googleapis.com/v1beta/openai",
+            ),
+        ],
+    )
+    async def test_openai_compatible_adapter_call(
+        self,
+        monkeypatch,
+        adapter,
+        expected_base_url,
+    ):
+        """All compatible providers share request and response handling."""
+        tool_call = SimpleNamespace(
+            id="call-1",
+            function=SimpleNamespace(name="lookup", arguments='{"query": "test"}'),
+        )
+        response = SimpleNamespace(
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(content="done", tool_calls=[tool_call]),
+                    finish_reason="stop",
+                )
+            ],
+            usage=SimpleNamespace(
+                prompt_tokens=10,
+                completion_tokens=3,
+                total_tokens=13,
+            ),
+        )
+        create = AsyncMock(return_value=response)
+        client = SimpleNamespace(
+            chat=SimpleNamespace(completions=SimpleNamespace(create=create))
+        )
+        client_factory = MagicMock(return_value=client)
+        monkeypatch.setitem(
+            sys.modules,
+            "openai",
+            SimpleNamespace(AsyncOpenAI=client_factory),
+        )
+
+        result = await adapter.call_with_tools(
+            messages=[{"role": "user", "content": "hello"}],
+            tools=[{"type": "function"}],
+        )
+
+        expected_client_kwargs = {"api_key": "test-key"}
+        if expected_base_url is not None:
+            expected_client_kwargs["base_url"] = expected_base_url
+        client_factory.assert_called_once_with(**expected_client_kwargs)
+        create.assert_awaited_once_with(
+            model=adapter.model,
+            messages=[{"role": "user", "content": "hello"}],
+            tools=[{"type": "function"}],
+        )
+        assert result == ProviderResponse(
+            content="done",
+            tool_calls=[
+                {
+                    "id": "call-1",
+                    "name": "lookup",
+                    "arguments": {"query": "test"},
+                }
+            ],
+            finish_reason="stop",
+            usage={
+                "prompt_tokens": 10,
+                "completion_tokens": 3,
+                "total_tokens": 13,
+            },
+        )
 
 
 if __name__ == "__main__":

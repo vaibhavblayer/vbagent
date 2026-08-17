@@ -124,9 +124,10 @@ class ContentExtractor:
         """Extract content from a single question item."""
         record = QuestionRecord()
         
-        # Extract problem (before solution/alternate/idea)
+        # Extract problem (before generated supporting environments)
         problem_match = re.search(
-            r'^(.*?)(?=\\begin\{solution\}|\\begin\{alternatesolution\}|\\begin\{idea\}|$)',
+            r'^(.*?)(?=\\begin\{solution\}|\\begin\{alternatesolution\}|'
+            r'\\begin\{idea\}|\\begin\{finalanswer\}|$)',
             item_content, re.DOTALL
         )
         if problem_match:
@@ -161,6 +162,14 @@ class ContentExtractor:
         if idea_match:
             record.idea_latex = idea_match.group(1).strip()
             record.has_idea = True
+
+        final_answer_match = re.search(
+            r'\\begin\{finalanswer\}(.*?)\\end\{finalanswer\}',
+            item_content,
+            re.DOTALL,
+        )
+        if final_answer_match:
+            record.final_answer_latex = final_answer_match.group(1).strip()
         
         # Extract TikZ diagrams with context
         record.tikz_diagrams = ContentExtractor._extract_tikz_with_context(item_content)
@@ -176,7 +185,10 @@ class ContentExtractor:
         
         # Define sections
         sections = {
-            'problem': r'^(.*?)(?=\\begin\{solution\}|\\begin\{alternatesolution\}|\\begin\{idea\}|$)',
+            'problem': (
+                r'^(.*?)(?=\\begin\{solution\}|\\begin\{alternatesolution\}|'
+                r'\\begin\{idea\}|\\begin\{finalanswer\}|$)'
+            ),
             'solution': r'\\begin\{solution\}(.*?)\\end\{solution\}',
             'alternate': r'\\begin\{alternatesolution\}(.*?)\\end\{alternatesolution\}',
             'idea': r'\\begin\{idea\}(.*?)\\end\{idea\}',

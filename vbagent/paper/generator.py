@@ -34,7 +34,7 @@ class ProblemGenerator:
     # ------------------------------------------------------------------
 
     def _via_idea_generator(self, target: GenerationTarget, with_solution: bool, tone: str = "", avoid_subtopics: Optional[list[str]] = None) -> GeneratedProblemResult:
-        from vbagent.agents.classification.idea_generator import generate_from_idea
+        from vbagent.agents.content_generation.idea_generator import generate_from_idea
         from vbagent.config import get_config
 
         subject = get_config().subject
@@ -95,7 +95,7 @@ class ProblemGenerator:
         )
 
     def _via_combiner(self, target: GenerationTarget, seed_problems: list[str]) -> GeneratedProblemResult:
-        from vbagent.agents.classification.problem_combiner import combine_problems
+        from vbagent.agents.content_generation.problem_combiner import combine_problems
 
         problems = [
             {"id": i, "latex": tex, "subject": target.topic, "topic": target.topic}

@@ -5,6 +5,8 @@ import tempfile
 from pathlib import Path
 
 from vbagent.database.store import QuestionDatabase, QuestionRecord
+from vbagent.database.extractor import ContentExtractor
+from vbagent.database.reconstructor import reconstruct_tex_file
 from vbagent.database.metadata_helper import (
     populate_from_classification_result,
     populate_diagram_metadata,
@@ -47,6 +49,42 @@ def test_insert_and_retrieve(temp_db):
         retrieved = db.get_by_id(record_id)
         assert retrieved is not None
         assert retrieved.file_path == "test.tex"
+
+
+def test_subjective_final_answer_storage(temp_db):
+    with QuestionDatabase(temp_db) as db:
+        answer = r"$x_{\mathrm{eq}}=\frac{b}{2a}$, stable."
+        record = QuestionRecord(
+            file_path="subjective.tex",
+            question_type="subjective",
+            problem_latex="Find equilibrium.",
+            solution_latex="Work.",
+            final_answer_latex=answer,
+        )
+
+        record_id = db.insert(record)
+        retrieved = db.get_by_id(record_id)
+
+        assert retrieved is not None
+        assert retrieved.final_answer_latex == answer
+
+
+def test_subjective_final_answer_extract_and_reconstruct(tmp_path):
+    answer = r"Stable: $C$; unstable: $A$, $E$."
+    source = tmp_path / "problem.tex"
+    source.write_text(
+        "\\item Find the equilibrium.\n\n"
+        "\\begin{solution}\nWork.\n\\end{solution}\n\n"
+        f"\\begin{{finalanswer}}\n{answer}\n\\end{{finalanswer}}\n",
+        encoding="utf-8",
+    )
+
+    records = ContentExtractor.extract_from_file(source)
+
+    assert len(records) == 1
+    assert records[0].final_answer_latex == answer
+    reconstructed = reconstruct_tex_file(records[0])
+    assert f"\\begin{{finalanswer}}\n{answer}\n\\end{{finalanswer}}" in reconstructed
 
 
 def test_agent2_metadata_storage(temp_db):

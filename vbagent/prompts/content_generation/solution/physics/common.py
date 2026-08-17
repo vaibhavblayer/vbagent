@@ -4,6 +4,27 @@ Shared guidelines, formatting rules, and templates used across
 all physics question types for solution generation.
 """
 
+from dataclasses import dataclass
+
+from ...mcq_format import MCQ_ANSWER_FORMAT_RULES
+
+
+@dataclass(frozen=True)
+class PhysicsTopicPrompts:
+    """The three supported prompt variants for one physics topic."""
+
+    subjective: str
+    mcq_sc: str
+    mcq_mc: str
+
+    def for_question_type(self, question_type: str) -> str:
+        """Select a prompt while preserving the historical subjective fallback."""
+        if question_type == "mcq_sc":
+            return self.mcq_sc
+        if question_type == "mcq_mc":
+            return self.mcq_mc
+        return self.subjective
+
 # LaTeX formatting rules for physics solutions (matches format_checker standards)
 LATEX_FORMATTING_RULES = r"""
 ## LaTeX Formatting Rules (CRITICAL - Follow Exactly)
@@ -75,6 +96,31 @@ F &= ma \\
 - Use \begin{tikzpicture}...\end{tikzpicture} for TikZ diagrams
 - Diagrams interrupt the flow, requiring separate align* blocks before and after
 
+### Diagram Decision (IMPORTANT)
+- Before finalizing, decide whether a visual would materially simplify the
+  reader's understanding of the setup, geometry, forces, motion, circuit,
+  optics, graph, or other spatial relationship.
+- When a diagram would clarify the reasoning, include one even if the original problem image has no diagram.
+  Prefer a concise, explanatory diagram over adding decorative artwork.
+- For a simple diagram, write the TikZ directly in `solution_latex`. For a
+  complex diagram, use `diagram_requirements` so the specialist can generate
+  it.
+- Every non-empty item in `diagram_requirements` MUST have the exact matching
+  marker `% DIAGRAM PLACEHOLDER: <diagram_id>` in `solution_latex`, at the
+  intended location. Use the same `diagram_id` in both places.
+- Never request a diagram without its marker. A requirement without a marker
+  cannot be positioned reliably in the finished solution.
+
+### Alternate Solution Decision
+- Decide whether a genuinely different and useful solution method would help
+  the learner. Set `alternate_solution_recommended` to `true` only when it
+  would add meaningful pedagogical value; use `false` for routine, direct, or
+  one-method problems.
+- When it is `true`, set `alternate_solution_hint` to one concise instruction
+  naming the preferred alternate method, such as "Use conservation of energy
+  instead of Newton's laws". Do not write the alternate solution itself.
+- When it is `false`, set `alternate_solution_hint` to `null`.
+
 ### Inline TikZ in Solutions (Encouraged)
 
 For SIMPLE diagrams, write the TikZ code directly in the solution instead of
@@ -129,6 +175,8 @@ the diagram is tailored exactly to the solution context.
 - Wrap in `\begin{center}...\end{center}`
 """
 
+LATEX_FORMATTING_RULES += MCQ_ANSWER_FORMAT_RULES
+
 # Solution quality guidelines
 SOLUTION_QUALITY = """
 ## Solution Quality Guidelines
@@ -157,6 +205,101 @@ SOLUTION_QUALITY = """
 - Point out common mistakes to avoid
 - Provide physical intuition where possible
 """
+
+
+def build_topic_prompts(
+    *,
+    subjective_intro: str,
+    mcq_intro: str,
+    mcq_mc_intro: str,
+    topic_concepts: str,
+    common_patterns: str,
+    diagram_guidance: str,
+    typical_mistakes: str,
+    subjective_diagram_requirements: str = "List of diagrams needed",
+) -> PhysicsTopicPrompts:
+    """Compose the shared physics prompt structure around topic knowledge."""
+    shared_guidance = (
+        topic_concepts
+        + "\n\n"
+        + common_patterns
+        + "\n\n"
+        + diagram_guidance
+        + "\n\n"
+        + typical_mistakes
+        + "\n\n"
+        + LATEX_FORMATTING_RULES
+    )
+
+    subjective = (
+        subjective_intro
+        + "\n\n"
+        + shared_guidance
+        + "\n\n"
+        + SOLUTION_QUALITY
+        + """
+
+## Output Format
+
+Return a JSON object with:
+- `solution_latex`: Complete solution in LaTeX with \\begin{solution}...\\end{solution}
+- `diagram_requirements`: """
+        + subjective_diagram_requirements
+        + """
+- `answer_type`: "subjective" or "integer"
+- `answer_value`: Final numerical answer if integer type, null otherwise
+- `alternate_solution_recommended`: `true` or `false`
+- `alternate_solution_hint`: A string or `null`
+"""
+    )
+    mcq_sc = (
+        mcq_intro
+        + "\n\n"
+        + shared_guidance
+        + """
+
+## MCQ-Specific Guidelines
+
+- Show key steps that lead to answer
+- Eliminate obviously wrong options when helpful
+- Verify answer matches one of the given options
+- Keep solution concise but complete
+
+## Output Format
+
+Return a JSON object with:
+- `solution_latex`: Solution in LaTeX with \\begin{solution}...\\end{solution}
+- `diagram_requirements`: List of diagrams if needed
+- `answer_type`: "mcq"
+- `answer_value`: Correct lowercase option letter (e.g., "a", "b", "c", "d")
+- `alternate_solution_recommended`: `true` or `false`
+- `alternate_solution_hint`: A string or `null`
+"""
+    )
+    mcq_mc = (
+        mcq_mc_intro
+        + "\n\n"
+        + shared_guidance
+        + """
+
+## MCQ-MC Specific Guidelines
+
+- Check each option independently
+- Show reasoning for why each is correct/incorrect
+- Multiple options can be correct
+
+## Output Format
+
+Return a JSON object with:
+- `solution_latex`: Solution in LaTeX
+- `diagram_requirements`: List of diagrams if needed
+- `answer_type`: "mcq"
+- `answer_value`: Comma-separated lowercase options (e.g., "a,c" or "b,d")
+- `alternate_solution_recommended`: `true` or `false`
+- `alternate_solution_hint`: A string or `null`
+"""
+    )
+    return PhysicsTopicPrompts(subjective, mcq_sc, mcq_mc)
 
 # Common physics packages needed
 PHYSICS_PACKAGES = r"""
@@ -221,6 +364,8 @@ Therefore, the correct option is (c).
 """
 
 __all__ = [
+    "PhysicsTopicPrompts",
+    "build_topic_prompts",
     "LATEX_FORMATTING_RULES",
     "SOLUTION_QUALITY",
     "PHYSICS_PACKAGES",

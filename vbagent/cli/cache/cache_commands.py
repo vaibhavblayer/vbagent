@@ -179,7 +179,7 @@ def clean(days: int, unused: bool, dry_run: bool):
         after = content_cache.get_stats()['total_entries']
         removed = before - after
         
-        console.print(f"[green]✓[/green] Removed {removed} unused cache entries")
+        console.print(f"[green]OK[/green] Removed {removed} unused cache entries")
     
     if days:
         # Count entries before
@@ -191,7 +191,7 @@ def clean(days: int, unused: bool, dry_run: bool):
         after = content_cache.get_stats()['total_entries']
         removed = before - after
         
-        console.print(f"[green]✓[/green] Removed {removed} cache entries older than {days} days")
+        console.print(f"[green]OK[/green] Removed {removed} cache entries older than {days} days")
     
     # Show final stats
     stats = content_cache.get_stats()
@@ -221,6 +221,6 @@ def clear(problem: str = None):
     cache.clear(problem)
     
     if problem:
-        console.print(f"[green]✓[/green] Cleared cache for {problem}")
+        console.print(f"[green]OK[/green] Cleared cache for {problem}")
     else:
-        console.print("[green]✓[/green] Cleared entire cache")
+        console.print("[green]OK[/green] Cleared entire cache")

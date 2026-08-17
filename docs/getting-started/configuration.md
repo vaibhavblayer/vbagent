@@ -75,6 +75,7 @@ Models: `gemini-2.0-flash-exp`, `gemini-exp-1206`
 ## Agent Types
 
 - `classifier` - Question type classification
+- `diagram_classifier` - Standalone diagram classification
 - `scanner` - LaTeX extraction
 - `tikz` - TikZ diagram generation
 - `tikz_checker` - TikZ validation
@@ -122,6 +123,26 @@ vbagent config reset
 ```bash
 vbagent config models
 ```
+
+### Agent Logging
+
+```bash
+# Verbose JSON input, usage, and output panels (default)
+vbagent config log-level INFO
+
+# Add tracebacks and lifecycle diagnostics
+vbagent config debug on
+
+# Persist metadata-only lifecycle events at any level
+export VBAGENT_LOG_FILE=.vbagent/logs/agent-events.jsonl
+```
+
+INFO mode prints every agent input, usage record, and output as structured JSON.
+DEBUG mode additionally records full response IDs, queue and request durations,
+token usage, selected key names, and completion/failure/cancellation state.
+Prompt and model output bodies are not written to JSONL. Quiet parallel workers
+suppress terminal rendering while still writing lifecycle events when event
+logging is enabled.
 
 ## Programmatic Configuration
 

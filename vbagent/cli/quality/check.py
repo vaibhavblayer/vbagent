@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import os
 import signal
-import subprocess
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
@@ -18,16 +17,9 @@ import click
 # Import common utilities
 from vbagent.cli.common import (
     ReviewAction,
-    SimpleAction,
     display_diff,
-    display_content_panel,
     display_session_summary,
-    prompt_approve_edit_skip_quit,
     prompt_full_review,
-    prompt_apply_skip,
-    prompt_apply_cancel,
-    graceful_shutdown,
-    open_in_editor,
     open_content_in_editor,
     format_latex,
     discover_tex_files,
@@ -41,9 +33,17 @@ from vbagent.cli.common import (
     _get_syntax,
     _get_prompt,
 )
+from vbagent.cli.quality.session_actions import prompt_checker_action
+from vbagent.cli.quality.tikz_support import _generate_tikz_for_placeholder
+from vbagent.cli.quality.checker_session import (
+    run_checker_session as _run_checker_session,
+)
 
 if TYPE_CHECKING:
     from rich.console import Console
+    from vbagent.models.diff import DiffResult
+    from vbagent.models.review import Suggestion
+    from vbagent.models.version_store import VersionStore
 
 
 def _get_text(*args, **kwargs):
@@ -71,16 +71,16 @@ def display_suggestion(suggestion: "Suggestion", console: "Console") -> None:
         f"[dim]File:[/dim] {suggestion.file_path}\n"
         f"[dim]Type:[/dim] {suggestion.issue_type.value}\n"
         f"[dim]Confidence:[/dim] [{confidence_color}]{suggestion.confidence:.0%}[/{confidence_color}]",
-        title=f"[cyan]Suggestion[/cyan]",
+        title="[cyan]Suggestion[/cyan]",
         border_style="cyan"
     ))
     
     # Reasoning
-    console.print(f"\n[bold]Reasoning:[/bold]")
+    console.print("\n[bold]Reasoning:[/bold]")
     console.print(suggestion.reasoning)
     
     # Diff
-    console.print(f"\n[bold]Proposed Changes:[/bold]")
+    console.print("\n[bold]Proposed Changes:[/bold]")
     display_diff(suggestion.diff, console)
 
 
@@ -226,15 +226,13 @@ def run_review_session(
     """
     # Lazy imports for this helper function
     from vbagent.agents.quality.reviewer import review_problem_sync, ReviewAgentError
-    from vbagent.models.diff import apply_diff_safe, DiffErrorType
+    from vbagent.models.diff import DiffErrorType
     from vbagent.models.version_store import SuggestionStatus
     
     # Create or reuse session
     if session_id is None:
         session_id = store.create_session()
-        is_resumed = False
     else:
-        is_resumed = True
         console.print(f"[cyan]Resuming session {session_id[:8]}...[/cyan]")
     
     # Statistics
@@ -304,7 +302,7 @@ def run_review_session(
             stats["suggestions_made"] += len(result.suggestions)
             
             if result.passed:
-                console.print(f"[green]✓ Problem passed review[/green]")
+                console.print("[green]OK Problem passed review[/green]")
                 console.print(f"[dim]{result.summary}[/dim]")
                 # Remove from remaining
                 if problem.problem_id in remaining_problem_ids:
@@ -327,7 +325,7 @@ def run_review_session(
                 if action == ReviewAction.APPROVE:
                     diff_result = apply_suggestion(suggestion, problem.problem_id)
                     if diff_result.success:
-                        console.print("[green]✓ Change applied[/green]")
+                        console.print("[green]OK Change applied[/green]")
                         store.save_suggestion(
                             suggestion, problem.problem_id,
                             SuggestionStatus.APPROVED, session_id
@@ -335,7 +333,7 @@ def run_review_session(
                         stats["approved_count"] += 1
                     else:
                         # Display detailed error information
-                        console.print("[red]✗ Failed to apply change[/red]")
+                        console.print("[red]ERROR Failed to apply change[/red]")
                         error_msg = format_diff_error(diff_result)
                         console.print(f"[dim]{error_msg}[/dim]")
                         
@@ -401,14 +399,14 @@ def run_review_session(
                         try:
                             with open(resolved_path, "w") as f:
                                 f.write(edited_content)
-                            console.print(f"[green]✓ Changes written to {resolved_path}[/green]")
+                            console.print(f"[green]OK Changes written to {resolved_path}[/green]")
                             store.save_suggestion(
                                 suggestion, problem.problem_id,
                                 SuggestionStatus.APPROVED, session_id
                             )
                             stats["approved_count"] += 1
                         except (IOError, OSError, PermissionError) as e:
-                            console.print(f"[red]✗ Failed to write: {e}[/red]")
+                            console.print(f"[red]ERROR Failed to write: {e}[/red]")
                             stats["skipped_count"] += 1
                     else:
                         console.print("[dim]Discarded[/dim]")
@@ -436,7 +434,7 @@ def run_review_session(
                 skipped_count=stats["skipped_count"],
                 completed=False,
             )
-            console.print(f"\n[yellow]Session saved. Resume with:[/yellow]")
+            console.print("\n[yellow]Session saved. Resume with:[/yellow]")
             console.print(f"[cyan]  vbagent check resume {session_id[:8]}[/cyan]")
         else:
             store.update_session(
@@ -456,29 +454,6 @@ def run_review_session(
             signal.signal(signal.SIGTERM, original_sigterm)
     
     return stats
-
-
-def display_session_summary(stats: dict, console: "Console") -> None:
-    """Display summary of a review session.
-    
-    Args:
-        stats: Session statistics dictionary
-        console: Rich console for output
-    """
-    console.print("\n[bold]═══ Session Summary ═══[/bold]")
-    
-    table = _get_table(show_header=False, style="minimal")
-    table.add_column("Metric", style="dim")
-    table.add_column("Value", justify="right")
-    
-    table.add_row("Problems reviewed", str(stats["problems_reviewed"]))
-    table.add_row("Suggestions made", str(stats["suggestions_made"]))
-    table.add_row("Approved", f"[green]{stats['approved_count']}[/green]")
-    table.add_row("Rejected", f"[red]{stats['rejected_count']}[/red]")
-    table.add_row("Skipped", f"[yellow]{stats['skipped_count']}[/yellow]")
-    
-    console.print(table)
-
 
 
 # CLI Commands
@@ -566,9 +541,7 @@ def run_check(count: int, problem_id: Optional[str], output_dir: str):
         load_problem_context,
         select_random,
     )
-    from vbagent.agents.quality.reviewer import review_problem_sync, ReviewAgentError
-    from vbagent.models.diff import apply_diff_safe
-    from vbagent.models.version_store import VersionStore, SuggestionStatus
+    from vbagent.models.version_store import VersionStore
     
     console = _get_console()
     
@@ -753,10 +726,10 @@ def apply(version_id: int, edit: bool):
             border_style="cyan"
         ))
         
-        console.print(f"\n[bold]Reasoning:[/bold]")
+        console.print("\n[bold]Reasoning:[/bold]")
         console.print(suggestion.reasoning)
         
-        console.print(f"\n[bold]Diff:[/bold]")
+        console.print("\n[bold]Diff:[/bold]")
         display_diff(suggestion.diff, console)
         
         # Check if file exists
@@ -825,9 +798,9 @@ def apply(version_id: int, edit: bool):
                     with open(target_path, "w") as f:
                         f.write(edited_content)
                     store.update_status(version_id, SuggestionStatus.APPROVED)
-                    console.print(f"[green]✓ Changes written to {target_path}[/green]")
+                    console.print(f"[green]OK Changes written to {target_path}[/green]")
                 except (IOError, OSError, PermissionError) as e:
-                    console.print(f"[red]✗ Failed to write file: {e}[/red]")
+                    console.print(f"[red]ERROR Failed to write file: {e}[/red]")
                     raise SystemExit(1)
                 return
             
@@ -842,9 +815,9 @@ def apply(version_id: int, edit: bool):
         result = apply_diff_safe(target_path, suggestion.diff)
         if result.success:
             store.update_status(version_id, SuggestionStatus.APPROVED)
-            console.print("[green]✓ Change applied successfully[/green]")
+            console.print("[green]OK Change applied successfully[/green]")
         else:
-            console.print("[red]✗ Failed to apply change[/red]")
+            console.print("[red]ERROR Failed to apply change[/red]")
             error_msg = format_diff_error(result)
             console.print(f"[dim]{error_msg}[/dim]")
             
@@ -1130,10 +1103,6 @@ def init_check(output_dir: str, from_index: Optional[int], to_index: Optional[in
         raise SystemExit(1)
     
     # Sort problems naturally (Problem_1, Problem_2, ..., Problem_10, ...)
-    import re
-    def natural_sort_key(s):
-        return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', s)]
-    
     sorted_problems = sorted(all_problems, key=natural_sort_key)
     
     # Apply range filter if specified
@@ -1154,13 +1123,13 @@ def init_check(output_dir: str, from_index: Optional[int], to_index: Optional[in
         count = store.init_problem_checks(sorted_problems, output_dir, reset=reset)
         
         if reset:
-            console.print(f"[green]✓ Reset and initialized {count} problem(s) for checking[/green]")
+            console.print(f"[green]OK Reset and initialized {count} problem(s) for checking[/green]")
         else:
-            console.print(f"[green]✓ Initialized {count} new problem(s) for checking[/green]")
+            console.print(f"[green]OK Initialized {count} new problem(s) for checking[/green]")
         
         # Show current stats
         stats = store.get_problem_check_stats(output_dir)
-        console.print(f"\n[bold]Check Status:[/bold]")
+        console.print("\n[bold]Check Status:[/bold]")
         console.print(f"  Pending:  {stats.get('pending', 0)}")
         console.print(f"  Checked:  {stats.get('checked', 0)}")
         console.print(f"  Passed:   {stats.get('passed', 0)}")
@@ -1169,7 +1138,7 @@ def init_check(output_dir: str, from_index: Optional[int], to_index: Optional[in
         console.print(f"  [dim]Total:    {stats.get('total', 0)}[/dim]")
         
         if stats.get('pending', 0) > 0:
-            console.print(f"\n[dim]Run 'vbagent check continue' to start checking[/dim]")
+            console.print("\n[dim]Run 'vbagent check continue' to start checking[/dim]")
         
     finally:
         store.close()
@@ -1205,7 +1174,6 @@ def continue_check(count: int, output_dir: str):
     from vbagent.agents.selection.selector import load_problem_context
     from vbagent.agents.quality.reviewer import review_problem_sync, ReviewAgentError
     from vbagent.models.version_store import VersionStore, SuggestionStatus, ProblemCheckStatus
-    from vbagent.models.diff import DiffErrorType
     
     console = _get_console()
     store = VersionStore(base_dir=".")
@@ -1217,11 +1185,11 @@ def continue_check(count: int, output_dir: str):
         if not pending:
             stats = store.get_problem_check_stats(output_dir)
             if stats.get('total', 0) == 0:
-                console.print(f"[yellow]No problems initialized.[/yellow]")
+                console.print("[yellow]No problems initialized.[/yellow]")
                 console.print(f"[dim]Run 'vbagent check init -d {output_dir}' first[/dim]")
             else:
-                console.print(f"[green]✓ All problems have been checked![/green]")
-                console.print(f"\n[bold]Check Status:[/bold]")
+                console.print("[green]OK All problems have been checked![/green]")
+                console.print("\n[bold]Check Status:[/bold]")
                 console.print(f"  Passed:   {stats.get('passed', 0)}")
                 console.print(f"  Failed:   {stats.get('failed', 0)}")
                 console.print(f"  Skipped:  {stats.get('skipped', 0)}")
@@ -1314,7 +1282,7 @@ def continue_check(count: int, output_dir: str):
                 session_stats["suggestions_made"] += len(result.suggestions)
                 
                 if result.passed:
-                    console.print(f"[green]✓ Problem passed review[/green]")
+                    console.print("[green]OK Problem passed review[/green]")
                     console.print(f"[dim]{result.summary}[/dim]")
                     store.update_problem_check(
                         problem.problem_id, output_dir,
@@ -1341,7 +1309,7 @@ def continue_check(count: int, output_dir: str):
                     if action == ReviewAction.APPROVE:
                         diff_result = apply_suggestion(suggestion, problem.problem_id)
                         if diff_result.success:
-                            console.print("[green]✓ Change applied[/green]")
+                            console.print("[green]OK Change applied[/green]")
                             store.save_suggestion(
                                 suggestion, problem.problem_id,
                                 SuggestionStatus.APPROVED, session_id
@@ -1349,7 +1317,7 @@ def continue_check(count: int, output_dir: str):
                             session_stats["approved_count"] += 1
                             had_approvals = True
                         else:
-                            console.print("[red]✗ Failed to apply change[/red]")
+                            console.print("[red]ERROR Failed to apply change[/red]")
                             error_msg = format_diff_error(diff_result)
                             console.print(f"[dim]{error_msg}[/dim]")
                             store.save_suggestion(
@@ -1393,7 +1361,7 @@ def continue_check(count: int, output_dir: str):
                                 try:
                                     with open(resolved_path, "w") as f:
                                         f.write(edited_content)
-                                    console.print(f"[green]✓ Changes written[/green]")
+                                    console.print("[green]OK Changes written[/green]")
                                     store.save_suggestion(
                                         suggestion, problem.problem_id,
                                         SuggestionStatus.APPROVED, session_id
@@ -1401,7 +1369,7 @@ def continue_check(count: int, output_dir: str):
                                     session_stats["approved_count"] += 1
                                     had_approvals = True
                                 except (IOError, OSError) as e:
-                                    console.print(f"[red]✗ Failed: {e}[/red]")
+                                    console.print(f"[red]ERROR Failed: {e}[/red]")
                                     session_stats["skipped_count"] += 1
                             else:
                                 session_stats["skipped_count"] += 1
@@ -1461,7 +1429,7 @@ def continue_check(count: int, output_dir: str):
         if remaining > 0:
             console.print(f"\n[dim]{remaining} problem(s) remaining. Run 'vbagent check continue' to continue.[/dim]")
         else:
-            console.print(f"\n[green]✓ All problems checked![/green]")
+            console.print("\n[green]OK All problems checked![/green]")
         
     finally:
         store.close()
@@ -1520,7 +1488,7 @@ def check_status(output_dir: str, show_status: Optional[str]):
         console.print(f"[cyan]{bar}[/cyan] {pct}% ({done}/{total})")
         
         # Stats table
-        console.print(f"\n[bold]Status Breakdown:[/bold]")
+        console.print("\n[bold]Status Breakdown:[/bold]")
         table = _get_table(show_header=False, style="minimal")
         table.add_column("Status", style="dim")
         table.add_column("Count", justify="right")
@@ -1556,7 +1524,7 @@ def check_status(output_dir: str, show_status: Optional[str]):
         
         # Suggestions
         if stats.get('pending', 0) > 0:
-            console.print(f"\n[dim]Run 'vbagent check continue' to check pending problems[/dim]")
+            console.print("\n[dim]Run 'vbagent check continue' to check pending problems[/dim]")
         
     finally:
         store.close()
@@ -1604,13 +1572,13 @@ def recheck(output_dir: str, failed: bool, problem_id: tuple[str, ...]):
         if problem_id:
             # Reset specific problems
             count = store.reset_problem_checks(output_dir, list(problem_id))
-            console.print(f"[green]✓ Reset {count} problem(s) to pending[/green]")
+            console.print(f"[green]OK Reset {count} problem(s) to pending[/green]")
         elif failed:
             # Reset only failed problems
             failed_problems = store.get_problems_by_status(output_dir, ProblemCheckStatus.FAILED)
             if failed_problems:
                 count = store.reset_problem_checks(output_dir, failed_problems)
-                console.print(f"[green]✓ Reset {count} failed problem(s) to pending[/green]")
+                console.print(f"[green]OK Reset {count} failed problem(s) to pending[/green]")
             else:
                 console.print("[dim]No failed problems to reset[/dim]")
         else:
@@ -1619,7 +1587,7 @@ def recheck(output_dir: str, failed: bool, problem_id: tuple[str, ...]):
                 console.print("[dim]Cancelled[/dim]")
                 return
             count = store.reset_problem_checks(output_dir)
-            console.print(f"[green]✓ Reset {count} problem(s) to pending[/green]")
+            console.print(f"[green]OK Reset {count} problem(s) to pending[/green]")
         
         # Show updated stats
         stats = store.get_problem_check_stats(output_dir)
@@ -1707,7 +1675,6 @@ def check_alternate(
         vbagent check alternate --prompt "Use energy conservation method"
         vbagent check alternate -d ./agentic/scans -p Problem_5
     """
-    import re
     from vbagent.agents.content_generation.alternate import (
         generate_alternate,
         count_alternate_solutions,
@@ -1719,40 +1686,7 @@ def check_alternate(
     
     # Discover all tex files
     output_path = Path(output_dir)
-    tex_files = []
-    
-    # Check if it's a single file
-    if output_path.is_file() and output_path.suffix == ".tex":
-        tex_files = [output_path]
-    else:
-        # First, check for .tex files directly in the directory
-        if output_path.exists():
-            tex_files.extend(output_path.glob("*.tex"))
-        
-        # Also check agentic-style structure (scans/ and variants/)
-        scans_dir = output_path / "scans"
-        if scans_dir.exists():
-            tex_files.extend(scans_dir.glob("*.tex"))
-        
-        variants_dir = output_path / "variants"
-        if variants_dir.exists():
-            for variant_type_dir in variants_dir.iterdir():
-                if variant_type_dir.is_dir():
-                    tex_files.extend(variant_type_dir.glob("*.tex"))
-        
-        # Also check subdirectories one level deep (like src/src_tex/)
-        for subdir in output_path.iterdir():
-            if subdir.is_dir() and not subdir.name.startswith('.'):
-                tex_files.extend(subdir.glob("*.tex"))
-    
-    # Remove duplicates while preserving order
-    seen = set()
-    unique_tex_files = []
-    for f in tex_files:
-        if f not in seen:
-            seen.add(f)
-            unique_tex_files.append(f)
-    tex_files = unique_tex_files
+    tex_files = discover_tex_files(output_path)
     
     if not tex_files:
         console.print(f"[red]Error:[/red] No .tex files found in {output_dir}")
@@ -1760,9 +1694,6 @@ def check_alternate(
         raise SystemExit(1)
     
     # Sort naturally
-    def natural_sort_key(p):
-        return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', str(p))]
-    
     tex_files = sorted(tex_files, key=natural_sort_key)
     
     # Filter by problem_id if specified
@@ -1781,7 +1712,7 @@ def check_alternate(
             needs_alternate.append((tex_file, current_count))
     
     if not needs_alternate:
-        console.print(f"[green]✓ All problems have at least {min_alternates} alternate solution(s)[/green]")
+        console.print(f"[green]OK All problems have at least {min_alternates} alternate solution(s)[/green]")
         return
     
     console.print(f"[cyan]Found {len(needs_alternate)} file(s) needing alternate solutions[/cyan]")
@@ -1952,7 +1883,7 @@ def check_alternate(
                 new_content = content + '\n' + final_content + '\n'
                 
                 tex_file.write_text(new_content)
-                console.print(f"[green]✓ Alternate solution appended to {rel_path}[/green]")
+                console.print(f"[green]OK Alternate solution appended to {rel_path}[/green]")
                 
                 # Save as approved
                 suggestion = Suggestion(
@@ -1971,7 +1902,7 @@ def check_alternate(
                 )
                 stats["approved"] += 1
             except (IOError, OSError) as e:
-                console.print(f"[red]✗ Failed to write: {e}[/red]")
+                console.print(f"[red]ERROR Failed to write: {e}[/red]")
                 stats["skipped"] += 1
             
             stats["processed"] += 1
@@ -2060,7 +1991,6 @@ def check_idea(
         vbagent check idea -c 10
         vbagent check idea -p Problem_1
     """
-    import re
     from vbagent.agents.content_generation.idea import (
         generate_idea_latex,
         has_idea_environment,
@@ -2072,49 +2002,13 @@ def check_idea(
     
     # Discover all tex files
     output_path = Path(output_dir)
-    tex_files = []
-    
-    # Check if it's a single file
-    if output_path.is_file() and output_path.suffix == ".tex":
-        tex_files = [output_path]
-    else:
-        # First, check for .tex files directly in the directory
-        if output_path.exists():
-            tex_files.extend(output_path.glob("*.tex"))
-        
-        # Also check agentic-style structure (scans/ and variants/)
-        scans_dir = output_path / "scans"
-        if scans_dir.exists():
-            tex_files.extend(scans_dir.glob("*.tex"))
-        
-        variants_dir = output_path / "variants"
-        if variants_dir.exists():
-            for variant_type_dir in variants_dir.iterdir():
-                if variant_type_dir.is_dir():
-                    tex_files.extend(variant_type_dir.glob("*.tex"))
-        
-        # Also check subdirectories one level deep
-        for subdir in output_path.iterdir():
-            if subdir.is_dir() and not subdir.name.startswith('.'):
-                tex_files.extend(subdir.glob("*.tex"))
-    
-    # Remove duplicates while preserving order
-    seen = set()
-    unique_tex_files = []
-    for f in tex_files:
-        if f not in seen:
-            seen.add(f)
-            unique_tex_files.append(f)
-    tex_files = unique_tex_files
+    tex_files = discover_tex_files(output_path)
     
     if not tex_files:
         console.print(f"[red]Error:[/red] No .tex files found in {output_dir}")
         raise SystemExit(1)
     
     # Sort naturally
-    def natural_sort_key(p):
-        return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', str(p))]
-    
     tex_files = sorted(tex_files, key=natural_sort_key)
     
     # Filter by problem_id if specified
@@ -2132,7 +2026,7 @@ def check_idea(
             needs_idea.append(tex_file)
     
     if not needs_idea:
-        console.print(f"[green]✓ All problems already have idea summaries[/green]")
+        console.print("[green]OK All problems already have idea summaries[/green]")
         return
     
     console.print(f"[cyan]Found {len(needs_idea)} file(s) needing idea extraction[/cyan]")
@@ -2287,7 +2181,7 @@ def check_idea(
                 new_content = content + '\n' + final_content + '\n'
                 
                 tex_file.write_text(new_content)
-                console.print(f"[green]✓ Idea summary appended to {rel_path}[/green]")
+                console.print(f"[green]OK Idea summary appended to {rel_path}[/green]")
                 
                 # Save as approved
                 suggestion = Suggestion(
@@ -2306,7 +2200,7 @@ def check_idea(
                 )
                 stats["approved"] += 1
             except (IOError, OSError) as e:
-                console.print(f"[red]✗ Failed to write: {e}[/red]")
+                console.print(f"[red]ERROR Failed to write: {e}[/red]")
                 stats["skipped"] += 1
             
             stats["processed"] += 1
@@ -2825,116 +2719,6 @@ def _load_diagram_type_from_classification(tex_file: Path, output_path: Path) ->
     return None
 
 
-def _generate_tikz_for_placeholder(
-    content: str,
-    image_path: Optional[Path],
-    diagram_type: Optional[str] = None,
-    extra_prompt: Optional[str] = None,
-    console = None,
-) -> Optional[str]:
-    """Generate TikZ code and replace \\input{diagram} placeholder.
-    
-    Uses the TikZ generator agent to create TikZ code from the problem
-    description and optional image, then replaces the placeholder.
-    
-    Args:
-        content: Full LaTeX content with \\input{diagram} placeholder
-        image_path: Optional path to reference image
-        diagram_type: Optional diagram type for reference matching
-        extra_prompt: Optional additional instructions
-        console: Rich console for output (optional)
-        
-    Returns:
-        Content with placeholder replaced by generated TikZ, or None on failure
-    """
-    import re
-    from vbagent.agents.diagram.tikz import generate_tikz, validate_tikz_output
-    
-    # Extract problem description for the generator
-    # Try to get the problem statement (before solution)
-    problem_match = re.search(r'\\item\s*(.*?)(?=\\begin\{solution\}|$)', content, re.DOTALL)
-    if problem_match:
-        description = problem_match.group(1).strip()
-        # Clean up LaTeX commands for description
-        description = re.sub(r'\\begin\{center\}.*?\\end\{center\}', '', description, flags=re.DOTALL)
-        description = description.strip()
-    else:
-        description = "Generate a physics diagram based on the problem context."
-    
-    # Add extra prompt if provided
-    if extra_prompt:
-        description = f"{description}\n\nAdditional instructions: {extra_prompt}"
-    
-    if console:
-        console.print(f"[dim]Generating TikZ... (Ctrl+C to quit)[/dim]")
-    
-    # Generate TikZ code
-    tikz_code = generate_tikz(
-        description=description,
-        image_path=str(image_path) if image_path else None,
-        use_context=True,
-    )
-    
-    if not tikz_code or not validate_tikz_output(tikz_code):
-        return None
-    
-    # Wrap in center environment if not already wrapped
-    if not tikz_code.strip().startswith(r'\begin{center}'):
-        tikz_code = f"\\begin{{center}}\n{tikz_code}\n\\end{{center}}"
-    
-    # Escape backslashes in tikz_code for use as replacement string
-    # re.sub interprets \1, \2, etc. as backreferences, so we need to escape
-    tikz_code_escaped = tikz_code.replace('\\', '\\\\')
-    
-    # Replace the placeholder patterns
-    # Pattern 1: \begin{center}\input{diagram}\end{center}
-    placeholder_pattern = r'\\begin\{center\}\s*%?\s*\\input\{diagram\}\s*\\end\{center\}'
-    result = re.sub(placeholder_pattern, tikz_code_escaped, content, flags=re.DOTALL)
-    
-    # Pattern 2: Simple \input{diagram} (with optional comment)
-    if result == content:
-        simple_pattern = r'%?\s*\\input\{diagram\}'
-        result = re.sub(simple_pattern, tikz_code_escaped, result)
-    
-    return result if result != content else None
-
-
-def _prompt_tikz_action(console) -> str:
-    """Prompt user for action on TikZ generation/check result.
-    
-    Args:
-        console: Rich console for output
-        
-    Returns:
-        Action string: 'approve', 'edit', 'reject', 'skip', or 'quit'
-    """
-    console.print("\n[bold]Actions:[/bold]")
-    console.print("  [green]a[/green]pprove - Apply this change")
-    console.print("  [red]r[/red]eject  - Store for later, don't apply")
-    console.print("  [blue]e[/blue]dit    - Edit in editor before applying")
-    console.print("  [yellow]s[/yellow]kip    - Skip without storing")
-    console.print("  [dim]q[/dim]uit    - Exit session")
-    
-    Prompt = _get_prompt()
-    try:
-        choice = Prompt.ask(
-            "\nAction",
-            choices=["a", "r", "e", "s", "q", "approve", "reject", "edit", "skip", "quit"],
-            default="a"
-        ).lower()
-    except KeyboardInterrupt:
-        return "quit"
-    
-    if choice in ["a", "approve"]:
-        return "approve"
-    elif choice in ["r", "reject"]:
-        return "reject"
-    elif choice in ["e", "edit"]:
-        return "edit"
-    elif choice in ["s", "skip"]:
-        return "skip"
-    else:
-        return "quit"
 
 
 def _run_tikz_patch_session(
@@ -2965,7 +2749,6 @@ def _run_tikz_patch_session(
         use_context: Whether to include TikZ reference examples
         ref_diagram_type: Filter reference examples by diagram type (e.g., circuit)
     """
-    import re
     from vbagent.models.version_store import VersionStore, SuggestionStatus
     from vbagent.models.review import Suggestion, ReviewIssueType as IssueType
     from vbagent.agents.diagram.tikz_checker import (
@@ -2986,9 +2769,6 @@ def _run_tikz_patch_session(
     if not tex_files:
         console.print(f"[red]Error:[/red] No .tex files found in {output_dir}")
         raise SystemExit(1)
-    
-    def natural_sort_key(p):
-        return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', str(p))]
     
     tex_files = sorted(tex_files, key=natural_sort_key)
     
@@ -3025,10 +2805,10 @@ def _run_tikz_patch_session(
     unchecked_files = [f for f in tex_files if str(f.resolve()) not in checked_files]
     
     if not unchecked_files:
-        console.print(f"[green]✓ All {len(tex_files)} file(s) have been checked[/green]")
+        console.print(f"[green]OK All {len(tex_files)} file(s) have been checked[/green]")
         stats = store.get_checker_stats("tikz_patch", output_dir_normalized)
         console.print(f"[dim]Total: {stats['total']}, Passed: {stats['passed']}, Had issues: {stats['failed']}[/dim]")
-        console.print(f"[dim]Use --reset to re-check files[/dim]")
+        console.print("[dim]Use --reset to re-check files[/dim]")
         store.close()
         return
     
@@ -3092,7 +2872,7 @@ def _run_tikz_patch_session(
             
             if needs_generation:
                 # Generate TikZ instead of checking
-                console.print(f"[cyan]Generating TikZ (found \\input{{diagram}} placeholder)[/cyan]")
+                console.print("[cyan]Generating TikZ (found \\input{diagram} placeholder)[/cyan]")
                 
                 if not image_path:
                     console.print("[yellow]Warning: No image found for generation. Results may be limited.[/yellow]")
@@ -3123,7 +2903,7 @@ def _run_tikz_patch_session(
                     diff_text = _generate_diff(content, generated_content, str(rel_path))
                     
                     if diff_text:
-                        console.print(f"\n[bold]Generated TikZ:[/bold]")
+                        console.print("\n[bold]Generated TikZ:[/bold]")
                         display_diff(diff_text, console)
                     
                     # Create suggestion for tracking
@@ -3139,7 +2919,7 @@ def _run_tikz_patch_session(
                     )
                     
                     # Prompt for action
-                    action = "approve" if auto_approve else _prompt_tikz_action(console)
+                    action = "approve" if auto_approve else prompt_checker_action(console)
                     if auto_approve:
                         console.print("[dim]Auto-approving...[/dim]")
                     
@@ -3167,12 +2947,12 @@ def _run_tikz_patch_session(
                     # Write the generated content
                     try:
                         tex_file.write_text(final_content)
-                        console.print(f"[green]✓ TikZ generated and applied to {rel_path}[/green]")
+                        console.print(f"[green]OK TikZ generated and applied to {rel_path}[/green]")
                         store.save_suggestion(suggestion, problem_name, SuggestionStatus.APPROVED, session_id)
                         store.mark_file_checked(str(tex_file.resolve()), "tikz_patch", output_dir_normalized, passed=False)
                         stats["approved"] += 1
                     except (IOError, OSError) as e:
-                        console.print(f"[red]✗ Failed to write: {e}[/red]")
+                        console.print(f"[red]ERROR Failed to write: {e}[/red]")
                         stats["rejected"] += 1
                     
                     continue
@@ -3201,7 +2981,7 @@ def _run_tikz_patch_session(
                 check_content = f"% ADDITIONAL INSTRUCTIONS: {extra_prompt}\n\n{content}"
             
             try:
-                console.print(f"[dim]Checking with apply_patch... (Ctrl+C to quit)[/dim]")
+                console.print("[dim]Checking with apply_patch... (Ctrl+C to quit)[/dim]")
                 result: PatchResult = check_tikz_with_patch(
                     file_path=str(tex_file),
                     full_content=check_content,
@@ -3220,7 +3000,7 @@ def _run_tikz_patch_session(
                 continue
             
             if result.passed:
-                console.print(f"[green]✓ {result.summary}[/green]")
+                console.print(f"[green]OK {result.summary}[/green]")
                 stats["passed"] += 1
                 store.mark_file_checked(str(tex_file.resolve()), "tikz_patch", output_dir_normalized, passed=True)
                 continue
@@ -3310,12 +3090,12 @@ def _run_tikz_patch_session(
             # Write the corrected content
             try:
                 tex_file.write_text(final_content)
-                console.print(f"[green]✓ Corrections applied to {rel_path}[/green]")
+                console.print(f"[green]OK Corrections applied to {rel_path}[/green]")
                 store.save_suggestion(suggestion, problem_name, SuggestionStatus.APPROVED, session_id)
                 store.mark_file_checked(str(tex_file.resolve()), "tikz_patch", output_dir_normalized, passed=False)
                 stats["approved"] += 1
             except (IOError, OSError) as e:
-                console.print(f"[red]✗ Failed to write: {e}[/red]")
+                console.print(f"[red]ERROR Failed to write: {e}[/red]")
                 store.save_suggestion(suggestion, problem_name, SuggestionStatus.REJECTED, session_id)
                 store.mark_file_checked(str(tex_file.resolve()), "tikz_patch", output_dir_normalized, passed=False)
                 stats["rejected"] += 1
@@ -3357,514 +3137,6 @@ def _run_tikz_patch_session(
         console.print(f"\n[dim]Session {session_id[:8]} saved. View with: vbagent check history[/dim]")
 
 
-def _detect_subject_for_file(tex_file: Path) -> str:
-    """Detect the subject for a .tex file from its classification JSON.
-
-    Looks for agentic/classifications/{stem}.json next to the scans dir.
-    Falls back to 'physics' if not found.
-    """
-    import json
-
-    stem = tex_file.stem  # e.g. "problem_21"
-
-    # Try sibling classifications/ directory
-    for candidate_dir in [
-        tex_file.parent.parent / "classifications",  # agentic/scans/../classifications
-        tex_file.parent / "classifications",          # same dir
-        Path("agentic") / "classifications",          # from cwd
-    ]:
-        json_path = candidate_dir / f"{stem}.json"
-        if json_path.exists():
-            try:
-                data = json.loads(json_path.read_text())
-                return data.get("subject", "physics")
-            except Exception:
-                pass
-
-    # Fallback: scan the tex file for % subject: comment
-    try:
-        for line in tex_file.read_text().split("\n")[:10]:
-            if line.startswith("% subject:"):
-                return line.split(":", 1)[1].strip()
-    except Exception:
-        pass
-
-    return "physics"
-
-
-def _run_checker_session(
-    output_dir: str,
-    count: int,
-    problem_id: Optional[str],
-    checker_name: str,
-    check_func_module: str,
-    check_func_name: str,
-    require_solution: bool = False,
-    require_tikz: bool = False,
-    reset: bool = False,
-    images_dir: Optional[str] = None,
-    extra_prompt: Optional[str] = None,
-    auto_approve: bool = False,
-) -> None:
-    """Run an interactive checker session with approval workflow.
-    
-    Saves progress to database for tracking and potential resume.
-    Skips already-checked files unless reset=True.
-    
-    Args:
-        output_dir: Directory containing .tex files
-        count: Number of files to process
-        problem_id: Optional specific problem ID to check
-        checker_name: Name of the checker (solution/grammar/clarity/tikz)
-        check_func_module: Module containing the check function
-        check_func_name: Name of the check function
-        require_solution: Whether to require solution environment
-        require_tikz: Whether to require TikZ code (for tikz checker)
-        reset: Whether to reset progress and re-check all files
-        images_dir: Optional directory containing images for problems
-        extra_prompt: Optional additional instructions for the checker
-        auto_approve: Whether to auto-approve all suggestions without prompting
-    """
-    import re
-    import importlib
-    from vbagent.models.version_store import VersionStore, SuggestionStatus
-    from vbagent.models.review import Suggestion, ReviewIssueType as IssueType
-    
-    # Dynamically import the check function
-    module = importlib.import_module(check_func_module)
-    check_func = getattr(module, check_func_name)
-    
-    # Import has_tikz_environment for tikz checker (needed for generation detection)
-    has_tikz_environment = None
-    if checker_name == "tikz" or require_tikz:
-        from vbagent.agents.diagram.tikz_checker import has_tikz_environment
-    
-    console = _get_console()
-    
-    output_path = Path(output_dir)
-    tex_files = _discover_tex_files(output_path)
-    
-    if not tex_files:
-        console.print(f"[red]Error:[/red] No .tex files found in {output_dir}")
-        raise SystemExit(1)
-    
-    def natural_sort_key(p):
-        return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', str(p))]
-    
-    tex_files = sorted(tex_files, key=natural_sort_key)
-    
-    if problem_id:
-        tex_files = [f for f in tex_files if problem_id in f.stem]
-        if not tex_files:
-            console.print(f"[red]Error:[/red] No files found matching '{problem_id}'")
-            raise SystemExit(1)
-    
-    # Filter for TikZ files if required
-    if require_tikz and has_tikz_environment:
-        tikz_files = []
-        for f in tex_files:
-            content = f.read_text()
-            if has_tikz_environment(content):
-                tikz_files.append(f)
-        tex_files = tikz_files
-        if not tex_files:
-            console.print(f"[yellow]No files with TikZ code found in {output_dir}[/yellow]")
-            return
-    
-    # Initialize version store for tracking
-    store = VersionStore(base_dir=".")
-    output_dir_normalized = str(output_path.resolve())
-    
-    # Reset progress if requested
-    if reset:
-        reset_count = store.reset_checker_progress(checker_name, output_dir_normalized)
-        if reset_count > 0:
-            console.print(f"[yellow]Reset progress for {reset_count} file(s)[/yellow]")
-    
-    # Filter out already-checked files
-    checked_files = store.get_checked_files(checker_name, output_dir_normalized)
-    unchecked_files = [f for f in tex_files if str(f.resolve()) not in checked_files]
-    
-    if not unchecked_files:
-        console.print(f"[green]✓ All {len(tex_files)} file(s) have already been checked for {checker_name} issues[/green]")
-        stats = store.get_checker_stats(checker_name, output_dir_normalized)
-        console.print(f"[dim]Total: {stats['total']}, Passed: {stats['passed']}, Had issues: {stats['failed']}[/dim]")
-        console.print(f"[dim]Use --reset to re-check files[/dim]")
-        store.close()
-        return
-    
-    if len(checked_files) > 0:
-        console.print(f"[dim]Skipping {len(checked_files)} already-checked file(s)[/dim]")
-    
-    to_process = unchecked_files[:count]
-    console.print(f"[cyan]Checking {len(to_process)} file(s) for {checker_name} issues[/cyan]")
-    session_id = store.create_session()
-    
-    # Map checker names to issue types
-    issue_type_map = {
-        "solution": IssueType.PHYSICS_ERROR,
-        "grammar": IssueType.GRAMMAR,
-        "clarity": IssueType.CLARITY,
-        "tikz": IssueType.FORMATTING,
-    }
-    issue_type = issue_type_map.get(checker_name, IssueType.OTHER)
-    
-    stats = {
-        "processed": 0,
-        "passed": 0,
-        "approved": 0,
-        "rejected": 0,
-        "skipped": 0,
-        "session_id": session_id,
-    }
-    
-    shutdown_requested = False
-    
-    def signal_handler(signum, frame):
-        nonlocal shutdown_requested
-        shutdown_requested = True
-        console.print("\n[yellow]Shutdown requested. Saving progress...[/yellow]")
-    
-    original_sigint = signal.signal(signal.SIGINT, signal_handler)
-    # SIGTERM is not available on Windows
-    original_sigterm = None
-    if sys.platform != "win32":
-        original_sigterm = signal.signal(signal.SIGTERM, signal_handler)
-    
-    try:
-        for idx, tex_file in enumerate(to_process):
-            if shutdown_requested:
-                break
-            
-            rel_path = tex_file.relative_to(output_path) if output_path.is_dir() else tex_file.name
-            problem_name = tex_file.stem
-            console.print(f"\n[bold cyan]═══ [{idx+1}/{len(to_process)}] {rel_path} ═══[/bold cyan]")
-            
-            content = tex_file.read_text()
-            
-            # Find corresponding image
-            # 1. Use explicit images_dir if provided
-            # 2. For tikz checker, auto-discover if file has \input{diagram} placeholder
-            image_path = None
-            if images_dir:
-                image_path = find_image_for_problem(tex_file, images_dir)
-                if image_path:
-                    console.print(f"[dim]Image: {image_path.name}[/dim]")
-            elif checker_name == "tikz":
-                # Auto-discover image if file has diagram placeholder
-                if has_diagram_placeholder(content):
-                    image_path = find_image_for_problem(tex_file, auto_discover=True)
-                    if image_path:
-                        console.print(f"[dim]Auto-found image: {image_path.name}[/dim]")
-            
-            # For tikz checker: check if generation is needed (has placeholder but no TikZ)
-            if checker_name == "tikz" and has_tikz_environment:
-                needs_generation = has_diagram_placeholder(content) and not has_tikz_environment(content)
-                
-                if needs_generation:
-                    # Generate TikZ instead of checking
-                    console.print(f"[cyan]Generating TikZ (found \\input{{diagram}} placeholder)[/cyan]")
-                    
-                    if not image_path:
-                        console.print("[yellow]Warning: No image found for generation. Results may be limited.[/yellow]")
-                    
-                    try:
-                        generated_content = _generate_tikz_for_placeholder(
-                            content=content,
-                            image_path=image_path,
-                            diagram_type=None,
-                            extra_prompt=extra_prompt,
-                            console=console,
-                        )
-                        stats["processed"] += 1
-                        
-                        if not generated_content:
-                            console.print("[yellow]Failed to generate TikZ[/yellow]")
-                            stats["skipped"] += 1
-                            continue
-                        
-                        # Show the generated content
-                        diff_text = _generate_diff(content, generated_content, str(rel_path))
-                        
-                        if diff_text:
-                            console.print(f"\n[bold]Generated TikZ:[/bold]")
-                            display_diff(diff_text, console)
-                        
-                        # Create suggestion for tracking
-                        suggestion = Suggestion(
-                            file_path=str(tex_file),
-                            issue_type=issue_type,
-                            description="TikZ generation: replaced \\input{diagram} placeholder",
-                            original_content=content,
-                            suggested_content=generated_content,
-                            diff=diff_text,
-                            reasoning="Generated TikZ code from image to replace placeholder.",
-                            confidence=0.8,
-                        )
-                        
-                        # Prompt for action
-                        action = "approve" if auto_approve else _prompt_tikz_action(console)
-                        if auto_approve:
-                            console.print("[dim]Auto-approving...[/dim]")
-                        
-                        if action == "quit":
-                            shutdown_requested = True
-                            break
-                        elif action == "skip":
-                            console.print("[dim]Skipped[/dim]")
-                            stats["skipped"] += 1
-                            continue
-                        elif action == "reject":
-                            store.save_suggestion(suggestion, problem_name, SuggestionStatus.REJECTED, session_id)
-                            store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=False)
-                            console.print("[yellow]Suggestion stored for later[/yellow]")
-                            stats["rejected"] += 1
-                            continue
-                        
-                        final_content = generated_content
-                        if action == "edit":
-                            success, edited = open_suggested_in_editor(str(tex_file), generated_content, console)
-                            if success and edited:
-                                final_content = edited
-                                console.print("[cyan]Content edited[/cyan]")
-                        
-                        # Write the generated content
-                        try:
-                            tex_file.write_text(final_content)
-                            console.print(f"[green]✓ TikZ generated and applied to {rel_path}[/green]")
-                            store.save_suggestion(suggestion, problem_name, SuggestionStatus.APPROVED, session_id)
-                            store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=False)
-                            stats["approved"] += 1
-                        except (IOError, OSError) as e:
-                            console.print(f"[red]✗ Failed to write: {e}[/red]")
-                            stats["rejected"] += 1
-                        
-                        continue
-                        
-                    except KeyboardInterrupt:
-                        console.print("\n[yellow]Interrupted[/yellow]")
-                        shutdown_requested = True
-                        break
-                    except Exception as e:
-                        console.print(f"[red]Error generating TikZ:[/red] {e}")
-                        stats["skipped"] += 1
-                        continue
-            
-            if require_solution and r'\begin{solution}' not in content:
-                console.print("[yellow]No solution environment found, skipping[/yellow]")
-                stats["skipped"] += 1
-                continue
-            
-            # For tikz checker: skip files without TikZ content (unless it needs generation)
-            if checker_name == "tikz" and has_tikz_environment:
-                has_tikz = has_tikz_environment(content)
-                has_placeholder = has_diagram_placeholder(content)
-                
-                if not has_tikz and not has_placeholder:
-                    console.print("[dim]No TikZ content found, skipping[/dim]")
-                    stats["skipped"] += 1
-                    # Mark as checked/passed since there's nothing to check
-                    store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=True)
-                    continue
-            
-            # Prepare content with extra prompt if provided
-            check_content = content
-            if extra_prompt:
-                console.print(f"[dim]Extra instructions: {extra_prompt}[/dim]")
-                # Prepend extra instructions as a comment for the checker
-                check_content = f"% ADDITIONAL INSTRUCTIONS: {extra_prompt}\n\n{content}"
-            
-            try:
-                console.print(f"[dim]Checking {checker_name}... (Ctrl+C to quit)[/dim]")
-                # Pass image to tikz checker if available
-                if checker_name == "tikz" and image_path:
-                    passed, summary, corrected_content = check_func(check_content, image_path=str(image_path))
-                elif checker_name == "format":
-                    # Detect subject from classification JSON for subject-aware formatting
-                    subject = _detect_subject_for_file(tex_file)
-                    if subject and subject != "physics":
-                        console.print(f"[dim]Subject: {subject}[/dim]")
-                    passed, summary, corrected_content = check_func(check_content, subject=subject)
-                else:
-                    passed, summary, corrected_content = check_func(check_content)
-                stats["processed"] += 1
-            except KeyboardInterrupt:
-                console.print("\n[yellow]Interrupted[/yellow]")
-                shutdown_requested = True
-                break
-            except Exception as e:
-                console.print(f"[red]Error checking {checker_name}:[/red] {e}")
-                stats["skipped"] += 1
-                continue
-            
-            if passed:
-                console.print(f"[green]✓ {summary}[/green]")
-                stats["passed"] += 1
-                # Mark file as checked (passed)
-                store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=True)
-                continue
-            
-            # Clean up extra prompt from corrected content if it was added
-            if extra_prompt and corrected_content.startswith("% ADDITIONAL INSTRUCTIONS:"):
-                # Remove the extra instructions line
-                lines = corrected_content.split('\n')
-                # Skip the instruction line and any following blank lines
-                start_idx = 0
-                for i, line in enumerate(lines):
-                    if line.startswith("% ADDITIONAL INSTRUCTIONS:"):
-                        start_idx = i + 1
-                        # Skip blank lines after the instruction
-                        while start_idx < len(lines) and not lines[start_idx].strip():
-                            start_idx += 1
-                        break
-                corrected_content = '\n'.join(lines[start_idx:])
-            
-            # Show the summary
-            console.print(f"[yellow]Issues found: {summary}[/yellow]")
-            
-            # Generate diff
-            diff_text = _generate_diff(content, corrected_content, str(rel_path))
-            
-            # Create suggestion object for database storage
-            suggestion = Suggestion(
-                file_path=str(tex_file),
-                issue_type=issue_type,
-                description=f"{checker_name.title()} check: {summary}",
-                original_content=content,
-                suggested_content=corrected_content,
-                diff=diff_text,
-                reasoning=f"Automated {checker_name} check found issues.",
-                confidence=0.8,
-            )
-            
-            if diff_text:
-                console.print(f"\n[bold]Proposed Changes:[/bold]")
-                display_diff(diff_text, console)
-            else:
-                # Fallback to showing corrected content if diff fails
-                formatted_content = _format_latex(corrected_content)
-                syntax = _get_syntax(formatted_content, "latex", theme="monokai", line_numbers=False)
-                console.print(_get_panel(
-                    syntax,
-                    title=f"[cyan]Corrected Content[/cyan]",
-                    border_style="cyan"
-                ))
-            
-            # Prompt for action
-            if auto_approve:
-                choice = "a"
-                console.print("[dim]Auto-approving...[/dim]")
-            else:
-                console.print("\n[bold]Actions:[/bold]")
-                console.print("  [green]a[/green]pprove - Apply this change")
-                console.print("  [red]r[/red]eject  - Store for later, don't apply")
-                console.print("  [blue]e[/blue]dit    - Edit in editor before applying")
-                console.print("  [yellow]s[/yellow]kip    - Skip without storing")
-                console.print("  [dim]q[/dim]uit    - Exit session")
-                
-                Prompt = _get_prompt()
-                try:
-                    choice = Prompt.ask(
-                        "\nAction",
-                        choices=["a", "r", "e", "s", "q", "approve", "reject", "edit", "skip", "quit"],
-                        default="a"
-                    ).lower()
-                except KeyboardInterrupt:
-                    console.print("\n[yellow]Interrupted[/yellow]")
-                    shutdown_requested = True
-                    break
-            
-            if choice in ["q", "quit"]:
-                shutdown_requested = True
-                break
-            
-            if choice in ["s", "skip"]:
-                console.print("[dim]Skipped[/dim]")
-                stats["skipped"] += 1
-                continue
-            
-            if choice in ["r", "reject"]:
-                # Store for later without applying
-                store.save_suggestion(
-                    suggestion, problem_name,
-                    SuggestionStatus.REJECTED, session_id
-                )
-                # Mark file as checked (had issues, rejected)
-                store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=False)
-                console.print("[yellow]Suggestion stored for later[/yellow]")
-                stats["rejected"] += 1
-                continue
-            
-            final_content = corrected_content
-            
-            if choice in ["e", "edit"]:
-                success, edited = open_suggested_in_editor(
-                    str(tex_file),
-                    corrected_content,
-                    console
-                )
-                if success and edited:
-                    final_content = edited
-                    console.print("[cyan]Content edited[/cyan]")
-                else:
-                    console.print("[yellow]Edit cancelled, using original correction[/yellow]")
-            
-            # Write the corrected content
-            try:
-                tex_file.write_text(final_content)
-                console.print(f"[green]✓ Corrections applied to {rel_path}[/green]")
-                # Save as approved
-                store.save_suggestion(
-                    suggestion, problem_name,
-                    SuggestionStatus.APPROVED, session_id
-                )
-                # Mark file as checked (had issues, approved fix)
-                store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=False)
-                stats["approved"] += 1
-            except (IOError, OSError) as e:
-                console.print(f"[red]✗ Failed to write: {e}[/red]")
-                # Store as rejected since we couldn't apply
-                store.save_suggestion(
-                    suggestion, problem_name,
-                    SuggestionStatus.REJECTED, session_id
-                )
-                # Mark file as checked (had issues, failed to apply)
-                store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=False)
-                stats["rejected"] += 1
-        
-        # Update session with final stats
-        store.update_session(
-            session_id,
-            problems_reviewed=stats["processed"],
-            suggestions_made=stats["approved"] + stats["rejected"],
-            approved_count=stats["approved"],
-            rejected_count=stats["rejected"],
-            skipped_count=stats["skipped"],
-            completed=not shutdown_requested,
-        )
-    
-    finally:
-        signal.signal(signal.SIGINT, original_sigint)
-        if original_sigterm is not None:
-            signal.signal(signal.SIGTERM, original_sigterm)
-        store.close()
-    
-    # Summary
-    console.print("\n[bold]═══ Session Summary ═══[/bold]")
-    table = _get_table(show_header=False, style="minimal")
-    table.add_column("Metric", style="dim")
-    table.add_column("Value", justify="right")
-    
-    table.add_row("Files checked", str(stats["processed"]))
-    table.add_row("Passed", f"[green]{stats['passed']}[/green]")
-    table.add_row("Approved", f"[green]{stats['approved']}[/green]")
-    table.add_row("Rejected", f"[red]{stats['rejected']}[/red]")
-    table.add_row("Skipped", f"[yellow]{stats['skipped']}[/yellow]")
-    
-    console.print(table)
-    
-    if shutdown_requested:
-        console.print(f"\n[dim]Session {session_id[:8]} saved. View with: vbagent check history[/dim]")
 
 
 # Aliases for backward compatibility - use common module functions

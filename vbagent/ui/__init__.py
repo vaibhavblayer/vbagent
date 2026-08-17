@@ -14,7 +14,14 @@ from vbagent.ui.components import (
     create_badge,
     create_section_header,
 )
-from vbagent.ui.logging import log_agent_input, log_agent_output, log_agent_error, log_agent_usage
+from vbagent.ui.logging import (
+    agent_logging_context,
+    get_agent_console,
+    log_agent_error,
+    log_agent_input,
+    log_agent_output,
+    log_agent_usage,
+)
 
 __all__ = [
     # Styles
@@ -40,4 +47,6 @@ __all__ = [
     "log_agent_output",
     "log_agent_error",
     "log_agent_usage",
+    "agent_logging_context",
+    "get_agent_console",
 ]

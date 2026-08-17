@@ -336,6 +336,22 @@ class TestTexParser:
         answer = extract_answer(content)
         assert answer is None
 
+    def test_extract_answer_subjective(self):
+        from vbagent.tex import extract_answer_details
+
+        content = (
+            "\\begin{finalanswer}\n"
+            r"$x_{\mathrm{stable}}=2\,\mathrm{m}$; "
+            r"$x_{\mathrm{unstable}}=-2\,\mathrm{m}$."
+            "\n\\end{finalanswer}"
+        )
+
+        answer = extract_answer_details(content)
+
+        assert answer is not None
+        assert answer.kind == "subjective"
+        assert answer.value.startswith(r"$x_{\mathrm{stable}}")
+
     def test_extract_answer_with_comments(self):
         """Test extracting answer with comments in content."""
         from vbagent.tex import extract_answer

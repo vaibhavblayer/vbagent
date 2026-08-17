@@ -1,6 +1,6 @@
 """SketchReader agent — extracts structured intent from handwritten scribbles.
 
-Unlike the unified classifier (which analyzes printed question images),
+Unlike the question classifier (which analyzes printed question images),
 this agent interprets rough sketches: hand-drawn circuits, graphs,
 equations, diagrams, and half-formed problem ideas.
 
@@ -9,8 +9,6 @@ values, labels, and what the user likely wants to create.
 """
 
 from __future__ import annotations
-
-from typing import Optional
 
 from pydantic import BaseModel, Field
 

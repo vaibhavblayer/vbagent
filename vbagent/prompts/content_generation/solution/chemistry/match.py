@@ -31,7 +31,7 @@ Given a matching problem with List I and List II, generate a solution that:
 \intertext{Q matches with [N] because [reason]}
 \intertext{Hence the matching is}
 P &\rightarrow N_1,\quad Q \rightarrow N_2,\quad R \rightarrow N_3,\quad S \rightarrow N_4.
-\intertext{Therefore, the correct option is (X).}
+\intertext{Therefore, the correct option is (a).}
 \end{align*}
 \end{solution}
 ```
@@ -41,7 +41,7 @@ P &\rightarrow N_1,\quad Q \rightarrow N_2,\quad R \rightarrow N_3,\quad S \righ
 1. Analyze each item systematically with chemistry reasoning
 2. Use \ce{} for chemical formulas
 3. State each match: $P \rightarrow N$
-4. End with "Therefore, the correct option is (X)." for the Codes MCQ
+4. End with the actual lowercase Codes-MCQ option letter, for example: "Therefore, the correct option is (a)."
 5. Use align* with \intertext{} — keep concise
 
 ## Output Format
@@ -50,7 +50,9 @@ P &\rightarrow N_1,\quad Q \rightarrow N_2,\quad R \rightarrow N_3,\quad S \righ
 {
   "solution_latex": "\\begin{solution}\n...\n\\end{solution}",
   "diagram_requirements": [],
-  "reasoning_notes": "Optional notes"
+  "reasoning_notes": "Optional notes",
+  "alternate_solution_recommended": false,
+  "alternate_solution_hint": null
 }
 ```
 """

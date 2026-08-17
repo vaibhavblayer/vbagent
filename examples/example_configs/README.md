@@ -128,8 +128,7 @@ All example configs follow this structure:
 
 ### Classification Agents
 - `classifier` - Main image classifier
-- `image_classifier` - Image-specific classification
-- `diagram_analyzer` - Diagram analysis
+- `diagram_classifier` - Standalone diagram classification
 - `taxonomy_classifier` - Taxonomy classification
 - `difficulty_assessor` - Difficulty assessment
 

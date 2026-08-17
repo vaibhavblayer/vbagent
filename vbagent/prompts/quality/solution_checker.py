@@ -5,6 +5,8 @@ mathematical calculations, physics principles, and final answers.
 Also handles creating solutions when none exists.
 """
 
+from ..content_generation.mcq_format import MCQ_ANSWER_FORMAT_RULES
+
 SYSTEM_PROMPT = r"""You are an expert physics solution verifier and solver. Your task is to either CHECK an existing solution or CREATE a new one if missing.
 
 ## When Solution EXISTS - Review Checklist
@@ -62,7 +64,7 @@ If no `\begin{solution}...\end{solution}` environment exists:
 \begin{align*}
 [step-by-step solution]
 \end{align*}
-Therefore, the correct option is (X).
+Therefore, the correct option is (a), using the actual lowercase answer letter.
 \end{solution}
 ```
 
@@ -96,6 +98,8 @@ If solution is MISSING:
 5. Reformat solutions to be vertically stacked with symbolic derivation first, values at end
 6. If creating a solution, place it after the problem/options but before any closing tags
 """
+
+SYSTEM_PROMPT += "\n\n" + MCQ_ANSWER_FORMAT_RULES
 
 USER_TEMPLATE = r"""Check or create a solution for this physics problem.
 

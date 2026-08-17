@@ -205,7 +205,7 @@ def generate(
                     )
                     saved = _save_generation(result)
                     all_results.append(result)
-                    console.print(f"  [green]✓[/green] {saved.get('problem', base_name)}")
+                    console.print(f"  [green]OK[/green] {saved.get('problem', base_name)}")
 
         # Mode 2: From ideas / scans directory
         elif ideas_dir or scans_dir:
@@ -240,9 +240,9 @@ def generate(
                     saved = _save_generation(result)
                 all_results.append(result)
                 if meta.get("cached"):
-                    console.print(f"  [green]✓[/green] {base_name} (cached)")
+                    console.print(f"  [green]OK[/green] {base_name} (cached)")
                 else:
-                    console.print(f"  [green]✓[/green] {base_name}")
+                    console.print(f"  [green]OK[/green] {base_name}")
 
         # Mode 3: From topic
         elif topic:
@@ -277,9 +277,9 @@ def generate(
                     saved = _save_generation(result)
                 all_results.append(result)
                 if meta.get("cached"):
-                    console.print(f"  [green]✓[/green] {base_name} (cached)")
+                    console.print(f"  [green]OK[/green] {base_name} (cached)")
                 else:
-                    console.print(f"  [green]✓[/green] {base_name}")
+                    console.print(f"  [green]OK[/green] {base_name}")
 
         # Save manifest
         if all_results:

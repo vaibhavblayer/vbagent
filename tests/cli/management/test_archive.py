@@ -44,6 +44,20 @@ The answer is B.
         assert "combined" in parts
         assert r"\ans" in parts["combined"]
 
+    def test_parse_tex_keeps_final_answer_out_of_question_part(self):
+        content = r"""
+\item Find the equilibrium.
+\begin{finalanswer}
+Stable: $C$; unstable: $A$, $E$.
+\end{finalanswer}
+"""
+
+        parts = _parse_tex(content)
+
+        assert "Find the equilibrium" in parts["question"]
+        assert r"\begin{finalanswer}" not in parts["question"]
+        assert r"\begin{finalanswer}" in parts["combined"]
+
     def test_extract_mcq_correct_option_single(self):
         """Test extracting single correct MCQ option."""
         content = r"""

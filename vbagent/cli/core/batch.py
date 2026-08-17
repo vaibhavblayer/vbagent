@@ -56,7 +56,7 @@ class SleepInhibitor:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            self._get_console().print("[dim]☕ Sleep inhibitor started (caffeinate)[/dim]")
+            self._get_console().print("[dim]ACTIVE Sleep inhibitor started (caffeinate)[/dim]")
         except FileNotFoundError:
             self._get_console().print("[yellow]Warning:[/yellow] caffeinate not found")
     
@@ -70,7 +70,7 @@ class SleepInhibitor:
             self._windows_previous_state = ctypes.windll.kernel32.SetThreadExecutionState(
                 ES_CONTINUOUS | ES_SYSTEM_REQUIRED
             )
-            self._get_console().print("[dim]☕ Sleep inhibitor started (Windows API)[/dim]")
+            self._get_console().print("[dim]ACTIVE Sleep inhibitor started (Windows API)[/dim]")
         except Exception as e:
             self._get_console().print(f"[yellow]Warning:[/yellow] Could not prevent sleep: {e}")
     
@@ -85,7 +85,7 @@ class SleepInhibitor:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            self._get_console().print("[dim]☕ Sleep inhibitor started (systemd-inhibit)[/dim]")
+            self._get_console().print("[dim]ACTIVE Sleep inhibitor started (systemd-inhibit)[/dim]")
         except FileNotFoundError:
             self._get_console().print("[dim]Sleep prevention not available (systemd-inhibit not found)[/dim]")
     
@@ -98,7 +98,7 @@ class SleepInhibitor:
             except subprocess.TimeoutExpired:
                 self.process.kill()
             self.process = None
-            self._get_console().print("[dim]☕ Sleep inhibitor stopped[/dim]")
+            self._get_console().print("[dim]ACTIVE Sleep inhibitor stopped[/dim]")
         
         if sys.platform == "win32" and self._windows_previous_state is not None:
             try:
@@ -106,7 +106,7 @@ class SleepInhibitor:
                 ES_CONTINUOUS = 0x80000000
                 ctypes.windll.kernel32.SetThreadExecutionState(ES_CONTINUOUS)
                 self._windows_previous_state = None
-                self._get_console().print("[dim]☕ Sleep inhibitor stopped[/dim]")
+                self._get_console().print("[dim]ACTIVE Sleep inhibitor stopped[/dim]")
             except Exception:
                 pass
     
@@ -190,7 +190,7 @@ def process_single_image(
     Returns True if successful, False if failed.
     """
     # Lazy imports
-    from vbagent.agents.classifier import classify as classify_image
+    from vbagent.agents.classification.question_classifier import classify_primary_image as classify_image
     from vbagent.agents.content_generation.scanner import scan as scan_image
     from vbagent.agents.diagram.tikz import generate_tikz
     from vbagent.agents.content_generation.idea import extract_ideas
@@ -700,7 +700,7 @@ def _run_batch(
                 
                 if success:
                     completed += 1
-                    console.print(f"  [green]✓ Completed[/green]")
+                    console.print(f"  [green]OK Completed[/green]")
                 else:
                     failed += 1
                 

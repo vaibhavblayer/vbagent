@@ -62,7 +62,7 @@ def index(directory: str, db: str, recursive: bool):
         with MetadataStore(db_path) as store:
             count = store.index_directory(dir_path, recursive=recursive)
     
-    console.print(f"[green]✓[/green] Indexed {count} question files\n")
+    console.print(f"[green]OK[/green] Indexed {count} question files\n")
 
 
 @metadata.command()

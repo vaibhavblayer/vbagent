@@ -12,7 +12,7 @@ import json
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from vbagent.cli.common import _get_console, format_latex
 from vbagent.config import get_config
@@ -93,7 +93,6 @@ def _save_llm_call(
 
 def _sanitize_input_for_save(input_data: list) -> list:
     """Strip base64 image data from message lists before saving to disk."""
-    import re
     sanitized = []
     for item in input_data:
         if not isinstance(item, dict):
@@ -126,18 +125,58 @@ def _sanitize_input_for_save(input_data: list) -> list:
 # ---------------------------------------------------------------------------
 # Generation cache — hash-based dedup so re-runs skip the LLM
 # ---------------------------------------------------------------------------
+_GENERATION_CACHE_SCHEMA = 2
+
+
 def _idea_hash(ideas: list[str], concepts: list[str], topic: str,
-               difficulty: str, question_type: str, subject: str) -> str:
-    """Deterministic hash of the generation inputs (for metadata only)."""
+               difficulty: str, question_type: str, subject: str,
+               with_solution: bool, with_diagram: bool) -> str:
+    """Return a deterministic fingerprint for generated output semantics."""
     blob = json.dumps({
+        "schema": _GENERATION_CACHE_SCHEMA,
         "ideas": sorted(ideas),
         "concepts": sorted(concepts),
         "topic": topic,
         "difficulty": difficulty,
         "question_type": question_type,
         "subject": subject,
+        "with_solution": with_solution,
+        "with_diagram": with_diagram,
     }, sort_keys=True)
     return hashlib.sha256(blob.encode()).hexdigest()[:16]
+
+
+def _load_generation_cache(
+    output_dir: Path,
+    base_name: str,
+    expected_key: str,
+) -> tuple[str, str | None] | None:
+    """Load a generation only when its persisted fingerprint still matches.
+
+    Cache entries created before fingerprint metadata was persisted, malformed
+    metadata, and partially written entries are treated as misses.
+    """
+    problem_path = output_dir / "problems" / f"{base_name}.tex"
+    metadata_path = output_dir / "generation" / f"{base_name}.json"
+    if not problem_path.is_file() or not metadata_path.is_file():
+        return None
+
+    try:
+        metadata = json.loads(metadata_path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+
+    if metadata.get("cache_key") != expected_key:
+        return None
+
+    try:
+        problem_tex = problem_path.read_text()
+        tikz_path = output_dir / "tikz" / f"{base_name}.tex"
+        tikz_code = tikz_path.read_text() if tikz_path.is_file() else None
+    except OSError:
+        return None
+
+    return problem_tex, tikz_code
 
 
 # ---------------------------------------------------------------------------
@@ -396,6 +435,12 @@ def _save_generation(result: GenerationResult) -> dict[str, str]:
         tikz_path = tikz_dir / f"{name}.tex"
         tikz_path.write_text(format_latex(result.tikz_code))
         saved["tikz"] = str(tikz_path)
+    else:
+        # Do not let an artifact from an older fingerprint leak into a new
+        # cache entry that intentionally has no diagram.
+        stale_tikz_path = out / "tikz" / f"{name}.tex"
+        if stale_tikz_path.is_file():
+            stale_tikz_path.unlink()
 
     # Sketch analysis
     if result.sketch_analysis:
@@ -442,7 +487,7 @@ def generate_from_sketch(
         (problem_tex, solution_tex, tikz_code, sketch_analysis_dict, idea_latex)
     """
     from vbagent.agents.content_generation.sketch_reader import analyze_sketch
-    from vbagent.agents.classification.idea_generator import generate_from_idea
+    from vbagent.agents.content_generation.idea_generator import generate_from_idea
 
     console = console or _get_console()
     subject = get_config().subject
@@ -567,7 +612,7 @@ def generate_from_ideas_dir(
 
     Returns list of (problem_tex, solution_tex, tikz_code, meta_dict, idea_latex).
     """
-    from vbagent.agents.classification.idea_generator import generate_from_idea
+    from vbagent.agents.content_generation.idea_generator import generate_from_idea
 
     console = console or _get_console()
     subject = get_config().subject
@@ -622,18 +667,15 @@ def generate_from_ideas_dir(
 
         effective_topic = topic or idea_data.get("topic", "") or subject
 
-        # Check cache — look for existing problems/{base_name}.tex
+        # Cache hits require both artifacts and matching generation metadata.
         cache_key = _idea_hash(ideas, concepts, effective_topic,
-                               difficulty, question_type, subject)
+                               difficulty, question_type, subject,
+                               with_solution, with_diagram)
         if output_base:
-            problems_file = output_base / "problems" / f"{base_name}.tex"
-            if problems_file.exists():
+            cached = _load_generation_cache(output_base, base_name, cache_key)
+            if cached:
                 console.print(f"  [cyan]↺ cached[/cyan] ({base_name})")
-                cached_tex = problems_file.read_text()
-                cached_tikz = None
-                tikz_file = output_base / "tikz" / f"{base_name}.tex"
-                if tikz_file.exists():
-                    cached_tikz = tikz_file.read_text()
+                cached_tex, cached_tikz = cached
                 meta = {"source_file": source_file, "base_name": base_name,
                         "cached": True, "cache_key": cache_key}
                 results.append((cached_tex, "", cached_tikz, meta, ""))
@@ -712,7 +754,7 @@ def generate_from_topic(
     Returns:
         (problem_tex, solution_tex, tikz_code, meta_dict, idea_latex)
     """
-    from vbagent.agents.classification.idea_generator import generate_from_idea
+    from vbagent.agents.content_generation.idea_generator import generate_from_idea
 
     console = console or _get_console()
     subject = get_config().subject
@@ -720,17 +762,16 @@ def generate_from_topic(
     ideas = [idea] if idea else [f"{topic} problem"]
     concepts = [topic]
 
-    # Check cache — look for existing problems/{base_name}.tex
-    cache_key = _idea_hash(ideas, concepts, topic, difficulty, question_type, subject)
+    # Cache hits require both artifacts and matching generation metadata.
+    cache_key = _idea_hash(
+        ideas, concepts, topic, difficulty, question_type, subject,
+        with_solution, with_diagram,
+    )
     if output_dir:
-        problems_file = output_dir / "problems" / f"{base_name}.tex"
-        if problems_file.exists():
+        cached = _load_generation_cache(output_dir, base_name, cache_key)
+        if cached:
             console.print(f"  [cyan]↺ cached[/cyan] ({base_name})")
-            cached_tex = problems_file.read_text()
-            cached_tikz = None
-            tikz_file = output_dir / "tikz" / f"{base_name}.tex"
-            if tikz_file.exists():
-                cached_tikz = tikz_file.read_text()
+            cached_tex, cached_tikz = cached
             meta = {"topic": topic, "idea": idea, "base_name": base_name,
                     "cached": True, "cache_key": cache_key}
             return cached_tex, "", cached_tikz, meta, ""
@@ -826,8 +867,8 @@ def _generate_tikz_for_problem(
             problem_text=problem_tex,
             diagram_context="problem",
         )
-        console.print(f"  [green]✓[/green] Diagram generated (agent: {agent_used})")
+        console.print(f"  [green]OK[/green] Diagram generated (agent: {agent_used})")
         return tikz_code
     except Exception as e:
-        console.print(f"  [yellow]⚠[/yellow] Diagram failed: {e}")
+        console.print(f"  [yellow]WARN[/yellow] Diagram failed: {e}")
         return None

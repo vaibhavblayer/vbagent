@@ -1,6 +1,7 @@
 """Tests for TikZ router."""
 
 import pytest
+
 from vbagent.agents.diagram.tikz_router import (
     route_tikz_agent,
     get_agent_capabilities,
@@ -66,6 +67,38 @@ def test_route_default():
     """Test default routing."""
     agent = route_tikz_agent()
     assert agent == "generic"
+
+
+@pytest.mark.parametrize(
+    ("diagram_type", "expected"),
+    [
+        ("apparatus_setup", "setup"),
+        ("logic_gate", "gates"),
+        ("number_line", "number_line"),
+        ("venn_set", "venn_diagram"),
+        ("calculus_function", "function_graph"),
+        ("coordinate_conic", "coordinate_geometry"),
+        ("geometric_triangle", "geometric_figure"),
+        ("organic_structure", "organic_structure"),
+        ("reaction_mechanism", "reaction_mechanism"),
+        ("orbital", "orbital"),
+        ("lewis", "lewis_structure"),
+        ("chemical_equation", "chemical_equation"),
+        ("enthalpy", "energy_diagram"),
+        ("force", "fbd"),
+        ("circuit", "circuit"),
+        ("incline", "mechanics"),
+        ("standing_wave", "wave"),
+        ("plot", "graph"),
+        ("ray", "optics"),
+    ],
+)
+def test_manual_diagram_type_routes(diagram_type, expected):
+    assert route_tikz_agent(diagram_type=diagram_type) == expected
+
+
+def test_problem_context_redirects_fbd_to_setup():
+    assert route_tikz_agent(diagram_type="fbd", diagram_context="problem") == "setup"
 
 
 def test_get_agent_capabilities():

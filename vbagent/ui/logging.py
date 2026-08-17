@@ -1,18 +1,23 @@
-"""Structured logging for agent I/O."""
+"""Structured agent logging and compact terminal rendering."""
 
+from dataclasses import dataclass
+from contextlib import contextmanager
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 import json
+import os
 import re
 import threading
+import traceback
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.text import Text
-from rich.table import Table
 from rich import box
 
-# Shared console instance — import this from other modules to avoid overlap
+# Shared default console. CLI code should obtain it through get_agent_console().
 console = Console()
 
 # Lock to synchronize debug log output with spinners
@@ -21,6 +26,82 @@ _log_lock = threading.Lock()
 # Thread-local task tag — set by parallel orchestrators so log output
 # shows which pipeline task (Scan / TikZ / Options) an agent belongs to.
 _task_tag = threading.local()
+_logging_context = threading.local()
+_event_lock = threading.Lock()
+
+_LEVELS = {
+    "DEBUG": 10,
+    "INFO": 20,
+    "WARNING": 30,
+    "ERROR": 40,
+    "CRITICAL": 50,
+}
+
+
+@dataclass(frozen=True)
+class AgentLoggingContext:
+    """Console and visibility settings inherited by pipeline workers."""
+
+    console: Console
+    quiet: bool = False
+
+
+def configure_agent_logging(*, output_console: Console | None = None, quiet: bool = False) -> None:
+    """Configure agent rendering for the current thread."""
+    _logging_context.value = AgentLoggingContext(
+        console=output_console or console,
+        quiet=quiet,
+    )
+
+
+@contextmanager
+def agent_logging_context(*, output_console: Console | None = None, quiet: bool = False):
+    """Temporarily configure logging without leaking state to later calls."""
+    previous = capture_agent_logging_context()
+    configure_agent_logging(output_console=output_console, quiet=quiet)
+    try:
+        yield capture_agent_logging_context()
+    finally:
+        apply_agent_logging_context(previous)
+
+
+def capture_agent_logging_context() -> AgentLoggingContext:
+    """Capture current settings so a child thread can inherit them."""
+    return getattr(
+        _logging_context,
+        "value",
+        AgentLoggingContext(console=console, quiet=False),
+    )
+
+
+def apply_agent_logging_context(context: AgentLoggingContext) -> None:
+    """Apply a context captured by a parent thread."""
+    _logging_context.value = context
+
+
+def get_agent_console() -> Console:
+    """Return the context console or the shared default console."""
+    return capture_agent_logging_context().console
+
+
+def _configured_level() -> str:
+    try:
+        from vbagent.config import get_config
+
+        config = get_config()
+        level = str(getattr(config, "log_level", "") or "").upper()
+        if level in _LEVELS:
+            return level
+        return "DEBUG" if getattr(config, "debug", False) else "INFO"
+    except Exception:
+        return "INFO"
+
+
+def _should_render(level: str) -> bool:
+    context = capture_agent_logging_context()
+    if context.quiet:
+        return False
+    return _LEVELS[level] >= _LEVELS[_configured_level()]
 
 
 def set_task_tag(tag: str | None):
@@ -35,6 +116,52 @@ def _get_tagged_name(agent_name: str) -> str:
         return f"{tag} › {agent_name}"
     return agent_name
 
+
+def _event_log_path() -> Path | None:
+    configured = os.environ.get("VBAGENT_LOG_FILE")
+    if configured:
+        if configured.strip().lower() in {"0", "off", "false", "none"}:
+            return None
+        return Path(configured).expanduser()
+    if _configured_level() == "DEBUG":
+        return Path(".vbagent/logs/agent-events.jsonl")
+    return None
+
+
+def record_agent_event(event: str, agent_name: str, **fields) -> None:
+    """Append a metadata-only lifecycle event when event logging is enabled."""
+    path = _event_log_path()
+    if path is None:
+        return
+
+    payload = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "event": event,
+        "agent": agent_name,
+    }
+    tag = getattr(_task_tag, "value", None)
+    if tag:
+        payload["stage"] = tag
+    payload.update(_sanitize_event_fields(fields))
+
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        line = json.dumps(payload, ensure_ascii=False, default=str)
+        with _event_lock:
+            with path.open("a", encoding="utf-8") as handle:
+                handle.write(line + "\n")
+    except OSError:
+        # Logging must never invalidate a completed model response.
+        return
+
+
+def _sanitize_event_fields(fields: dict) -> dict:
+    sanitized = _sanitize_dict(fields)
+    for key in ("error", "message"):
+        if key in sanitized:
+            sanitized[key] = _truncate(str(sanitized[key]), 1000)
+    return sanitized
+
 _MAX_TEXT_LEN = 600
 _MAX_JSON_LEN = 1200
 _BASE64_PATTERN = re.compile(
@@ -44,25 +171,25 @@ _RAW_BASE64_PATTERN = re.compile(r'[A-Za-z0-9+/=]{200,}')
 
 
 def log_agent_input(agent_name, input_data, model=None):
-    """Log agent input."""
+    """Render a structured JSON request preview."""
+    record_agent_event("request_queued", agent_name, model=model)
+    if not _should_render("INFO"):
+        return
+
     display_name = _get_tagged_name(agent_name)
     title = f"[INPUT] {display_name}"
     if model:
         title += f" : {model}"
     
-    # Show which API key is being used (if key manager is active)
-    try:
-        from vbagent.api_keys.manager import KeyManager
-        km = KeyManager.get_instance()
-        if km.is_enabled() and km.current_key_name:
-            title += f" : {km.current_key_name}"
-    except Exception:
-        pass
-    
-    body = _format_input(input_data)
+    body = _format_dict({
+        "agent": display_name,
+        "model": model,
+        "input": _sanitize_dict(input_data),
+    }, _MAX_JSON_LEN)
     with _log_lock:
-        console.print()
-        console.print(Panel(
+        output = get_agent_console()
+        output.print()
+        output.print(Panel(
             body, title=title, title_align="left",
             border_style="#3b82f6", box=box.SIMPLE,
             padding=(1, 2),
@@ -70,37 +197,92 @@ def log_agent_input(agent_name, input_data, model=None):
 
 
 def log_agent_output(agent_name, output_data, duration=None):
-    """Log agent output."""
+    """Render a structured JSON response preview."""
+    if not _should_render("INFO"):
+        return
+
     display_name = _get_tagged_name(agent_name)
     title = f"[OUTPUT] {display_name}"
     if duration is not None:
         title += f" : {duration:.2f}s"
     
-    # Don't truncate for scanner/solution agents - show full LaTeX
-    skip_truncation = any(keyword in agent_name.lower() for keyword in ['scanner', 'solution', 'problem'])
-    body = _format_output(output_data, skip_truncation=skip_truncation)
+    skip_truncation = any(
+        keyword in agent_name.lower()
+        for keyword in ("scanner", "solution", "problem")
+    )
+    if hasattr(output_data, "model_dump"):
+        serialized_output = output_data.model_dump()
+    else:
+        serialized_output = output_data
+    body = _format_dict({
+        "agent": display_name,
+        "duration": f"{duration:.2f}s" if duration is not None else None,
+        "output": _sanitize_dict(serialized_output),
+    }, 999999 if skip_truncation else _MAX_JSON_LEN)
     
     with _log_lock:
-        console.print()
-        console.print(Panel(
+        output = get_agent_console()
+        output.print()
+        output.print(Panel(
             body, title=title, title_align="left",
             border_style="#22c55e", box=box.SIMPLE,
             padding=(1, 2),
         ))
 
 
-def log_agent_error(agent_name, error):
-    """Log agent error."""
+def log_agent_started(agent_name, *, model="", queue_duration=0.0,
+                      key_name=None, has_image=False, reasoning="none"):
+    """Record the point at which a queued request receives an API slot."""
+    record_agent_event(
+        "request_started",
+        agent_name,
+        model=model,
+        queue_duration=round(queue_duration, 4),
+        key_name=key_name,
+        has_image=has_image,
+        reasoning=reasoning,
+    )
+
+
+def log_agent_error(agent_name, error, **metadata):
+    """Record and render a failed or cancelled request."""
+    attached = getattr(error, "_vbagent_metadata", {})
+    details = {**attached, **metadata}
     display_name = _get_tagged_name(agent_name)
     err_type = type(error).__name__
     err_msg = str(error)
+    event = "cancelled" if isinstance(error, TimeoutError) else "failed"
+    record_agent_event(event, agent_name, error_type=err_type, error=err_msg, **details)
+
+    if not _should_render("ERROR"):
+        return
+
+    if _configured_level() != "DEBUG":
+        parts = [f"[red]ERROR {display_name}[/red]", f"{err_type}: {err_msg}"]
+        duration = details.get("request_duration")
+        if duration is not None:
+            parts.append(f"{float(duration):.1f}s")
+        model = details.get("model")
+        if model:
+            parts.append(str(model).replace("openai/", ""))
+        with _log_lock:
+            line = Text.from_markup(" [dim]·[/dim] ".join(parts))
+            line.no_wrap = True
+            line.overflow = "ellipsis"
+            get_agent_console().print(line)
+        return
+
     body = Text()
     body.append(err_type, style="#f87171")
     body.append(": ", style="#6b7280")
     body.append(_truncate(err_msg, 400), style="#e5e7eb")
+    if error.__traceback__:
+        trace = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+        body.append("\n\n" + _truncate(trace, 2000), style="#6b7280")
     with _log_lock:
-        console.print()
-        console.print(Panel(
+        output = get_agent_console()
+        output.print()
+        output.print(Panel(
             body, title=f"[ERROR] {display_name}",
             title_align="left", border_style="#ef4444",
             box=box.SIMPLE, padding=(1, 2),
@@ -108,63 +290,101 @@ def log_agent_error(agent_name, error):
 
 
 def log_agent_usage(agent_name, *, model="", duration=0.0, usage=None,
-                    response_id=None, has_image=False, reasoning="none"):
-    """Log agent completion as a compact JSON panel.
-
-    Always shown (not gated by debug) — this is the primary completion indicator.
-    """
-    import json as _json
-    from rich.syntax import Syntax
+                    response_id=None, has_image=False, reasoning="none",
+                    queue_duration=0.0, request_duration=None, key_name=None,
+                    cache_group_id=None):
+    """Record completion and render structured JSON usage metadata."""
 
     short_model = model.replace("openai/", "") if model else "?"
 
     data: dict = {
-        "duration": f"{duration:.1f}s",
-        "model": short_model,
+        "input": 0,
+        "output": 0,
+        "cached": 0,
+        "cache_write": 0,
+        "cache_hit_percent": 0.0,
+        "cache_write_percent": 0.0,
+        "reasoning": 0,
+        "requests": 0,
     }
-
-    if reasoning and reasoning != "none":
-        data["reasoning"] = reasoning
-
-    if has_image:
-        data["image"] = True
 
     if usage is not None:
         inp = getattr(usage, "input_tokens", 0) or 0
         out = getattr(usage, "output_tokens", 0) or 0
         cached = 0
+        cache_write = 0
         reasoning_tok = 0
         inp_details = getattr(usage, "input_tokens_details", None)
         if inp_details:
             cached = getattr(inp_details, "cached_tokens", 0) or 0
+            cache_write = getattr(inp_details, "cache_write_tokens", 0) or 0
         out_details = getattr(usage, "output_tokens_details", None)
         if out_details:
             reasoning_tok = getattr(out_details, "reasoning_tokens", 0) or 0
 
-        tokens: dict = {"input": inp}
-        if cached:
-            tokens["cached"] = cached
-        tokens["output"] = out
-        if reasoning_tok:
-            tokens["reasoning"] = reasoning_tok
-        data["tokens"] = tokens
+        data.update({
+            "input": inp,
+            "output": out,
+            "cached": cached,
+            "cache_write": cache_write,
+            "cache_hit_percent": round((cached / inp) * 100, 1) if inp else 0.0,
+            "cache_write_percent": round((cache_write / inp) * 100, 1) if inp else 0.0,
+            "reasoning": reasoning_tok,
+            "requests": getattr(usage, "requests", 0) or 0,
+        })
 
-        reqs = getattr(usage, "requests", 0) or 0
-        if reqs > 1:
-            data["requests"] = reqs
+    actual_request_duration = duration if request_duration is None else request_duration
+    record_agent_event(
+        "completed",
+        agent_name,
+        model=short_model,
+        duration=round(duration, 4),
+        request_duration=round(actual_request_duration, 4),
+        queue_duration=round(queue_duration, 4),
+        key_name=key_name,
+        cache_group_id=cache_group_id,
+        response_id=response_id,
+        has_image=has_image,
+        reasoning_effort=reasoning,
+        tokens=data,
+    )
 
-    if response_id:
-        short_id = response_id if len(response_id) <= 20 else f"…{response_id[-12:]}"
-        data["id"] = short_id
+    if not _should_render("INFO"):
+        return
 
-    raw = _json.dumps(data, indent=2, ensure_ascii=False)
-    body = Syntax(raw, "json", theme="monokai", word_wrap=True, padding=1)
-
+    usage_payload = {
+        "agent": _get_tagged_name(agent_name),
+        "status": "completed",
+        "duration": f"{duration:.1f}s",
+        "request_duration": f"{actual_request_duration:.1f}s",
+        "queue_duration": f"{queue_duration:.1f}s",
+        "model": short_model,
+        "reasoning": reasoning,
+        "image": has_image,
+        "tokens": data,
+        "key_name": key_name,
+        "cache_group": cache_group_id,
+        "response_id": response_id,
+    }
     with _log_lock:
-        display_name = _get_tagged_name(agent_name)
-        console.print()
-        console.print(f"[dim]✓ {display_name}[/dim]")
-        console.print(body)
+        output = get_agent_console()
+        output.print()
+        output.print(Panel(
+            _format_dict(usage_payload, _MAX_JSON_LEN),
+            title=f"[USAGE] {_get_tagged_name(agent_name)}",
+            title_align="left",
+            border_style="#a78bfa",
+            box=box.SIMPLE,
+            padding=(1, 2),
+        ))
+
+
+def _compact_number(value: int) -> str:
+    if value >= 1_000_000:
+        return f"{value / 1_000_000:.1f}m"
+    if value >= 1_000:
+        return f"{value / 1_000:.1f}k"
+    return str(value)
 
 
 def _format_input(data):

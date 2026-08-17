@@ -1,9 +1,12 @@
 """Match-the-following question scanner prompt."""
 
 from .common import DIAGRAM_PLACEHOLDER
+from .._shared import MCQ_ANSWER_FORMAT_RULES
 
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
+
+Subject: Physics
 
 **Goal:** Analyze the provided image and extract a matching-type question. Format the texts in LaTeX format with the question in `\item` command, then diagram in tikz env nested within center env if there is any diagram present, then make the table for list/column/anything, then put the options in a tasks environment.
 
@@ -89,7 +92,7 @@ SYSTEM_PROMPT = r"""
 ---
 
 **Final Check:** Ensure your output is ONLY the LaTeX snippet from `\item` to `\end{solution}` with no extra text or comments.
-"""
+""" + MCQ_ANSWER_FORMAT_RULES
 
 USER_TEMPLATE = "Extract LaTeX from this physics question image."
 

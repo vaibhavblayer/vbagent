@@ -19,7 +19,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from rich.console import Console
@@ -30,9 +30,24 @@ if TYPE_CHECKING:
 # =============================================================================
 
 def _get_console():
-    """Lazy import of rich Console."""
-    from rich.console import Console
-    return Console()
+    """Return the shared/context-aware Rich console."""
+    from vbagent.ui.logging import get_agent_console
+    return get_agent_console()
+
+
+def configure_cli_verbosity(ctx, param, verbose: bool) -> bool:
+    """Apply a core CLI command's verbose/quiet choice to agent telemetry."""
+    from vbagent.ui.logging import (
+        capture_agent_logging_context,
+        configure_agent_logging,
+    )
+
+    current = capture_agent_logging_context()
+    configure_agent_logging(
+        output_console=current.console,
+        quiet=not verbose,
+    )
+    return verbose
 
 
 def _get_panel(*args, **kwargs):
@@ -592,7 +607,7 @@ def format_latex(content: str) -> str:
     # Clean up triple+ blank lines
     result = re.sub(r'\n{3,}', '\n\n', result)
     # Strip trailing whitespace on each line
-    result = '\n'.join(l.rstrip() for l in result.split('\n'))
+    result = '\n'.join(line.rstrip() for line in result.split('\n'))
 
     return result.strip() + '\n'
 
