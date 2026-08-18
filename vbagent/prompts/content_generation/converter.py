@@ -8,7 +8,7 @@ Prompts for converting physics questions between different formats:
 - Passage/Comprehension type
 """
 
-from .mcq_format import MCQ_ANSWER_FORMAT_RULES
+from .mcq_format import MATCH_OPTION_FORMAT_RULES, MCQ_ANSWER_FORMAT_RULES
 
 SYSTEM_PROMPT = r"""You are an expert physics educator specializing in question format conversion. Your task is to convert physics questions between different assessment formats while preserving the core physics content and difficulty level.
 
@@ -127,10 +127,10 @@ Example: `...the current will be \hrulefill A. \ansint{3}`
 \end{center}
 
 \begin{tasks}(2)
-    \task $a \rightarrow p$, $b \rightarrow q$, $c \rightarrow r$, $d \rightarrow s$
-    \task $a \rightarrow q$, $b \rightarrow p$, $c \rightarrow s$, $d \rightarrow r$ \ans
-    \task $a \rightarrow r$, $b \rightarrow s$, $c \rightarrow p$, $d \rightarrow q$
-    \task $a \rightarrow s$, $b \rightarrow r$, $c \rightarrow q$, $d \rightarrow p$
+    \task $\mathrm{a\rightarrow p,\ b\rightarrow q,\ c\rightarrow r,\ d\rightarrow s}$
+    \task $\mathrm{a\rightarrow q,\ b\rightarrow p,\ c\rightarrow s,\ d\rightarrow r}$ \ans
+    \task $\mathrm{a\rightarrow r,\ b\rightarrow s,\ c\rightarrow p,\ d\rightarrow q}$
+    \task $\mathrm{a\rightarrow s,\ b\rightarrow r,\ c\rightarrow q,\ d\rightarrow p}$
 \end{tasks}
 \begin{solution}
 \begin{align*}
@@ -145,7 +145,8 @@ Therefore, the correct option is (b).
 ```
 - Column I uses (a), (b), (c), (d) labels
 - Column II uses (p), (q), (r), (s) labels
-- Options show matching combinations using `$a \rightarrow p$` notation
+- Put each complete matching combination inside one `$\mathrm{...}$` expression
+- Keep `\ans` outside the closing `$` of the correct option
 - Use `\renewcommand{\arraystretch}{2}` for table spacing
 
 ### Passage/Comprehension Type (passage):
@@ -320,7 +321,7 @@ FORMAT B - Answer in terms of a variable (COMMON):
 - Create a matching table with Column I (a, b, c, d) and Column II (p, q, r, s)
 - Use tabular environment with \renewcommand{\arraystretch}{2} for spacing
 - Create 4 options showing different matching combinations
-- Use $a \rightarrow p$ notation for matches in options
+- Put each full combination in one $\mathrm{...}$ expression, with all arrows and commas inside it
 - Mark the correct combination with \ans
 - Solution should explain WHY each item matches
 
@@ -333,9 +334,10 @@ Structure:
     \end{tabular}
 \end{center}
 \begin{tasks}(2)
-    \task [combination 1]
-    \task [combination 2] \ans
-    ...
+    \task $\mathrm{a\rightarrow p,\ b\rightarrow q,\ c\rightarrow r,\ d\rightarrow s}$
+    \task $\mathrm{a\rightarrow q,\ b\rightarrow p,\ c\rightarrow s,\ d\rightarrow r}$ \ans
+    \task $\mathrm{a\rightarrow r,\ b\rightarrow s,\ c\rightarrow p,\ d\rightarrow q}$
+    \task $\mathrm{a\rightarrow s,\ b\rightarrow r,\ c\rightarrow q,\ d\rightarrow p}$
 \end{tasks}
 \begin{solution}...\end{solution}""",
     
@@ -384,6 +386,8 @@ def get_format_instructions(target_format: str) -> str:
         Format-specific instruction string
     """
     instructions = FORMAT_INSTRUCTIONS.get(target_format, "")
+    if target_format == "match":
+        instructions += MATCH_OPTION_FORMAT_RULES
     if target_format in {"mcq_sc", "mcq_mc", "passage", "match"}:
         instructions += MCQ_ANSWER_FORMAT_RULES
     return instructions

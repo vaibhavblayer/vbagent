@@ -12,6 +12,7 @@ from .formatting_rules import (
     TIKZ_GUIDELINES_SHORT,
 )
 from .common import PASSAGE_DIAGRAM_INLINE
+from ...mcq_format import MATCH_OPTION_FORMAT_RULES_UNMARKED
 
 
 def get_problem_prompt(question_type: str) -> str:
@@ -123,8 +124,44 @@ Extract the passage and all sub-questions with their options.
 **Output:** ONLY the LaTeX from passage through all questions and options. Do NOT include solutions.
 """
 
+    elif question_type == "match":
+        return base_prompt + r"""
+## Match the Following - Problem Extraction
+
+1. **Problem Statement (`\item ...`)**
+   - Begin with `\item`
+   - Extract the exact question text
+
+2. **Diagram (if present)**
+""" + DIAGRAM_PLACEHOLDER + r"""
+
+3. **Matching Table**
+   - Use a tabular environment for the two columns
+   - Extract every item from both columns without shortening it
+
+4. **Options (`\begin{tasks}(2) ... \end{tasks}`)**
+   - Extract all matching combinations
+   - Do NOT mark any answer with `\ans` — answer marking is done later by the solution agent
+
+---
+
+""" + MATCH_OPTION_FORMAT_RULES_UNMARKED + r"""
+
+---
+
+""" + PROBLEM_FORMATTING_RULES + r"""
+
+---
+
+""" + LATEX_FORMATTING_RULES + r"""
+
+---
+
+**Output:** ONLY the LaTeX from `\item` through the table and options. Do NOT include solution.
+"""
+
     else:
-        # subjective, match, integer — default
+        # subjective and integer — default
         return base_prompt + r"""
 ## Subjective/Other - Problem Extraction
 

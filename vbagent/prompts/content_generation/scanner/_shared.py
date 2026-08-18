@@ -4,7 +4,11 @@ Constants that are identical (or near-identical) across all subjects.
 Subject-specific constants live in each subject's common.py.
 """
 
-from ..mcq_format import MCQ_ANSWER_FORMAT_RULES
+from ..mcq_format import (
+    MATCH_OPTION_FORMAT_RULES,
+    MATCH_OPTION_FORMAT_RULES_UNMARKED,
+    MCQ_ANSWER_FORMAT_RULES,
+)
 
 # Diagram placeholder instruction - scanner outputs placeholder, TikZ agent generates actual code
 DIAGRAM_PLACEHOLDER = r"""
@@ -123,6 +127,9 @@ OPTIONS_WITH_DIAGRAMS_BIOLOGY = options_with_diagrams(r"""    ❌ \begin{tikzpic
 
 
 __all__ = [
+    "MATCH_OPTION_FORMAT_RULES",
+    "MATCH_OPTION_FORMAT_RULES_UNMARKED",
+    "MCQ_ANSWER_FORMAT_RULES",
     "DIAGRAM_PLACEHOLDER",
     "PASSAGE_DIAGRAM_INLINE",
     "options_with_diagrams",

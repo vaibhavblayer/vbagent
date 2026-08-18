@@ -1,7 +1,7 @@
 """Match-the-following question scanner prompt."""
 
 from .common import DIAGRAM_PLACEHOLDER
-from .._shared import MCQ_ANSWER_FORMAT_RULES
+from .._shared import MATCH_OPTION_FORMAT_RULES, MCQ_ANSWER_FORMAT_RULES
 
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
@@ -63,10 +63,10 @@ Subject: Physics
 \end{center}
 
 \begin{tasks}(2)
-    \task $a \rightarrow p$, $b \rightarrow q$, $c \rightarrow r$, $d \rightarrow s$
-    \task $a \rightarrow q$, $b \rightarrow p$, $c \rightarrow s$, $d \rightarrow r$ \ans
-    \task $a \rightarrow r$, $b \rightarrow s$, $c \rightarrow p$, $d \rightarrow q$
-    \task $a \rightarrow s$, $b \rightarrow r$, $c \rightarrow q$, $d \rightarrow p$
+    \task $\mathrm{a\rightarrow p,\ b\rightarrow q,\ c\rightarrow r,\ d\rightarrow s}$
+    \task $\mathrm{a\rightarrow q,\ b\rightarrow p,\ c\rightarrow s,\ d\rightarrow r}$ \ans
+    \task $\mathrm{a\rightarrow r,\ b\rightarrow s,\ c\rightarrow p,\ d\rightarrow q}$
+    \task $\mathrm{a\rightarrow s,\ b\rightarrow r,\ c\rightarrow q,\ d\rightarrow p}$
 \end{tasks}
 \begin{solution}
     \begin{align*}
@@ -92,7 +92,7 @@ Subject: Physics
 ---
 
 **Final Check:** Ensure your output is ONLY the LaTeX snippet from `\item` to `\end{solution}` with no extra text or comments.
-""" + MCQ_ANSWER_FORMAT_RULES
+""" + MATCH_OPTION_FORMAT_RULES + MCQ_ANSWER_FORMAT_RULES
 
 USER_TEMPLATE = "Extract LaTeX from this physics question image."
 

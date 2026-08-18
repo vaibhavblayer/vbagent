@@ -12,6 +12,7 @@ from .formatting_rules import (
     TIKZ_GUIDELINES_SHORT,
 )
 from .common import PASSAGE_DIAGRAM_INLINE
+from ...mcq_format import MATCH_OPTION_FORMAT_RULES_UNMARKED
 
 
 def get_problem_prompt(question_type: str) -> str:
@@ -221,6 +222,10 @@ Extract the passage and all sub-questions with their options.
 4. **Options (`\begin{tasks}(2) ... \end{tasks}`)**
    - Extract matching options
    - Do NOT mark any answer with `\ans` — answer marking is done later by the solution agent
+
+---
+
+""" + MATCH_OPTION_FORMAT_RULES_UNMARKED + r"""
 
 ---
 
