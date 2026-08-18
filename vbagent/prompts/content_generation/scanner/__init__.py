@@ -12,6 +12,7 @@ Each subject has its own subdirectory with question-type specific prompts.
 # ``SCANNER_PROMPTS`` API represented the physics prompts; subject-aware callers
 # should use ``get_scanner_prompt`` instead.
 from .physics import SCANNER_PROMPTS
+from ..table_format import TABLE_FORMAT_RULES
 
 
 # Default user template for all scanner types
@@ -45,7 +46,7 @@ def get_scanner_prompt(question_type: str, subject: str = "physics") -> str:
         # Fallback to physics for unknown subjects
         from .physics import get_prompt
     
-    return get_prompt(question_type)
+    return get_prompt(question_type) + "\n\n" + TABLE_FORMAT_RULES
 
 
 def get_user_template(subject: str = "physics") -> str:

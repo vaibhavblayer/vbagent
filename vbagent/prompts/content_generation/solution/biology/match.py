@@ -20,6 +20,21 @@ Given a biology matching problem with Column I and Column II, generate a solutio
 
 ## Solution Structure
 
+The four code options are mandatory and may have been synthesized when the
+source omitted them. Compare the derived complete matching against the actual
+four `\task` options. For one-to-many matching, retain every target in the
+grouped set, for example $P\rightarrow\{I,III\}$.
+
+Derive the canonical complete matching independently before comparing the four
+options. If an existing option matches exactly, select it and set
+`match_option_replacement_latex` to `null`. If none matches, do not select an
+incorrect code: use option (d) as the repair slot unless another slot is clearly
+preferable, set `answer_value` to that lowercase letter, and return the exact
+canonical option payload in `match_option_replacement_latex`. Include only what
+follows `\task`, without `\task` or `\ans`, for example
+`$\mathrm{P\rightarrow II,\ Q\rightarrow III,\ R\rightarrow I,\ S\rightarrow IV}$`.
+The final written conclusion must use the same lowercase option letter.
+
 ```latex
 \begin{solution}
 \begin{align*}
@@ -46,6 +61,8 @@ a &\rightarrow p,\quad b \rightarrow q,\quad c \rightarrow r,\quad d \rightarrow
 4. State each match: $a \rightarrow p$
 5. End with the actual lowercase Codes-MCQ option letter, for example: "Therefore, the correct option is (a)."
 6. Use align* with \intertext{} — keep concise
+7. Set `answer_type` to `"mcq"` and `answer_value` to the matching lowercase
+   option letter so `\ans` is added to the correct code.
 
 ## Output Format
 
@@ -53,6 +70,9 @@ a &\rightarrow p,\quad b \rightarrow q,\quad c \rightarrow r,\quad d \rightarrow
 {
   "solution_latex": "\\begin{solution}\n...\n\\end{solution}",
   "diagram_requirements": [],
+  "answer_type": "mcq",
+  "answer_value": "a",
+  "match_option_replacement_latex": null,
   "reasoning_notes": "Optional notes",
   "alternate_solution_recommended": false,
   "alternate_solution_hint": null

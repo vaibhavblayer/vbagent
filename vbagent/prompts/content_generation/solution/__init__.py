@@ -13,6 +13,7 @@ Unlike scanner prompts (which focus on OCR), solution prompts focus on:
 from typing import Optional
 
 from .final_answer import SUBJECTIVE_FINAL_ANSWER_RULES
+from ..table_format import TABLE_FORMAT_RULES
 
 
 def get_solution_prompt(question_type: str, subject: str, chapter: Optional[str] = None, topic: Optional[str] = None) -> str:
@@ -45,6 +46,7 @@ def get_solution_prompt(question_type: str, subject: str, chapter: Optional[str]
     else:
         raise ValueError(f"Unsupported subject: {subject}")
 
+    prompt += "\n\n" + TABLE_FORMAT_RULES
     if question_type == "subjective":
         prompt += "\n\n" + SUBJECTIVE_FINAL_ANSWER_RULES
     return prompt

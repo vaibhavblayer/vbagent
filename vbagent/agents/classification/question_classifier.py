@@ -86,7 +86,7 @@ def create_question_classifier(subject: str = "physics"):
 
 def _classification_cache_group(subject: str) -> str:
     """Return the stable cache group for one version of a subject prompt."""
-    return f"vbagent:question-classifier:v2:{subject}"
+    return f"vbagent:question-classifier:v3:{subject}"
 
 
 def _uses_explicit_prompt_cache(model: str) -> bool:

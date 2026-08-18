@@ -864,6 +864,66 @@ def test_duplicate_option_sets_keep_last_definition_once():
     assert "new B" in result
 
 
+def test_match_table_diagrams_are_defined_once_and_consumed_in_cells():
+    """Matching-row diagrams remain inside their corresponding table cells."""
+    latex = r"""\item Match the graphs.
+%% MATCH_DIAGRAMS: Column-I graphs
+\begin{center}
+\begin{tabular}{c|c|c|l}
+(A) & \MatchA & (P) & First statement \\
+(B) & \MatchB & (Q) & Second statement \\
+\end{tabular}
+\end{center}
+\begin{tasks}(2)
+\task $\mathrm{A\rightarrow P,\ B\rightarrow Q}$
+\task $\mathrm{A\rightarrow Q,\ B\rightarrow P}$
+\end{tasks}"""
+    tikz_code = r"""\pgfmathsetmacro{\axisWidth}{2.5}
+\def\MatchA{%
+\begin{tikzpicture}[baseline=(current bounding box.center)]
+\draw[->] (0,0) -- (\axisWidth,0);
+\draw[thick] plot[domain=0:2] ({\x},{\x});
+\end{tikzpicture}}
+\def\MatchB{%
+\begin{tikzpicture}[baseline=(current bounding box.center)]
+\draw[->] (0,0) -- (\axisWidth,0);
+\draw[thick] plot[domain=0:2] ({\x},{2-\x});
+\end{tikzpicture}}"""
+
+    once = insert_tikz_into_latex(latex, tikz_code)
+    twice = insert_tikz_into_latex(once, tikz_code)
+
+    assert twice.count(r"\def\MatchA") == 1
+    assert twice.count(r"\def\MatchB") == 1
+    assert twice.count(r"\pgfmathsetmacro{\axisWidth}{2.5}") == 1
+    assert twice.index(r"\def\MatchA") < twice.index(r"\begin{tabular}")
+    assert r"(A) & \MatchA & (P)" in twice
+    assert r"(B) & \MatchB & (Q)" in twice
+    assert "MATCH_DIAGRAMS" not in twice
+
+
+def test_standalone_and_match_table_diagrams_can_coexist():
+    """A separate stem diagram is preserved alongside table-cell diagrams."""
+    latex = r"""\item Use the setup and match the graphs.
+\begin{center}\input{diagram}\end{center}
+\begin{center}
+\begin{tabular}{c|c}
+(A) & \MatchA \\
+\end{tabular}
+\end{center}"""
+    tikz_code = r"""\begin{tikzpicture}\node{standalone setup};\end{tikzpicture}
+\def\MatchA{\begin{tikzpicture}[baseline=(current bounding box.center)]
+\draw (0,0) -- (1,1);
+\end{tikzpicture}}"""
+
+    result = insert_tikz_into_latex(latex, tikz_code)
+
+    assert r"\input{diagram}" not in result
+    assert result.count("standalone setup") == 1
+    assert result.count(r"\def\MatchA") == 1
+    assert r"(A) & \MatchA" in result
+
+
 def test_format_latex_basic_indentation():
     """Test that format_latex adds proper indentation to environments."""
     input_latex = r"""\item Test problem

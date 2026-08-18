@@ -228,6 +228,9 @@ Diagram analysis rules:
 - `has_diagram` means a standalone/main graphical diagram in the question stem
   or passage, OUTSIDE the answer choices. Option diagrams do not make this true.
 - `has_option_diagrams` means one or more answer choices contain graphical diagrams.
+- Diagrams embedded in Column-I or Column-II of a match-the-column table count
+  as main/problem diagrams (`has_diagram=true`), not option diagrams. Reserve
+  `has_option_diagrams` for the selectable answer choices in the `tasks` block.
 - Use these four states exactly:
   1. No diagrams: has_diagram=false, has_option_diagrams=false
   2. Main diagram only: has_diagram=true, has_option_diagrams=false

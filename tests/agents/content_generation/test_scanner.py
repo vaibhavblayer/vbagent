@@ -14,6 +14,7 @@ from vbagent.prompts.content_generation.scanner import (
     get_user_template,
 )
 from vbagent.agents.content_generation.scanner import create_scanner_agent
+from vbagent.prompts.content_generation.table_format import TABLE_FORMAT_RULES
 
 
 # Valid question types
@@ -41,7 +42,9 @@ def test_biology_scanner_uses_biology_prompts():
     )
 
     for question_type, prompt in biology_prompts.items():
-        assert get_scanner_prompt(question_type, "biology") == prompt
+        assert get_scanner_prompt(question_type, "biology") == (
+            prompt + "\n\n" + TABLE_FORMAT_RULES
+        )
 
 
 # Strategy for valid question types

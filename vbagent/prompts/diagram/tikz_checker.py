@@ -207,6 +207,12 @@ For `\def\OptionA{...}` style option diagrams:
 \end{tikzpicture}}
 ```
 
+For matching-table diagrams, preserve the separate `\def\MatchA{...}`,
+`\def\MatchB{...}`, ... structure. Each definition must contain exactly one
+row diagram with `baseline=(current bounding box.center)`. Do not combine the
+rows into a montage, do not rename them to `\OptionA`, and do not draw (A),
+(B), ... inside the pictures because the table supplies those labels.
+
 **12. KinemaTikZ package - anchor syntax**
 When using `kinematikz` package for frames/supports:
 - Anchors use HYPHEN `-` not DOT `.`

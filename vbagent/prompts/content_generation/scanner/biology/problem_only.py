@@ -12,7 +12,10 @@ from .formatting_rules import (
     TIKZ_GUIDELINES_SHORT,
 )
 from .common import PASSAGE_DIAGRAM_INLINE
-from ...mcq_format import MATCH_OPTION_FORMAT_RULES_UNMARKED
+from ...mcq_format import (
+    MATCH_OPTION_FORMAT_RULES_UNMARKED,
+    MATCH_TABLE_DIAGRAM_RULES,
+)
 
 
 def get_problem_prompt(question_type: str) -> str:
@@ -133,7 +136,7 @@ Extract the passage and all sub-questions with their options.
    - Extract the exact question text
 
 2. **Diagram (if present)**
-""" + DIAGRAM_PLACEHOLDER + r"""
+""" + DIAGRAM_PLACEHOLDER + MATCH_TABLE_DIAGRAM_RULES + r"""
 
 3. **Matching Table**
    - Use a tabular environment for the two columns

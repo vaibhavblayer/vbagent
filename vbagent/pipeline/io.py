@@ -16,6 +16,8 @@ from vbagent.tex import extract_items
 
 _OPTION_ARTIFACT_MARKER = "% VBAGENT_OPTION_DIAGRAMS_BEGIN"
 _OPTION_DEF_START_RE = re.compile(r"\\def\s*\\Option([A-F])\s*\{")
+_MATCH_ARTIFACT_MARKER = "% VBAGENT_MATCH_DIAGRAMS_BEGIN"
+_MATCH_DEF_START_RE = re.compile(r"\\def\s*\\Match([A-Z])\s*\{")
 
 if TYPE_CHECKING:
     from vbagent.models.pipeline import PipelineResult
@@ -111,7 +113,10 @@ def _assembled_latex_for_save(result: "PipelineResult") -> str:
     latex = result.latex
     if result.tikz_code and any(
         marker in latex
-        for marker in (r"\input{diagram}", r"\OptionA", r"\OptionB")
+        for marker in (
+            r"\input{diagram}", r"\OptionA", r"\OptionB",
+            r"\MatchA", r"\MatchB",
+        )
     ):
         latex = insert_tikz_into_latex(latex, result.tikz_code)
     return format_latex(latex)
@@ -120,9 +125,10 @@ def _assembled_latex_for_save(result: "PipelineResult") -> str:
 def insert_tikz_into_latex(latex: str, tikz_code: str) -> str:
     """Replace diagram placeholders with actual TikZ code.
 
-    Handles two types of placeholders:
+    Handles three diagram roles:
     1. Main diagram: \\begin{center}\\input{diagram}\\end{center}
-    2. MCQ option diagrams: \\def\\OptionA{...} through \\def\\OptionD{...}
+    2. Matching-table cells: \\def\\MatchA{...} consumed by \\MatchA
+    3. MCQ option diagrams: \\def\\OptionA{...} through \\def\\OptionD{...}
 
     When tikz_code contains BOTH a main diagram and option defs
     (e.g. merged by ProblemOrchestrator), splits them and handles
@@ -131,8 +137,9 @@ def insert_tikz_into_latex(latex: str, tikz_code: str) -> str:
     if tikz_code is None:
         return latex
 
-    # Split tikz_code into main diagram and option defs
+    # Split tikz_code into standalone, matching-table, and option artifacts.
     main_tikz, option_tikz = _split_main_and_options(tikz_code)
+    main_tikz, match_tikz = _split_main_and_match(main_tikz)
 
     result = latex
 
@@ -152,7 +159,25 @@ def insert_tikz_into_latex(latex: str, tikz_code: str) -> str:
             if re.search(simple_pattern, latex):
                 result = re.sub(simple_pattern, lambda m: main_tikz, result)
 
-    # 2. Insert option defs before \begin{tasks}
+    # 2. Insert matching-table definitions before the table that consumes them.
+    if match_tikz and re.search(r"\\Match[A-Z]\b", result):
+        result = _remove_match_definitions(result)
+
+        match_support = _clean_definition_support(
+            _remove_match_definitions(match_tikz)
+        )
+        if match_support:
+            result = result.replace(match_support, "", 1)
+
+        result = re.sub(r'%\s*MATCH_DIAGRAMS:.*?(?:\n|$)', '', result)
+        table_pattern = r'(\s*\\begin\{(?:tabular|tabularx|tabular\*)\})'
+
+        def insert_before_table(match):
+            return f"\n{match_tikz.strip()}\n{match.group(1)}"
+
+        result = re.sub(table_pattern, insert_before_table, result, count=1)
+
+    # 3. Insert option defs before \begin{tasks}
     if option_tikz:
         # Remove existing option defs in the LaTeX (will be replaced). This
         # uses balanced-brace parsing because TikZ definitions are nested much
@@ -162,7 +187,7 @@ def insert_tikz_into_latex(latex: str, tikz_code: str) -> str:
         # Option generators occasionally emit a shared top-level macro before
         # the definitions. Remove the exact previous support block as well so
         # save-time reassembly cannot duplicate it.
-        option_support = _clean_option_support(
+        option_support = _clean_definition_support(
             _remove_option_definitions(option_tikz)
         )
         if option_support:
@@ -211,11 +236,39 @@ def _split_main_and_options(tikz_code: str) -> tuple[str, str]:
     return main_part, _normalize_option_artifact(option_source)
 
 
+def _split_main_and_match(tikz_code: str) -> tuple[str, str]:
+    r"""Split a standalone diagram from ``\def\MatchX`` definitions."""
+    if _MATCH_ARTIFACT_MARKER in tikz_code:
+        main_part, match_part = tikz_code.split(_MATCH_ARTIFACT_MARKER, 1)
+        return main_part.strip(), _normalize_match_artifact(match_part)
+
+    spans = _match_definition_spans(tikz_code)
+    if not spans:
+        return tikz_code, ""
+
+    prefix = tikz_code[:spans[0][1]].strip()
+    if r"\begin{tikzpicture}" in prefix:
+        main_part = prefix
+        match_source = tikz_code[spans[0][1]:]
+    else:
+        main_part = ""
+        match_source = tikz_code
+
+    return main_part, _normalize_match_artifact(match_source)
+
+
 def split_tikz_artifacts(tikz_code: Optional[str]) -> tuple[str, str]:
     """Return normalized main and option portions of a TikZ artifact."""
     if not tikz_code:
         return "", ""
     return _split_main_and_options(tikz_code)
+
+
+def has_standalone_main_tikz(tikz_code: Optional[str]) -> bool:
+    """Return whether an artifact contains a non-table standalone diagram."""
+    main_tikz, _ = split_tikz_artifacts(tikz_code)
+    standalone_tikz, _ = _split_main_and_match(main_tikz)
+    return bool(standalone_tikz.strip())
 
 
 def combine_tikz_artifacts(
@@ -281,9 +334,22 @@ def _balanced_group_end(text: str, opening_brace: int) -> Optional[int]:
 
 def _option_definition_spans(text: str) -> list[tuple[str, int, int]]:
     """Return ``(letter, start, end)`` spans for balanced option definitions."""
+    return _definition_spans(text, _OPTION_DEF_START_RE)
+
+
+def _match_definition_spans(text: str) -> list[tuple[str, int, int]]:
+    """Return ``(letter, start, end)`` spans for matching-table definitions."""
+    return _definition_spans(text, _MATCH_DEF_START_RE)
+
+
+def _definition_spans(
+    text: str,
+    start_pattern: re.Pattern[str],
+) -> list[tuple[str, int, int]]:
+    """Return balanced macro-definition spans found by ``start_pattern``."""
     spans: list[tuple[str, int, int]] = []
     position = 0
-    while match := _OPTION_DEF_START_RE.search(text, position):
+    while match := start_pattern.search(text, position):
         end = _balanced_group_end(text, match.end() - 1)
         if end is None:
             position = match.end()
@@ -295,7 +361,19 @@ def _option_definition_spans(text: str) -> list[tuple[str, int, int]]:
 
 def _remove_option_definitions(text: str) -> str:
     """Remove every complete ``\\def\\OptionX{...}`` block from text."""
-    spans = _option_definition_spans(text)
+    return _remove_definition_spans(text, _option_definition_spans(text))
+
+
+def _remove_match_definitions(text: str) -> str:
+    """Remove every complete ``\\def\\MatchX{...}`` block from text."""
+    return _remove_definition_spans(text, _match_definition_spans(text))
+
+
+def _remove_definition_spans(
+    text: str,
+    spans: list[tuple[str, int, int]],
+) -> str:
+    """Remove the supplied balanced definition spans from text."""
     if not spans:
         return text
     pieces = []
@@ -317,15 +395,35 @@ def _normalize_option_artifact(option_tikz: str) -> str:
     for letter, start, end in spans:
         latest[letter] = option_tikz[start:end].strip()
 
-    support = _clean_option_support(_remove_option_definitions(option_tikz))
+    support = _clean_definition_support(_remove_option_definitions(option_tikz))
     definitions = [latest[letter] for letter in "ABCDEF" if letter in latest]
     parts = ([support] if support else []) + definitions
     return "\n".join(parts)
 
 
-def _clean_option_support(text: str) -> str:
-    """Discard wrapper noise while retaining shared option-level commands."""
-    ignored = {"%", "```", "```latex", _OPTION_ARTIFACT_MARKER}
+def _normalize_match_artifact(match_tikz: str) -> str:
+    """Keep one definition per matching row, preferring the last set."""
+    spans = _match_definition_spans(match_tikz)
+    if not spans:
+        return match_tikz.strip()
+
+    latest: dict[str, str] = {}
+    for letter, start, end in spans:
+        latest[letter] = match_tikz[start:end].strip()
+
+    support = _clean_definition_support(_remove_match_definitions(match_tikz))
+    definitions = [latest[letter] for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                   if letter in latest]
+    parts = ([support] if support else []) + definitions
+    return "\n".join(parts)
+
+
+def _clean_definition_support(text: str) -> str:
+    """Discard wrapper noise while retaining shared definition-level commands."""
+    ignored = {
+        "%", "```", "```latex",
+        _OPTION_ARTIFACT_MARKER, _MATCH_ARTIFACT_MARKER,
+    }
     lines = [line for line in text.splitlines() if line.strip() not in ignored]
     return "\n".join(lines).strip()
 

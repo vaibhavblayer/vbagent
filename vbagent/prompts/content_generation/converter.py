@@ -8,7 +8,12 @@ Prompts for converting physics questions between different formats:
 - Passage/Comprehension type
 """
 
-from .mcq_format import MATCH_OPTION_FORMAT_RULES, MCQ_ANSWER_FORMAT_RULES
+from .mcq_format import (
+    MATCH_OPTION_FORMAT_RULES,
+    MATCH_TABLE_DIAGRAM_RULES,
+    MCQ_ANSWER_FORMAT_RULES,
+)
+from .table_format import TABLE_FORMAT_RULES
 
 SYSTEM_PROMPT = r"""You are an expert physics educator specializing in question format conversion. Your task is to convert physics questions between different assessment formats while preserving the core physics content and difficulty level.
 
@@ -114,9 +119,9 @@ Example: `...the current will be \hrulefill A. \ansint{3}`
 
 \begin{center}
     \renewcommand{\arraystretch}{2}
-    \begin{tabular}{p{0.25cm}p{8cm}|p{0.25cm}p{5cm}}
+    \begin{tabular}{@{}p{0.1\textwidth}p{0.3\textwidth}|p{0.1\textwidth}p{0.4\textwidth}@{}}
     \hline
-    & Column I & & Column II \\
+    & \textbf{Column-I} & & \textbf{Column-II} \\
     \hline
     (a) & Item A description & (p) & Match P description \\
     (b) & Item B description & (q) & Match Q description \\
@@ -259,7 +264,7 @@ Therefore, the correct option is (a).
 - For integer type: the final answer MUST be a clean integer; work backwards from the answer to choose parameters
 - For MCQ: all four options should be clean expressions, not messy decimals"""
 
-SYSTEM_PROMPT += "\n\n" + MCQ_ANSWER_FORMAT_RULES
+SYSTEM_PROMPT += "\n\n" + MCQ_ANSWER_FORMAT_RULES + TABLE_FORMAT_RULES
 
 USER_TEMPLATE = r"""Convert this physics question from {source_format} to {target_format}.
 
@@ -329,7 +334,7 @@ Structure:
 \item [Question asking to match columns]
 \begin{center}
     \renewcommand{\arraystretch}{2}
-    \begin{tabular}{p{0.25cm}p{8cm}|p{0.25cm}p{5cm}}
+    \begin{tabular}{@{}p{0.1\textwidth}p{0.3\textwidth}|p{0.1\textwidth}p{0.4\textwidth}@{}}
     ...table content...
     \end{tabular}
 \end{center}
@@ -385,9 +390,9 @@ def get_format_instructions(target_format: str) -> str:
     Returns:
         Format-specific instruction string
     """
-    instructions = FORMAT_INSTRUCTIONS.get(target_format, "")
+    instructions = FORMAT_INSTRUCTIONS.get(target_format, "") + TABLE_FORMAT_RULES
     if target_format == "match":
-        instructions += MATCH_OPTION_FORMAT_RULES
+        instructions += MATCH_TABLE_DIAGRAM_RULES + MATCH_OPTION_FORMAT_RULES
     if target_format in {"mcq_sc", "mcq_mc", "passage", "match"}:
         instructions += MCQ_ANSWER_FORMAT_RULES
     return instructions

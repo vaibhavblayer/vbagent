@@ -138,6 +138,11 @@ class SolutionOrchestrator:
         # Step 4: Answer marking
         answer_type = solution_output.answer_type
         answer_value = solution_output.answer_value
+        match_option_replacement = getattr(
+            solution_output, "match_option_replacement_latex", None
+        )
+        if match_option_replacement:
+            match_option_replacement = match_option_replacement.strip() or None
         final_answer_latex = getattr(solution_output, "final_answer_latex", None)
         if final_answer_latex:
             final_answer_latex = final_answer_latex.strip() or None
@@ -161,6 +166,18 @@ class SolutionOrchestrator:
             r'\s*\\begin\{finalanswer\}.*?\\end\{finalanswer\}',
             '', clean_problem, flags=re.DOTALL,
         ).rstrip()
+        match_option_repaired = False
+        if question_type == "match" and match_option_replacement:
+            clean_problem = self._replace_match_option(
+                clean_problem,
+                answer_value,
+                match_option_replacement,
+            )
+            solution_latex = self._sync_match_option_conclusion(
+                solution_latex,
+                answer_value,
+            )
+            match_option_repaired = True
         final_latex = clean_problem + "\n\n" + solution_latex
 
         # Mark answer in the combined LaTeX
@@ -184,6 +201,7 @@ class SolutionOrchestrator:
                 "question_type": question_type,
                 "answer_type": answer_type,
                 "answer_value": answer_value,
+                "match_option_repaired": match_option_repaired,
                 "final_answer_latex": final_answer_latex,
                 "diagrams_requested": len(diagram_reqs),
                 "diagrams_rendered": len(diagram_codes),
@@ -402,6 +420,110 @@ class SolutionOrchestrator:
         elif answer_type == "integer" and answer_value:
             latex = self._mark_integer_answer(latex, answer_value)
         return latex
+
+    @staticmethod
+    def _replace_match_option(
+        problem_latex: str,
+        answer_value: str | None,
+        replacement_latex: str,
+    ) -> str:
+        r"""Replace one incorrect match-code option with the derived mapping."""
+        letter = (answer_value or "").strip().lower()
+        option_index = {"a": 0, "b": 1, "c": 2, "d": 3}.get(letter)
+        if option_index is None:
+            raise ValueError(
+                "Match option repair requires answer_value to be one of a, b, c, d"
+            )
+
+        payload = replacement_latex.strip()
+        payload = re.sub(r"^\\task\b\s*", "", payload).strip()
+        payload = re.sub(r"\s*\\ans\b\s*$", "", payload).strip()
+        if not payload or re.search(
+            r"\\(?:begin|end)\{tasks\}|\\task\b", payload
+        ):
+            raise ValueError(
+                "Match option replacement must contain one option payload only"
+            )
+
+        tasks_block = re.search(
+            r"(\\begin\{tasks\}(?:\s*\([^)]*\))?)(.*?)(\\end\{tasks\})",
+            problem_latex,
+            flags=re.DOTALL,
+        )
+        if not tasks_block:
+            raise ValueError("Cannot repair match option: tasks block not found")
+
+        body = re.sub(r"\s*\\ans\b", "", tasks_block.group(2))
+        task_starts = list(re.finditer(r"\\task\b", body))
+        if len(task_starts) != 4:
+            raise ValueError(
+                "Cannot repair match option: expected exactly four code options"
+            )
+
+        start = task_starts[option_index].start()
+        end = (
+            task_starts[option_index + 1].start()
+            if option_index + 1 < len(task_starts)
+            else len(body)
+        )
+        old_segment = body[start:end]
+        trailing_match = re.search(r"\s*$", old_segment)
+        trailing = trailing_match.group(0) if trailing_match else ""
+        new_segment = rf"\task {payload}" + trailing
+        repaired_body = body[:start] + new_segment + body[end:]
+
+        return (
+            problem_latex[:tasks_block.start()]
+            + tasks_block.group(1)
+            + repaired_body
+            + tasks_block.group(3)
+            + problem_latex[tasks_block.end():]
+        )
+
+    @staticmethod
+    def _sync_match_option_conclusion(
+        solution_latex: str,
+        answer_value: str | None,
+    ) -> str:
+        """Keep the written conclusion aligned with a repaired option letter."""
+        letter = (answer_value or "").strip().lower()
+        if letter not in {"a", "b", "c", "d"}:
+            raise ValueError(
+                "Match option repair requires answer_value to be one of a, b, c, d"
+            )
+
+        conclusion_pattern = re.compile(
+            r"(correct\s+option\s+is\s+\()[a-d](\))",
+            flags=re.IGNORECASE,
+        )
+        if conclusion_pattern.search(solution_latex):
+            return conclusion_pattern.sub(
+                lambda match: f"{match.group(1)}{letter}{match.group(2)}",
+                solution_latex,
+            )
+
+        conclusion = (
+            rf"\intertext{{Therefore, the correct option is ({letter}).}}"
+        )
+        align_end = solution_latex.rfind(r"\end{align*}")
+        if align_end >= 0:
+            return (
+                solution_latex[:align_end].rstrip()
+                + "\n"
+                + conclusion
+                + "\n"
+                + solution_latex[align_end:]
+            )
+        solution_end = solution_latex.rfind(r"\end{solution}")
+        if solution_end >= 0:
+            return (
+                solution_latex[:solution_end].rstrip()
+                + "\n"
+                + conclusion
+                + "\n"
+                + solution_latex[solution_end:]
+            )
+        return solution_latex.rstrip() + "\n" + conclusion
 
     def _mark_mcq_answer(self, latex: str, answer_value: str) -> str:
         r"""Mark the correct MCQ option with \ans.

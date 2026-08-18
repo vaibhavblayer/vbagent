@@ -115,6 +115,15 @@ class SolutionOutput(BaseModel):
             "integer-type, None for subjective"
         )
     )
+    match_option_replacement_latex: Optional[str] = Field(
+        default=None,
+        description=(
+            "Match questions only: the complete correct option payload, "
+            "without \\task or \\ans, when none of the four scanned code "
+            "options matches the derived mapping. Null when an existing "
+            "option already matches."
+        ),
+    )
     final_answer_latex: Optional[str] = Field(
         default=None,
         description=(

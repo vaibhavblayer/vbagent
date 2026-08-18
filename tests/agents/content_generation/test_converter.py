@@ -11,6 +11,7 @@ from hypothesis import given, settings, assume
 from hypothesis import strategies as st
 
 from vbagent.agents.content_generation.converter import VALID_FORMATS
+from vbagent.agents.content_generation import converter as converter_agent
 from vbagent.prompts.content_generation.converter import get_format_instructions, FORMAT_INSTRUCTIONS
 
 
@@ -301,6 +302,44 @@ def test_validate_match_structure():
     """
     # Match type uses tasks, so MCQ validation should pass
     assert validate_mcq_structure(match_latex)
+
+
+def test_match_conversion_retries_when_options_are_missing(monkeypatch):
+    valid = r"""\item Match.
+\begin{tasks}(2)
+\task $\mathrm{P\rightarrow I}$
+\task $\mathrm{P\rightarrow II}$
+\task $\mathrm{P\rightarrow III}$
+\task $\mathrm{P\rightarrow IV}$
+\end{tasks}"""
+    responses = iter([r"\item Match.\begin{tabular}{cc}P&I\end{tabular}", valid])
+    calls = []
+    monkeypatch.setattr(
+        converter_agent,
+        "run_agent_sync",
+        lambda *args, **kwargs: calls.append(args[1]) or next(responses),
+    )
+
+    result = converter_agent.convert_format(
+        r"\item Original.", "subjective", "match"
+    )
+
+    assert result == valid
+    assert len(calls) == 2
+    assert "previous conversion was invalid" in calls[1]
+
+
+def test_match_conversion_fails_closed_after_invalid_retry(monkeypatch):
+    monkeypatch.setattr(
+        converter_agent,
+        "run_agent_sync",
+        lambda *args, **kwargs: r"\item Match without options.",
+    )
+
+    with pytest.raises(ValueError, match="mandatory four-option tasks block"):
+        converter_agent.convert_format(
+            r"\item Original.", "subjective", "match"
+        )
 
 
 def test_validate_passage_structure():

@@ -141,3 +141,58 @@ def test_stale_subjective_solution_cache_is_regenerated(tmp_path, monkeypatch):
     assert result.latex == new_latex
     assert result.final_answer_latex == new_answer
     assert cache.get_stage_data("problem_1", "solution")["final_answer_latex"] == new_answer
+
+
+def test_stale_match_solution_cache_is_regenerated_for_option_repair(
+    tmp_path, monkeypatch
+):
+    from types import SimpleNamespace
+
+    from vbagent.agents.orchestration.solution_orchestrator import SolutionResult
+    from vbagent.cache import PipelineCache
+    from vbagent.models.classification import PrimaryClassification
+    from vbagent.pipeline.stages import generate_solution_orchestrated
+    import vbagent.agents.orchestration.solution_orchestrator as orchestrator_module
+
+    cache = PipelineCache(str(tmp_path))
+    cache.set(
+        "problem_1",
+        "solution",
+        r"\item Old match.\begin{solution}Old solution.\end{solution}",
+        stage_data={"answer_type": "mcq", "answer_value": "a"},
+    )
+    new_latex = r"\item Repaired match.\begin{solution}New solution.\end{solution}"
+    fake_orchestrator = SimpleNamespace(
+        run=lambda **kwargs: SolutionResult(
+            latex=new_latex,
+            answer_type="mcq",
+            answer_value="d",
+            metadata={"match_option_repaired": True},
+        )
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "create_solution_orchestrator",
+        lambda console=None: fake_orchestrator,
+    )
+    primary = PrimaryClassification(
+        subject="physics",
+        question_type="match",
+        has_diagram=False,
+        confidence=1.0,
+        classified_from="latex",
+    )
+
+    result = generate_solution_orchestrated(
+        image_path="unused.png",
+        primary=primary,
+        problem_latex=r"\item Match.",
+        cache=cache,
+        problem_id="problem_1",
+        return_result=True,
+    )
+
+    assert result.latex == new_latex
+    stage_data = cache.get_stage_data("problem_1", "solution")
+    assert stage_data["match_solution_repair_contract_version"] == 1
+    assert stage_data["match_option_repaired"] is True

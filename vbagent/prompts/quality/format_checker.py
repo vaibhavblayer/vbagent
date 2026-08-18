@@ -7,6 +7,7 @@ biology uses \\includegraphics for PNG diagrams.
 """
 
 from ..content_generation.mcq_format import MCQ_ANSWER_FORMAT_RULES
+from ..content_generation.table_format import TABLE_FORMAT_RULES
 
 # Subject-specific addendum injected into the system prompt
 _BIOLOGY_ADDENDUM = r"""
@@ -180,9 +181,9 @@ SYSTEM_PROMPT_BASE = r"""You are an expert LaTeX formatter for educational conte
 \item [Problem setup text]
 \begin{center}
 \renewcommand{\arraystretch}{2}
-\begin{tabular}{p{0.5cm}p{2.5cm}|p{0.5cm}p{3cm}}
+\begin{tabular}{@{}p{0.1\textwidth}p{0.3\textwidth}|p{0.1\textwidth}p{0.4\textwidth}@{}}
 \hline
-\multicolumn{2}{c|}{List I} & \multicolumn{2}{c}{List II} \\
+& \textbf{List-I} & & \textbf{List-II} \\
 \hline
 P. & Item P & 1. & Item 1 \\
 ...
@@ -199,6 +200,16 @@ Codes
 ```
 - Uses tabular for List I / List II
 - Answer selected via MCQ "Codes" options
+- Every match question must have exactly four code options in
+  `\begin{tasks}(2)...\end{tasks}`. If the source omitted the codes, synthesize
+  one correct complete mapping and three plausible permutations; do not leave
+  the question as a bare table. For one-to-many mappings, keep grouped targets
+  on the same arrow, for example `P\rightarrow\{I,III\}`.
+- If a List/Column row contains a diagram, keep it in that row using a
+  dedicated placeholder such as `(A) & \MatchA & ...`. Definitions such as
+  `\def\MatchA{\begin{tikzpicture}...\end{tikzpicture}}` belong before the
+  table. Never move all row diagrams into a centered montage above the table,
+  and never use `\OptionA` for matching-table cells.
 
 **Options with Diagrams:**
 ```latex
@@ -630,7 +641,7 @@ def get_system_prompt(subject: str = "physics") -> str:
         base_prompt = SYSTEM_PROMPT_BASE + _CHEMISTRY_ADDENDUM
     else:
         base_prompt = SYSTEM_PROMPT_BASE
-    return base_prompt + "\n\n" + MCQ_ANSWER_FORMAT_RULES
+    return base_prompt + "\n\n" + MCQ_ANSWER_FORMAT_RULES + TABLE_FORMAT_RULES
 
 
 # Default (physics) for backward compatibility

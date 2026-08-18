@@ -20,6 +20,21 @@ Given a matching problem with List I and List II, generate a solution that:
 
 ## Solution Structure
 
+The four code options are mandatory and may have been synthesized when the
+source omitted them. Compare the derived complete matching against the actual
+four `\task` options. For one-to-many matching, retain the complete grouped set,
+for example $P\rightarrow\{I,III\}$.
+
+Derive the canonical complete matching before trusting the scanned options. If
+one of the four options matches exactly, select it and set
+`match_option_replacement_latex` to `null`. If none matches, do not select an
+incorrect code: use option (d) as the repair slot unless another slot is clearly
+preferable, set `answer_value` to that lowercase letter, and return the exact
+canonical option payload in `match_option_replacement_latex`. The payload is
+only what follows `\task`, without `\task` or `\ans`, for example
+`$\mathrm{P\rightarrow II,\ Q\rightarrow III,\ R\rightarrow I,\ S\rightarrow IV}$`.
+The final written conclusion must use the same lowercase letter.
+
 ```latex
 \begin{solution}
 \begin{align*}
@@ -43,6 +58,8 @@ P &\rightarrow N_1,\quad Q \rightarrow N_2,\quad R \rightarrow N_3,\quad S \righ
 3. State each match: $P \rightarrow N$
 4. End with the actual lowercase Codes-MCQ option letter, for example: "Therefore, the correct option is (a)."
 5. Use align* with \intertext{} — keep concise
+6. Set `answer_type` to `"mcq"` and `answer_value` to the matching lowercase
+   option letter so `\ans` is added to the correct code.
 
 ## Output Format
 
@@ -50,6 +67,9 @@ P &\rightarrow N_1,\quad Q \rightarrow N_2,\quad R \rightarrow N_3,\quad S \righ
 {
   "solution_latex": "\\begin{solution}\n...\n\\end{solution}",
   "diagram_requirements": [],
+  "answer_type": "mcq",
+  "answer_value": "a",
+  "match_option_replacement_latex": null,
   "reasoning_notes": "Optional notes",
   "alternate_solution_recommended": false,
   "alternate_solution_hint": null

@@ -24,6 +24,22 @@ Given a matching problem with List I and List II, generate a solution that:
 
 The problem presents List I and List II in a tabular, followed by MCQ "Codes" options.
 Your solution should analyze each item and conclude with the correct code option.
+The four code options are mandatory and may have been synthesized when the
+source omitted them. Compare your derived complete matching against the actual
+four `\task` options and return that option's lowercase letter. For one-to-many
+matching, preserve every target in the set, such as $P\rightarrow\{I,III\}$.
+
+First derive the canonical complete matching independently of the scanned code
+options. Then compare it with all four options:
+- If an existing option matches exactly, select it and set
+  `match_option_replacement_latex` to `null`.
+- If none matches, do not force the result into an incorrect option. Use option
+  (d) as the repair slot unless another slot is clearly preferable, set
+  `answer_value` to that slot's lowercase letter, and return the exact canonical
+  option payload in `match_option_replacement_latex`. Include only what follows
+  `\task`, without `\task` or `\ans`, for example
+  `$\mathrm{P\rightarrow II,\ Q\rightarrow III,\ R\rightarrow I,\ S\rightarrow IV}$`.
+- The final written conclusion must use the same lowercase option letter.
 
 ```latex
 \begin{solution}
@@ -61,6 +77,8 @@ P &\rightarrow 2,\quad Q \rightarrow 2,\quad R \rightarrow 3,\quad S \rightarrow
 ### Answer Format
 - End with the actual lowercase Codes-MCQ option letter, for example: "Therefore, the correct option is (d)."
 - The answer is one of the code options (a), (b), (c), (d)
+- Set `answer_type` to `"mcq"` and `answer_value` to that lowercase letter so
+  the orchestrator places `\ans` on the same option.
 
 ### Solution Style
 - One continuous align* block (unless diagram interrupts)
@@ -74,6 +92,9 @@ P &\rightarrow 2,\quad Q \rightarrow 2,\quad R \rightarrow 3,\quad S \rightarrow
 {
   "solution_latex": "\\begin{solution}\n...\n\\end{solution}",
   "diagram_requirements": [],
+  "answer_type": "mcq",
+  "answer_value": "d",
+  "match_option_replacement_latex": null,
   "reasoning_notes": "Optional notes",
   "alternate_solution_recommended": false,
   "alternate_solution_hint": null

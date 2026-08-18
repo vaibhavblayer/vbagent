@@ -22,7 +22,14 @@ class _Cache:
     def get(self, problem_id, stage):
         return self.values.get(stage)
 
-    def set(self, problem_id, stage, value):
+    def get_stage_data(self, problem_id, stage):
+        if stage == "scan":
+            return {"match_table_contract_version": 2}
+        if stage == "tikz":
+            return {"match_table_contract_version": 1}
+        return {}
+
+    def set(self, problem_id, stage, value, stage_data=None):
         self.values[stage] = value
 
 
@@ -200,3 +207,56 @@ def test_main_and_option_diagrams_are_both_preserved_once():
     assert result.latex.count(r"\def\OptionB") == 1
     assert "wrong A" not in result.latex
     assert "wrong B" not in result.latex
+
+
+def test_match_diagram_description_requires_row_macros_not_montage():
+    primary = SimpleNamespace(question_type="match")
+    diagram = SimpleNamespace(diagram_type="graph")
+
+    description = ProblemOrchestrator._main_diagram_description(primary, diagram)
+
+    assert r"\def\MatchA" in description
+    assert "Do not combine table rows into one montage" in description
+    assert "baseline=(current bounding box.center)" in description
+    assert r"do not output any \def\Option definitions" in description
+
+
+def test_match_question_refreshes_legacy_scan_and_tikz_cache(monkeypatch):
+    class _LegacyMatchCache(_Cache):
+        def get_stage_data(self, problem_id, stage):
+            return {}
+
+    cache = _LegacyMatchCache({
+        "scan": "legacy scan",
+        "tikz": "legacy montage",
+    })
+    classification = QuestionClassification(
+        subject="physics",
+        question_type="match",
+        has_diagram=True,
+        diagram_type="graph",
+    )
+    captured = {}
+    orchestrator = ProblemOrchestrator(
+        console=Console(file=io.StringIO(), force_terminal=False)
+    )
+
+    def fake_parallel(*args, **kwargs):
+        captured["scan_cached"] = args[4]
+        captured["tikz_cached"] = args[5]
+        return (
+            r"\item Match.\begin{tabular}{cc}(A)&\MatchA\end{tabular}",
+            r"\def\MatchA{\begin{tikzpicture}\draw(0,0)--(1,1);\end{tikzpicture}}",
+            None,
+        )
+
+    monkeypatch.setattr(orchestrator, "_run_parallel", fake_parallel)
+
+    result = orchestrator.run(
+        "question.png", classification, cache=cache, problem_id="legacy_match"
+    )
+
+    assert captured["scan_cached"] is False
+    assert captured["tikz_cached"] is False
+    assert "legacy montage" not in result.latex
+    assert result.latex.count(r"\def\MatchA") == 1

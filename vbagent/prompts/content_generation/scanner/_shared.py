@@ -7,6 +7,7 @@ Subject-specific constants live in each subject's common.py.
 from ..mcq_format import (
     MATCH_OPTION_FORMAT_RULES,
     MATCH_OPTION_FORMAT_RULES_UNMARKED,
+    MATCH_TABLE_DIAGRAM_RULES,
     MCQ_ANSWER_FORMAT_RULES,
 )
 
@@ -83,7 +84,7 @@ def options_with_diagrams(forbidden_examples: str = "") -> str:
     Extract them as plain LaTeX using the tabular environment.
     Place `\ans` AFTER `\end{tabular}`, not inside it:
     ```latex
-    \task \begin{tabular}{|c|c|c|} \hline $A$ & $B$ & $Y$ \\ \hline 0 & 0 & 0 \\ \hline 0 & 1 & 1 \\ \hline 1 & 0 & 1 \\ \hline 1 & 1 & 1 \\ \hline \end{tabular} \ans
+    \task \begin{tabular}{c|c|c} \hline $A$ & $B$ & $Y$ \\ \hline 0 & 0 & 0 \\ 0 & 1 & 1 \\ 1 & 0 & 1 \\ 1 & 1 & 1 \\ \hline \end{tabular} \ans
     ```
     Do NOT use \OptionA placeholders or TikZ for tables.
     
@@ -138,6 +139,7 @@ OPTIONS_WITH_DIAGRAMS_BIOLOGY = options_with_diagrams(r"""    ❌ \begin{tikzpic
 __all__ = [
     "MATCH_OPTION_FORMAT_RULES",
     "MATCH_OPTION_FORMAT_RULES_UNMARKED",
+    "MATCH_TABLE_DIAGRAM_RULES",
     "MCQ_ANSWER_FORMAT_RULES",
     "DIAGRAM_PLACEHOLDER",
     "PASSAGE_DIAGRAM_INLINE",

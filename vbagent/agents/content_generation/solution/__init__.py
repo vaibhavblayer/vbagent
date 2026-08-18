@@ -5,6 +5,7 @@ and returns SolutionOutput with solution_latex + diagram_requirements + answer
 plus a conditional alternate-solution recommendation.
 """
 
+import re
 from typing import Optional
 
 from vbagent.agents.base import create_agent, create_image_message, run_agent_sync
@@ -70,6 +71,34 @@ def generate_solution(
             "Subjective solution response is missing required "
             "final_answer_latex"
         )
+    if question_type == "match":
+        answer = (output.answer_value or "").strip().lower()
+        if output.answer_type != "mcq" or answer not in {"a", "b", "c", "d"}:
+            conclusion = re.search(
+                r"correct\s+option\s+is\s+\(([a-d])\)",
+                output.solution_latex,
+                flags=re.IGNORECASE,
+            )
+            if not conclusion:
+                raise ValueError(
+                    "Match solution response is missing the correct code option"
+                )
+            output.answer_type = "mcq"
+            output.answer_value = conclusion.group(1).lower()
+        else:
+            output.answer_value = answer
+        replacement = (output.match_option_replacement_latex or "").strip()
+        if replacement:
+            if re.search(
+                r"\\(?:begin|end)\{tasks\}|\\task\b|\\ans\b",
+                replacement,
+            ):
+                raise ValueError(
+                    "Match option replacement must contain only the option payload"
+                )
+            output.match_option_replacement_latex = replacement
+        else:
+            output.match_option_replacement_latex = None
     return output
 
 

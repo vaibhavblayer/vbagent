@@ -19,7 +19,8 @@ if TYPE_CHECKING:
     from vbagent.cache import PipelineCache
 
 
-_QUESTION_CLASSIFICATION_CONTRACT_VERSION = 2
+_QUESTION_CLASSIFICATION_CONTRACT_VERSION = 3
+_MATCH_SOLUTION_REPAIR_CONTRACT_VERSION = 1
 
 
 
@@ -86,11 +87,22 @@ def generate_solution_orchestrated(
             and cached_answer_type == "subjective"
             and not cached_final_answer
         )
+        stale_match_cache = (
+            primary.question_type == "match"
+            and cached_data.get("match_solution_repair_contract_version")
+            != _MATCH_SOLUTION_REPAIR_CONTRACT_VERSION
+        )
         if stale_subjective_cache:
             if console:
                 console.print(
                     "[dim yellow]Cached solution has no subjective final "
                     "answer; regenerating...[/dim yellow]"
+                )
+        elif stale_match_cache:
+            if console:
+                console.print(
+                    "[dim yellow]Cached match solution predates option repair; "
+                    "regenerating...[/dim yellow]"
                 )
         elif not return_result:
             return cached_latex
@@ -141,6 +153,14 @@ def generate_solution_orchestrated(
             stage_data={
                 "answer_type": result.answer_type,
                 "answer_value": result.answer_value,
+                "match_solution_repair_contract_version": (
+                    _MATCH_SOLUTION_REPAIR_CONTRACT_VERSION
+                    if primary.question_type == "match"
+                    else None
+                ),
+                "match_option_repaired": result.metadata.get(
+                    "match_option_repaired", False
+                ),
                 "final_answer_latex": result.final_answer_latex,
                 "alternate_solution_recommended": result.alternate_solution_recommended,
                 "alternate_solution_hint": result.alternate_solution_hint,

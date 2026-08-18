@@ -4,6 +4,7 @@ Uses openai-agents SDK to analyze question images and extract
 LaTeX code using type-specific and subject-specific prompts.
 """
 
+import re
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -18,8 +19,58 @@ from vbagent.config import get_config
 from vbagent.models.classification import ClassificationResult
 from vbagent.models.content import ScanResult
 from vbagent.prompts.content_generation.scanner import get_scanner_prompt, get_user_template
+from vbagent.prompts.content_generation.table_format import TABLE_FORMAT_RULES
 from vbagent.references.context import get_context_prompt_section
 from vbagent.utils.latex import clean_latex_output
+
+
+_MATCH_OPTIONS_RETRY = r"""
+Your previous extraction was invalid because every match-type question must
+contain exactly four code options, even when the source image contains only the
+two columns. Re-extract the complete question. If code options are absent or
+incomplete in the source, infer the correct complete matching and synthesize
+four distinct options in \begin{tasks}(2)...\end{tasks}; include the correct
+matching exactly once. Keep each option in one $\mathrm{...}$ expression. For
+one-to-many mappings use grouped targets such as P\rightarrow\{I,III\}. Return
+only the required LaTeX.
+"""
+
+
+def _has_required_match_options(latex: str) -> bool:
+    """Return whether a match extraction has one four-option tasks block."""
+    blocks = re.findall(
+        r"\\begin\{tasks\}\(2\)(.*?)\\end\{tasks\}",
+        latex,
+        flags=re.DOTALL,
+    )
+    return any(len(re.findall(r"\\task\b", block)) == 4 for block in blocks)
+
+
+def _scan_with_match_option_gate(
+    agent,
+    image_path: str,
+    user_template: str,
+    question_type: str,
+    show_spinner: bool,
+) -> str:
+    """Run a scan and retry once if a match question omitted code options."""
+    message = create_image_message(image_path, user_template)
+    raw_latex = run_agent_sync(agent, message, show_spinner=show_spinner)
+    latex = clean_latex_output(raw_latex)
+    if question_type != "match" or _has_required_match_options(latex):
+        return latex
+
+    retry_message = create_image_message(
+        image_path,
+        f"{user_template}\n\n{_MATCH_OPTIONS_RETRY}",
+    )
+    raw_latex = run_agent_sync(agent, retry_message, show_spinner=show_spinner)
+    latex = clean_latex_output(raw_latex)
+    if not _has_required_match_options(latex):
+        raise ValueError(
+            "Match extraction is missing the mandatory four-option tasks block"
+        )
+    return latex
 
 
 def create_scanner_agent(
@@ -94,11 +145,13 @@ def scan(
     
     agent = create_scanner_agent(classification.question_type, use_context, subject, sample_reference=sample_reference)
     user_template = get_user_template(subject)
-    message = create_image_message(image_path, user_template)
-    raw_latex = run_agent_sync(agent, message, show_spinner=show_spinner)
-    
-    # Clean up markdown artifacts from LLM output
-    latex = clean_latex_output(raw_latex)
+    latex = _scan_with_match_option_gate(
+        agent,
+        image_path,
+        user_template,
+        classification.question_type,
+        show_spinner,
+    )
     
     return ScanResult(
         latex=latex,
@@ -135,11 +188,13 @@ def scan_with_type(
     
     agent = create_scanner_agent(question_type, use_context, subject)
     user_template = get_user_template(subject)
-    message = create_image_message(image_path, user_template)
-    raw_latex = run_agent_sync(agent, message)
-    
-    # Clean up markdown artifacts from LLM output
-    latex = clean_latex_output(raw_latex)
+    latex = _scan_with_match_option_gate(
+        agent,
+        image_path,
+        user_template,
+        question_type,
+        True,
+    )
     
     return ScanResult(
         latex=latex,
@@ -186,7 +241,7 @@ def scan_problem(
     mod = importlib.import_module(
         f"vbagent.prompts.content_generation.scanner.{subject}.problem_only"
     )
-    system_prompt = mod.get_problem_prompt(question_type)
+    system_prompt = mod.get_problem_prompt(question_type) + "\n\n" + TABLE_FORMAT_RULES
     user_template = mod.USER_TEMPLATE
 
     # Add golden sample as formatting reference
@@ -209,10 +264,13 @@ def scan_problem(
         agent_type="scanner",
     )
 
-    message = create_image_message(image_path, user_template)
-    raw_latex = run_agent_sync(agent, message, show_spinner=show_spinner)
-
-    return clean_latex_output(raw_latex)
+    return _scan_with_match_option_gate(
+        agent,
+        image_path,
+        user_template,
+        question_type,
+        show_spinner,
+    )
 
 
 def scan_solution(

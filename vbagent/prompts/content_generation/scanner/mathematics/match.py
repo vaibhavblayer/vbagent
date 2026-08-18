@@ -1,14 +1,18 @@
 """Match-the-following question scanner prompt."""
 
 from .common import DIAGRAM_PLACEHOLDER
-from .._shared import MATCH_OPTION_FORMAT_RULES, MCQ_ANSWER_FORMAT_RULES
+from .._shared import (
+    MATCH_OPTION_FORMAT_RULES,
+    MATCH_TABLE_DIAGRAM_RULES,
+    MCQ_ANSWER_FORMAT_RULES,
+)
 
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
 
 Subject: Mathematics
 
-**Goal:** Analyze the provided image and extract a matching-type question. Format the texts in LaTeX format with the question in `\item` command, then diagram in tikz env nested within center env if there is any diagram present, then make the table for list/column/anything, then put the options in a tasks environment.
+**Goal:** Analyze the provided image and extract a matching-type question. Format it with the question in `\item`, the matching table (keeping any row diagrams inside their own cells), and the answer codes in a tasks environment.
 
 **CRITICAL OUTPUT CONSTRAINT:** Return only the raw LaTeX snippet starting precisely with `\item` and ending precisely after `\end{solution}`. Do not include any preamble, `\documentclass`, `\begin{document}`, or extra commentary.
 
@@ -25,7 +29,7 @@ Subject: Mathematics
     * Do **not** include example/exercise numbering prefixes (e.g., `Example 25.4`, `Ex. 3.2`, `Problem 12`, `Q.5`). Start directly with the actual problem text.
 
 2.  **Diagram (Optional)**
-""" + DIAGRAM_PLACEHOLDER + r"""
+""" + DIAGRAM_PLACEHOLDER + MATCH_TABLE_DIAGRAM_RULES + r"""
 
 3.  **Matching Table**
     * Use a table environment with appropriate column widths.
@@ -50,9 +54,9 @@ Subject: Mathematics
 
 \begin{center}
     \renewcommand{\arraystretch}{2}
-    \begin{tabular}{p{0.25cm}p{8cm}|p{0.25cm}p{5cm}}
+    \begin{tabular}{@{}p{0.1\textwidth}p{0.3\textwidth}|p{0.1\textwidth}p{0.4\textwidth}@{}}
     \hline
-    & Column I & & Column II \\
+    & \textbf{Column-I} & & \textbf{Column-II} \\
     \hline
     (a) & Item A description & (p) & Match P description \\
     (b) & Item B description & (q) & Match Q description \\

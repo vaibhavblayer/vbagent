@@ -15,6 +15,7 @@ from vbagent.prompts.content_generation.converter import (
     USER_TEMPLATE,
     get_format_instructions,
 )
+from vbagent.agents.content_generation.scanner import _has_required_match_options
 
 
 # Valid format types
@@ -80,6 +81,24 @@ def convert_format(
     )
     
     raw_result = run_agent_sync(converter_agent, message)
-    
-    # Clean up markdown artifacts from LLM output
-    return clean_latex_output(raw_result)
+    converted = clean_latex_output(raw_result)
+
+    if target_format == "match" and not _has_required_match_options(converted):
+        retry_message = (
+            f"{message}\n\n"
+            "The previous conversion was invalid because it omitted the "
+            "mandatory four match-code options. Return the complete corrected "
+            "match question with exactly four distinct options inside "
+            "\\begin{tasks}(2)...\\end{tasks}, even if the source had no "
+            "options. For one-to-many mappings, keep grouped targets on the "
+            "same arrow, such as P\\rightarrow\\{I,III\\}.\n\n"
+            f"Previous invalid output:\n{converted}"
+        )
+        raw_result = run_agent_sync(converter_agent, retry_message)
+        converted = clean_latex_output(raw_result)
+        if not _has_required_match_options(converted):
+            raise ValueError(
+                "Match conversion is missing the mandatory four-option tasks block"
+            )
+
+    return converted

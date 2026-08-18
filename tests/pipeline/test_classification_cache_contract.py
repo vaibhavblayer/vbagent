@@ -49,11 +49,11 @@ def test_stale_classification_cache_is_refreshed(monkeypatch):
 
     assert result is fresh
     assert len(calls) == 1
-    assert cache.saved[1] == {"contract_version": 2}
+    assert cache.saved[1] == {"contract_version": 3}
 
 
 def test_current_classification_cache_is_reused(monkeypatch):
-    cache = _Cache(contract_version=2)
+    cache = _Cache(contract_version=3)
 
     def unexpected_call(*args, **kwargs):
         raise AssertionError("current classification cache should be reused")

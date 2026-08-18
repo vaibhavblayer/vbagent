@@ -19,12 +19,17 @@ from vbagent.agents.classification.question_classifier import (
 )
 from vbagent.pipeline.io import (
     combine_tikz_artifacts,
+    has_standalone_main_tikz,
     insert_tikz_into_latex,
     remove_main_diagram_placeholder,
     split_tikz_artifacts,
 )
 from vbagent.cli.common import format_latex, _get_console
 from vbagent.references.samples import get_sample
+
+
+_MATCH_SCAN_CONTRACT_VERSION = 2
+_MATCH_TIKZ_CONTRACT_VERSION = 1
 
 
 class ProblemResult:
@@ -94,7 +99,19 @@ class ProblemOrchestrator:
 
         # Check cache
         scan_cached = cache and problem_id and cache.has(problem_id, "scan")
+        if scan_cached and primary.question_type == "match":
+            scan_cached = (
+                cache.get_stage_data(problem_id, "scan").get(
+                    "match_table_contract_version"
+                ) == _MATCH_SCAN_CONTRACT_VERSION
+            )
         tikz_cached = cache and problem_id and cache.has(problem_id, "tikz")
+        if tikz_cached and primary.question_type == "match":
+            tikz_cached = (
+                cache.get_stage_data(problem_id, "tikz").get(
+                    "match_table_contract_version"
+                ) == _MATCH_TIKZ_CONTRACT_VERSION
+            )
         options_cached = cache and problem_id and cache.has(problem_id, "options")
 
         if scan_cached and (tikz_cached or not needs_tikz) and (options_cached or not needs_options):
@@ -126,7 +143,7 @@ class ProblemOrchestrator:
         # a main placeholder despite classification, self-heal the miss.
         main_artifact, option_artifact = split_tikz_artifacts(tikz_code)
         if (not option_only and latex and r'\input{diagram}' in latex
-                and not main_artifact):
+                and not has_standalone_main_tikz(tikz_code)):
             main_artifact = self._run_main_diagram_sync(
                 image_path,
                 primary,
@@ -150,7 +167,10 @@ class ProblemOrchestrator:
             return latex
         if not any(
             marker in latex
-            for marker in (r'\input{diagram}', r'\OptionA', r'\OptionB')
+            for marker in (
+                r'\input{diagram}', r'\OptionA', r'\OptionB',
+                r'\MatchA', r'\MatchB',
+            )
         ):
             return latex
 
@@ -174,15 +194,7 @@ class ProblemOrchestrator:
             "[yellow]Diagram placeholder found after no-diagram classification; "
             "generating TikZ...[/yellow]"
         )
-        description = (
-            f"Reconstruct only the standalone main {diagram_analysis.diagram_type} "
-            "diagram in the question stem. Ignore every diagram inside the "
-            "answer options. Do not output any \\def\\Option definitions."
-            if diagram_analysis and diagram_analysis.diagram_type
-            else "Reconstruct only the standalone main diagram in the question "
-                 "stem. Ignore every diagram inside the answer options. Do not "
-                 "output any \\def\\Option definitions."
-        )
+        description = self._main_diagram_description(primary, diagram_analysis)
         code, agent = generate_tikz_with_routing(
             image_path=image_path,
             description=description,
@@ -193,9 +205,45 @@ class ProblemOrchestrator:
             diagram_context="problem",
         )
         if cache and problem_id and code:
-            cache.set(problem_id, "tikz", code)
+            stage_data = (
+                {"match_table_contract_version": _MATCH_TIKZ_CONTRACT_VERSION}
+                if primary.question_type == "match"
+                else None
+            )
+            cache.set(problem_id, "tikz", code, stage_data=stage_data)
         self.console.print(f"[green]OK[/green] TikZ complete [dim]{agent}[/dim]")
         return code
+
+    @staticmethod
+    def _main_diagram_description(primary, diagram_analysis) -> str:
+        """Describe the required problem-diagram artifact without role mixing."""
+        diagram_type = (
+            diagram_analysis.diagram_type
+            if diagram_analysis and diagram_analysis.diagram_type
+            else "diagram"
+        )
+        if primary.question_type == "match":
+            return (
+                f"Reconstruct the {diagram_type} diagrams according to their "
+                "structural role in this match-the-column question. For every "
+                "diagram located inside a Column-I or Column-II row, output one "
+                "separate self-contained definition named from its source row "
+                "label, for example \\def\\MatchA{\\begin{tikzpicture}"
+                "...\\end{tikzpicture}}. Include "
+                "baseline=(current bounding box.center). Do not combine table "
+                "rows into one montage and do not draw row labels inside the "
+                "TikZ pictures. If a genuinely separate standalone diagram "
+                "also exists outside the table, output that standalone "
+                "tikzpicture first, followed by the \\def\\MatchX definitions. "
+                "Ignore diagrams inside selectable answer options, do not "
+                "output any \\def\\Option definitions, and output no table or "
+                "question text."
+            )
+        return (
+            f"Reconstruct only the standalone main {diagram_type} diagram in "
+            "the question stem. Ignore every diagram inside the answer options. "
+            "Do not output any \\def\\Option definitions."
+        )
 
     def _run_scan(self, image_path, primary, sample, cache, problem_id) -> str:
         """Run problem-only scanner (no solution extraction)."""
@@ -213,7 +261,17 @@ class ProblemOrchestrator:
         self.console.print("[green]OK[/green] Scan complete")
 
         if cache and problem_id:
-            cache.set(problem_id, "scan", latex)
+            stage_data = (
+                {"match_table_contract_version": _MATCH_SCAN_CONTRACT_VERSION}
+                if primary.question_type == "match"
+                else None
+            )
+            cache.set(
+                problem_id,
+                "scan",
+                latex,
+                stage_data=stage_data,
+            )
 
         return latex
 
@@ -283,7 +341,17 @@ class ProblemOrchestrator:
                 scan_holder["result"] = result
                 # Cache immediately so partial progress survives
                 if cache and problem_id:
-                    cache.set(problem_id, "scan", result)
+                    stage_data = (
+                        {"match_table_contract_version": _MATCH_SCAN_CONTRACT_VERSION}
+                        if primary.question_type == "match"
+                        else None
+                    )
+                    cache.set(
+                        problem_id,
+                        "scan",
+                        result,
+                        stage_data=stage_data,
+                    )
                 state["scan"]["status"] = "done"
             except Exception as e:
                 scan_holder["error"] = e
@@ -297,24 +365,12 @@ class ProblemOrchestrator:
             start_times["tikz"] = time.time()
             state["tikz"]["status"] = "running"
             try:
-                desc = (f"Reconstruct only the standalone main "
-                        f"{diagram_analysis.diagram_type} diagram in the question "
-                        "stem. Ignore every diagram inside the answer options. "
-                        "Do not output any \\def\\Option definitions."
-                        if diagram_analysis and diagram_analysis.diagram_type
-                        else "Reconstruct only the standalone main diagram in the "
-                             "question stem. Ignore every diagram inside the answer "
-                             "options. Do not output any \\def\\Option definitions.")
+                desc = self._main_diagram_description(primary, diagram_analysis)
                 # For biology: use diagram_draw_description if available
                 if (diagram_analysis
                         and hasattr(diagram_analysis, 'diagram_draw_description')
                         and diagram_analysis.diagram_draw_description):
-                    desc = (
-                        f"{diagram_analysis.diagram_draw_description}\n\n"
-                        "Reconstruct only the standalone main diagram in the "
-                        "question stem. Ignore every diagram inside the answer "
-                        "options."
-                    )
+                    desc = f"{diagram_analysis.diagram_draw_description}\n\n{desc}"
                 code, agent = generate_tikz_with_routing(
                     image_path=image_path,
                     description=desc,
@@ -329,7 +385,17 @@ class ProblemOrchestrator:
                 state["tikz"]["agent"] = agent
                 # Cache immediately
                 if cache and problem_id and code:
-                    cache.set(problem_id, "tikz", code)
+                    stage_data = (
+                        {"match_table_contract_version": _MATCH_TIKZ_CONTRACT_VERSION}
+                        if primary.question_type == "match"
+                        else None
+                    )
+                    cache.set(
+                        problem_id,
+                        "tikz",
+                        code,
+                        stage_data=stage_data,
+                    )
                 state["tikz"]["status"] = "done"
             except Exception as e:
                 tikz_holder["error"] = e

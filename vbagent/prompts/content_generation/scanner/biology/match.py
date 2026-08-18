@@ -1,7 +1,11 @@
 """Match-the-following question scanner prompt for biology."""
 
 from .common import DIAGRAM_PLACEHOLDER
-from .._shared import MATCH_OPTION_FORMAT_RULES, MCQ_ANSWER_FORMAT_RULES
+from .._shared import (
+    MATCH_OPTION_FORMAT_RULES,
+    MATCH_TABLE_DIAGRAM_RULES,
+    MCQ_ANSWER_FORMAT_RULES,
+)
 
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
@@ -25,7 +29,7 @@ SYSTEM_PROMPT = r"""
     * Do **not** include example/exercise numbering prefixes.
 
 2.  **Diagram (Optional)**
-""" + DIAGRAM_PLACEHOLDER + r"""
+""" + DIAGRAM_PLACEHOLDER + MATCH_TABLE_DIAGRAM_RULES + r"""
 
 3.  **Matching Table**
     * Use a table environment with appropriate column widths.
@@ -50,9 +54,9 @@ SYSTEM_PROMPT = r"""
 
 \begin{center}
     \renewcommand{\arraystretch}{2}
-    \begin{tabular}{p{0.25cm}p{8cm}|p{0.25cm}p{5cm}}
+    \begin{tabular}{@{}p{0.1\textwidth}p{0.3\textwidth}|p{0.1\textwidth}p{0.4\textwidth}@{}}
     \hline
-    & Column I & & Column II \\
+    & \textbf{Column-I} & & \textbf{Column-II} \\
     \hline
     (a) & \textit{Plasmodium} & (p) & Nitrogen fixation \\
     (b) & \textit{Rhizobium} & (q) & Causes malaria \\

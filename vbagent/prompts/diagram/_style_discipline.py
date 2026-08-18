@@ -189,13 +189,15 @@ them with PGF/TikZ. Simplify construction geometry, not mathematical content.
 - No markdown code fences
 - No explanatory text — just the TikZ code
 - Start with `\begin{tikzpicture}` and end with `\end{tikzpicture}`
-  (or `\def\OptionA{...}` for MCQ option diagrams)
+  (or separate `\def\OptionA{...}` definitions for MCQ option diagrams, or
+  separate `\def\MatchA{...}` definitions for diagrams consumed inside a
+  match-the-column table)
 
 ### 9. Centering — Always Wrap in `\begin{center}`
 Every `\begin{tikzpicture}...\end{tikzpicture}` block MUST be wrapped in
 `\begin{center}...\end{center}` so diagrams are horizontally centered in the
-document. The ONLY exception is MCQ option diagrams (inside `\def\OptionA{...}`
-or `\task` environments) — those stay inline.
+document. The exceptions are MCQ option diagrams (inside `\def\OptionA{...}`)
+and matching-table cell diagrams (inside `\def\MatchA{...}`); those stay inline.
 
 **GOOD (main/solution diagram):**
 ```latex
@@ -210,4 +212,14 @@ or `\task` environments) — those stay inline.
 ```latex
 \def\OptionA{\begin{tikzpicture}...\end{tikzpicture}}
 ```
+
+**GOOD (matching-table cell — no center):**
+```latex
+\def\MatchA{\begin{tikzpicture}[baseline=(current bounding box.center)]...\end{tikzpicture}}
+```
+
+When asked for diagrams embedded in a match-the-column table, create one
+self-contained `\def\MatchX{...}` per diagram-bearing row. Never combine the
+rows into one large TikZ picture, never include the row label inside the
+diagram, and never use `\OptionX` for table cells.
 """
