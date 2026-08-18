@@ -13,6 +13,10 @@ from typing import TYPE_CHECKING, Optional
 from vbagent.cli.common import format_latex, extract_problem_solution
 from vbagent.tex import extract_items
 
+
+_OPTION_ARTIFACT_MARKER = "% VBAGENT_OPTION_DIAGRAMS_BEGIN"
+_OPTION_DEF_START_RE = re.compile(r"\\def\s*\\Option([A-F])\s*\{")
+
 if TYPE_CHECKING:
     from vbagent.models.pipeline import PipelineResult
     from vbagent.models.classification import (
@@ -41,13 +45,19 @@ def merge_metadata_into_latex(
     if difficulty and difficulty.tags_auto:
         comments.append(f"% tags: {', '.join(difficulty.tags_auto)}")
 
-    if diagram:
+    if diagram and primary.has_diagram:
         comments.append("% has_diagram: true")
         comments.append(f"% diagram_type: {diagram.diagram_type}")
         if diagram.diagram_elements:
             comments.append(f"% diagram_elements: {', '.join(diagram.diagram_elements)}")
     elif primary.has_diagram:
         comments.append("% has_diagram: true")
+
+    if diagram and diagram.has_option_diagrams:
+        comments.append("% has_option_diagrams: true")
+        comments.append(f"% num_option_diagrams: {diagram.num_option_diagrams}")
+        if diagram.option_diagram_type:
+            comments.append(f"% option_diagram_type: {diagram.option_diagram_type}")
 
     if difficulty:
         if difficulty.prerequisite_concepts:
@@ -144,10 +154,19 @@ def insert_tikz_into_latex(latex: str, tikz_code: str) -> str:
 
     # 2. Insert option defs before \begin{tasks}
     if option_tikz:
-        # Remove existing option defs in the LaTeX (will be replaced)
-        for option in ["A", "B", "C", "D", "E", "F"]:
-            pattern = rf'\\def\\Option{option}\{{[^{{}}]*(?:\{{[^{{}}]*\}}[^{{}}]*)*\}}'
-            result = re.sub(pattern, "", result)
+        # Remove existing option defs in the LaTeX (will be replaced). This
+        # uses balanced-brace parsing because TikZ definitions are nested much
+        # more deeply than a regular expression can safely match.
+        result = _remove_option_definitions(result)
+
+        # Option generators occasionally emit a shared top-level macro before
+        # the definitions. Remove the exact previous support block as well so
+        # save-time reassembly cannot duplicate it.
+        option_support = _clean_option_support(
+            _remove_option_definitions(option_tikz)
+        )
+        if option_support:
+            result = result.replace(option_support, "", 1)
 
         # Remove OPTIONS_DIAGRAMS comment
         result = re.sub(r'%\s*OPTIONS_DIAGRAMS:.*?(?:\n|$)', '', result)
@@ -158,7 +177,7 @@ def insert_tikz_into_latex(latex: str, tikz_code: str) -> str:
         def insert_before_tasks(match):
             return f"\n{option_tikz.strip()}\n{match.group(1)}"
 
-        result = re.sub(tasks_pattern, insert_before_tasks, result)
+        result = re.sub(tasks_pattern, insert_before_tasks, result, count=1)
 
     return result
 
@@ -167,22 +186,148 @@ def _split_main_and_options(tikz_code: str) -> tuple[str, str]:
     r"""Split combined tikz_code into (main_diagram, option_defs).
 
     Option defs are lines starting with ``\def\OptionX{`` through
-    their matching closing brace. Everything else is the main diagram.
+    their matching closing brace. An explicit artifact marker separates a
+    genuine main diagram from option support code.
     """
-    has_options = r'\def\Option' in tikz_code
+    if _OPTION_ARTIFACT_MARKER in tikz_code:
+        main_part, option_part = tikz_code.split(_OPTION_ARTIFACT_MARKER, 1)
+        return main_part.strip(), _normalize_option_artifact(option_part)
 
-    if not has_options:
+    spans = _option_definition_spans(tikz_code)
+    if not spans:
         return tikz_code, ""
 
-    # Find where option defs start — first \def\Option
-    idx = tikz_code.find(r'\def\Option')
-    if idx == -1:
-        return tikz_code, ""
+    prefix = tikz_code[:spans[0][1]].strip()
+    # Legacy combined artifacts had no boundary marker. A standalone
+    # tikzpicture before the first option definition is the main diagram;
+    # otherwise the prefix is option support code (for example a shared macro).
+    if r"\begin{tikzpicture}" in prefix:
+        main_part = prefix
+        option_source = tikz_code[spans[0][1]:]
+    else:
+        main_part = ""
+        option_source = tikz_code
 
-    main_part = tikz_code[:idx].strip()
-    option_part = tikz_code[idx:].strip()
+    return main_part, _normalize_option_artifact(option_source)
 
-    return main_part, option_part
+
+def split_tikz_artifacts(tikz_code: Optional[str]) -> tuple[str, str]:
+    """Return normalized main and option portions of a TikZ artifact."""
+    if not tikz_code:
+        return "", ""
+    return _split_main_and_options(tikz_code)
+
+
+def combine_tikz_artifacts(
+    main_tikz: Optional[str],
+    option_tikz: Optional[str],
+) -> Optional[str]:
+    """Combine independently generated main and option artifacts safely."""
+    main_source = (main_tikz or "").strip()
+    embedded_options = ""
+    if main_source and (r"\def\Option" in main_source
+                        or _OPTION_ARTIFACT_MARKER in main_source):
+        main_source, embedded_options = _split_main_and_options(main_source)
+
+    main = main_source.strip()
+    # A dedicated option agent is authoritative. Embedded option definitions
+    # from a main agent are retained only as a fallback.
+    options = (option_tikz or embedded_options or "").strip()
+    if not options:
+        return main or None
+    if not main:
+        return f"{_OPTION_ARTIFACT_MARKER}\n{options}"
+    return f"{main}\n\n{_OPTION_ARTIFACT_MARKER}\n{options}"
+
+
+def remove_main_diagram_placeholder(latex: str) -> str:
+    """Remove a scanner placeholder when classification says options-only."""
+    centered = r"\\begin\{center\}\s*\\input\{diagram\}\s*\\end\{center\}"
+    result = re.sub(centered, "", latex)
+    return re.sub(r"\\input\{diagram\}", "", result)
+
+
+def _is_escaped(text: str, index: int) -> bool:
+    """Return whether the character at index is escaped by a backslash."""
+    backslashes = 0
+    index -= 1
+    while index >= 0 and text[index] == "\\":
+        backslashes += 1
+        index -= 1
+    return backslashes % 2 == 1
+
+
+def _balanced_group_end(text: str, opening_brace: int) -> Optional[int]:
+    """Find the exclusive end of a TeX group, skipping comments/escaped braces."""
+    depth = 0
+    index = opening_brace
+    while index < len(text):
+        char = text[index]
+        if char == "%" and not _is_escaped(text, index):
+            newline = text.find("\n", index)
+            if newline == -1:
+                return None
+            index = newline + 1
+            continue
+        if char == "{" and not _is_escaped(text, index):
+            depth += 1
+        elif char == "}" and not _is_escaped(text, index):
+            depth -= 1
+            if depth == 0:
+                return index + 1
+        index += 1
+    return None
+
+
+def _option_definition_spans(text: str) -> list[tuple[str, int, int]]:
+    """Return ``(letter, start, end)`` spans for balanced option definitions."""
+    spans: list[tuple[str, int, int]] = []
+    position = 0
+    while match := _OPTION_DEF_START_RE.search(text, position):
+        end = _balanced_group_end(text, match.end() - 1)
+        if end is None:
+            position = match.end()
+            continue
+        spans.append((match.group(1), match.start(), end))
+        position = end
+    return spans
+
+
+def _remove_option_definitions(text: str) -> str:
+    """Remove every complete ``\\def\\OptionX{...}`` block from text."""
+    spans = _option_definition_spans(text)
+    if not spans:
+        return text
+    pieces = []
+    position = 0
+    for _, start, end in spans:
+        pieces.append(text[position:start])
+        position = end
+    pieces.append(text[position:])
+    return "".join(pieces)
+
+
+def _normalize_option_artifact(option_tikz: str) -> str:
+    """Keep one definition per option, preferring the last generated set."""
+    spans = _option_definition_spans(option_tikz)
+    if not spans:
+        return option_tikz.strip()
+
+    latest: dict[str, str] = {}
+    for letter, start, end in spans:
+        latest[letter] = option_tikz[start:end].strip()
+
+    support = _clean_option_support(_remove_option_definitions(option_tikz))
+    definitions = [latest[letter] for letter in "ABCDEF" if letter in latest]
+    parts = ([support] if support else []) + definitions
+    return "\n".join(parts)
+
+
+def _clean_option_support(text: str) -> str:
+    """Discard wrapper noise while retaining shared option-level commands."""
+    ignored = {"%", "```", "```latex", _OPTION_ARTIFACT_MARKER}
+    lines = [line for line in text.splitlines() if line.strip() not in ignored]
+    return "\n".join(lines).strip()
 
 
 def generate_image_paths_from_range(

@@ -816,6 +816,54 @@ def test_insert_tikz_into_latex_option_diagrams():
     assert r"\task \OptionB \ans" in result
 
 
+def test_option_diagram_insertion_is_idempotent_with_nested_tikz():
+    """Repeated assembly keeps one deeply nested definition per option."""
+    latex = r"""\item Choose the graph.
+% OPTIONS_DIAGRAMS: graphs
+\begin{tasks}(2)
+    \task \OptionA
+    \task \OptionB \ans
+\end{tasks}"""
+    tikz_code = r"""\pgfmathsetmacro{\axisWidth}{2.5}
+\def\OptionA{%
+\begin{tikzpicture}[baseline=(current bounding box.center)]
+  \draw[domain=0:1] plot ({\x},{\x*\x});
+\end{tikzpicture}}
+\def\OptionB{%
+\begin{tikzpicture}[baseline=(current bounding box.center)]
+  \node[draw] {$\left\{x^2\right\}$};
+\end{tikzpicture}}"""
+
+    once = insert_tikz_into_latex(latex, tikz_code)
+    twice = insert_tikz_into_latex(once, tikz_code)
+
+    assert twice.count(r"\def\OptionA") == 1
+    assert twice.count(r"\def\OptionB") == 1
+    assert twice.count(r"\pgfmathsetmacro{\axisWidth}{2.5}") == 1
+
+
+def test_duplicate_option_sets_keep_last_definition_once():
+    """A malformed model response with two option sets is normalized."""
+    latex = r"""\item Choose.
+\begin{tasks}(2)
+    \task \OptionA
+    \task \OptionB
+\end{tasks}"""
+    tikz_code = r"""\def\OptionA{\begin{tikzpicture}\node{old A};\end{tikzpicture}}
+\def\OptionB{\begin{tikzpicture}\node{old B};\end{tikzpicture}}
+\def\OptionA{\begin{tikzpicture}\node{new A};\end{tikzpicture}}
+\def\OptionB{\begin{tikzpicture}\node{new B};\end{tikzpicture}}"""
+
+    result = insert_tikz_into_latex(latex, tikz_code)
+
+    assert result.count(r"\def\OptionA") == 1
+    assert result.count(r"\def\OptionB") == 1
+    assert "old A" not in result
+    assert "old B" not in result
+    assert "new A" in result
+    assert "new B" in result
+
+
 def test_format_latex_basic_indentation():
     """Test that format_latex adds proper indentation to environments."""
     input_latex = r"""\item Test problem

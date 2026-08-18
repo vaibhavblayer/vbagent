@@ -225,7 +225,19 @@ Question type detection:
 - match: Match the following (two columns)
 
 Diagram analysis rules:
-- If has_diagram is false, set diagram fields to null/empty
+- `has_diagram` means a standalone/main graphical diagram in the question stem
+  or passage, OUTSIDE the answer choices. Option diagrams do not make this true.
+- `has_option_diagrams` means one or more answer choices contain graphical diagrams.
+- Use these four states exactly:
+  1. No diagrams: has_diagram=false, has_option_diagrams=false
+  2. Main diagram only: has_diagram=true, has_option_diagrams=false
+  3. Option diagrams only: has_diagram=false, has_option_diagrams=true
+  4. Both main and option diagrams: has_diagram=true, has_option_diagrams=true
+- Main diagram fields (`diagram_type`, `diagram_category`, `diagram_elements`,
+  `diagram_features`, `suggested_tikz_agent`) describe ONLY the standalone/main
+  diagram. Option fields describe ONLY the choice diagrams.
+- If has_diagram is false, set the main diagram fields to null/empty even when
+  has_option_diagrams is true; still populate all option-diagram fields.
 - Analyze ONLY the PROBLEM section diagrams, IGNORE solution diagrams
 - Truth tables are NOT diagrams — they are plain LaTeX tables (tabular environment). If the ONLY visual element is a truth table, set has_diagram=false. The scanner will extract it as a tabular. Only set has_diagram=true if there is an actual graphical element (gate circuit, waveform, ray diagram, etc.) alongside or instead of the table.
 - Similarly, simple data tables, matching columns, and text-only charts are NOT diagrams.

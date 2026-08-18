@@ -13,12 +13,21 @@ from ..mcq_format import (
 # Diagram placeholder instruction - scanner outputs placeholder, TikZ agent generates actual code
 DIAGRAM_PLACEHOLDER = r"""
     **Diagram Handling (IMPORTANT):**
-    *   If the image contains a diagram, output ONLY a placeholder:
+    *   This rule applies ONLY to a standalone/main diagram in the question
+        stem or passage, outside the answer choices.
+    *   If the question stem contains such a main diagram, output ONLY a placeholder:
         ```latex
         \begin{center}
             \input{diagram}
         \end{center}
         ```
+    *   Diagrams shown inside options (a), (b), (c), ... are OPTION diagrams,
+        not a main diagram. For an options-only question, do NOT emit
+        `\input{diagram}`; use only the `%% OPTIONS_DIAGRAMS` marker and
+        `\OptionA`, `\OptionB`, ... placeholders described below.
+    *   If the image contains BOTH a main diagram and option diagrams, emit one
+        `\input{diagram}` placeholder for the main diagram AND the separate
+        `\OptionA`, `\OptionB`, ... placeholders for the choices.
     *   Do NOT generate TikZ/chemfig code during scanning - the diagram agent will generate it separately.
     *   Place the placeholder immediately after the `\item` line (before options/tasks).
 """

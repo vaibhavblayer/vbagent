@@ -19,6 +19,9 @@ if TYPE_CHECKING:
     from vbagent.cache import PipelineCache
 
 
+_QUESTION_CLASSIFICATION_CONTRACT_VERSION = 2
+
+
 
 
 
@@ -344,15 +347,25 @@ def classify_question(
     )
 
     if cache and problem_id and cache.has(problem_id, "classification"):
-        if console:
-            console.print("[dim]Loading cached classification...[/dim]")
-        cached_data = cache.get(problem_id, "classification")
-        if cached_data is None:
-            # Cache returned None despite has() check - regenerate
+        stage_data = cache.get_stage_data(problem_id, "classification")
+        cache_is_current = stage_data.get(
+            "contract_version"
+        ) == _QUESTION_CLASSIFICATION_CONTRACT_VERSION
+        if cache_is_current:
             if console:
-                console.print("[dim yellow]Cache returned None, regenerating...[/dim yellow]")
-        else:
-            return QuestionClassification(**cached_data)
+                console.print("[dim]Loading cached classification...[/dim]")
+            cached_data = cache.get(problem_id, "classification")
+            if cached_data is not None:
+                return QuestionClassification(**cached_data)
+            if console:
+                console.print(
+                    "[dim yellow]Cache returned None, regenerating...[/dim yellow]"
+                )
+        elif console:
+            console.print(
+                "[dim]Refreshing classification for the main/option diagram "
+                "contract...[/dim]"
+            )
 
     if console:
         with console.status("[bold green]Stage 1: Classifying & analyzing..."):
@@ -361,7 +374,14 @@ def classify_question(
         result = classify_question_image(image_path, show_spinner=True)
 
     if cache and problem_id:
-        cache.set(problem_id, "classification", result.model_dump())
+        cache.set(
+            problem_id,
+            "classification",
+            result.model_dump(),
+            stage_data={
+                "contract_version": _QUESTION_CLASSIFICATION_CONTRACT_VERSION,
+            },
+        )
 
     return result
 

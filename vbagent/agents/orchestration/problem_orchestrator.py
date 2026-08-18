@@ -18,7 +18,10 @@ from vbagent.agents.classification.question_classifier import (
     to_diagram_analysis,
 )
 from vbagent.pipeline.io import (
+    combine_tikz_artifacts,
     insert_tikz_into_latex,
+    remove_main_diagram_placeholder,
+    split_tikz_artifacts,
 )
 from vbagent.cli.common import format_latex, _get_console
 from vbagent.references.samples import get_sample
@@ -97,11 +100,13 @@ class ProblemOrchestrator:
         if scan_cached and (tikz_cached or not needs_tikz) and (options_cached or not needs_options):
             self.console.print("[dim]Loading from cache...[/dim]")
             latex = cache.get(problem_id, "scan")
-            tikz_code = cache.get(problem_id, "tikz") if tikz_cached else None
+            tikz_code = (
+                cache.get(problem_id, "tikz")
+                if tikz_cached and needs_tikz
+                else None
+            )
             option_tikz = cache.get(problem_id, "options") if options_cached else None
-            # Merge options into tikz
-            if option_tikz:
-                tikz_code = (tikz_code + "\n\n" + option_tikz) if tikz_code else option_tikz
+            tikz_code = combine_tikz_artifacts(tikz_code, option_tikz)
         else:
             # Parallel dispatch: scan ∥ tikz ∥ options (3-way)
             latex, tikz_code, option_tikz = self._run_parallel(
@@ -110,17 +115,26 @@ class ProblemOrchestrator:
                 needs_tikz=needs_tikz, needs_options=needs_options,
             )
 
-        # The scan is downstream evidence. If it contains a main-diagram
-        # placeholder despite has_diagram=False, self-heal the classifier miss
-        # instead of persisting an unresolved \input{diagram}.
-        if latex and r'\input{diagram}' in latex and not tikz_code:
-            tikz_code = self._run_main_diagram_sync(
+        # Option-only questions must not acquire a second, composite "main"
+        # diagram. A genuine main + option question has both flags true and
+        # keeps both independent generation paths.
+        option_only = needs_options and not needs_tikz
+        if option_only and latex and r'\input{diagram}' in latex:
+            latex = remove_main_diagram_placeholder(latex)
+
+        # The scan is downstream evidence. If a non-option-only scan contains
+        # a main placeholder despite classification, self-heal the miss.
+        main_artifact, option_artifact = split_tikz_artifacts(tikz_code)
+        if (not option_only and latex and r'\input{diagram}' in latex
+                and not main_artifact):
+            main_artifact = self._run_main_diagram_sync(
                 image_path,
                 primary,
                 diagram_analysis,
                 cache=cache,
                 problem_id=problem_id,
             )
+            tikz_code = combine_tikz_artifacts(main_artifact, option_artifact)
 
         # Combine LaTeX + TikZ
         latex = self._assemble_latex(latex, tikz_code)
@@ -161,9 +175,13 @@ class ProblemOrchestrator:
             "generating TikZ...[/yellow]"
         )
         description = (
-            f"Generate TikZ for {diagram_analysis.diagram_type}"
+            f"Reconstruct only the standalone main {diagram_analysis.diagram_type} "
+            "diagram in the question stem. Ignore every diagram inside the "
+            "answer options. Do not output any \\def\\Option definitions."
             if diagram_analysis and diagram_analysis.diagram_type
-            else "Reconstruct the diagram shown in the problem image"
+            else "Reconstruct only the standalone main diagram in the question "
+                 "stem. Ignore every diagram inside the answer options. Do not "
+                 "output any \\def\\Option definitions."
         )
         code, agent = generate_tikz_with_routing(
             image_path=image_path,
@@ -279,14 +297,24 @@ class ProblemOrchestrator:
             start_times["tikz"] = time.time()
             state["tikz"]["status"] = "running"
             try:
-                desc = (f"Generate TikZ for {diagram_analysis.diagram_type}"
+                desc = (f"Reconstruct only the standalone main "
+                        f"{diagram_analysis.diagram_type} diagram in the question "
+                        "stem. Ignore every diagram inside the answer options. "
+                        "Do not output any \\def\\Option definitions."
                         if diagram_analysis and diagram_analysis.diagram_type
-                        else "Generate diagram")
+                        else "Reconstruct only the standalone main diagram in the "
+                             "question stem. Ignore every diagram inside the answer "
+                             "options. Do not output any \\def\\Option definitions.")
                 # For biology: use diagram_draw_description if available
                 if (diagram_analysis
                         and hasattr(diagram_analysis, 'diagram_draw_description')
                         and diagram_analysis.diagram_draw_description):
-                    desc = diagram_analysis.diagram_draw_description
+                    desc = (
+                        f"{diagram_analysis.diagram_draw_description}\n\n"
+                        "Reconstruct only the standalone main diagram in the "
+                        "question stem. Ignore every diagram inside the answer "
+                        "options."
+                    )
                 code, agent = generate_tikz_with_routing(
                     image_path=image_path,
                     description=desc,
@@ -294,6 +322,7 @@ class ProblemOrchestrator:
                     primary=primary,
                     use_context=self.use_context,
                     show_spinner=True,
+                    diagram_context="problem",
                 )
                 tikz_holder["result"] = code
                 tikz_holder["agent"] = agent
@@ -438,12 +467,7 @@ class ProblemOrchestrator:
         if not run_options and latex and (r'\OptionA' in latex or r'\OptionB' in latex):
             option_tikz = self._run_option_diagrams_sync(image_path, primary, diagram_analysis)
 
-        # Merge: option tikz takes precedence if it contains option definitions
-        if option_tikz:
-            if tikz_code:
-                tikz_code = tikz_code + "\n\n" + option_tikz
-            else:
-                tikz_code = option_tikz
+        tikz_code = combine_tikz_artifacts(tikz_code, option_tikz)
 
         return latex, tikz_code, option_tikz
 

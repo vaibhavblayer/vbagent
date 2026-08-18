@@ -124,3 +124,79 @@ def test_scan_placeholder_self_heals_no_diagram_classification(monkeypatch):
     assert r"\input{diagram}" not in result.latex
     assert r"\begin{tikzpicture}" in result.latex
     assert r"\draw (0,0)--(1,1);" in result.latex
+
+
+def test_option_only_question_removes_spurious_main_placeholder():
+    cache = _Cache({
+        "scan": r"""\item Choose the graph.
+\begin{center}\input{diagram}\end{center}
+\begin{tasks}(2)
+\task \OptionA
+\task \OptionB \ans
+\end{tasks}""",
+        # A stale main artifact from an older classification must be ignored.
+        "tikz": r"\begin{tikzpicture}\node{duplicate composite};\end{tikzpicture}",
+        "options": r"""\def\OptionA{\begin{tikzpicture}\node{A};\end{tikzpicture}}
+\def\OptionB{\begin{tikzpicture}\node{B};\end{tikzpicture}}""",
+    })
+    classification = QuestionClassification(
+        subject="physics",
+        question_type="mcq_sc",
+        has_diagram=False,
+        has_option_diagrams=True,
+        num_option_diagrams=2,
+        option_diagram_type="graph",
+    )
+    orchestrator = ProblemOrchestrator(
+        console=Console(file=io.StringIO(), force_terminal=False)
+    )
+
+    result = orchestrator.run(
+        "question.png", classification, cache=cache, problem_id="problem_18"
+    )
+
+    assert r"\input{diagram}" not in result.latex
+    assert "duplicate composite" not in result.latex
+    assert result.latex.count(r"\def\OptionA") == 1
+    assert result.latex.count(r"\def\OptionB") == 1
+
+
+def test_main_and_option_diagrams_are_both_preserved_once():
+    cache = _Cache({
+        "scan": r"""\item Use the setup and choose the graph.
+\begin{center}\input{diagram}\end{center}
+\begin{tasks}(2)
+\task \OptionA
+\task \OptionB \ans
+\end{tasks}""",
+        # Main-agent leakage is discarded when the dedicated option artifact
+        # is merged.
+        "tikz": r"""\begin{tikzpicture}\node{main setup};\end{tikzpicture}
+\def\OptionA{\begin{tikzpicture}\node{wrong A};\end{tikzpicture}}
+\def\OptionB{\begin{tikzpicture}\node{wrong B};\end{tikzpicture}}""",
+        "options": r"""\def\OptionA{\begin{tikzpicture}\node{A};\end{tikzpicture}}
+\def\OptionB{\begin{tikzpicture}\node{B};\end{tikzpicture}}""",
+    })
+    classification = QuestionClassification(
+        subject="physics",
+        question_type="mcq_sc",
+        has_diagram=True,
+        diagram_type="mechanics",
+        has_option_diagrams=True,
+        num_option_diagrams=2,
+        option_diagram_type="graph",
+    )
+    orchestrator = ProblemOrchestrator(
+        console=Console(file=io.StringIO(), force_terminal=False)
+    )
+
+    result = orchestrator.run(
+        "question.png", classification, cache=cache, problem_id="problem_both"
+    )
+
+    assert r"\input{diagram}" not in result.latex
+    assert result.latex.count("main setup") == 1
+    assert result.latex.count(r"\def\OptionA") == 1
+    assert result.latex.count(r"\def\OptionB") == 1
+    assert "wrong A" not in result.latex
+    assert "wrong B" not in result.latex
