@@ -13,8 +13,9 @@ Your task is to generate TikZ code for coordinate geometry diagrams including li
 **Basic Coordinate Axes:**
 ```latex
 \begin{tikzpicture}
-\draw[thin, ->] (-3,0) -- (3,0) node[right] {$x$};
-\draw[thin, ->] (0,-3) -- (0,3) node[above] {$y$};
+\coordinate (O) at (0,0);
+\draw[thin, ->] ($(O)+(-3,0)$) -- ++(6,0) node[right] {$x$};
+\draw[thin, ->] ($(O)+(0,-3)$) -- ++(0,6) node[above] {$y$};
 \foreach \x in {-2,-1,1,2}
     \draw (\x,0.1) -- (\x,-0.1) node[below, font=\tiny] {$\x$};
 \foreach \y in {-2,-1,1,2}
@@ -36,9 +37,11 @@ Your task is to generate TikZ code for coordinate geometry diagrams including li
 ### Line through Two Points
 
 ```latex
-\draw[thick] (1,2) -- (4,5);
-\fill (1,2) circle (2pt) node[below left] {$A(1,2)$};
-\fill (4,5) circle (2pt) node[above right] {$B(4,5)$};
+\coordinate (A) at (1,2);
+\coordinate (B) at (4,5);
+\draw[thick] (A) -- (B);
+\fill (A) circle (2pt) node[below left] {$A(1,2)$};
+\fill (B) circle (2pt) node[above right] {$B(4,5)$};
 ```
 
 ### Parallel Lines (Same Slope)
@@ -69,12 +72,15 @@ Your task is to generate TikZ code for coordinate geometry diagrams including li
 ### Distance and Section Formula
 
 ```latex
-\fill (1,1) circle (2pt) node[below left] {$A(1,1)$};
-\fill (5,4) circle (2pt) node[above right] {$B(5,4)$};
-\draw[thick] (1,1) -- (5,4);
-% Midpoint
-\fill (3,2.5) circle (2pt) node[above left] {$M$};
-\node[below, font=\footnotesize] at (3,2.5) {$\left(\frac{6}{2},\frac{5}{2}\right)$};
+\coordinate (A) at (1,1);
+\coordinate (B) at (5,4);
+\coordinate (M) at ($(A)!0.5!(B)$);
+\fill (A) circle (2pt) node[below left] {$A(1,1)$};
+\fill (B) circle (2pt) node[above right] {$B(5,4)$};
+\draw[thick] (A) -- (B);
+% Midpoint — let TikZ derive the geometry
+\fill (M) circle (2pt) node[above left] {$M$};
+\node[below, font=\footnotesize] at (M) {$\left(\frac{6}{2},\frac{5}{2}\right)$};
 ```
 
 ### Angle Bisectors
@@ -172,7 +178,8 @@ Your task is to generate TikZ code for coordinate geometry diagrams including li
 \draw[thick] (0,0) circle (2cm);
 \fill (0,0) circle (2pt) node[below left] {$O$};
 % Director circle (radius = r√2)
-\draw[thick, dashed] (0,0) circle (2.83cm);
+\pgfmathsetmacro{\directorRadius}{2*sqrt(2)}
+\draw[thick, dashed] (0,0) circle[radius=\directorRadius cm];
 \node[font=\footnotesize] at (2.2,2.2) {$r\sqrt{2}$};
 \end{tikzpicture}
 ```
@@ -227,9 +234,11 @@ Your task is to generate TikZ code for coordinate geometry diagrams including li
 \draw[thick, domain=-2.8:2.8, samples=60] plot ({(\x)^2/4}, {\x});
 \fill (1,0) circle (2pt) node[below right, font=\footnotesize] {$F$};
 % Focal chord through F
-\fill (4,4) circle (2pt) node[right] {$P$};
-\fill (0.25,-1) circle (2pt) node[left] {$Q$};
-\draw[thick] (4,4) -- (0.25,-1);
+\coordinate (P) at (4,4);
+\coordinate (Q) at ({1/4},-1);
+\fill (P) circle (2pt) node[right] {$P$};
+\fill (Q) circle (2pt) node[left] {$Q$};
+\draw[thick] (P) -- (Q);
 \end{tikzpicture}
 ```
 
@@ -247,8 +256,8 @@ Your task is to generate TikZ code for coordinate geometry diagrams including li
 \draw[thick] (0,0) ellipse (3cm and 2cm);
 \fill (0,0) circle (2pt) node[below right, font=\footnotesize] {$O$};
 % Foci c = √5
-\fill (-2.236,0) circle (2pt) node[below, font=\footnotesize] {$F_1$};
-\fill (2.236,0) circle (2pt) node[below, font=\footnotesize] {$F_2$};
+\fill ({-sqrt(5)},0) circle (2pt) node[below, font=\footnotesize] {$F_1$};
+\fill ({sqrt(5)},0) circle (2pt) node[below, font=\footnotesize] {$F_2$};
 % Vertices
 \fill (-3,0) circle (1.5pt) node[below left, font=\footnotesize] {$A'$};
 \fill (3,0) circle (1.5pt) node[below right, font=\footnotesize] {$A$};
@@ -264,10 +273,12 @@ Your task is to generate TikZ code for coordinate geometry diagrams including li
 
 ```latex
 % Tangent at point (x₀,y₀): xx₀/a² + yy₀/b² = 1
+\pgfmathsetmacro{\px}{3*sqrt(3)/2}
+\coordinate (P) at (\px,1);
 \draw[thick] (0,0) ellipse (3cm and 2cm);
-\fill (2.598,1) circle (2pt) node[above right] {$P$};
-\draw[thick, dashed, domain=-0.5:4] plot (\x, {(9 - 2.598*\x)/2});
-\node[font=\footnotesize] at (3.5,0.5) {tangent};
+\fill (P) circle (2pt) node[above right] {$P$};
+\draw[thick, dashed, domain=-0.5:4] plot (\x, {(9 - \px*\x)/2});
+\node[font=\footnotesize] at ($(P)+(1,-0.5)$) {tangent};
 ```
 
 ### Auxiliary Circle and Eccentric Angle
@@ -321,8 +332,10 @@ Your task is to generate TikZ code for coordinate geometry diagrams including li
 \draw[thick, domain=-4.5:-2.05, samples=50] plot (\x, {1.5*sqrt((\x)^2/4 - 1)});
 \draw[thick, domain=-4.5:-2.05, samples=50] plot (\x, {-1.5*sqrt((\x)^2/4 - 1)});
 % Asymptotes
-\draw[dashed, thin] (-4.5,-3.375) -- (4.5,3.375) node[above, font=\footnotesize] {$y=\frac{b}{a}x$};
-\draw[dashed, thin] (-4.5,3.375) -- (4.5,-3.375);
+\def\xmax{4.5}
+\draw[dashed, thin] (-\xmax,{-0.75*\xmax}) -- (\xmax,{0.75*\xmax})
+    node[above, font=\footnotesize] {$y=\frac{b}{a}x$};
+\draw[dashed, thin] (-\xmax,{0.75*\xmax}) -- (\xmax,{-0.75*\xmax});
 % Foci c = √(a²+b²) = √6.25 = 2.5
 \fill (-2.5,0) circle (2pt) node[below, font=\footnotesize] {$F_1$};
 \fill (2.5,0) circle (2pt) node[below, font=\footnotesize] {$F_2$};
@@ -373,7 +386,8 @@ Your task is to generate TikZ code for coordinate geometry diagrams including li
 ```latex
 \fill (-2,0) circle (2pt) node[below] {$F_1$};
 \fill (2,0) circle (2pt) node[below] {$F_2$};
-\draw[thick, dashed] (0,0) ellipse (3cm and 2.236cm);
+\pgfmathsetmacro{\b}{sqrt(5)}
+\draw[thick, dashed] (0,0) ellipse (3cm and \b cm);
 \fill (2.5,1.5) circle (2pt) node[right] {$P$};
 \draw[dotted] (-2,0) -- (2.5,1.5) -- (2,0);
 \node[font=\footnotesize] at (0,-3) {$|PF_1|+|PF_2|=2a$};
@@ -386,11 +400,20 @@ Your task is to generate TikZ code for coordinate geometry diagrams including li
 ### Translation
 
 ```latex
-\draw[thick] (0,0) -- (1.5,0) -- (1.5,1) -- (0,1) -- cycle;
-\node[font=\footnotesize] at (0.75,0.5) {original};
-\draw[thick, dashed] (3,1.5) -- (4.5,1.5) -- (4.5,2.5) -- (3,2.5) -- cycle;
-\node[font=\footnotesize] at (3.75,2) {image};
-\draw[->, thin] (1.5,1) -- (3,1.5);
+\coordinate (A) at (0,0);
+\coordinate (B) at ($(A)+(1.5,0)$);
+\coordinate (C) at ($(B)+(0,1)$);
+\coordinate (D) at ($(A)+(0,1)$);
+\draw[thick] (A) -- (B) -- (C) -- (D) -- cycle;
+\node[font=\footnotesize] at ($(A)!0.5!(C)$) {original};
+\def\dx{3} \def\dy{1.5}
+\coordinate (Ap) at ($(A)+(\dx,\dy)$);
+\coordinate (Bp) at ($(B)+(\dx,\dy)$);
+\coordinate (Cp) at ($(C)+(\dx,\dy)$);
+\coordinate (Dp) at ($(D)+(\dx,\dy)$);
+\draw[thick, dashed] (Ap) -- (Bp) -- (Cp) -- (Dp) -- cycle;
+\node[font=\footnotesize] at ($(Ap)!0.5!(Cp)$) {image};
+\draw[->, thin] (C) -- (Cp);
 ```
 
 ### Rotation About Origin

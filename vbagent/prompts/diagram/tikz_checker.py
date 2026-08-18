@@ -35,7 +35,11 @@ _REVIEW_CHECKLIST = r"""## Review Checklist
 5. Use `node[midway]` for labels on lines/springs - NO position calculations
 6. Use SCOPES for repeated structures - avoids coordinate bloat
 7. NO variable bloat - don't create a variable for every position
-8. PREFER INTEGER VALUES - use 1, 2, 3 instead of 1.2, 2.8, 3.5 when possible
+8. PREFER SIMPLE SCHEMATIC VALUES - integers and simple fractions such as 0.5,
+   1, 1.5, 2, 3 instead of arbitrary precision when the exact value is not data
+9. Use relative `++(dx,dy)` moves from named points for connected geometry
+10. Use polar vectors, calc interpolation/projection, or named-path intersections
+    for derived points instead of manually approximating their coordinates
 
 **Check for:**
 - Too many variables when inline expressions would be cleaner
@@ -43,8 +47,11 @@ _REVIEW_CHECKLIST = r"""## Review Checklist
 - Absolute positioning instead of `$(node.anchor)+(x,y)$` or `below of=`
 - Repeated code that should use `\begin{scope}[xshift=...]`
 - Hardcoded shift values like `(5.2, 0)` instead of scope
-- Decimal values like 1.2, 3.8 when integers like 1, 4 would work
+- Arbitrary values like `0.145`, `0.27`, or `(2.347,-1.892)` when simple
+  relative or calculated geometry would work
 - 7-8+ variables when 2-3 would suffice
+- Do NOT round actual graph data, measured coordinates, roots, intersections, or
+  curve-control values; preserve them exactly with expressions such as `{sqrt(5)}`
 
 BAD - variable bloat, absolute coordinates, separate label positions, decimals:
 ```
@@ -65,17 +72,23 @@ GOOD - calc-based positioning, node[midway] for labels, integers (PREFERRED):
 ```
 \tikzset{
     pulley/.style={draw, thick, circle, minimum size=1cm, fill=white},
-    block/.style={draw, thick, fill=white, minimum width=1.2cm, minimum height=0.8cm}
+    block/.style={draw, thick, fill=white, minimum width=1.5cm, minimum height=1cm}
 }
 
-% BEST - use calc library: $(node.anchor)+(x,y)$ with integer offsets
+% BEST - use calc/anchors and simple relative offsets
 \pic[rotate=180] (ceiling) at (0,0) {frame=2cm};
 \node[pulley] (pulley) at ($(ceiling-center)+(0,-1)$) {};
 \node[block] (block_right) at ($(pulley.east)+(0,-2)$) {$m_1$};
-\node[block] (block_left) at ($(pulley.west)+(0,-3)$) {$m_2$};  % Use -3 not -2.5
+\node[block] (block_left) at ($(pulley.west)+(0,-3)$) {$m_2$};
+\draw (pulley.east) -- ++(0,-2) coordinate (rightRopeEnd);
 
-% Also OK - use below of=, xshift, yshift with integers
-\node[block] (box1) [below of=pulley1, yshift=-2cm] {$m_1$};  % Use -2cm not -1.5cm
+% Also OK - use below of=, xshift, yshift with simple spacing
+\node[block] (box1) [below of=pulley1, yshift=-2cm] {$m_1$};
+
+% Exact derived geometry — do not guess the meeting point
+\coordinate (midpoint) at ($(A)!0.5!(B)$);
+\draw (O) -- ++(30:2);
+\path[name intersections={of=lineA and lineB, by=meeting}];
 
 % Use node[midway] for labels on lines/springs - MUCH cleaner!
 \draw[spring] (ceiling-center) -- (pulley.north) node[midway, right=2mm] {$k$};
@@ -85,7 +98,8 @@ GOOD - calc-based positioning, node[midway] for labels, integers (PREFERRED):
 **When to create variable vs inline:**
 - Create variable: used 3+ times OR very complex expression
 - Use inline: used 1-2 times, keeps code readable
-- ALWAYS prefer integers: use 2 instead of 1.8, use 3 instead of 3.2
+- For schematic spacing, prefer integers/simple fractions; preserve exact
+  mathematical or measured values when they carry meaning
 
 - Use `\pgfmathsetmacro` (NOT `\def`)
 - Use camelCase for variable names

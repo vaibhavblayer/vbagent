@@ -140,7 +140,50 @@ or `\textbf{}` for vectors.
 - ✅ `$\vec{B}$`, `$\vec{F}$`, `$\vec{v}$`, `$\vec{E}$`, `$\vec{p}$`
 - ❌ `$\mathbf{B}$`, `$\boldsymbol{F}$`, `$\textbf{v}$`
 
-### 7. Output Cleanliness
+### 7. Coordinate Discipline — Build Geometry, Do Not Guess It
+Prefer coordinates that reveal the construction. Start from one or a few named
+base points, then build nearby geometry with relative moves, node anchors, and
+the `calc`/`intersections` libraries.
+
+**Preferred order:**
+1. Named nodes and anchors: `(block.east)`, `(pulley.south)`, `(O)`
+2. Relative movement: `-- ++(1,0)`, `-- ++(0,1)`, `-- ++(45:2)`
+3. Exact TikZ calculations: `($(A)!0.5!(B)$)`, `($(P)+(0,1)$)`, `(A -| B)`
+4. Named-path intersections for points determined by two lines or curves
+5. Absolute coordinates only for essential base points and actual plotted data
+
+For schematic spacing, prefer integers and simple fractions such as `0.25`,
+`0.5`, `1`, `1.5`, `2`, and `3`. Do NOT invent precision with values such as
+`0.145`, `0.27`, or `(2.347,-1.892)` merely to make elements meet visually.
+
+**BAD — repeated origins and guessed derived points:**
+```latex
+\draw (0,0) -- (1,0);
+\draw (0,0) -- (0,1);
+\coordinate (meeting) at (2.347,-1.892);
+\draw (0.145,0.27) -- (1.73,2.18);
+```
+
+**GOOD — one base point, simple relative vectors, exact relationships:**
+```latex
+\coordinate (O) at (0,0);
+\draw (O) -- ++(1,0);
+\draw (O) -- ++(0,1);
+\coordinate (M) at ($(A)!0.5!(B)$);
+\draw (block.east) -- ++(1.5,0) coordinate (ropeEnd);
+\path[name intersections={of=lineA and lineB, by=meeting}];
+```
+
+Use polar relative coordinates when direction and length are known; for example,
+`(O) -- ++(30:2)` is clearer and more exact than `-- ++(1.732,1)`. If the same
+dimension appears three or more times, define it once and reuse it.
+
+**Important exception:** do not round coordinates that are actual problem data,
+measured values, roots/intersections being plotted, or necessary curve-control
+parameters. Keep those exact with expressions such as `{sqrt(5)}` or compute
+them with PGF/TikZ. Simplify construction geometry, not mathematical content.
+
+### 8. Output Cleanliness
 - No `\usepackage` commands (preamble handles this)
 - No `\documentclass`, `\begin{document}`, etc.
 - No markdown code fences
@@ -148,7 +191,7 @@ or `\textbf{}` for vectors.
 - Start with `\begin{tikzpicture}` and end with `\end{tikzpicture}`
   (or `\def\OptionA{...}` for MCQ option diagrams)
 
-### 8. Centering — Always Wrap in `\begin{center}`
+### 9. Centering — Always Wrap in `\begin{center}`
 Every `\begin{tikzpicture}...\end{tikzpicture}` block MUST be wrapped in
 `\begin{center}...\end{center}` so diagrams are horizontally centered in the
 document. The ONLY exception is MCQ option diagrams (inside `\def\OptionA{...}`

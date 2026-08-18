@@ -207,9 +207,9 @@ Block on 30° incline | coordinate_system: tilted (along and perpendicular to in
 \draw[->] (block.east) ++(0.5,0) -- ++(1,0) node[right] {$x$};
 \draw[->] (block.east) ++(0.5,0) -- ++(0,1) node[above] {$y$};
 
-% Component resolution (from key_equations)
-\draw[dashed] (block.center) -- ++(0.75,-0.433) node[right] {$mg\sin\theta$};
-\draw[dashed] (block.center) -- ++(-0.433,-0.75) node[below] {$mg\cos\theta$};
+% Component resolution (from key_equations): exact polar directions, simple lengths
+\draw[dashed] (block.center) -- ++(-30:1.5) node[right] {$mg\sin\theta$};
+\draw[dashed] (block.center) -- ++(-120:1) node[below] {$mg\cos\theta$};
 ```
 
 This produces an FBD that precisely matches the solution's physics analysis!

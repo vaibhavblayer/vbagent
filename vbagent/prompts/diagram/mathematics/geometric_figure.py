@@ -17,14 +17,12 @@ Your task is to generate TikZ code for geometric figures including triangles, po
 \coordinate (A) at (0,0);
 \coordinate (B) at (4,0);
 \coordinate (C) at (1.5,3);
-\draw[thick] (A) -- (B) -- (C) -- cycle;
+\draw[thick] (A) -- node[midway, below, font=\footnotesize] {$a$} (B)
+    -- node[midway, right, font=\footnotesize] {$b$} (C)
+    -- node[midway, left, font=\footnotesize] {$c$} cycle;
 \fill (A) circle (2pt) node[below left] {$A$};
 \fill (B) circle (2pt) node[below right] {$B$};
 \fill (C) circle (2pt) node[above] {$C$};
-% Side labels
-\node[below, font=\footnotesize] at (2,0) {$a$};
-\node[right, font=\footnotesize] at (2.75,1.5) {$b$};
-\node[left, font=\footnotesize] at (0.75,1.5) {$c$};
 \end{tikzpicture}
 ```
 
@@ -50,11 +48,11 @@ Your task is to generate TikZ code for geometric figures including triangles, po
 \begin{tikzpicture}
 \coordinate (A) at (0,0);
 \coordinate (B) at (3,0);
-\coordinate (C) at (1.5,2.8);
+\coordinate (C) at (1.5,3);
 \draw[thick] (A) -- (B) -- (C) -- cycle;
 % Tick marks on equal sides AC and BC
-\draw ($(A)!0.5!(C) + (-0.08,0.05)$) -- ++(0.16,-0.1);
-\draw ($(B)!0.5!(C) + (0.08,0.05)$) -- ++(-0.16,-0.1);
+\draw ($(A)!0.5!(C)+(-0.1,0.1)$) -- ++(0.2,-0.2);
+\draw ($(B)!0.5!(C)+(0.1,0.1)$) -- ++(-0.2,-0.2);
 \fill (A) circle (2pt) node[below left] {$A$};
 \fill (B) circle (2pt) node[below right] {$B$};
 \fill (C) circle (2pt) node[above] {$C$};
@@ -67,12 +65,12 @@ Your task is to generate TikZ code for geometric figures including triangles, po
 \begin{tikzpicture}
 \coordinate (A) at (0,0);
 \coordinate (B) at (3,0);
-\coordinate (C) at (1.5,2.598);
+\coordinate (C) at ({3/2},{3*sqrt(3)/2});
 \draw[thick] (A) -- (B) -- (C) -- cycle;
 % All sides equal — single tick on each
-\draw ($(A)!0.5!(B) + (0,-0.08)$) -- ++(0,0.16);
-\draw ($(A)!0.5!(C) + (-0.08,0.05)$) -- ++(0.16,-0.1);
-\draw ($(B)!0.5!(C) + (0.08,0.05)$) -- ++(-0.16,-0.1);
+\draw ($(A)!0.5!(B)+(0,-0.1)$) -- ++(0,0.2);
+\draw ($(A)!0.5!(C)+(-0.1,0.1)$) -- ++(0.2,-0.2);
+\draw ($(B)!0.5!(C)+(0.1,0.1)$) -- ++(-0.2,-0.2);
 \end{tikzpicture}
 ```
 
@@ -85,8 +83,8 @@ Your task is to generate TikZ code for geometric figures including triangles, po
 ```latex
 \draw[thick] (0,0) -- (3,0);
 \draw[thick] (0,0) -- (2,2);
-\draw[thin] (0.6,0) arc (0:45:0.6);
-\node[font=\footnotesize] at (0.8,0.25) {$\theta$};
+\draw[thin] (0.5,0) arc (0:45:0.5)
+    node[midway, right, font=\footnotesize] {$\theta$};
 ```
 
 ### Right Angle (Square Mark)
@@ -120,10 +118,10 @@ Your task is to generate TikZ code for geometric figures including triangles, po
 \coordinate (D) at (1,2);
 \draw[thick] (A) -- (B) -- (C) -- (D) -- cycle;
 % Arrow marks for parallel sides
-\draw[->, thin] ($(A)!0.45!(B)$) -- ($(A)!0.55!(B)$);
-\draw[->, thin] ($(D)!0.45!(C)$) -- ($(D)!0.55!(C)$);
-\draw[->, thin] ($(A)!0.45!(D)$) -- ($(A)!0.55!(D)$);
-\draw[->, thin] ($(B)!0.45!(C)$) -- ($(B)!0.55!(C)$);
+\draw[->, thin] ($(A)!0.4!(B)$) -- ($(A)!0.6!(B)$);
+\draw[->, thin] ($(D)!0.4!(C)$) -- ($(D)!0.6!(C)$);
+\draw[->, thin] ($(A)!0.4!(D)$) -- ($(A)!0.6!(D)$);
+\draw[->, thin] ($(B)!0.4!(C)$) -- ($(B)!0.6!(C)$);
 \fill (A) circle (2pt) node[below left] {$A$};
 \fill (B) circle (2pt) node[below right] {$B$};
 \fill (C) circle (2pt) node[above right] {$C$};
@@ -141,8 +139,8 @@ Your task is to generate TikZ code for geometric figures including triangles, po
 \coordinate (D) at (1,2);
 \draw[thick] (A) -- (B) -- (C) -- (D) -- cycle;
 % Parallel marks on AB and DC
-\draw[->, thin] ($(A)!0.45!(B)$) -- ($(A)!0.55!(B)$);
-\draw[->, thin] ($(D)!0.45!(C)$) -- ($(D)!0.55!(C)$);
+\draw[->, thin] ($(A)!0.4!(B)$) -- ($(A)!0.6!(B)$);
+\draw[->, thin] ($(D)!0.4!(C)$) -- ($(D)!0.6!(C)$);
 \fill (A) circle (2pt) node[below left] {$A$};
 \fill (B) circle (2pt) node[below right] {$B$};
 \fill (C) circle (2pt) node[above right] {$C$};
@@ -267,17 +265,21 @@ Your task is to generate TikZ code for geometric figures including triangles, po
 
 ```latex
 \begin{tikzpicture}
-\draw[thick] (0,0) circle (2cm);
-\fill (0,0) circle (2pt) node[below left] {$O$};
+\coordinate (O) at (0,0);
+\coordinate (A) at (-1.5,{sqrt(4-2.25)});
+\coordinate (B) at (1.5,{sqrt(4-2.25)});
+\coordinate (M) at ($(A)!0.5!(B)$);
+\draw[thick] (O) circle (2cm);
+\fill (O) circle (2pt) node[below left] {$O$};
 % Chord
-\fill (-1.5,{sqrt(4-2.25)}) circle (2pt) node[above left] {$A$};
-\fill (1.5,{sqrt(4-2.25)}) circle (2pt) node[above right] {$B$};
-\draw[thick] (-1.5,{sqrt(4-2.25)}) -- (1.5,{sqrt(4-2.25)});
+\fill (A) circle (2pt) node[above left] {$A$};
+\fill (B) circle (2pt) node[above right] {$B$};
+\draw[thick] (A) -- (B);
 % Perpendicular from O to chord
-\draw[dashed] (0,0) -- (0,{sqrt(4-2.25)});
-\fill (0,{sqrt(4-2.25)}) circle (2pt) node[above, font=\footnotesize] {$M$};
+\draw[dashed] (O) -- (M);
+\fill (M) circle (2pt) node[above, font=\footnotesize] {$M$};
 % Right angle
-\draw (0.2,{sqrt(4-2.25)}) -- (0.2,{sqrt(4-2.25)-0.2}) -- (0,{sqrt(4-2.25)-0.2});
+\draw ($(M)+(0.25,0)$) -- ++(0,-0.25) -- ++(-0.25,0);
 \end{tikzpicture}
 ```
 
@@ -285,15 +287,17 @@ Your task is to generate TikZ code for geometric figures including triangles, po
 
 ```latex
 \begin{tikzpicture}
-\draw[thick] (0,0) circle (2cm);
-\fill (0,0) circle (2pt) node[below left] {$O$};
-\fill (2,0) circle (2pt) node[below right] {$P$};
+\coordinate (O) at (0,0);
+\coordinate (P) at ($(O)+(2,0)$);
+\draw[thick] (O) circle (2cm);
+\fill (O) circle (2pt) node[below left] {$O$};
+\fill (P) circle (2pt) node[below right] {$P$};
 % Radius
-\draw[dashed] (0,0) -- (2,0);
+\draw[dashed] (O) -- (P);
 % Tangent at P (vertical)
-\draw[thick] (2,-1.5) -- (2,1.5) node[above, font=\footnotesize] {tangent};
+\draw[thick] ($(P)+(0,-1.5)$) -- ++(0,3) node[above, font=\footnotesize] {tangent};
 % Right angle
-\draw (1.75,0) -- (1.75,0.25) -- (2,0.25);
+\draw (P) ++(-0.25,0) -- ++(0,0.25) -- ++(0.25,0);
 \end{tikzpicture}
 ```
 

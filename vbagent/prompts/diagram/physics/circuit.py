@@ -179,13 +179,15 @@ Use arrow decorations for current direction:
 
 ### Current Element $d\vec{l}$ with Position Vector $\vec{r}$
 ```latex
+\coordinate (wireStart) at (0.5,0);
+\coordinate (dl) at (1.5,2);
 \draw[very thick, postaction={decorate}]
     [decoration={markings, mark=at position 0.3 with {\arrow{Stealth}}}]
-    (0.5,0) .. controls ++(2,0.5) and ++(-2,-0.5) .. (2.5,4);
-\draw[very thick, -Stealth] (1.5,2)--(2.75,2.75) node[below]{$\vec{r}$};
-\draw[dashed, very thick] (2.75,2.75)--(4.375,3.7) node{$\bullet$};
-\node at (1.5,2) [left] {$d\vec{l}$};
-\draw[line width=0.45mm, -Stealth] (1.5,1.65)--(1.5,2.45);
+    (wireStart) .. controls ++(2,0.5) and ++(-2,-0.5) .. (2.5,4);
+\draw[very thick, ->] (dl) -- ++(1,1) coordinate (P) node[midway, below]{$\vec{r}$};
+\draw[dashed, very thick] (P) -- ++(1.5,1) node{$\bullet$};
+\node[left] at (dl) {$d\vec{l}$};
+\draw[line width=0.5mm, ->] ($(dl)+(0,-0.5)$) -- ++(0,1);
 ```
 
 ### Straight Conductor with Perpendicular Distance
@@ -204,7 +206,7 @@ For Biot-Savart derivation — conductor, point P, distance d, angles:
 
 ### Detailed Biot-Savart Geometry (dl, r, theta, d, l)
 ```latex
-\def\dl{0.75} \def\pos{1.5} \def\r{2}
+\def\dl{0.5} \def\pos{1.5} \def\r{2}
 \tzline(0,-3)(0,3)
 \tzline[->, ultra thick](0,\pos)(0,\pos+\dl){$\d{\vec{l}}$}[ml]
 \tzline[dashed](-\r,0)(2*\r,0)
@@ -256,16 +258,17 @@ For Biot-Savart derivation — conductor, point P, distance d, angles:
 
 ### Regular Polygon at Centre (n-sided)
 ```latex
-\draw[dashed, thick] (0,0) node{$\bullet$} node[above]{O} circle[radius=2.5];
-\draw[dashed, thick] (0,0)--([turn]30:2.5) coordinate(a);
-\draw[dashed, thick] (0,0)--([turn]-30:2.5);
-\draw[dashed, thick] (0,0) coordinate(g)--([turn]0:2.16) coordinate(f);
+\coordinate (O) at (0,0);
+\draw[dashed, thick] (O) node{$\bullet$} node[above]{O} circle[radius=2.5];
+\draw[dashed, thick] (O) -- ++(30:2.5) coordinate(a);
+\draw[dashed, thick] (O) -- ++(-30:2.5);
+\draw[dashed, thick] (O) -- ++(0:{2.5*cos(30)}) coordinate(f);
 \draw[postaction={decorate}]
     [decoration={markings, mark=at position 0.5 with {\arrow{latex}}}]
     (a)--([turn]-120:2.5) coordinate(b);
 % Continue for remaining sides...
-\node at (-1,-1) {$r$};
-\node at (-0.29,-1.1) {\tiny{$\left(\dfrac{\pi}{n}\right)$}};
+\node at (225:1.5) {$r$};
+\node at (-15:0.75) {\tiny{$\left(\dfrac{\pi}{n}\right)$}};
 ```
 
 ---
@@ -312,15 +315,17 @@ Vary `\def\a{...}` for different entry angles:
 ### Helical Path (velocity at angle to B)
 ```latex
 % Helix using coil decoration
+\coordinate (O) at (0,0);
 \draw[very thick, decoration={aspect=0.3, segment length=10mm,
     amplitude=1.5cm, coil}, decorate, arrows={[bend]-}]
-    (0,0) -- (0,4.45);
-\node[draw, fill=white, circle, inner sep=1pt] at (0,0) {};
-\draw[->] (0,0)--(-2.75,0) node[left]{$y$};
-\draw[->] (0,0)--(0,5) node[right]{$x$};
-\draw[->] (0,0)--(-2,0.33) node[right]{$\vec{v}$};
-\draw (0,0.4) node[above=2mm]{$\theta$} arc[start angle=90, end angle=170, radius=0.4];
-\node at (0.37,0.65) {$\vec{B}$};
+    (O) -- ++(0,4.5);
+\node[draw, fill=white, circle, inner sep=1pt] at (O) {};
+\draw[->] (O) -- ++(-3,0) node[left]{$y$};
+\draw[->] (O) -- ++(0,5) node[right]{$x$};
+\draw[->] (O) -- ++(170:2) node[right]{$\vec{v}$};
+\draw ($(O)+(0,0.5)$) node[above=2mm]{$\theta$}
+    arc[start angle=90, end angle=170, radius=0.5];
+\node at ($(O)+(0.5,0.5)$) {$\vec{B}$};
 ```
 
 ### 3D Cross Product Visualization
@@ -387,7 +392,7 @@ For spiral inductors with inner radius $a$ and outer radius $b$:
 \draw[thick, postaction={decorate}]
     [decoration={markings, mark=between positions 0 and 1 step 8mm
         with {\arrow{latex}}}]
-    (3,-0.65) circle[radius=1.65];
+    (3,-0.5) circle[radius=1.5];
 ```
 
 ### Magnetic Moment and Torque
@@ -395,9 +400,10 @@ For spiral inductors with inner radius $a$ and outer radius $b$:
 \draw[very thick, postaction={decorate}]
     [decoration={markings, mark=at position 0.15 with {\arrow{latex}}}]
     (0,0) ellipse (3 and 1.2);
-\node at (1.65,1.45) [right] {$i$};
-\draw[->, very thick] (0,0) node{$\bullet$} -- (0,2.25) node[right]{$\vec{M}$};
-\draw[->, very thick] (0,0.5) -- (0,0.75) node[right]{$\vec{A}$};
+\node[right] at (60:2) {$i$};
+\coordinate (O) at (0,0);
+\draw[->, very thick] (O) node{$\bullet$} -- ++(0,2) node[right]{$\vec{M}$};
+\draw[->, very thick] ($(O)+(0,0.5)$) -- ++(0,0.5) node[right]{$\vec{A}$};
 ```
 
 ---
@@ -512,8 +518,9 @@ To flip polarity (make B the positive terminal), add `invert`:
     pre length=5pt, post length=5pt
   }}
 }
-\draw[sourceCoil] (-2.6,0) -- (-0.45,0);
-\draw[sourceCoil] (0.45,0) -- (2.6,0);
+\coordinate (O) at (0,0);
+\draw[sourceCoil] ($(O)+(-3,0)$) -- ($(O)+(-0.5,0)$);
+\draw[sourceCoil] ($(O)+(0.5,0)$) -- ($(O)+(3,0)$);
 ```
 Adjust `amplitude` (4–8pt) and `segment length` (4–6pt) for size. Split the coil
 around the center point if you need to place a vector origin there.

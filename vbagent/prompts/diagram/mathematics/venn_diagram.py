@@ -260,16 +260,18 @@ Use `pattern=north east lines` or `fill=black!15` (light gray) for shaded region
 \node at (2.5,1.5) {$S$};
 
 % Event A (hatched)
-\draw[thick] (-0.5,0) circle (1cm);
-\node at (-1.2,0.7) {$A$};
+\coordinate (Acenter) at (-0.5,0);
+\draw[thick] (Acenter) circle (1cm);
+\node at ($(Acenter)+(-0.5,0.5)$) {$A$};
 
 % Event B (dotted boundary)
-\draw[thick, dashed] (0.8,0) circle (1cm);
-\node at (1.5,0.7) {$B$};
+\coordinate (Bcenter) at (1,0);
+\draw[thick, dashed] (Bcenter) circle (1cm);
+\node at ($(Bcenter)+(0.5,0.5)$) {$B$};
 
-\node at (-0.5,-2.5) {$P(A) = 0.4$};
-\node at (0.8,-2.5) {$P(B) = 0.3$};
-\node at (0.15,0) {$0.1$};
+\node at ($(Acenter)+(0,-2.5)$) {$P(A) = 0.4$};
+\node at ($(Bcenter)+(0,-2.5)$) {$P(B) = 0.3$};
+\node at ($(Acenter)!0.5!(Bcenter)$) {$0.1$};
 \end{tikzpicture}
 ```
 

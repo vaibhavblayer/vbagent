@@ -101,7 +101,7 @@ You may receive enhanced context from the solution agent with detailed physics i
 
 % Boundary (free end - ring on rod)
 \draw[boundary] (0,-0.5) -- ++(0,2);
-\draw[thick] (0,1.8) circle (0.15);
+\draw[thick] (0,2) circle (0.25);
 \node[right] at (0,2.2) {free end};
 
 % Incident wave - single pulse
@@ -118,38 +118,41 @@ You may receive enhanced context from the solution agent with detailed physics i
 ### Transmission at Boundary (Denser to Rarer) - Single Pulse
 ```latex
 \coordinate (O) at (0,0);
-\draw[axis] (O) -- ++(-4.8,0);
-\draw[axis] (O) -- ++(5.4,0);
-\draw[axis] (O) -- ++(0,3.6) node[above] {$y$};
-\node[below] at (-4.5,0) {$-x$};
-\node[below] at (5.1,0) {$+x$};
+\draw[axis] (O) -- ++(-5,0);
+\draw[axis] (O) -- ++(5,0);
+\draw[axis] (O) -- ++(0,4) node[above] {$y$};
+\node[below] at ($(O)+(-4.5,0)$) {$-x$};
+\node[below] at ($(O)+(4.5,0)$) {$+x$};
 
 % Boundary
 \draw[boundary] (0,-0.5) -- ++(0,4);
-\node[right] at (0,3.1) {boundary};
-\node[below, align=center] at (-2.4,-0.15) {denser medium\\$(v_1,\lambda_1)$};
-\node[below, align=center] at (2.8,-0.15) {rarer medium\\$(v_2=2v_1,\lambda_2)$};
+\node[right] at ($(O)+(0,3)$) {boundary};
+\node[below, align=center] at ($(O)+(-2.5,-0.5)$) {denser medium\\$(v_1,\lambda_1)$};
+\node[below, align=center] at ($(O)+(2.5,-0.5)$) {rarer medium\\$(v_2=2v_1,\lambda_2)$};
 
 % Incident wave - single pulse
-\tztos+[ultra thick] (-3.6,2.2) [out=0, in=180](0.6,0)[out=0, in=180](0.6,0.75)
-    [out=0, in=180](0.6,-0.75)[out=0, in=180](0.6,0);
-\draw[->] (-2.9,3.1) -- ++(1.0,0) node[midway, above] {incident};
-\draw[<->, thin] (-3.6,1.25) -- ++(2.4,0) node[midway, below] {$\lambda_1$};
-\draw[<->, thin] (-2.1,2.2) -- ++(0,0.75) node[midway, right] {$A_i$};
+\coordinate (incidentStart) at (-4,2);
+\tztos+[ultra thick] (incidentStart) [out=0, in=180](0.5,0)[out=0, in=180](0.5,1)
+    [out=0, in=180](0.5,-1)[out=0, in=180](0.5,0);
+\draw[->] ($(incidentStart)+(0.5,1.5)$) -- ++(1,0) node[midway, above] {incident};
+\draw[<->, thin] ($(incidentStart)+(0,-1)$) -- ++(2,0) node[midway, below] {$\lambda_1$};
+\draw[<->, thin] ($(incidentStart)+(1.5,0)$) -- ++(0,1) node[midway, right] {$A_i$};
 
 % Reflected wave - single pulse (reduced amplitude, same wavelength)
-\tztos+[thick] (-3.6,-1.15) [out=0, in=180](0.6,0)[out=0, in=180](0.6,0.22)
-    [out=0, in=180](0.6,-0.22)[out=0, in=180](0.6,0);
-\draw[->] (-1.8,-0.25) -- ++(-1.0,0) node[midway, above] {reflected};
-\draw[<->, thin] (-2.15,-1.15) -- ++(0,0.22) node[midway, right] {$A_r$};
+\coordinate (reflectedStart) at (-4,-1);
+\tztos+[thick] (reflectedStart) [out=0, in=180](0.5,0)[out=0, in=180](0.5,0.25)
+    [out=0, in=180](0.5,-0.25)[out=0, in=180](0.5,0);
+\draw[->] ($(reflectedStart)+(2,0.5)$) -- ++(-1,0) node[midway, above] {reflected};
+\draw[<->, thin] ($(reflectedStart)+(1.5,0)$) -- ++(0,0.25) node[midway, right] {$A_r$};
 
 % Transmitted wave - single pulse (larger amplitude, longer wavelength)
-\tztos+[very thick] (0.25,-1.15) [out=0, in=180](1.2,0)[out=0, in=180](1.2,1.0)
-    [out=0, in=180](1.2,-1.0)[out=0, in=180](1.2,0);
-\draw[->] (2.0,0.05) -- ++(1.2,0) node[midway, above] {transmitted};
-\draw[<->, thin] (2.25,-1.15) -- ++(0,1.0) node[midway, right] {$A_t$};
-\draw[<->, thin] (0.25,-2.15) -- ++(4.8,0) node[midway, below] {$\lambda_2=2\lambda_1$};
-\node[below] at (0,-2.75) {$A_r:A_t=1:4$};
+\coordinate (transmittedStart) at (0.5,-1);
+\tztos+[very thick] (transmittedStart) [out=0, in=180](1,0)[out=0, in=180](1,1)
+    [out=0, in=180](1,-1)[out=0, in=180](1,0);
+\draw[->] ($(transmittedStart)+(1.5,1.5)$) -- ++(1,0) node[midway, above] {transmitted};
+\draw[<->, thin] ($(transmittedStart)+(2,0)$) -- ++(0,1) node[midway, right] {$A_t$};
+\draw[<->, thin] ($(transmittedStart)+(0,-1)$) -- ++(4,0) node[midway, below] {$\lambda_2=2\lambda_1$};
+\node[below] at ($(O)+(0,-2.5)$) {$A_r:A_t=1:4$};
 ```
 
 **CRITICAL: Keep amplitudes small and diagrams clean:**
@@ -416,7 +419,7 @@ Pre-loaded in preamble:
 % GOOD - relative movements
 \coordinate (origin) at (0,0);
 \draw[axis] (origin) -- ++(6,0) node[right] {$x$};
-\draw[axis] (origin) -- ++(0,3,0) node[above] {$y$};
+\draw[axis] (origin) -- ++(0,3) node[above] {$y$};
 \draw[boundary] (origin) -- ++(0,3.5);
 
 % BAD - too many absolute coordinates
@@ -476,10 +479,11 @@ Pre-loaded in preamble:
 
 ```latex
 % GOOD - clean, essential labels only
-\tztos+[ultra thick] (-3.6,2.2) [out=0, in=180](0.6,0)[out=0, in=180](0.6,0.75)
-    [out=0, in=180](0.6,-0.75)[out=0, in=180](0.6,0);
-\draw[->] (-2.9,3.1) -- ++(1.0,0) node[midway, above] {incident};
-\node[below] at (-2.4,-0.15) {denser medium};
+\coordinate (pulseStart) at (-4,2);
+\tztos+[ultra thick] (pulseStart) [out=0, in=180](0.5,0)[out=0, in=180](0.5,1)
+    [out=0, in=180](0.5,-1)[out=0, in=180](0.5,0);
+\draw[->] ($(pulseStart)+(0.5,1.5)$) -- ++(1,0) node[midway, above] {incident};
+\node[below] at ($(pulseStart)+(1.5,-2)$) {denser medium};
 
 % BAD - too many labels, overlapping text
 \tztos+[ultra thick] (-3.6,2.2) [out=0, in=180](0.6,0)[out=0, in=180](0.6,0.75)

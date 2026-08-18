@@ -24,8 +24,9 @@ You may receive enhanced context from the solution agent with detailed physics i
 Use TikZ `\draw plot` with domain/samples:
 ```latex
 \begin{tikzpicture}[scale=0.8]
-    \draw[thin, ->] (0,0) -- (3,0) node[right] {$t$};
-    \draw[thin, ->] (0,-1.2) -- (0,1.2) node[above] {$y$};
+    \coordinate (O) at (0,0);
+    \draw[thin, ->] (O) -- ++(3,0) node[right] {$t$};
+    \draw[thin, ->] ($(O)+(0,-1.5)$) -- ++(0,3) node[above] {$y$};
     \draw[thick] plot[domain=0:2.5, samples=50] (\x, {sin(4*\x r)*exp(-0.5*\x)});
     \foreach \x in {1,2} {\draw[thin] (\x,0.05) -- (\x,-0.05) node[below, font=\tiny] {\x};}
 \end{tikzpicture}
@@ -196,7 +197,7 @@ legend style = {font=\tiny},
 \begin{tikzpicture}[scale=0.8]
 \draw[thin, ->] (0,0) -- (7,0) node[right] {$t$};
 \draw[thin, ->] (0,-1.5) -- (0,1.5) node[above] {$y$};
-\draw[thick] plot[domain=0:6.28, samples=100] (\x, {sin(\x r)});
+\draw[thick] plot[domain=0:2*pi, samples=100] (\x, {sin(deg(\x))});
 \end{tikzpicture}
 ```
 

@@ -212,7 +212,11 @@ Use line styles to distinguish different functions:
 ]
 \addplot[thick] {x^2};
 \addplot[thick, dashed] {2*x + 1};
-\addplot[only marks, mark=*] coordinates {(-0.414,0.172) (2.414,5.828)};
+\pgfmathsetmacro{\xa}{1-sqrt(2)}
+\pgfmathsetmacro{\ya}{3-2*sqrt(2)}
+\pgfmathsetmacro{\xb}{1+sqrt(2)}
+\pgfmathsetmacro{\yb}{3+2*sqrt(2)}
+\addplot[only marks, mark=*] coordinates {(\xa,\ya) (\xb,\yb)};
 \legend{$y=x^2$, $y=2x+1$}
 \end{axis}
 \end{tikzpicture}

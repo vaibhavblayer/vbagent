@@ -33,15 +33,15 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 ### Convex Lens (Converging)
 ```latex
 \draw[very thick] (0,-2) -- (0,2);
-\draw[thick] (-0.15,-2) to[bend left=12] (-0.15,2);
-\draw[thick] (0.15,-2) to[bend right=12] (0.15,2);
+\draw[thick] (-0.25,-2) to[bend left=12] (-0.25,2);
+\draw[thick] (0.25,-2) to[bend right=12] (0.25,2);
 ```
 
 ### Concave Lens (Diverging)
 ```latex
 \draw[very thick] (0,-2) -- (0,2);
-\draw[thick] (-0.15,-2) to[bend right=12] (-0.15,2);
-\draw[thick] (0.15,-2) to[bend left=12] (0.15,2);
+\draw[thick] (-0.25,-2) to[bend right=12] (-0.25,2);
+\draw[thick] (0.25,-2) to[bend left=12] (0.25,2);
 ```
 
 ### Principal Axis and Focal Points
@@ -56,30 +56,38 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 ### Complete Ray Diagram (Convex Lens)
 ```latex
 \begin{tikzpicture}[scale=0.8]
+\coordinate (O) at (0,0);
+\coordinate (F) at (2,0);
+\coordinate (Fp) at (-2,0);
+\coordinate (objectBase) at (-4,0);
+\coordinate (objectTop) at ($(objectBase)+(0,1.5)$);
+\coordinate (lensHit) at (0,1.5);
 % Principal axis
-\draw[thin, <->] (-6,0) -- (6,0);
+\draw[thin, <->] ($(O)+(-6,0)$) -- ($(O)+(6,0)$);
 
 % Lens
-\draw[very thick] (0,-2.5) -- (0,2.5);
-\draw[thick] (-0.12,-2.5) to[bend left=10] (-0.12,2.5);
-\draw[thick] (0.12,-2.5) to[bend right=10] (0.12,2.5);
+\draw[very thick] ($(O)+(0,-2.5)$) -- ++(0,5);
+\draw[thick] ($(O)+(-0.25,-2.5)$) to[bend left=10] ($(O)+(-0.25,2.5)$);
+\draw[thick] ($(O)+(0.25,-2.5)$) to[bend right=10] ($(O)+(0.25,2.5)$);
 
 % Focal points
-\fill (2,0) circle (2pt) node[below] {$F$};
-\fill (-2,0) circle (2pt) node[below] {$F'$};
+\fill (F) circle (2pt) node[below] {$F$};
+\fill (Fp) circle (2pt) node[below] {$F'$};
 
 % Object (upward arrow)
-\draw[->, very thick] (-4,0) -- (-4,1.5) node[above] {Object};
+\draw[->, very thick] (objectBase) -- (objectTop) node[above] {Object};
 
 % Ray 1: Parallel → through F
-\draw[->, thick] (-4,1.5) -- (0,1.5);
-\draw[->, thick] (0,1.5) -- (3,0);
+\draw[->, thick] (objectTop) -- (lensHit);
+\draw[name path=refracted, ->, thick] (lensHit) -- ($(lensHit)!2!(F)$);
 
 % Ray 2: Through centre (undeviated)
-\draw[->, thick] (-4,1.5) -- (3,-1.125);
+\draw[name path=central, ->, thick] (objectTop) -- ($(objectTop)!2!(O)$);
 
-% Image
-\draw[->, very thick] (3,0) -- (3,-1.125) node[below] {Image};
+% Image location is the exact ray intersection — never guess its coordinate
+\path[name intersections={of=refracted and central, by=imageTop}];
+\coordinate (imageBase) at (imageTop |- O);
+\draw[->, very thick] (imageBase) -- (imageTop) node[below] {Image};
 \end{tikzpicture}
 ```
 
@@ -92,7 +100,7 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 \draw[very thick] (0,-2) arc[start angle=180, end angle=120, radius=4];
 % Hatching on back
 \foreach \y in {-1.8,-1.5,...,1.8} {
-    \draw[thin] (0.05,\y) -- (0.2,\y+0.15);
+    \draw[thin] (0.25,\y) -- ++(0.25,0.25);
 }
 ```
 
@@ -105,7 +113,7 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 ```latex
 \draw[very thick] (0,-2) -- (0,2);
 \foreach \y in {-1.8,-1.5,...,1.8} {
-    \draw[thin] (-0.15,\y) -- (-0.3,\y+0.15);
+    \draw[thin] (-0.25,\y) -- ++(-0.25,0.25);
 }
 ```
 
@@ -198,24 +206,27 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 \fill (-3,0) circle (2pt) node[left] {$S$};
 
 % Barrier with slits
-\draw[very thick] (0,-2) -- (0,-0.3);
-\draw[very thick] (0,0.3) -- (0,2);
-\node at (0,0.15) [right] {$S_1$};
-\node at (0,-0.15) [right] {$S_2$};
+\coordinate (S1) at (0,0.5);
+\coordinate (S2) at (0,-0.5);
+\draw[very thick] (0,-2) -- ($(S2)+(0,-0.25)$);
+\draw[very thick] ($(S1)+(0,0.25)$) -- (0,2);
+\node[right] at (S1) {$S_1$};
+\node[right] at (S2) {$S_2$};
 
 % Screen
 \draw[very thick] (4,-2) -- (4,2);
 \node at (4,2.3) {Screen};
 
 % Rays to point P
-\draw[thick] (0,0.3) -- (4,1) node[right] {$P$};
-\draw[thick] (0,-0.3) -- (4,1);
+\coordinate (P) at (4,1);
+\draw[thick] (S1) -- (P) node[right] {$P$};
+\draw[thick] (S2) -- (P);
 
 % Central maximum
 \draw[thick, dashed] (0,0) -- (4,0) node[right] {$O$};
 
 % Labels
-\draw[|<->|, thin] (-0.5,-0.3) -- (-0.5,0.3) node[midway, left] {$d$};
+\draw[|<->|, thin] ($(S2)+(-0.5,0)$) -- ($(S1)+(-0.5,0)$) node[midway, left] {$d$};
 \draw[|<->|, thin] (0,-2.5) -- (4,-2.5) node[midway, below] {$D$};
 \end{tikzpicture}
 ```
@@ -263,20 +274,21 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 \begin{tikzpicture}
 % Grating (multiple slits)
 \foreach \y in {-1.5,-1,...,1.5} {
-    \draw[very thick] (-0.1,\y-0.15) -- (-0.1,\y+0.15);
-    \draw[very thick] (0.1,\y-0.15) -- (0.1,\y+0.15);
+    \draw[very thick] (-0.25,\y-0.25) -- ++(0,0.5);
+    \draw[very thick] (0.25,\y-0.25) -- ++(0,0.5);
 }
 
 % Incident plane wave
 \foreach \y in {-1.5,-0.5,0.5,1.5} {
-    \draw[->, thick] (-2,\y) -- (-0.1,\y);
+    \draw[->, thick] (-2,\y) -- ++(1.5,0);
 }
 
 % Diffracted orders
-\draw[->, thick] (0.1,0) -- (3,0) node[right] {$m=0$};
-\draw[->, thick] (0.1,0) -- (3,1.5) node[right] {$m=1$};
-\draw[->, thick] (0.1,0) -- (3,-1.5) node[right] {$m=-1$};
-\draw[->, thick] (0.1,0) -- (3,3) node[right] {$m=2$};
+\coordinate (G) at (0.5,0);
+\draw[->, thick] (G) -- ++(3,0) node[right] {$m=0$};
+\draw[->, thick] (G) -- ++(3,1.5) node[right] {$m=1$};
+\draw[->, thick] (G) -- ++(3,-1.5) node[right] {$m=-1$};
+\draw[->, thick] (G) -- ++(3,3) node[right] {$m=2$};
 
 % Grating equation
 \node at (1.5,-2.5) {$d\sin\theta = m\lambda$};

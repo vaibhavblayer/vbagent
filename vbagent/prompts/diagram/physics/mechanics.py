@@ -194,7 +194,7 @@ You may receive enhanced context from the solution agent with detailed physics i
 \def\angle{30}
 \pic[rotate=\angle] (incline) at (0,0) {frame=5cm};
 \coordinate (blockpos) at ($(incline-left)!0.4!(incline-right)$);
-\coordinate (anchorpos) at ($(incline-left)!0.85!(incline-right)$);
+\coordinate (anchorpos) at ($(incline-left)!0.75!(incline-right)$);
 \node[draw, thick, fill=white, rotate=\angle, minimum width=1cm, minimum height=1cm, 
     anchor=south] (block) at (blockpos) {$m$};
 \draw[thick] (incline-right) -- (anchorpos);
@@ -255,7 +255,7 @@ You may receive enhanced context from the solution agent with detailed physics i
 \fill (center) circle (3pt);
 \draw[dashed] (center) -- ++(-2.5,0) (center) -- ++(2.5,0);
 \draw[dashed] (center) -- ++(0,-2.5) (center) -- ++(0,2.5);
-\draw[->, very thick] (center) -- ++(1.414,1.414) node[midway, above left] {$r$};
+\draw[->, very thick] (center) -- ++(45:2) node[midway, above left] {$r$};
 \draw[->, thick] (1.8,1.2) arc[start angle=30, end angle=60, radius=2.2] node[right] {$\omega$};
 ```
 

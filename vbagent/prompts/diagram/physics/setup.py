@@ -94,8 +94,8 @@ If the problem does not mention a force or motion, do not invent one.
 \node[draw, thick, circle, minimum size=1cm, fill=white] (p) at ($(ceiling-center)+(0,-1)$) {};
 \fill (p.center) circle (2pt);
 \draw[thick] (ceiling-center) -- (p.center);
-\draw[thick] (p.center) -- ++(-0.8,0) -- ++(0,-2.5) coordinate (m1pos);
-\draw[thick] (p.center) -- ++(0.8,0) -- ++(0,-2) coordinate (m2pos);
+\draw[thick] (p.center) -- ++(-0.5,0) -- ++(0,-2.5) coordinate (m1pos);
+\draw[thick] (p.center) -- ++(0.5,0) -- ++(0,-2) coordinate (m2pos);
 \node[draw, thick, fill=white, minimum width=1cm, minimum height=1cm] at (m1pos) {$m_1$};
 \node[draw, thick, fill=white, minimum width=1cm, minimum height=1cm] at (m2pos) {$m_2$};
 ```

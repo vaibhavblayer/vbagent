@@ -303,7 +303,7 @@ Your output MUST be valid TikZ code that can be placed inside a tikzpicture envi
     \\draw[container] (0,0) rectangle (\\containerWidth, \\containerHeight);
     \\fill[fluid water] (0,0) rectangle (\\containerWidth, \\waterLevel);
     \\draw[block] (\\blockX, \\blockY) rectangle ++(\\blockWidth, \\blockHeight);
-    \\node at (0.7, 0.35) {Water};
+    \\node at ({\\containerWidth/2}, {\\waterLevel/2}) {Water};
 \\end{scope}
 
 \\begin{scope}[xshift=\\scopeShift cm]  % Right container - same code, just shifted!
@@ -311,8 +311,8 @@ Your output MUST be valid TikZ code that can be placed inside a tikzpicture envi
     \\fill[fluid water] (0,0) rectangle (\\containerWidth, \\waterLevel);
     \\fill[fluid oil] (0,\\waterLevel) rectangle (\\containerWidth, \\oilLevel);
     \\draw[block] (\\blockX, \\blockY) rectangle ++(\\blockWidth, \\blockHeight);
-    \\node at (0.7, 0.35) {Water};
-    \\node at (0.55, 1.82) {Oil};
+    \\node at ({\\containerWidth/2}, {\\waterLevel/2}) {Water};
+    \\node at ({\\containerWidth/2}, {(\\waterLevel+\\oilLevel)/2}) {Oil};
 \\end{scope}
 ```
 
@@ -698,4 +698,3 @@ USER_TEMPLATE_FROM_PROBLEM = """Analyze the following physics problem and genera
 - Include comments for complex sections
 - Scale appropriately for the content
 - If the problem already contains TikZ code, you may improve/replace it or generate a complementary diagram"""
-

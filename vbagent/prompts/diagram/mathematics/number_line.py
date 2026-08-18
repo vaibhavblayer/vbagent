@@ -64,7 +64,7 @@ You may receive enhanced context from the solution agent with detailed mathemati
 
 % Major ticks
 \foreach \x in {-2,-1,0,1,2,3,4}
-    \draw (\x,0.15) -- (\x,-0.15) node[below] {$\x$};
+    \draw (\x,0.25) -- ++(0,-0.5) node[below] {$\x$};
 
 % Highlight specific points
 \fill (2,0) circle (3pt) node[above] {$a$};
@@ -85,7 +85,7 @@ You may receive enhanced context from the solution agent with detailed mathemati
 \draw (2,0) circle (3pt);
 
 % Ray to the right
-\draw[->] (2,0) -- (4.8,0);
+\draw[->] (2,0) -- ++(3,0);
 
 \node at (3,-1) {$x > 2$};
 \end{tikzpicture}
@@ -102,7 +102,7 @@ You may receive enhanced context from the solution agent with detailed mathemati
 \fill (2,0) circle (3pt);
 
 % Ray to the right
-\draw[->] (2,0) -- (4.8,0);
+\draw[->] (2,0) -- ++(3,0);
 
 \node at (3,-1) {$x \geq 2$};
 \end{tikzpicture}
@@ -112,7 +112,7 @@ You may receive enhanced context from the solution agent with detailed mathemati
 ```latex
 % Open circle, ray to the left
 \draw (2,0) circle (3pt);
-\draw[<-] (-1.8,0) -- (2,0);
+\draw[<-] (-2,0) -- (2,0);
 \node at (0,-1) {$x < 2$};
 ```
 
@@ -120,7 +120,7 @@ You may receive enhanced context from the solution agent with detailed mathemati
 ```latex
 % Closed circle, ray to the left
 \fill (2,0) circle (3pt);
-\draw[<-] (-1.8,0) -- (2,0);
+\draw[<-] (-2,0) -- (2,0);
 \node at (0,-1) {$x \leq 2$};
 ```
 
@@ -267,7 +267,7 @@ Generate ONLY TikZ code without `\begin{center}` or `\end{center}`.
 \foreach \x in {-1,0,1,2,3,4}
     \draw (\x,0.1) -- (\x,-0.1) node[below] {$\x$};
 \fill (2,0) circle (3pt);
-\draw[->] (2,0) -- (4.8,0);
+\draw[->] (2,0) -- ++(3,0);
 \end{tikzpicture}
 ```
 
@@ -309,10 +309,10 @@ Absolute value inequality solution | axis_range: x: [-5, 5] | domain: x≤-2 or 
 \fill (3,0) circle (3pt);
 
 % Left ray (x ≤ -2)
-\draw[<-] (-4.8,0) -- (-2,0);
+\draw[<-] (-5,0) -- (-2,0);
 
 % Right ray (x ≥ 3)
-\draw[->] (3,0) -- (4.8,0);
+\draw[->] (3,0) -- ++(2,0);
 
 \node at (0,-1) {$x \leq -2$ or $x \geq 3$};
 \end{tikzpicture}
