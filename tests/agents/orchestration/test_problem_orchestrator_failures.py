@@ -260,3 +260,113 @@ def test_match_question_refreshes_legacy_scan_and_tikz_cache(monkeypatch):
     assert captured["tikz_cached"] is False
     assert "legacy montage" not in result.latex
     assert result.latex.count(r"\def\MatchA") == 1
+
+
+def test_match_question_assembles_column_two_p_to_s_macros():
+    orchestrator = ProblemOrchestrator(
+        console=Console(file=io.StringIO(), force_terminal=False)
+    )
+    latex = r"""\item Match.
+\begin{tabular}{cc|cc}
+(A) & First & (P) & \MatchP \\
+(B) & Second & (Q) & \MatchQ \\
+(C) & Third & (R) & \MatchR \\
+(D) & Fourth & (S) & \MatchS \\
+\end{tabular}"""
+    tikz_code = r"""\def\MatchP{\begin{tikzpicture}\node{P};\end{tikzpicture}}
+\def\MatchQ{\begin{tikzpicture}\node{Q};\end{tikzpicture}}
+\def\MatchR{\begin{tikzpicture}\node{R};\end{tikzpicture}}
+\def\MatchS{\begin{tikzpicture}\node{S};\end{tikzpicture}}"""
+
+    assembled = orchestrator._assemble_latex(latex, tikz_code)
+
+    for letter in "PQRS":
+        assert assembled.count(rf"\def\Match{letter}") == 1
+    assert assembled.index(r"\def\MatchP") < assembled.index(
+        r"\begin{tabular}"
+    )
+
+
+def test_passage_refreshes_legacy_scan_and_option_diagram_cache(monkeypatch):
+    class _LegacyPassageCache(_Cache):
+        def get_stage_data(self, problem_id, stage):
+            return {}
+
+    cache = _LegacyPassageCache({
+        "scan": r"\item Old.\begin{tasks}(2)\task Graph (a)\end{tasks}",
+        "options": r"\def\OptionA{old}",
+    })
+    classification = QuestionClassification(
+        subject="physics",
+        question_type="passage",
+        has_diagram=False,
+        has_option_diagrams=True,
+        num_option_diagrams=8,
+        option_diagram_type="graph",
+    )
+    captured = {}
+    orchestrator = ProblemOrchestrator(
+        console=Console(file=io.StringIO(), force_terminal=False)
+    )
+
+    def fake_parallel(*args, **kwargs):
+        captured["scan_cached"] = args[4]
+        captured["options_cached"] = args[6]
+        return (
+            r"\item Passage.\begin{tasks}(2)\task \OptionA\task \OptionH\end{tasks}",
+            r"\def\OptionA{new A}\def\OptionH{new H}",
+            r"\def\OptionA{new A}\def\OptionH{new H}",
+        )
+
+    monkeypatch.setattr(orchestrator, "_run_parallel", fake_parallel)
+
+    result = orchestrator.run(
+        "question.png", classification, cache=cache, problem_id="passage_1"
+    )
+
+    assert captured["scan_cached"] is False
+    assert captured["options_cached"] is False
+    assert "old" not in result.latex
+    assert result.latex.count(r"\def\OptionH") == 1
+
+
+def test_assertion_reason_refreshes_scan_from_old_diagram_contract(monkeypatch):
+    class _LegacyAssertionCache(_Cache):
+        def get_stage_data(self, problem_id, stage):
+            return {}
+
+    cache = _LegacyAssertionCache({
+        "scan": r"\item Old.\begin{center}\text{[Diagram]}\end{center}",
+        "tikz": r"\begin{tikzpicture}\node{motion};\end{tikzpicture}",
+    })
+    classification = QuestionClassification(
+        subject="physics",
+        question_type="assertion_reason",
+        has_diagram=True,
+        diagram_type="mechanics",
+    )
+    captured = {}
+    orchestrator = ProblemOrchestrator(
+        console=Console(file=io.StringIO(), force_terminal=False)
+    )
+
+    def fake_parallel(*args, **kwargs):
+        captured["scan_cached"] = args[4]
+        captured["tikz_cached"] = args[5]
+        return (
+            r"\item New.\begin{center}\input{diagram}\end{center}",
+            cache.values["tikz"],
+            None,
+        )
+
+    monkeypatch.setattr(orchestrator, "_run_parallel", fake_parallel)
+
+    result = orchestrator.run(
+        "question.png", classification, cache=cache, problem_id="problem_68"
+    )
+
+    assert captured["scan_cached"] is False
+    assert captured["tikz_cached"] is True
+    assert r"\input{diagram}" not in result.latex
+    assert "[Diagram]" not in result.latex
+    assert result.latex.count(r"\begin{tikzpicture}") == 1

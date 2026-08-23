@@ -15,9 +15,24 @@ from vbagent.tex import extract_items
 
 
 _OPTION_ARTIFACT_MARKER = "% VBAGENT_OPTION_DIAGRAMS_BEGIN"
-_OPTION_DEF_START_RE = re.compile(r"\\def\s*\\Option([A-F])\s*\{")
+_OPTION_DEF_START_RE = re.compile(r"\\def\s*\\Option([A-Z])\s*\{")
 _MATCH_ARTIFACT_MARKER = "% VBAGENT_MATCH_DIAGRAMS_BEGIN"
 _MATCH_DEF_START_RE = re.compile(r"\\def\s*\\Match([A-Z])\s*\{")
+_CENTERED_MAIN_DIAGRAM_RE = re.compile(
+    r"\\begin\{center\}\s*%?\s*\\input\{diagram\}\s*\\end\{center\}"
+)
+_MAIN_DIAGRAM_INPUT_RE = re.compile(r"\\input\{diagram\}")
+_COMMENTED_MAIN_DIAGRAM_INPUT_RE = re.compile(
+    r"^[ \t]*%[ \t]*\\input\{diagram\}[ \t]*$",
+    flags=re.MULTILINE,
+)
+_LEGACY_DIAGRAM_TEXT = r"\\text\s*\{\s*\[\s*diagram\s*\]\s*\}"
+_CENTERED_LEGACY_DIAGRAM_RE = re.compile(
+    rf"\\begin\{{center\}}\s*(?:{_LEGACY_DIAGRAM_TEXT}|\[\s*diagram\s*\])"
+    r"\s*\\end\{center\}",
+    flags=re.IGNORECASE,
+)
+_LEGACY_DIAGRAM_TEXT_RE = re.compile(_LEGACY_DIAGRAM_TEXT, flags=re.IGNORECASE)
 
 if TYPE_CHECKING:
     from vbagent.models.pipeline import PipelineResult
@@ -111,15 +126,55 @@ def get_base_name(source_path: str) -> str:
 def _assembled_latex_for_save(result: "PipelineResult") -> str:
     """Return normalized LaTeX with any available TikZ deterministically merged."""
     latex = result.latex
-    if result.tikz_code and any(
-        marker in latex
-        for marker in (
-            r"\input{diagram}", r"\OptionA", r"\OptionB",
-            r"\MatchA", r"\MatchB",
-        )
-    ):
+    if result.tikz_code and has_tikz_placeholder(latex):
         latex = insert_tikz_into_latex(latex, result.tikz_code)
     return format_latex(latex)
+
+
+def has_main_diagram_placeholder(latex: Optional[str]) -> bool:
+    r"""Return whether LaTeX contains a current or legacy main placeholder."""
+    if not latex:
+        return False
+    return bool(
+        _MAIN_DIAGRAM_INPUT_RE.search(latex)
+        or _CENTERED_LEGACY_DIAGRAM_RE.search(latex)
+        or _LEGACY_DIAGRAM_TEXT_RE.search(latex)
+    )
+
+
+def has_tikz_placeholder(latex: Optional[str]) -> bool:
+    r"""Return whether LaTeX contains a main, option, or match-cell placeholder."""
+    if not latex:
+        return False
+    return bool(
+        has_main_diagram_placeholder(latex)
+        or re.search(r"\\(?:Option|Match)[A-Z]\b", latex)
+    )
+
+
+def replace_main_diagram_placeholder(latex: str, replacement: str) -> str:
+    r"""Replace current and legacy main-diagram placeholders consistently."""
+    if replacement and r"\begin{center}" not in replacement:
+        centered_replacement = (
+            f"\\begin{{center}}\n{replacement}\n\\end{{center}}"
+        )
+    else:
+        centered_replacement = replacement
+
+    result = _CENTERED_MAIN_DIAGRAM_RE.sub(
+        lambda _: centered_replacement,
+        latex,
+    )
+    result = _CENTERED_LEGACY_DIAGRAM_RE.sub(
+        lambda _: centered_replacement,
+        result,
+    )
+    result = _COMMENTED_MAIN_DIAGRAM_INPUT_RE.sub(
+        lambda _: replacement,
+        result,
+    )
+    result = _MAIN_DIAGRAM_INPUT_RE.sub(lambda _: replacement, result)
+    return _LEGACY_DIAGRAM_TEXT_RE.sub(lambda _: replacement, result)
 
 
 def insert_tikz_into_latex(latex: str, tikz_code: str) -> str:
@@ -143,21 +198,9 @@ def insert_tikz_into_latex(latex: str, tikz_code: str) -> str:
 
     result = latex
 
-    # 1. Replace \input{diagram} with main diagram
+    # 1. Replace current or legacy main-diagram placeholder.
     if main_tikz:
-        placeholder_pattern = r'\\begin\{center\}\s*\\input\{diagram\}\s*\\end\{center\}'
-
-        if "\\begin{center}" not in main_tikz:
-            tikz_wrapped = f"\\begin{{center}}\n{main_tikz}\n\\end{{center}}"
-        else:
-            tikz_wrapped = main_tikz
-
-        result = re.sub(placeholder_pattern, lambda m: tikz_wrapped, result)
-
-        if result == latex:
-            simple_pattern = r'\\input\{diagram\}'
-            if re.search(simple_pattern, latex):
-                result = re.sub(simple_pattern, lambda m: main_tikz, result)
+        result = replace_main_diagram_placeholder(result, main_tikz)
 
     # 2. Insert matching-table definitions before the table that consumes them.
     if match_tikz and re.search(r"\\Match[A-Z]\b", result):
@@ -295,9 +338,7 @@ def combine_tikz_artifacts(
 
 def remove_main_diagram_placeholder(latex: str) -> str:
     """Remove a scanner placeholder when classification says options-only."""
-    centered = r"\\begin\{center\}\s*\\input\{diagram\}\s*\\end\{center\}"
-    result = re.sub(centered, "", latex)
-    return re.sub(r"\\input\{diagram\}", "", result)
+    return replace_main_diagram_placeholder(latex, "")
 
 
 def _is_escaped(text: str, index: int) -> bool:
@@ -396,7 +437,8 @@ def _normalize_option_artifact(option_tikz: str) -> str:
         latest[letter] = option_tikz[start:end].strip()
 
     support = _clean_definition_support(_remove_option_definitions(option_tikz))
-    definitions = [latest[letter] for letter in "ABCDEF" if letter in latest]
+    definitions = [latest[letter] for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                   if letter in latest]
     parts = ([support] if support else []) + definitions
     return "\n".join(parts)
 

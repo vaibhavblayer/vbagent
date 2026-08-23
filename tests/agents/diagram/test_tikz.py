@@ -409,6 +409,13 @@ def test_has_diagram_placeholder_detects_input_diagram():
 \end{center}
 """
     assert has_diagram_placeholder(content_commented) is True
+
+    content_legacy_assertion = r"""
+\begin{center}
+    \text{[Diagram]}
+\end{center}
+"""
+    assert has_diagram_placeholder(content_legacy_assertion) is True
     
     # Should not detect other inputs
     content_other = r"\input{preamble}"

@@ -19,6 +19,8 @@ from vbagent.agents.classification.question_classifier import (
 )
 from vbagent.pipeline.io import (
     combine_tikz_artifacts,
+    has_main_diagram_placeholder,
+    has_tikz_placeholder,
     has_standalone_main_tikz,
     insert_tikz_into_latex,
     remove_main_diagram_placeholder,
@@ -30,6 +32,9 @@ from vbagent.references.samples import get_sample
 
 _MATCH_SCAN_CONTRACT_VERSION = 2
 _MATCH_TIKZ_CONTRACT_VERSION = 1
+_PASSAGE_OPTION_SCAN_CONTRACT_VERSION = 1
+_PASSAGE_OPTION_TIKZ_CONTRACT_VERSION = 1
+_ASSERTION_DIAGRAM_SCAN_CONTRACT_VERSION = 1
 
 
 class ProblemResult:
@@ -105,6 +110,18 @@ class ProblemOrchestrator:
                     "match_table_contract_version"
                 ) == _MATCH_SCAN_CONTRACT_VERSION
             )
+        if scan_cached and primary.question_type == "passage":
+            scan_cached = (
+                cache.get_stage_data(problem_id, "scan").get(
+                    "passage_option_contract_version"
+                ) == _PASSAGE_OPTION_SCAN_CONTRACT_VERSION
+            )
+        if scan_cached and primary.question_type == "assertion_reason":
+            scan_cached = (
+                cache.get_stage_data(problem_id, "scan").get(
+                    "assertion_diagram_contract_version"
+                ) == _ASSERTION_DIAGRAM_SCAN_CONTRACT_VERSION
+            )
         tikz_cached = cache and problem_id and cache.has(problem_id, "tikz")
         if tikz_cached and primary.question_type == "match":
             tikz_cached = (
@@ -113,6 +130,12 @@ class ProblemOrchestrator:
                 ) == _MATCH_TIKZ_CONTRACT_VERSION
             )
         options_cached = cache and problem_id and cache.has(problem_id, "options")
+        if options_cached and primary.question_type == "passage":
+            options_cached = (
+                cache.get_stage_data(problem_id, "options").get(
+                    "passage_option_contract_version"
+                ) == _PASSAGE_OPTION_TIKZ_CONTRACT_VERSION
+            )
 
         if scan_cached and (tikz_cached or not needs_tikz) and (options_cached or not needs_options):
             self.console.print("[dim]Loading from cache...[/dim]")
@@ -136,13 +159,13 @@ class ProblemOrchestrator:
         # diagram. A genuine main + option question has both flags true and
         # keeps both independent generation paths.
         option_only = needs_options and not needs_tikz
-        if option_only and latex and r'\input{diagram}' in latex:
+        if option_only and has_main_diagram_placeholder(latex):
             latex = remove_main_diagram_placeholder(latex)
 
         # The scan is downstream evidence. If a non-option-only scan contains
         # a main placeholder despite classification, self-heal the miss.
         main_artifact, option_artifact = split_tikz_artifacts(tikz_code)
-        if (not option_only and latex and r'\input{diagram}' in latex
+        if (not option_only and has_main_diagram_placeholder(latex)
                 and not has_standalone_main_tikz(tikz_code)):
             main_artifact = self._run_main_diagram_sync(
                 image_path,
@@ -165,13 +188,7 @@ class ProblemOrchestrator:
         """Combine independently cached/generated scan and TikZ artifacts."""
         if not latex or not tikz_code:
             return latex
-        if not any(
-            marker in latex
-            for marker in (
-                r'\input{diagram}', r'\OptionA', r'\OptionB',
-                r'\MatchA', r'\MatchB',
-            )
-        ):
+        if not has_tikz_placeholder(latex):
             return latex
 
         assembled = insert_tikz_into_latex(latex, tikz_code)
@@ -261,11 +278,7 @@ class ProblemOrchestrator:
         self.console.print("[green]OK[/green] Scan complete")
 
         if cache and problem_id:
-            stage_data = (
-                {"match_table_contract_version": _MATCH_SCAN_CONTRACT_VERSION}
-                if primary.question_type == "match"
-                else None
-            )
+            stage_data = self._scan_stage_data(primary.question_type)
             cache.set(
                 problem_id,
                 "scan",
@@ -341,11 +354,7 @@ class ProblemOrchestrator:
                 scan_holder["result"] = result
                 # Cache immediately so partial progress survives
                 if cache and problem_id:
-                    stage_data = (
-                        {"match_table_contract_version": _MATCH_SCAN_CONTRACT_VERSION}
-                        if primary.question_type == "match"
-                        else None
-                    )
+                    stage_data = self._scan_stage_data(primary.question_type)
                     cache.set(
                         problem_id,
                         "scan",
@@ -424,7 +433,18 @@ class ProblemOrchestrator:
                 option_holder["result"] = tikz_code
                 # Cache immediately
                 if cache and problem_id and tikz_code:
-                    cache.set(problem_id, "options", tikz_code)
+                    stage_data = (
+                        {"passage_option_contract_version":
+                         _PASSAGE_OPTION_TIKZ_CONTRACT_VERSION}
+                        if primary.question_type == "passage"
+                        else None
+                    )
+                    cache.set(
+                        problem_id,
+                        "options",
+                        tikz_code,
+                        stage_data=stage_data,
+                    )
                 state["options"]["status"] = "done"
             except Exception as e:
                 option_holder["error"] = e
@@ -557,6 +577,23 @@ class ProblemOrchestrator:
         except Exception as e:
             self.console.print(f"[yellow]  WARN Option diagrams failed: {e}[/yellow]")
             raise
+
+    @staticmethod
+    def _scan_stage_data(question_type: str) -> Optional[dict]:
+        """Return prompt-contract metadata for cached scan artifacts."""
+        if question_type == "match":
+            return {"match_table_contract_version": _MATCH_SCAN_CONTRACT_VERSION}
+        if question_type == "passage":
+            return {
+                "passage_option_contract_version":
+                    _PASSAGE_OPTION_SCAN_CONTRACT_VERSION
+            }
+        if question_type == "assertion_reason":
+            return {
+                "assertion_diagram_contract_version":
+                    _ASSERTION_DIAGRAM_SCAN_CONTRACT_VERSION
+            }
+        return None
 
 
 def create_problem_orchestrator(use_context: bool = True, console=None) -> ProblemOrchestrator:

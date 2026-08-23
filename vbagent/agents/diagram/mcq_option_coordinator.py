@@ -89,7 +89,7 @@ def generate_mcq_options(
         num_options = diagram_analysis.get("num_option_diagrams", 4)
     elif diagram_analysis and hasattr(diagram_analysis, "num_option_diagrams"):
         num_options = diagram_analysis.num_option_diagrams
-    num_options = max(2, min(num_options, 6))  # clamp 2–6
+    num_options = max(2, min(num_options, 26))  # one unique A--Z macro per diagram
 
     # Trim descriptions to actual count
     if option_descriptions and len(option_descriptions) > num_options:

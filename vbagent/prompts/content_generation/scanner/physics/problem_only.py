@@ -12,6 +12,7 @@ from .formatting_rules import (
     TIKZ_GUIDELINES_SHORT,
 )
 from .common import PASSAGE_DIAGRAM_INLINE
+from .._shared import PASSAGE_OPTION_DIAGRAMS
 from ...mcq_format import (
     MATCH_OPTION_FORMAT_RULES_UNMARKED,
     MATCH_TABLE_DIAGRAM_RULES,
@@ -134,7 +135,10 @@ def get_problem_prompt(question_type: str) -> str:
    - Begin with `\item`
    - Extract assertion and reason on one line
 
-2. **Options (`\begin{tasks}(1) ... \end{tasks}`)**
+2. **Diagram (if present)**
+""" + DIAGRAM_PLACEHOLDER + r"""
+
+3. **Options (`\begin{tasks}(1) ... \end{tasks}`)**
    - Use 1-column tasks (statements are long)
    - Do NOT mark any answer with `\ans` — answer marking is done later by the solution agent
 
@@ -181,6 +185,7 @@ Extract the passage and all sub-questions with their options.
 """ + PASSAGE_DIAGRAM_INLINE + r"""
 
 4. **Sub-questions**
+""" + PASSAGE_OPTION_DIAGRAMS + r"""
    - Each question: `\item [question text]`
    - Followed by `\begin{tasks}(2) ... \end{tasks}`
    - **CRITICAL:** Do NOT mark any answers with `\ans` — answer marking is done later by the solution agent

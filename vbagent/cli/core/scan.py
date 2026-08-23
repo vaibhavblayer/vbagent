@@ -187,8 +187,11 @@ def scan(
                         raw_diagram_description=None
                     )
 
-                    if r'\input{diagram}' in result.latex:
-                        from vbagent.pipeline.io import insert_tikz_into_latex
+                    from vbagent.pipeline.io import (
+                        has_main_diagram_placeholder,
+                        insert_tikz_into_latex,
+                    )
+                    if has_main_diagram_placeholder(result.latex):
                         from vbagent.cli.common import format_latex
                         console.print("[dim]  → Combining LaTeX + TikZ...[/dim]")
                         result.latex = insert_tikz_into_latex(result.latex, tikz_code)
@@ -278,8 +281,11 @@ def scan(
                         tikz_syntax = _get_syntax(tikz_code, "latex", theme="monokai", line_numbers=True)
                         console.print(_get_panel(tikz_syntax, title=f"Generated TikZ ({agent_used})", border_style="cyan"))
 
-                        if r'\input{diagram}' in result.latex:
-                            from vbagent.pipeline.io import insert_tikz_into_latex
+                        from vbagent.pipeline.io import (
+                            has_main_diagram_placeholder,
+                            insert_tikz_into_latex,
+                        )
+                        if has_main_diagram_placeholder(result.latex):
                             from vbagent.cli.common import format_latex
                             console.print("[dim]  → Combining LaTeX + TikZ...[/dim]")
                             result.latex = insert_tikz_into_latex(result.latex, tikz_code)

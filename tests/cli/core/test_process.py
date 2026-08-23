@@ -785,6 +785,45 @@ def test_insert_tikz_into_latex_wraps_in_center():
     assert r"\draw (0,0) circle (1)" in result
 
 
+def test_insert_tikz_into_legacy_assertion_diagram_placeholder():
+    """Older assertion scans using literal [Diagram] still assemble."""
+    latex = r"""\item Figure shows a sequence of photographs.
+\begin{center}
+    \text{[Diagram]}
+\end{center}
+\textbf{Statement-1:} Acceleration appears upward.
+\textbf{Statement-2:} Time reversal changes $\vec v$ to $-\vec v$.
+\begin{tasks}(1)
+    \task Both statements are true
+    \task Statement-1 is false, statement-2 is true
+\end{tasks}"""
+    tikz_code = r"""\begin{tikzpicture}
+\foreach \y in {0,0.5,1.5,3} \draw (0,\y) circle (0.12);
+\end{tikzpicture}"""
+
+    result = insert_tikz_into_latex(latex, tikz_code)
+
+    assert "[Diagram]" not in result
+    assert result.count(r"\begin{tikzpicture}") == 1
+    assert r"\textbf{Statement-1:}" in result
+    assert result.index(r"\begin{tikzpicture}") < result.index(
+        r"\textbf{Statement-1:}"
+    )
+
+
+def test_insert_tikz_replaces_commented_main_placeholder():
+    latex = r"""\item Draw the motion.
+% \input{diagram}
+\begin{solution}Done.\end{solution}"""
+    tikz_code = r"\begin{tikzpicture}\draw (0,0)--(0,1);\end{tikzpicture}"
+
+    result = insert_tikz_into_latex(latex, tikz_code)
+
+    assert r"\input{diagram}" not in result
+    assert "% \\begin{tikzpicture}" not in result
+    assert result.count(r"\begin{tikzpicture}") == 1
+
+
 def test_insert_tikz_into_latex_option_diagrams():
     """Test that option diagram definitions are inserted before tasks."""
     latex = r"""\item Which graph shows the correct relationship?
@@ -840,6 +879,34 @@ def test_option_diagram_insertion_is_idempotent_with_nested_tikz():
     assert twice.count(r"\def\OptionA") == 1
     assert twice.count(r"\def\OptionB") == 1
     assert twice.count(r"\pgfmathsetmacro{\axisWidth}{2.5}") == 1
+
+
+def test_passage_option_diagrams_support_more_than_one_a_to_d_group():
+    latex = r"""\item First graph question.
+\begin{tasks}(2)
+\task \OptionA
+\task \OptionB
+\task \OptionC
+\task \OptionD
+\end{tasks}
+\item Second graph question.
+\begin{tasks}(2)
+\task \OptionE
+\task \OptionF
+\task \OptionG
+\task \OptionH
+\end{tasks}"""
+    tikz_code = "\n".join(
+        rf"\def\Option{letter}{{\begin{{tikzpicture}}\node{{{letter}}};\end{{tikzpicture}}}}"
+        for letter in "ABCDEFGH"
+    )
+
+    assembled = insert_tikz_into_latex(latex, tikz_code)
+
+    for letter in "ABCDEFGH":
+        assert assembled.count(rf"\def\Option{letter}") == 1
+        assert rf"\task \Option{letter}" in assembled
+    assert assembled.index(r"\def\OptionH") < assembled.index(r"\begin{tasks}")
 
 
 def test_duplicate_option_sets_keep_last_definition_once():
@@ -900,6 +967,35 @@ def test_match_table_diagrams_are_defined_once_and_consumed_in_cells():
     assert r"(A) & \MatchA & (P)" in twice
     assert r"(B) & \MatchB & (Q)" in twice
     assert "MATCH_DIAGRAMS" not in twice
+
+
+def test_save_boundary_assembles_match_diagrams_with_p_to_s_row_labels():
+    """Any MatchX label must trigger assembly, not only MatchA/MatchB."""
+    from types import SimpleNamespace
+
+    from vbagent.pipeline.io import _assembled_latex_for_save
+
+    latex = r"""\item Match the graphs.
+%% MATCH_DIAGRAMS: Column-II rows (P)--(S) contain diagrams
+\begin{tabular}{cc|cc}
+(A) & First & (P) & \MatchP \\
+(B) & Second & (Q) & \MatchQ \\
+(C) & Third & (R) & \MatchR \\
+(D) & Fourth & (S) & \MatchS \\
+\end{tabular}"""
+    tikz_code = r"""\def\MatchP{\begin{tikzpicture}\node{P};\end{tikzpicture}}
+\def\MatchQ{\begin{tikzpicture}\node{Q};\end{tikzpicture}}
+\def\MatchR{\begin{tikzpicture}\node{R};\end{tikzpicture}}
+\def\MatchS{\begin{tikzpicture}\node{S};\end{tikzpicture}}"""
+
+    result = _assembled_latex_for_save(
+        SimpleNamespace(latex=latex, tikz_code=tikz_code)
+    )
+
+    for letter in "PQRS":
+        assert result.count(rf"\def\Match{letter}") == 1
+    assert result.index(r"\def\MatchP") < result.index(r"\begin{tabular}")
+    assert "MATCH_DIAGRAMS" not in result
 
 
 def test_standalone_and_match_table_diagrams_can_coexist():

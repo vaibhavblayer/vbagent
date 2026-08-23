@@ -50,6 +50,36 @@ PASSAGE_DIAGRAM_INLINE = r"""
 """
 
 
+PASSAGE_OPTION_DIAGRAMS = r"""
+    **Diagram Options Across Passage Sub-questions (CRITICAL):**
+    * If answer choices contain graphs, figures, circuits, structures, or other
+      diagrams, use placeholders rather than prose such as `Graph (a)`.
+    * Add one `%% OPTIONS_DIAGRAMS:` comment describing every diagram group.
+    * Assign option macros continuously across the whole passage and NEVER
+      restart at A. The first four-diagram group uses `\OptionA`--`\OptionD`,
+      the second uses `\OptionE`--`\OptionH`, and so on.
+    * Preserve text-only options normally; only diagram choices use macros.
+
+    ```latex
+    %% OPTIONS_DIAGRAMS: Q1 graphs A--D; Q2 graphs E--H
+    \item First graph question.
+    \begin{tasks}(2)
+        \task \OptionA
+        \task \OptionB
+        \task \OptionC
+        \task \OptionD
+    \end{tasks}
+    \item Second graph question.
+    \begin{tasks}(2)
+        \task \OptionE
+        \task \OptionF
+        \task \OptionG
+        \task \OptionH
+    \end{tasks}
+    ```
+"""
+
+
 def options_with_diagrams(forbidden_examples: str = "") -> str:
     """Build the OPTIONS_WITH_DIAGRAMS prompt with subject-specific forbidden examples.
 
@@ -143,6 +173,7 @@ __all__ = [
     "MCQ_ANSWER_FORMAT_RULES",
     "DIAGRAM_PLACEHOLDER",
     "PASSAGE_DIAGRAM_INLINE",
+    "PASSAGE_OPTION_DIAGRAMS",
     "options_with_diagrams",
     "OPTIONS_WITH_DIAGRAMS_PHYSICS",
     "OPTIONS_WITH_DIAGRAMS_CHEMISTRY",

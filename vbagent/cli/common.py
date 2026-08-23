@@ -842,9 +842,11 @@ def has_diagram_placeholder(content: str) -> bool:
     Returns:
         True if a diagram placeholder is found (including commented ones)
     """
-    import re
-    # Match both active and commented placeholders
-    return bool(re.search(r'%?\s*\\input\{diagram\}', content))
+    from vbagent.pipeline.io import has_main_diagram_placeholder
+
+    # The core helper also recognizes legacy assertion scans that emitted
+    # ``\text{[Diagram]}`` instead of the canonical input placeholder.
+    return has_main_diagram_placeholder(content)
 
 
 def discover_images_dir(tex_dir: Path) -> Optional[Path]:

@@ -211,7 +211,7 @@ Respond with ONLY a valid JSON object:
     "suggested_tikz_agent": {suggested_agents},
 
     "has_option_diagrams": true | false,
-    "num_option_diagrams": <0-4>,
+    "num_option_diagrams": <total count across all option groups, 0-26>,
     "option_diagram_type": "<diagram type for options or empty string>",
     "option_diagram_descriptions": ["<desc A>", "<desc B>", ...]
 }}
@@ -228,6 +228,10 @@ Diagram analysis rules:
 - `has_diagram` means a standalone/main graphical diagram in the question stem
   or passage, OUTSIDE the answer choices. Option diagrams do not make this true.
 - `has_option_diagrams` means one or more answer choices contain graphical diagrams.
+- For passage/comprehension questions, inspect every sub-question. Count option
+  diagrams across all sub-questions, not only the first group. For example, two
+  four-graph questions give `num_option_diagrams=8`, with descriptions ordered
+  Q1(a)--Q1(d), then Q2(a)--Q2(d).
 - Diagrams embedded in Column-I or Column-II of a match-the-column table count
   as main/problem diagrams (`has_diagram=true`), not option diagrams. Reserve
   `has_option_diagrams` for the selectable answer choices in the `tasks` block.

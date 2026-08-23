@@ -7,6 +7,7 @@
 
 from hypothesis import given, settings, assume
 from hypothesis import strategies as st
+import pytest
 
 from vbagent.prompts.content_generation.scanner import (
     SCANNER_PROMPTS,
@@ -45,6 +46,46 @@ def test_biology_scanner_uses_biology_prompts():
         assert get_scanner_prompt(question_type, "biology") == (
             prompt + "\n\n" + TABLE_FORMAT_RULES
         )
+
+
+@pytest.mark.parametrize(
+    "subject", ["physics", "chemistry", "mathematics", "biology"]
+)
+def test_problem_only_passage_uses_unique_option_macros_across_groups(subject):
+    import importlib
+
+    module = importlib.import_module(
+        f"vbagent.prompts.content_generation.scanner.{subject}.problem_only"
+    )
+    prompt = module.get_problem_prompt("passage")
+
+    assert r"\OptionA`--`\OptionD" in prompt
+    assert r"\OptionE`--`\OptionH" in prompt
+    assert "NEVER\n      restart at A" in prompt
+
+
+@pytest.mark.parametrize("subject", VALID_SUBJECTS)
+def test_problem_only_assertion_reason_uses_main_diagram_placeholder(subject):
+    import importlib
+
+    module = importlib.import_module(
+        f"vbagent.prompts.content_generation.scanner.{subject}.problem_only"
+    )
+    prompt = module.get_problem_prompt("assertion_reason")
+
+    assert "standalone/main diagram" in prompt
+    assert r"\input{diagram}" in prompt
+    assert prompt.index("**Diagram (if present)**") < prompt.index(
+        "**Options (`\\begin{tasks}(1)"
+    )
+
+
+@pytest.mark.parametrize("subject", ["physics", "chemistry", "mathematics"])
+def test_full_assertion_reason_prompt_uses_main_diagram_placeholder(subject):
+    prompt = get_scanner_prompt("assertion_reason", subject)
+
+    assert "standalone/main diagram" in prompt
+    assert r"\input{diagram}" in prompt
 
 
 # Strategy for valid question types
@@ -183,7 +224,15 @@ def valid_latex_output_strategy(draw):
 def invalid_latex_output_strategy(draw):
     """Generate invalid LaTeX output that doesn't follow the expected structure."""
     choice = draw(st.integers(min_value=0, max_value=2))
-    content = draw(st.text(min_size=10, max_size=200).filter(lambda x: x.strip()))
+    content = draw(
+        st.text(min_size=10, max_size=200).filter(
+            lambda x: (
+                x.strip()
+                and r"\begin{solution}" not in x
+                and r"\end{solution}" not in x
+            )
+        )
+    )
     
     if choice == 0:
         # Missing \item at start

@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Optional
 
 from vbagent.cli.common import _get_console, _get_panel, extract_problem_solution
 from vbagent.pipeline.io import (
+    has_main_diagram_placeholder,
     merge_metadata_into_latex,
     insert_tikz_into_latex,
 )
@@ -164,7 +165,7 @@ def process_generated_problem(
             tikz_file = dirs["tikz"] / f"{problem_name}.tex"
             tikz_file.write_text(tikz_code)
             console.print(f"[green]OK TikZ saved to {tikz_file}[/green]")
-            if r'\input{diagram}' in generated.problem_latex:
+            if has_main_diagram_placeholder(generated.problem_latex):
                 generated.problem_latex = insert_tikz_into_latex(generated.problem_latex, tikz_code)
         except Exception as e:
             console.print(f"[yellow]! TikZ generation failed: {e}[/yellow]")

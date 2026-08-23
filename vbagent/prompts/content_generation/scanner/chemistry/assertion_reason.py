@@ -1,5 +1,8 @@
 """Assertion-Reason question scanner prompt."""
 
+from .common import DIAGRAM_PLACEHOLDER
+
+
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
 
@@ -23,7 +26,10 @@ Analyze the provided image and extract an Assertion–Reason style question. Pro
     * Do not include exam/year metadata (e.g., `NEET[2022]`, `JEE 2019`, `IIT-JEE 2020`, `(2023)`, `[2021]`).
     * Do **not** include example/exercise numbering prefixes (e.g., `Example 25.4`, `Ex. 3.2`, `Problem 12`, `Q.5`). Start directly with the assertion text.
 
-2.  Assertion and Reason Options (`\begin{tasks}(c) ... \end{tasks}`)
+2.  Diagram (if present)
+""" + DIAGRAM_PLACEHOLDER + r"""
+
+3.  Assertion and Reason Options (`\begin{tasks}(c) ... \end{tasks}`)
     *   Column rule: choose columns by option style.
         \begin{tasks}(1)
           \task Both Assertion and Reason are true and Reason is the correct explanation of Assertion 
@@ -34,7 +40,7 @@ Analyze the provided image and extract an Assertion–Reason style question. Pro
     *   Provide the options using `\task`.
     *   Based on your analysis in the solution step, mark the single correct answer by appending ` \ans` to the end of its corresponding `\task` line.
 
-3.  Solution (`\begin{solution} ... \end{solution}`)
+4.  Solution (`\begin{solution} ... \end{solution}`)
     * Place a `solution` environment immediately after the `\item`.
     * Inside, use one `align*` environment.
     * Use `\intertext{...}` for short prose between equation lines; wrap any math with `$...$`. Do not nest `\text{...}` inside `\intertext{...}`.

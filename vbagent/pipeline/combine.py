@@ -58,6 +58,14 @@ def _insert_tikz_into_latex(problem_tex: str, tikz_code: str) -> str:
     if not tikz_code:
         return problem_tex
 
+    from vbagent.pipeline.io import (
+        has_main_diagram_placeholder,
+        insert_tikz_into_latex,
+    )
+
+    if has_main_diagram_placeholder(problem_tex):
+        return insert_tikz_into_latex(problem_tex, tikz_code)
+
     wrapped = f"\n\\begin{{center}}\n{tikz_code.strip()}\n\\end{{center}}\n"
 
     if "%TIKZ_PLACEHOLDER%" in problem_tex:

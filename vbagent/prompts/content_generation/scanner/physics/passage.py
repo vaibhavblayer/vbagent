@@ -1,7 +1,7 @@
 """Passage/Comprehension question scanner prompt."""
 
 from .common import PASSAGE_DIAGRAM_INLINE
-from .._shared import MCQ_ANSWER_FORMAT_RULES
+from .._shared import MCQ_ANSWER_FORMAT_RULES, PASSAGE_OPTION_DIAGRAMS
 
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
@@ -95,7 +95,7 @@ Subject: Physics
 ---
 
 **Final Check:** Return only the LaTeX snippet from the first line shown above through the last `\end{solution}` with nothing extra.
-""" + MCQ_ANSWER_FORMAT_RULES
+""" + PASSAGE_OPTION_DIAGRAMS + MCQ_ANSWER_FORMAT_RULES
 
 USER_TEMPLATE = "Extract LaTeX from this physics question image."
 
