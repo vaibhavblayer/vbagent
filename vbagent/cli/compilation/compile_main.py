@@ -56,16 +56,20 @@ def _assemble_problem_for_compile(
     if not scan_path.exists():
         raise ValueError(f"Problem file not found: {scan_path}")
 
+    from vbagent.pipeline.io import (
+        has_main_diagram_placeholder,
+        insert_tikz_into_latex,
+        replace_main_diagram_placeholder,
+    )
+
     content = scan_path.read_text()
-    if r"\input{diagram}" not in content:
+    if not has_main_diagram_placeholder(content):
         return content, False, False
 
     tikz_path = scans_path.parent / "tikz" / f"{problem}.tex"
     if tikz_path.exists():
-        from vbagent.pipeline.io import insert_tikz_into_latex
-
         assembled = insert_tikz_into_latex(content, tikz_path.read_text())
-        if r"\input{diagram}" in assembled:
+        if has_main_diagram_placeholder(assembled):
             raise ValueError(
                 f"Could not assemble diagram placeholder in {scan_path} "
                 f"using {tikz_path}"
@@ -77,7 +81,7 @@ def _assemble_problem_for_compile(
         f"{problem}"
         "]}}}"
     )
-    return content.replace(r"\input{diagram}", fallback), True, True
+    return replace_main_diagram_placeholder(content, fallback), True, True
 
 
 def _missing_diagram_names(content: str) -> list[str]:
@@ -103,6 +107,7 @@ def generate_preamble(subject: str = "physics", title: str = "Problems", include
 \usetikzlibrary{arrows.meta, patterns, calc, intersections, quotes, angles}
 \usepackage{amsmath, amssymb, amsfonts, mathtools}
 \usepackage{comment, multicol}
+\usepackage{multirow}
 \setlength{\columnsep}{10pt}
 \setlength{\columnseprule}{0.4pt}
 \usepackage[upright]{fourier}
@@ -113,6 +118,7 @@ def generate_preamble(subject: str = "physics", title: str = "Problems", include
     subject_packages = {
         "physics": r"""
 \usepackage{tzplot, pgfplots, kinematikz}
+\usepgfplotslibrary{groupplots}
 \usepackage{circuitikz}
 \ctikzset{resistors/scale=0.75,capacitors/scale=0.75,inductors/scale=0.75}""",
         
@@ -121,10 +127,12 @@ def generate_preamble(subject: str = "physics", title: str = "Problems", include
 \usepackage[version=4]{mhchem}
 \usepackage[modules=all]{chemmacros}
 \usepackage{pgfplots}
+\usepgfplotslibrary{groupplots}
 \pgfplotsset{compat=1.18}""",
         
         "mathematics": r"""
 \usepackage{pgfplots, tkz-euclide}
+\usepgfplotslibrary{groupplots}
 \pgfplotsset{compat=1.18}
 \usepackage{venndiagram}"""
     }
@@ -139,6 +147,7 @@ def generate_preamble(subject: str = "physics", title: str = "Problems", include
 \usepackage[modules=all]{chemmacros}
 \usepackage{tkz-euclide}
 \usepackage{venndiagram}
+\usepgfplotslibrary{groupplots}
 \pgfplotsset{compat=1.18}"""
     
     # Custom commands

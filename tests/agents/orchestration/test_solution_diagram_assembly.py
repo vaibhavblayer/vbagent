@@ -63,12 +63,19 @@ def test_run_returns_final_latex_with_fallback_inserted_diagram():
     )
     orchestrator._dispatch_diagrams = MagicMock(return_value={"d1": tikz})
 
+    problem_latex = r"\begin{problem}Find x.\end{problem}"
     result = orchestrator.run(
-        problem_latex=r"\begin{problem}Find x.\end{problem}",
+        problem_latex=problem_latex,
         subject="physics",
         question_type="subjective",
     )
 
+    orchestrator._dispatch_diagrams.assert_called_once_with(
+        orchestrator._call_subject_agent.return_value.diagram_requirements,
+        None,
+        "physics",
+        problem_latex,
+    )
     assert tikz in result.latex
     assert "% Auto-inserted solution diagram: d1" in result.latex
 

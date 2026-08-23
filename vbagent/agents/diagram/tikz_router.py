@@ -24,7 +24,7 @@ class _GeneratorSpec:
     forwards: tuple[str, ...] = ()
 
 
-_PHYSICS_FORWARDS = (
+_RICH_CONTEXT_FORWARDS = (
     "problem_text",
     "solution_context",
     "values",
@@ -32,14 +32,14 @@ _PHYSICS_FORWARDS = (
 )
 
 _GENERATOR_REGISTRY: dict[AgentType, _GeneratorSpec] = {
-    "fbd": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_fbd", _PHYSICS_FORWARDS),
-    "setup": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_setup", _PHYSICS_FORWARDS),
-    "circuit": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_circuit", _PHYSICS_FORWARDS),
-    "gates": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_gates", _PHYSICS_FORWARDS),
-    "graph": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_graph", _PHYSICS_FORWARDS),
-    "optics": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_optics", _PHYSICS_FORWARDS),
-    "mechanics": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_mechanics", _PHYSICS_FORWARDS),
-    "wave": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_wave", _PHYSICS_FORWARDS),
+    "fbd": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_fbd", _RICH_CONTEXT_FORWARDS),
+    "setup": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_setup", _RICH_CONTEXT_FORWARDS),
+    "circuit": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_circuit", _RICH_CONTEXT_FORWARDS),
+    "gates": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_gates", _RICH_CONTEXT_FORWARDS),
+    "graph": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_graph", _RICH_CONTEXT_FORWARDS),
+    "optics": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_optics", _RICH_CONTEXT_FORWARDS),
+    "mechanics": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_mechanics", _RICH_CONTEXT_FORWARDS),
+    "wave": _GeneratorSpec("vbagent.agents.diagram.physics", "generate_wave", _RICH_CONTEXT_FORWARDS),
     "reaction_mechanism": _GeneratorSpec(
         "vbagent.agents.diagram.chemistry", "generate_reaction_mechanism"
     ),
@@ -54,19 +54,24 @@ _GENERATOR_REGISTRY: dict[AgentType, _GeneratorSpec] = {
         "vbagent.agents.diagram.chemistry", "generate_energy_diagram"
     ),
     "function_graph": _GeneratorSpec(
-        "vbagent.agents.diagram.mathematics", "generate_function_graph"
+        "vbagent.agents.diagram.mathematics", "generate_function_graph",
+        _RICH_CONTEXT_FORWARDS,
     ),
     "coordinate_geometry": _GeneratorSpec(
-        "vbagent.agents.diagram.mathematics", "generate_coordinate_geometry"
+        "vbagent.agents.diagram.mathematics", "generate_coordinate_geometry",
+        _RICH_CONTEXT_FORWARDS,
     ),
     "geometric_figure": _GeneratorSpec(
-        "vbagent.agents.diagram.mathematics", "generate_geometric_figure"
+        "vbagent.agents.diagram.mathematics", "generate_geometric_figure",
+        _RICH_CONTEXT_FORWARDS,
     ),
     "number_line": _GeneratorSpec(
-        "vbagent.agents.diagram.mathematics", "generate_number_line"
+        "vbagent.agents.diagram.mathematics", "generate_number_line",
+        _RICH_CONTEXT_FORWARDS,
     ),
     "venn_diagram": _GeneratorSpec(
-        "vbagent.agents.diagram.mathematics", "generate_venn_diagram"
+        "vbagent.agents.diagram.mathematics", "generate_venn_diagram",
+        _RICH_CONTEXT_FORWARDS,
     ),
     "generic": _GeneratorSpec("vbagent.agents.diagram.tikz", "generate_tikz"),
 }

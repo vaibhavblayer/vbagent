@@ -104,7 +104,10 @@ class SolutionOrchestrator:
         if diagram_reqs and generate_diagrams:
             self.console.print(f"[dim]  → Generating {len(diagram_reqs)} solution diagram(s)...[/dim]")
             diagram_codes = self._dispatch_diagrams(
-                diagram_reqs, image_path if has_diagram else None, subject,
+                diagram_reqs,
+                image_path if has_diagram else None,
+                subject,
+                problem_latex,
             )
             self.console.print(f"[green]  OK {len(diagram_codes)} diagram(s) generated[/green]")
         elif diagram_reqs and not generate_diagrams:
@@ -231,7 +234,7 @@ class SolutionOrchestrator:
             show_spinner=True,
         )
 
-    def _dispatch_diagrams(self, diagram_reqs, image_path, subject):
+    def _dispatch_diagrams(self, diagram_reqs, image_path, subject, problem_latex):
         """Dispatch diagram agents in parallel for each requirement.
 
         Passes diagram_type and rich context (values, labels, solution_context)
@@ -274,6 +277,7 @@ class SolutionOrchestrator:
                     show_spinner=True,  # Show status like other agents
                     subject=subject,
                     diagram_type=diagram_type,
+                    problem_text=problem_latex,
                     solution_context=context,
                     values=values if values else None,
                     labels=labels if labels else None,

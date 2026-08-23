@@ -68,6 +68,43 @@ def test_diagram_agent_appends_coordinate_discipline(monkeypatch):
     assert STYLE_DISCIPLINE in instructions
 
 
+def test_mathematics_style_agent_receives_forwarded_solution_context(monkeypatch):
+    """Simple-reference agents must still receive exact diagram requirements."""
+    captured = {}
+
+    def fake_create_agent(**kwargs):
+        captured.update(kwargs)
+        return kwargs
+
+    monkeypatch.setattr(diagram_base, "create_agent", fake_create_agent)
+    agent = DiagramAgent(
+        DiagramAgentConfig(
+            name="MathContextProbe",
+            agent_type="tikz",
+            system_prompt="MATH PROMPT",
+            user_template="{description}",
+            user_template_from_problem="{problem}",
+            has_rich_context=False,
+        )
+    )
+
+    agent.create_agent(
+        use_context=False,
+        problem_text=r"Plot $f(x)=x+1$.",
+        solution_context="Show its intercept and domain.",
+        values={"function": "x+1", "x_intercept": "-1"},
+        labels=[r"$f(x)=x+1$", r"$(-1,0)$"],
+    )
+
+    instructions = captured["instructions"]
+    assert r"Plot $f(x)=x+1$." in instructions
+    assert "Show its intercept and domain." in instructions
+    assert "function=x+1" in instructions
+    assert "x_intercept=-1" in instructions
+    assert r"$f(x)=x+1$" in instructions
+    assert r"$(-1,0)$" in instructions
+
+
 def test_tikz_checker_enforces_same_coordinate_discipline():
     """Post-generation review must preserve the generation prompt's geometry rules."""
     checklist = get_review_checklist("mathematics")

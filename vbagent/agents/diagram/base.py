@@ -3,11 +3,13 @@
 Eliminates ~80% boilerplate across 15+ diagram agents by extracting
 the shared patterns into a configurable DiagramAgent class.
 
-Two agent patterns are supported:
-- "rich" (physics): Has reference search tool, classification context via
-  TikZReferenceStore, and solution_context/values/labels params.
-- "simple" (chemistry/math): No reference tool, uses ReferenceStore with
-  a hardcoded search query, simpler generate() signature.
+Two reference-retrieval patterns are supported:
+- classification-aware agents use TikZReferenceStore metadata and an optional
+  lazy search tool;
+- fixed-query agents use ReferenceStore with a configured search query.
+
+Both patterns accept the same exact problem/solution context, values, and
+required labels from the upstream solution agent.
 """
 
 from __future__ import annotations
@@ -44,7 +46,9 @@ class DiagramAgentConfig:
         solution_context_hint: Hint appended after solution_context in prompt.
         problem_template_key: The format key in user_template_from_problem
             (e.g. "problem_text" for physics, "problem" for chem/math).
-        has_rich_context: Whether agent supports solution_context/values/labels.
+        has_rich_context: Whether the agent uses classification-aware TikZ
+            reference retrieval. Forwarded problem/solution context is
+            supported independently for every diagram agent.
     """
 
     name: str
@@ -209,21 +213,22 @@ class DiagramAgent:
                 if ctx:
                     prompt += "\n\n" + ctx
 
-        # Rich context from solution agent (physics agents)
-        if self.config.has_rich_context:
-            if problem_text:
-                prompt += f"\n\n## Problem Context\n\n{problem_text}\n"
-            if solution_context:
-                prompt += f"\n\n## Solution Analysis\n\n{solution_context}\n"
-                if self.config.solution_context_hint:
-                    prompt += f"\n{self.config.solution_context_hint}\n"
-            if values:
-                values_str = ", ".join(f"{k}={v}" for k, v in values.items())
-                prompt += f"\n\n## Values to Use\n\n{values_str}\n"
-            if labels:
-                labels_str = ", ".join(labels)
-                prompt += f"\n\n## Labels Required\n\n{labels_str}\n"
-                prompt += "\nEnsure all these labels appear in the diagram.\n"
+        # Exact downstream context is relevant to every subject. Keep
+        # ``has_rich_context`` limited to reference-retrieval behavior so
+        # mathematics agents do not silently lose functions, values, or labels.
+        if problem_text:
+            prompt += f"\n\n## Problem Context\n\n{problem_text}\n"
+        if solution_context:
+            prompt += f"\n\n## Solution Analysis\n\n{solution_context}\n"
+            if self.config.solution_context_hint:
+                prompt += f"\n{self.config.solution_context_hint}\n"
+        if values:
+            values_str = ", ".join(f"{k}={v}" for k, v in values.items())
+            prompt += f"\n\n## Values to Use\n\n{values_str}\n"
+        if labels:
+            labels_str = ", ".join(labels)
+            prompt += f"\n\n## Labels Required\n\n{labels_str}\n"
+            prompt += "\nEnsure all these labels appear in the diagram.\n"
 
         tools = []
         ref_tool = self._get_reference_tool()
@@ -256,8 +261,9 @@ class DiagramAgent:
     ) -> str:
         """Generate diagram code.
 
-        Rich agents accept all params. Simple agents ignore
-        solution_context/values/labels/classification/search_references.
+        Every agent accepts exact problem/solution context, values, and labels.
+        Classification-aware reference lookup remains opt-in via
+        ``has_rich_context``.
         """
         # Validate inputs
         if self.config.has_rich_context:
@@ -273,10 +279,10 @@ class DiagramAgent:
         agent = self.create_agent(
             use_context=use_context,
             classification=classification,
-            problem_text=problem_text if self.config.has_rich_context else None,
-            solution_context=solution_context if self.config.has_rich_context else None,
-            values=values if self.config.has_rich_context else None,
-            labels=labels if self.config.has_rich_context else None,
+            problem_text=problem_text,
+            solution_context=solution_context,
+            values=values,
+            labels=labels,
         )
 
         # Build user message

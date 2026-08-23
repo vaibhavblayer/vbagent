@@ -53,7 +53,7 @@ def test_physics_dispatch_forwards_rich_context(monkeypatch):
     }
 
 
-def test_simple_dispatch_only_forwards_supported_arguments(monkeypatch):
+def test_mathematics_dispatch_forwards_rich_context(monkeypatch):
     received = {}
 
     def generate_number_line(**kwargs):
@@ -72,8 +72,8 @@ def test_simple_dispatch_only_forwards_supported_arguments(monkeypatch):
         description="x > 2",
         use_context=False,
         show_spinner=True,
-        problem_text="not supported",
-        solution_context="not supported",
+        problem_text="solve the inequality",
+        solution_context="solution set has two rays",
         values={"x": 2},
         labels=["x"],
         mcq_options=True,
@@ -84,7 +84,27 @@ def test_simple_dispatch_only_forwards_supported_arguments(monkeypatch):
         "description": "x > 2",
         "use_context": False,
         "show_spinner": True,
+        "problem_text": "solve the inequality",
+        "solution_context": "solution set has two rays",
+        "values": {"x": 2},
+        "labels": ["x"],
     }
+
+
+def test_every_mathematics_generator_accepts_rich_context():
+    mathematics_agents = {
+        "function_graph",
+        "coordinate_geometry",
+        "geometric_figure",
+        "number_line",
+        "venn_diagram",
+    }
+
+    for agent_type in mathematics_agents:
+        assert (
+            tikz_router._GENERATOR_REGISTRY[agent_type].forwards
+            == tikz_router._RICH_CONTEXT_FORWARDS
+        )
 
 
 def test_generic_dispatch_supplies_default_description(monkeypatch):

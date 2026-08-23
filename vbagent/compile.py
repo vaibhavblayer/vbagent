@@ -60,6 +60,7 @@ PREAMBLE_TEMPLATE = r"""\documentclass[preview, border=2mm]{{standalone}}
 
 % --- Plots ---
 \usepackage{{pgfplots}}
+\usepgfplotslibrary{{groupplots}}
 \pgfplotsset{{compat=1.18}}
 
 % --- Tasks (MCQ options) ---
@@ -67,6 +68,7 @@ PREAMBLE_TEMPLATE = r"""\documentclass[preview, border=2mm]{{standalone}}
 
 % --- Content environments and visibility controls ---
 \usepackage{{comment, multicol}}
+\usepackage{{multirow}}
 \newenvironment{{solution}}{{\par\textbf{{Solution:}}\par}}{{}}
 \newenvironment{{alternatesolution}}{{\par\textbf{{Alternate solution:}}\par}}{{}}
 \newenvironment{{hint}}{{\par\textbf{{Hint:}}\par}}{{}}
@@ -136,12 +138,16 @@ def _build_document(latex_snippet: str, subject: str = "physics") -> str:
     if content.startswith("\\item"):
         content = f"\\begin{{enumerate}}\n{content}\n\\end{{enumerate}}"
     
-    # Replace \input{diagram} with a placeholder that compiles
-    # This allows compilation before TikZ is generated
-    if "\\input{diagram}" in content:
-        content = content.replace(
-            "\\input{diagram}",
-            "\\fbox{\\texttt{[DIAGRAM PLACEHOLDER - TikZ will be inserted here]}}"
+    # Replace current and legacy placeholders so validation never silently
+    # renders a scanner's literal ``[Diagram]`` marker.
+    from vbagent.pipeline.io import (
+        has_main_diagram_placeholder,
+        replace_main_diagram_placeholder,
+    )
+    if has_main_diagram_placeholder(content):
+        content = replace_main_diagram_placeholder(
+            content,
+            "\\fbox{\\texttt{[DIAGRAM PLACEHOLDER - TikZ will be inserted here]}}",
         )
 
     return PREAMBLE_TEMPLATE.format(
@@ -150,7 +156,7 @@ def _build_document(latex_snippet: str, subject: str = "physics") -> str:
     )
 
 
-def _parse_errors(log: str) -> str:
+def _parse_errors(log: str, source: str | None = None) -> str:
     """Extract meaningful error lines from pdflatex log.
 
     Returns a concise summary suitable for sending back to an agent.
@@ -175,8 +181,36 @@ def _parse_errors(log: str) -> str:
     if not errors:
         return "Compilation failed (unknown error — check log)"
 
-    # Limit to first 5 errors
-    return "\n\n".join(errors[:5])
+    summary = "\n\n".join(errors[:5])
+
+    # TeX often reports the line after an incomplete TikZ/PGFPlots command.
+    # Include nearby generated-source lines so a repair agent sees the actual
+    # malformed command instead of only the point where parsing finally failed.
+    if source:
+        line_numbers = []
+        for match in re.finditer(r"(?:^|\n)l\.(\d+)\b", log):
+            line_no = int(match.group(1))
+            if line_no not in line_numbers:
+                line_numbers.append(line_no)
+        source_lines = source.splitlines()
+        contexts = []
+        for line_no in line_numbers[:3]:
+            start = max(1, line_no - 7)
+            end = min(len(source_lines), line_no + 2)
+            rendered = []
+            for current in range(start, end + 1):
+                marker = ">" if current == line_no else " "
+                rendered.append(
+                    f"{marker} {current:4d} | {source_lines[current - 1]}"
+                )
+            contexts.append(
+                f"Generated source context around line {line_no}:\n"
+                + "\n".join(rendered)
+            )
+        if contexts:
+            summary += "\n\n" + "\n\n".join(contexts)
+
+    return summary
 
 
 
@@ -290,7 +324,7 @@ def compile_latex(
                 pdf_path=final_pdf,
             )
         else:
-            error_summary = _parse_errors(log_output)
+            error_summary = _parse_errors(log_output, document)
             return CompileResult(
                 success=False,
                 error_summary=error_summary,
