@@ -270,6 +270,8 @@ async def review_problem(
         variants=context.variants if context.variants else None,
         variant_paths=context.variant_paths if context.variant_paths else None,
         has_image=context.image_path is not None,
+        subject=context.subject,
+        compile_error=context.compile_error,
     )
     
     last_error: Optional[ReviewError] = None

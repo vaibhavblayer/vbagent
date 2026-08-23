@@ -5,6 +5,7 @@ for quality review.
 """
 
 import random
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -20,6 +21,8 @@ class ProblemContext:
     image_path: str | None
     latex_path: str
     latex_content: str
+    subject: str = "physics"
+    compile_error: str | None = None
     variants: dict[str, str] = field(default_factory=dict)  # variant_type -> latex content
     variant_paths: dict[str, str] = field(default_factory=dict)  # variant_type -> file path
 
@@ -101,6 +104,24 @@ def load_problem_context(output_dir: str, problem_id: str) -> ProblemContext:
         raise FileNotFoundError(f"Problem LaTeX not found: {problem_id}.tex")
     
     latex_content = latex_path.read_text()
+
+    # Classification is the authoritative subject source for compile packages
+    # and subject-aware QA. Support both agentic/ and direct scans/ inputs.
+    subject = "physics"
+    classification_candidates = [
+        latex_path.parent.parent / "classifications" / f"{problem_id}.json",
+        output_path / "classifications" / f"{problem_id}.json",
+        latex_path.parent / "classifications" / f"{problem_id}.json",
+    ]
+    for classification_path in classification_candidates:
+        if not classification_path.exists():
+            continue
+        try:
+            classification = json.loads(classification_path.read_text())
+            subject = classification.get("subject") or subject
+            break
+        except (OSError, json.JSONDecodeError, TypeError):
+            continue
     
     # Try to find associated image
     # Images are typically in a separate images directory with same base name
@@ -138,6 +159,7 @@ def load_problem_context(output_dir: str, problem_id: str) -> ProblemContext:
         image_path=image_path,
         latex_path=str(latex_path),
         latex_content=latex_content,
+        subject=subject,
         variants=variants,
         variant_paths=variant_paths,
     )

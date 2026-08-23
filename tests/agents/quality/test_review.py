@@ -20,6 +20,7 @@ from vbagent.models.diff import (
     parse_diff,
     apply_diff_to_content,
 )
+from vbagent.prompts.quality.reviewer import format_review_prompt
 
 
 # Valid issue types
@@ -31,6 +32,21 @@ VALID_ISSUE_TYPES = [
     "formatting",
     "other",
 ]
+
+
+def test_review_prompt_includes_confirmed_compile_diagnostic():
+    prompt = format_review_prompt(
+        problem_id="problem_124",
+        latex_content=r"\addplot[only marks]",
+        latex_path="agentic/scans/problem_124.tex",
+        subject="mathematics",
+        compile_error="pgfplots: unknown plot command",
+    )
+
+    assert "Review this mathematics problem" in prompt
+    assert "Local Compilation: FAILED" in prompt
+    assert "pgfplots: unknown plot command" in prompt
+    assert "Do not mark the problem as passed" in prompt
 
 
 # Strategies for generating test data

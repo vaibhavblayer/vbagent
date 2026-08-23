@@ -7,6 +7,7 @@ questions with AI-powered quality review and diff-based suggestions.
 from __future__ import annotations
 
 import os
+import re
 import signal
 import sys
 from pathlib import Path
@@ -54,6 +55,49 @@ def _get_text(*args, **kwargs):
 
 # Alias for backward compatibility
 open_suggested_in_editor = open_content_in_editor
+
+
+def _canonical_output_dir(output_dir: str) -> str:
+    """Return a stable path key for newly initialized check sessions."""
+    return str(Path(output_dir).resolve())
+
+
+def _resolve_tracked_output_dir(store, requested: str | None) -> str:
+    """Resolve an explicit path or reuse the initialized check directory.
+
+    Existing databases may contain relative paths or trailing slashes. Match
+    those records by resolved path so old sessions remain resumable.
+    """
+    tracked = store.get_problem_check_dirs()
+
+    if requested:
+        requested_canonical = _canonical_output_dir(requested)
+        for stored in tracked:
+            if _canonical_output_dir(stored) == requested_canonical:
+                return stored
+        return requested_canonical
+
+    pending = store.get_problem_check_dirs(pending_only=True)
+    candidates = [path for path in pending if Path(path).exists()]
+    if not candidates:
+        candidates = [path for path in tracked if Path(path).exists()]
+
+    if len(candidates) == 1:
+        return candidates[0]
+
+    default_dir = _canonical_output_dir("agentic")
+    for stored in candidates:
+        if _canonical_output_dir(stored) == default_dir:
+            return stored
+
+    if len(candidates) > 1:
+        choices = "\n".join(f"  - {path}" for path in candidates)
+        raise click.ClickException(
+            "Multiple initialized check directories were found. "
+            "Choose one with --dir:\n" + choices
+        )
+
+    return default_dir
 
 
 def display_suggestion(suggestion: "Suggestion", console: "Console") -> None:
@@ -1095,11 +1139,17 @@ def init_check(output_dir: str, from_index: Optional[int], to_index: Optional[in
         console.print("[red]Error:[/red] --from must be <= --to")
         raise SystemExit(1)
     
+    # Reuse an equivalent legacy path key when present (for example,
+    # ``agentic/scans/``), otherwise persist a canonical absolute path.
+    store = VersionStore(base_dir=".")
+    output_dir = _resolve_tracked_output_dir(store, output_dir)
+
     # Discover available problems
     all_problems = discover_problems(output_dir)
     
     if not all_problems:
         console.print(f"[red]Error:[/red] No problems found in {output_dir}")
+        store.close()
         raise SystemExit(1)
     
     # Sort problems naturally (Problem_1, Problem_2, ..., Problem_10, ...)
@@ -1108,16 +1158,16 @@ def init_check(output_dir: str, from_index: Optional[int], to_index: Optional[in
     # Apply range filter if specified
     if from_index or to_index:
         start = from_index or 1
-        end = to_index or len(sorted_problems)
-        start_idx = max(0, start - 1)
-        end_idx = min(len(sorted_problems), end)
-        sorted_problems = sorted_problems[start_idx:end_idx]
+        end = to_index or sys.maxsize
+        ranged_problems = []
+        for problem_id in sorted_problems:
+            match = re.search(r"(\d+)(?!.*\d)", problem_id)
+            if match and start <= int(match.group(1)) <= end:
+                ranged_problems.append(problem_id)
+        sorted_problems = ranged_problems
         console.print(f"[cyan]Filtering to range {start}-{end}: {len(sorted_problems)} problem(s)[/cyan]")
     
     console.print(f"[cyan]Found {len(sorted_problems)} problem(s) in {output_dir}[/cyan]")
-    
-    # Initialize tracking
-    store = VersionStore(base_dir=".")
     
     try:
         count = store.init_problem_checks(sorted_problems, output_dir, reset=reset)
@@ -1155,10 +1205,16 @@ def init_check(output_dir: str, from_index: Optional[int], to_index: Optional[in
     "-d", "--dir",
     "output_dir",
     type=click.Path(exists=True),
-    default="agentic",
-    help="Output directory to check (default: agentic)"
+    default=None,
+    help="Output directory to check (default: reuse directory from check init)"
 )
-def continue_check(count: int, output_dir: str):
+@click.option(
+    "--compile/--no-compile",
+    "compile_first",
+    default=True,
+    help="Compile each problem and send errors to the reviewer (default: enabled)"
+)
+def continue_check(count: int, output_dir: Optional[str], compile_first: bool):
     """Continue checking from where you left off.
     
     Picks up pending problems from the tracking database and
@@ -1179,6 +1235,8 @@ def continue_check(count: int, output_dir: str):
     store = VersionStore(base_dir=".")
     
     try:
+        output_dir = _resolve_tracked_output_dir(store, output_dir)
+
         # Get pending problems
         pending = store.get_pending_problems(output_dir, limit=count)
         
@@ -1255,6 +1313,27 @@ def continue_check(count: int, output_dir: str):
                 
                 # Run AI review
                 try:
+                    if compile_first:
+                        from vbagent.compile import compile_latex
+
+                        console.print("[dim]Compiling LaTeX before review...[/dim]")
+                        compile_result = compile_latex(
+                            problem.latex_content,
+                            subject=problem.subject,
+                        )
+                        problem.compile_error = (
+                            None if compile_result.success
+                            else compile_result.error_summary
+                        )
+                        if problem.compile_error:
+                            console.print(
+                                "[yellow]Compile failed; forwarding the exact "
+                                "diagnostic to the review agent.[/yellow]"
+                            )
+                            console.print(f"[dim]{problem.compile_error}[/dim]")
+                        else:
+                            console.print("[green]OK Compile passed[/green]")
+
                     console.print("[dim]Running AI review... (Ctrl+C to quit)[/dim]")
                     result = review_problem_sync(problem)
                 except KeyboardInterrupt:
@@ -1281,7 +1360,7 @@ def continue_check(count: int, output_dir: str):
                 session_stats["problems_reviewed"] += 1
                 session_stats["suggestions_made"] += len(result.suggestions)
                 
-                if result.passed:
+                if result.passed and not problem.compile_error:
                     console.print("[green]OK Problem passed review[/green]")
                     console.print(f"[dim]{result.summary}[/dim]")
                     store.update_problem_check(
@@ -1290,6 +1369,12 @@ def continue_check(count: int, output_dir: str):
                     )
                     session_stats["passed_count"] += 1
                     continue
+
+                if result.passed and problem.compile_error:
+                    console.print(
+                        "[red]Compile failure remains unresolved; the problem "
+                        "cannot pass review.[/red]"
+                    )
                 
                 console.print(f"[yellow]Found {len(result.suggestions)} suggestion(s)[/yellow]")
                 console.print(f"[dim]{result.summary}[/dim]")
@@ -1380,9 +1465,33 @@ def continue_check(count: int, output_dir: str):
                         shutdown_requested = True
                         break
                 
+                # Recompile an approved edit before considering the item fixed.
+                approved_compile_failed = False
+                if had_approvals and compile_first:
+                    from vbagent.compile import compile_latex
+
+                    refreshed = Path(problem.latex_path).read_text()
+                    verification = compile_latex(
+                        refreshed,
+                        subject=problem.subject,
+                    )
+                    if verification.success:
+                        console.print("[green]OK Approved change compiles[/green]")
+                    else:
+                        approved_compile_failed = True
+                        console.print(
+                            "[red]Approved change still fails compilation; "
+                            "leaving the problem as failed.[/red]"
+                        )
+                        console.print(f"[dim]{verification.error_summary}[/dim]")
+
                 # Update problem status
                 if not shutdown_requested:
-                    status = ProblemCheckStatus.CHECKED if had_approvals else ProblemCheckStatus.FAILED
+                    status = (
+                        ProblemCheckStatus.CHECKED
+                        if had_approvals and not approved_compile_failed
+                        else ProblemCheckStatus.FAILED
+                    )
                     store.update_problem_check(
                         problem.problem_id, output_dir,
                         status, len(result.suggestions)
@@ -1440,8 +1549,8 @@ def continue_check(count: int, output_dir: str):
     "-d", "--dir",
     "output_dir",
     type=click.Path(exists=True),
-    default="agentic",
-    help="Output directory to check (default: agentic)"
+    default=None,
+    help="Output directory to check (default: reuse directory from check init)"
 )
 @click.option(
     "-s", "--show", "show_status",
@@ -1449,7 +1558,7 @@ def continue_check(count: int, output_dir: str):
     default=None,
     help="Show problems with specific status"
 )
-def check_status(output_dir: str, show_status: Optional[str]):
+def check_status(output_dir: Optional[str], show_status: Optional[str]):
     """Show check progress and status.
     
     Displays statistics for problem checking in the specified directory.
@@ -1469,6 +1578,7 @@ def check_status(output_dir: str, show_status: Optional[str]):
     store = VersionStore(base_dir=".")
     
     try:
+        output_dir = _resolve_tracked_output_dir(store, output_dir)
         stats = store.get_problem_check_stats(output_dir)
         
         if stats.get('total', 0) == 0:
@@ -1535,8 +1645,8 @@ def check_status(output_dir: str, show_status: Optional[str]):
     "-d", "--dir",
     "output_dir",
     type=click.Path(exists=True),
-    default="agentic",
-    help="Output directory (default: agentic)"
+    default=None,
+    help="Output directory (default: reuse directory from check init)"
 )
 @click.option(
     "--failed",
@@ -1549,7 +1659,7 @@ def check_status(output_dir: str, show_status: Optional[str]):
     multiple=True,
     help="Specific problem IDs to recheck (can be used multiple times)"
 )
-def recheck(output_dir: str, failed: bool, problem_id: tuple[str, ...]):
+def recheck(output_dir: Optional[str], failed: bool, problem_id: tuple[str, ...]):
     """Reset problems for rechecking.
     
     Resets the status of problems to pending so they can be checked again.
@@ -1569,6 +1679,7 @@ def recheck(output_dir: str, failed: bool, problem_id: tuple[str, ...]):
     store = VersionStore(base_dir=".")
     
     try:
+        output_dir = _resolve_tracked_output_dir(store, output_dir)
         if problem_id:
             # Reset specific problems
             count = store.reset_problem_checks(output_dir, list(problem_id))

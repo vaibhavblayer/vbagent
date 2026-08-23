@@ -718,6 +718,21 @@ class VersionStore:
         
         cursor.execute(query, params)
         return [row["problem_id"] for row in cursor.fetchall()]
+
+    def get_problem_check_dirs(self, pending_only: bool = False) -> list[str]:
+        """Return tracked output directories in most-recently-used order."""
+        cursor = self.conn.cursor()
+        query = """
+            SELECT output_dir, MAX(id) AS latest_id
+            FROM problem_checks
+        """
+        params: list[str] = []
+        if pending_only:
+            query += " WHERE status = ?"
+            params.append(ProblemCheckStatus.PENDING.value)
+        query += " GROUP BY output_dir ORDER BY latest_id DESC"
+        cursor.execute(query, params)
+        return [row["output_dir"] for row in cursor.fetchall()]
     
     def get_problem_check_stats(self, output_dir: str) -> dict:
         """Get statistics for problem checks in a directory.

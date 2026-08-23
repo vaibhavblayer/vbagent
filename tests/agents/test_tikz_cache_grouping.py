@@ -92,3 +92,35 @@ def test_followup_turn_uses_previous_response_and_compiler_error(monkeypatch):
     assert calls[1][2] is credentials
     assert "Undefined control sequence" in calls[1][0]
     assert "candidate-v2" in calls[1][0]
+
+
+def test_local_compile_error_is_attached_to_tikz_validation(monkeypatch):
+    result = SimpleNamespace(
+        fixed_tikz_code="broken candidate",
+        compilation_status=None,
+        is_valid=True,
+        errors_found=[],
+    )
+    monkeypatch.setattr(tikz_checker, "run_agent_sync", lambda *args, **kwargs: result)
+
+    from vbagent import compile as compile_module
+
+    monkeypatch.setattr(
+        compile_module,
+        "compile_latex",
+        lambda *args, **kwargs: SimpleNamespace(
+            success=False,
+            error_summary="confirmed pgfplots syntax error",
+        ),
+    )
+
+    checked, _ = tikz_checker._validate_tikz_turn(
+        object(),
+        "check this",
+        compile_test=True,
+        cache_group_id=None,
+    )
+
+    assert checked.is_valid is False
+    assert checked.compilation_status == "failed"
+    assert checked.errors_found[0].message == "confirmed pgfplots syntax error"

@@ -209,6 +209,21 @@ def test_discover_problems_empty_directory():
         assert problems == []
 
 
+def test_load_problem_context_reads_subject_from_classification(tmp_path):
+    scans_dir = tmp_path / "agentic" / "scans"
+    classifications_dir = tmp_path / "agentic" / "classifications"
+    scans_dir.mkdir(parents=True)
+    classifications_dir.mkdir(parents=True)
+    (scans_dir / "problem_124.tex").write_text(r"\item Plot the function.")
+    (classifications_dir / "problem_124.json").write_text(
+        '{"subject": "mathematics"}'
+    )
+
+    context = load_problem_context(str(scans_dir), "problem_124")
+
+    assert context.subject == "mathematics"
+
+
 def test_discover_problems_no_scans_dir():
     """Test discover_problems when scans directory doesn't exist."""
     with tempfile.TemporaryDirectory() as tmpdir:

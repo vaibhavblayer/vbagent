@@ -636,14 +636,14 @@ def _validate_tikz_turn(
         else:
             result.compilation_status = "failed"
             result.is_valid = False
-            if compile_result.error:
+            if compile_result.error_summary:
                 from vbagent.models.diagram import TikZError
 
                 result.errors_found.append(
                     TikZError(
                         type="compilation",
                         line=0,
-                        message=compile_result.error,
+                        message=compile_result.error_summary,
                         severity="error",
                     )
                 )

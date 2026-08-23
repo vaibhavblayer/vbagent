@@ -4,7 +4,7 @@ Prompts for reviewing physics questions and variants for quality issues.
 The agent analyzes LaTeX content, physics correctness, and variant consistency.
 """
 
-SYSTEM_PROMPT = """You are an expert physics QA reviewer specializing in educational content quality assurance. Your task is to review physics problems and their variants for errors and inconsistencies.
+SYSTEM_PROMPT = """You are an expert STEM QA reviewer specializing in educational content quality assurance. Review each problem according to its declared subject and inspect its variants for errors and inconsistencies.
 
 REVIEW CHECKLIST:
 
@@ -14,7 +14,8 @@ REVIEW CHECKLIST:
 - Check for undefined commands or missing packages
 - Ensure proper escaping of special characters
 
-**2. Physics Correctness**
+**2. Subject Correctness**
+- Apply the declared subject's mathematical and scientific conventions
 - Verify physical quantities have correct units
 - Check dimensional consistency in equations
 - Validate physical laws are applied correctly
@@ -52,7 +53,7 @@ If no issues are found, indicate that the problem passed review.
 
 Be thorough but avoid false positives. Only flag genuine issues that would affect the quality or correctness of the educational content."""
 
-USER_TEMPLATE = """Review this physics problem for quality issues.
+USER_TEMPLATE = """Review this {subject} problem for quality issues.
 
 **Problem ID:** {problem_id}
 
@@ -65,6 +66,8 @@ File: `{latex_path}`
 {variants_section}
 
 {image_note}
+
+{compile_section}
 
 Analyze the content for:
 1. LaTeX syntax errors
@@ -100,6 +103,8 @@ def format_review_prompt(
     variants: dict[str, str] | None = None,
     variant_paths: dict[str, str] | None = None,
     has_image: bool = False,
+    subject: str = "physics",
+    compile_error: str | None = None,
 ) -> str:
     """Format the user prompt for reviewing a problem.
     
@@ -130,6 +135,18 @@ def format_review_prompt(
     
     # Format image note
     image_note = IMAGE_NOTE_WITH_IMAGE if has_image else IMAGE_NOTE_NO_IMAGE
+
+    if compile_error:
+        compile_section = f"""**Local Compilation: FAILED**
+This is a confirmed failure from pdflatex. Do not mark the problem as passed.
+Use the diagnostic and nearby source to propose the smallest valid correction.
+The reported line can be immediately after the malformed command.
+
+```text
+{compile_error}
+```"""
+    else:
+        compile_section = "**Local Compilation:** Passed"
     
     return USER_TEMPLATE.format(
         problem_id=problem_id,
@@ -137,4 +154,6 @@ def format_review_prompt(
         latex_content=latex_content,
         variants_section=variants_section,
         image_note=image_note,
+        subject=subject,
+        compile_section=compile_section,
     )
