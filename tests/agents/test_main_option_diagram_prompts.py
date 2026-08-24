@@ -5,10 +5,15 @@ from pydantic import ValidationError
 
 from vbagent.agents.classification.question_classifier import (
     QuestionClassification,
+    QuestionRoutingClassification,
+    classification_fingerprint,
     to_diagram_analysis,
 )
 from vbagent.prompts.classification.question_classifier import (
     get_question_classifier_prompt,
+)
+from vbagent.prompts.classification.question_router import (
+    get_question_router_prompt,
 )
 from vbagent.prompts.content_generation.scanner._shared import DIAGRAM_PLACEHOLDER
 from vbagent.prompts.content_generation.scanner._shared import options_with_diagrams
@@ -21,6 +26,34 @@ def test_classifier_prompt_defines_all_four_diagram_states():
     assert "Option diagrams only: has_diagram=false, has_option_diagrams=true" in prompt
     assert "Both main and option diagrams: has_diagram=true, has_option_diagrams=true" in prompt
     assert "Option diagrams do not make this true" in prompt
+
+
+def test_generic_router_outputs_only_subject_and_question_type():
+    prompt = get_question_router_prompt()
+
+    assert '"subject"' in prompt
+    assert '"question_type"' in prompt
+    assert '"has_diagram"' not in prompt
+    assert '"chapter"' not in prompt
+    assert '"diagram_type"' not in prompt
+    assert "stem are objects the student must inspect" in prompt
+    assert "classify it as `subjective`" in prompt
+    assert "separate selectable answer" in prompt
+
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        QuestionRoutingClassification(
+            subject="mathematics",
+            question_type="subjective",
+            has_diagram=True,
+        )
+
+
+def test_subject_analyzer_does_not_reclassify_routing_fields():
+    prompt = get_question_classifier_prompt("mathematics")
+
+    assert '"subject":' not in prompt
+    assert '"question_type":' not in prompt
+    assert "subject-neutral routing stage has already fixed" in prompt
 
 
 def test_classifier_prompt_keeps_stem_panel_collections_out_of_option_fields():
@@ -114,6 +147,19 @@ def test_physics_graph_type_is_not_rewritten():
 
     assert classification.diagram_type == "graph"
     assert classification.suggested_tikz_agent == "graph"
+
+
+def test_classification_fingerprint_is_deterministic_and_content_sensitive():
+    base = QuestionClassification(
+        subject="physics",
+        question_type="mcq_sc",
+        has_diagram=False,
+    )
+    same = base.model_copy(deep=True)
+    changed = base.model_copy(update={"question_type": "subjective"})
+
+    assert classification_fingerprint(base) == classification_fingerprint(same)
+    assert classification_fingerprint(base) != classification_fingerprint(changed)
 
 
 def test_main_diagram_agent_must_match_diagram_type():

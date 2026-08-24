@@ -293,9 +293,10 @@ def _process_image_impl(
     """Process an image through the canonical question pipeline.
 
     Architecture:
-    1. Question Classifier (1 call → subject + type + diagram analysis)
-    2. Problem Orchestrator (scan ∥ tikz, deterministic routing)
-    3. Optional: Solution Orchestrator, Ideas, Alternates, Variants
+    1. Generic router (subject + question type)
+    2. Subject-specific classifier (curriculum + diagram analysis)
+    3. Problem Orchestrator (scan ∥ tikz, deterministic routing)
+    4. Optional: Solution Orchestrator, Ideas, Alternates, Variants
 
     Args:
         quiet: If True, suppress all console output (used in parallel mode).
@@ -307,7 +308,11 @@ def _process_image_impl(
         classify_question,
         run_problem_orchestrator,
     )
-    from vbagent.agents.classification.question_classifier import to_primary_classification, to_diagram_analysis
+    from vbagent.agents.classification.question_classifier import (
+        classification_fingerprint,
+        to_diagram_analysis,
+        to_primary_classification,
+    )
 
     variant_types = variant_types or []
     # In quiet mode, use a devnull console to suppress all output
@@ -325,12 +330,16 @@ def _process_image_impl(
     if cache:
         cached_stages = cache.get_cached_stages(problem_id)
         if cached_stages:
-            console.print(f"[dim]Cached: {', '.join(cached_stages)}[/dim]")
+            console.print(
+                "[dim]Cache entries present: "
+                f"{', '.join(cached_stages)} (validating per stage)[/dim]"
+            )
 
-    # Stage 1: Question classification (1 API call)
+    # Stage 1: generic routing + subject-specific detailed classification
     classification = classify_question(
         image_path, cache=cache, problem_id=problem_id, console=console,
     )
+    classification_dependency = classification_fingerprint(classification)
     primary = to_primary_classification(classification)
     diagram_analysis = to_diagram_analysis(classification)
 
@@ -357,6 +366,7 @@ def _process_image_impl(
             image_path, primary, problem_latex=latex,
             cache=cache, problem_id=problem_id, console=console,
             return_result=True,
+            classification_fingerprint=classification_dependency,
         )
         latex = solution_result.latex
         alternate_solution_recommended = solution_result.alternate_solution_recommended

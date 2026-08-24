@@ -12,12 +12,13 @@ from vbagent.models.metadata import PipelineMetadata, StageMetadata, StageStatus
 
 # Stages whose cached content is JSON (not raw TeX)
 _JSON_STAGES = frozenset({
-    "classification", "diagram", "ideas",
+    "routing", "classification", "diagram", "ideas",
     "animation_assessment", "solution_script", "solution_voice",
 })
 
 # Simple stage name → PipelineMetadata attribute name
 _STAGE_ATTR = {
+    "routing": "classification_route",
     "classification": "classification",
     "diagram": "diagram_analysis",
     "scan": "scan",
@@ -142,7 +143,7 @@ class PipelineCache:
         # Build stage metadata
         from vbagent.models.metadata import ClassificationMetadata
 
-        if stage == "classification" and isinstance(data, dict):
+        if stage in {"routing", "classification"} and isinstance(data, dict):
             stage_meta = ClassificationMetadata(
                 status=StageStatus.COMPLETED,
                 content_hash=content_hash,

@@ -71,6 +71,10 @@ class PipelineMetadata(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.now)
 
     # Pipeline stages
+    classification_route: Optional[ClassificationMetadata] = Field(
+        default=None,
+        description="Subject-neutral subject and question-type routing stage",
+    )
     classification: Optional[ClassificationMetadata] = Field(default=None)
     diagram_analysis: Optional[StageMetadata] = Field(default=None)
     scan: Optional[StageMetadata] = Field(default=None)
@@ -117,6 +121,7 @@ class PipelineMetadata(BaseModel):
     def calculate_summary(self):
         """Calculate pipeline summary statistics."""
         stages = [
+            self.classification_route,
             self.classification,
             self.diagram_analysis,
             self.scan,

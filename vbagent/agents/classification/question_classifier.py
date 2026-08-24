@@ -1,9 +1,7 @@
-"""Canonical question-image classifier.
+"""Two-stage question routing and subject-specific image analysis."""
 
-Classifies the question, curriculum topic, and diagram requirements in one
-vision request.
-"""
-
+import hashlib
+import json
 from dataclasses import replace
 from typing import ClassVar, Optional
 
@@ -28,6 +26,39 @@ from vbagent.models.classification import (
 from vbagent.prompts.classification.question_classifier import (
     get_question_classifier_prompt,
 )
+from vbagent.prompts.classification.question_router import (
+    get_question_router_prompt,
+)
+
+
+class QuestionRoutingClassification(BaseModel):
+    """Minimal, subject-neutral first-pass routing result."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    subject: Subject
+    question_type: QuestionType
+
+
+class SubjectSpecificQuestionAnalysis(BaseModel):
+    """Detailed second-pass analysis after subject and type are fixed."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    has_diagram: bool
+    confidence: float = Field(ge=0.0, le=1.0, default=1.0)
+    chapter: Optional[str] = None
+    topic: Optional[str] = None
+    diagram_type: Optional[str] = None
+    diagram_category: Optional[DiagramCategory] = None
+    diagram_complexity: Optional[DiagramComplexity] = None
+    diagram_elements: list[str] = Field(default_factory=list)
+    diagram_features: DiagramFeatures = Field(default_factory=DiagramFeatures)
+    suggested_tikz_agent: Optional[str] = None
+    has_option_diagrams: bool = False
+    num_option_diagrams: int = 0
+    option_diagram_type: str = ""
+    option_diagram_descriptions: list[str] = Field(default_factory=list)
 
 
 class QuestionClassification(BaseModel):
@@ -139,13 +170,27 @@ class QuestionClassification(BaseModel):
         return self
 
 
-def _initial_subject(subject: Optional[str]) -> str:
-    """Use an explicit subject or the configured default for the first pass."""
-    return subject or get_config().subject
+def create_question_router():
+    """Create the subject-neutral, minimal first-pass router."""
+    model = get_model("classifier")
+    model_settings = get_model_settings("classifier")
+    if _uses_explicit_prompt_cache(model):
+        model_settings = replace(
+            model_settings,
+            prompt_cache_options={"mode": "explicit", "ttl": "30m"},
+        )
+    return create_agent(
+        name="QuestionRouter",
+        instructions=get_question_router_prompt(),
+        model=model,
+        model_settings=model_settings,
+        output_type=QuestionRoutingClassification,
+        agent_type="classifier",
+    )
 
 
 def create_question_classifier(subject: str = "physics"):
-    """Create the canonical question classifier agent."""
+    """Create the detailed subject-specific second-pass analyzer."""
     prompt = get_question_classifier_prompt(subject)
     model = get_model("classifier")
     model_settings = get_model_settings("classifier")
@@ -155,18 +200,23 @@ def create_question_classifier(subject: str = "physics"):
             prompt_cache_options={"mode": "explicit", "ttl": "30m"},
         )
     return create_agent(
-        name=f"QuestionClassifier-{subject}",
+        name=f"QuestionAnalyzer-{subject}",
         instructions=prompt,
         model=model,
         model_settings=model_settings,
-        output_type=QuestionClassification,
+        output_type=SubjectSpecificQuestionAnalysis,
         agent_type="classifier",
     )
 
 
+def _routing_cache_group() -> str:
+    """Return the stable cache group for the generic routing prompt."""
+    return "vbagent:question-router:v1"
+
+
 def _classification_cache_group(subject: str) -> str:
     """Return the stable cache group for one version of a subject prompt."""
-    return f"vbagent:question-classifier:v4:{subject}"
+    return f"vbagent:question-analyzer:v1:{subject}"
 
 
 def _uses_explicit_prompt_cache(model: str) -> bool:
@@ -175,63 +225,108 @@ def _uses_explicit_prompt_cache(model: str) -> bool:
     return get_config().base_url is None and normalized.startswith("gpt-5.6")
 
 
-def _classification_message(image_path: str, subject: str, model: str):
-    text = f"Classify and analyze this {subject} question."
+def _routing_message(image_path: str, model: str):
+    """Build the subject-neutral first-pass image message."""
+    text = "Determine only the subject and question type."
     if _uses_explicit_prompt_cache(model):
         return create_cacheable_image_message(
             image_path,
             text,
-            "Apply the stable classifier instructions above to the following question image.",
+            "Apply the stable subject-neutral routing instructions above.",
         )
     return create_image_message(image_path, text)
+
+
+def _classification_message(
+    image_path: str,
+    subject: str,
+    question_type: str,
+    model: str,
+):
+    """Build the detailed subject-specific second-pass image message."""
+    text = (
+        f"Analyze this routed {subject} {question_type} question. "
+        "Return only the detailed analysis fields; subject and question type "
+        "were fixed by the routing stage."
+    )
+    if _uses_explicit_prompt_cache(model):
+        return create_cacheable_image_message(
+            image_path,
+            text,
+            "Apply the stable subject-specific analysis instructions above.",
+        )
+    return create_image_message(image_path, text)
+
+
+def classify_question_route(
+    image_path: str,
+    show_spinner: bool = True,
+) -> QuestionRoutingClassification:
+    """Route an image using only subject and question type."""
+    agent = create_question_router()
+    message = _routing_message(image_path, str(agent.model))
+    return run_agent_sync_grouped(
+        agent,
+        message,
+        _routing_cache_group(),
+        show_spinner=show_spinner,
+        timeout=90,
+    )
 
 
 def classify_question_image(
     image_path: str,
     subject: Optional[str] = None,
     show_spinner: bool = True,
+    routing: Optional[QuestionRoutingClassification] = None,
 ) -> QuestionClassification:
-    """Classify a question image and its diagram in one API call.
-
-    If the classifier returns a different subject than what was initially
-    detected/provided, re-runs with the correct subject-specific prompt
-    so diagram types and agent routing are accurate.
+    """Route an image, then perform its subject-specific detailed analysis.
 
     Args:
         image_path: Path to question image
-        subject: Subject override (auto-detected if None)
+        subject: Optional explicit subject override.
         show_spinner: Whether to show spinner
+        routing: Optional cached first-pass result.
 
     Returns:
         Complete question classification and diagram data
     """
-    initial_subject = _initial_subject(subject)
-    agent = create_question_classifier(initial_subject)
-    message = _classification_message(image_path, initial_subject, str(agent.model))
-    result = run_agent_sync_grouped(
+    route = routing or classify_question_route(
+        image_path,
+        show_spinner=show_spinner,
+    )
+    if subject is not None and route.subject != subject:
+        route = route.model_copy(update={"subject": subject})
+
+    agent = create_question_classifier(route.subject)
+    message = _classification_message(
+        image_path,
+        route.subject,
+        route.question_type,
+        str(agent.model),
+    )
+    analysis = run_agent_sync_grouped(
         agent,
         message,
-        _classification_cache_group(initial_subject),
+        _classification_cache_group(route.subject),
         show_spinner=show_spinner,
         timeout=90,
     )
+    return QuestionClassification(
+        subject=route.subject,
+        question_type=route.question_type,
+        **analysis.model_dump(),
+    )
 
-    # If classifier corrected the subject, re-run with the right prompt
-    # so diagram_type and suggested_tikz_agent use the correct valid types.
-    # Skip re-run if subject was explicitly provided by the caller.
-    if not subject and result.subject != initial_subject:
-        corrected = result.subject
-        agent = create_question_classifier(corrected)
-        message = _classification_message(image_path, corrected, str(agent.model))
-        result = run_agent_sync_grouped(
-            agent,
-            message,
-            _classification_cache_group(corrected),
-            show_spinner=show_spinner,
-            timeout=90,
-        )
 
-    return result
+def classification_fingerprint(result: QuestionClassification) -> str:
+    """Return a deterministic dependency key for downstream cache stages."""
+    payload = json.dumps(
+        result.model_dump(mode="json"),
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def to_primary_classification(
@@ -287,9 +382,14 @@ def to_diagram_analysis(
 
 
 __all__ = [
+    "QuestionRoutingClassification",
+    "SubjectSpecificQuestionAnalysis",
     "QuestionClassification",
+    "create_question_router",
     "create_question_classifier",
+    "classify_question_route",
     "classify_question_image",
+    "classification_fingerprint",
     "classify_primary_image",
     "to_primary_classification",
     "to_diagram_analysis",

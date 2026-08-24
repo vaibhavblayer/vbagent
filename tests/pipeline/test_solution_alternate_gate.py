@@ -84,6 +84,110 @@ def test_cached_solution_restores_subjective_final_answer(tmp_path):
     assert result.final_answer_latex == final_answer
 
 
+def test_solution_cache_reuses_matching_classification_fingerprint(
+    tmp_path, monkeypatch
+):
+    from vbagent.cache import PipelineCache
+    from vbagent.models.classification import PrimaryClassification
+    from vbagent.pipeline.stages import generate_solution_orchestrated
+    import vbagent.agents.orchestration.solution_orchestrator as orchestrator_module
+
+    cache = PipelineCache(str(tmp_path))
+    cached_latex = r"\item Q.\begin{solution}Cached.\end{solution}"
+    cache.set(
+        "problem_1",
+        "solution",
+        cached_latex,
+        stage_data={
+            "answer_type": "mcq",
+            "answer_value": "a",
+            "classification_fingerprint": "same-classification",
+        },
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "create_solution_orchestrator",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("matching solution cache should be reused")
+        ),
+    )
+    primary = PrimaryClassification(
+        subject="physics",
+        question_type="mcq_sc",
+        has_diagram=False,
+    )
+
+    result = generate_solution_orchestrated(
+        image_path="unused.png",
+        primary=primary,
+        cache=cache,
+        problem_id="problem_1",
+        return_result=True,
+        classification_fingerprint="same-classification",
+    )
+
+    assert result.latex == cached_latex
+    assert result.answer_value == "a"
+
+
+def test_solution_cache_refreshes_for_changed_classification(
+    tmp_path, monkeypatch
+):
+    from types import SimpleNamespace
+
+    from vbagent.agents.orchestration.solution_orchestrator import SolutionResult
+    from vbagent.cache import PipelineCache
+    from vbagent.models.classification import PrimaryClassification
+    from vbagent.pipeline.stages import generate_solution_orchestrated
+    import vbagent.agents.orchestration.solution_orchestrator as orchestrator_module
+
+    cache = PipelineCache(str(tmp_path))
+    cache.set(
+        "problem_1",
+        "solution",
+        r"\item Old.\begin{solution}Old.\end{solution}",
+        stage_data={
+            "answer_type": "mcq",
+            "answer_value": "a",
+            "classification_fingerprint": "old-classification",
+        },
+    )
+    new_latex = r"\item New.\begin{solution}New.\end{solution}"
+    fake_orchestrator = SimpleNamespace(
+        run=lambda **kwargs: SolutionResult(
+            latex=new_latex,
+            answer_type="mcq",
+            answer_value="b",
+            metadata={},
+        )
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "create_solution_orchestrator",
+        lambda console=None: fake_orchestrator,
+    )
+    primary = PrimaryClassification(
+        subject="physics",
+        question_type="mcq_sc",
+        has_diagram=False,
+    )
+
+    result = generate_solution_orchestrated(
+        image_path="unused.png",
+        primary=primary,
+        problem_latex=r"\item New.",
+        cache=cache,
+        problem_id="problem_1",
+        return_result=True,
+        classification_fingerprint="new-classification",
+    )
+
+    assert result.latex == new_latex
+    assert cache.get_stage_data("problem_1", "solution")[
+        "classification_fingerprint"
+    ] == "new-classification"
+
+
 def test_stale_subjective_solution_cache_is_regenerated(tmp_path, monkeypatch):
     from types import SimpleNamespace
 

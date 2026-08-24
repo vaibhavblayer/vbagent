@@ -9,12 +9,22 @@ import pytest
 from rich.console import Console
 
 from vbagent.agents.orchestration.problem_orchestrator import ProblemOrchestrator
-from vbagent.agents.classification.question_classifier import QuestionClassification
+from vbagent.agents.classification.question_classifier import (
+    QuestionClassification,
+    classification_fingerprint,
+)
 
 
 class _Cache:
-    def __init__(self, values):
+    def __init__(self, values, classification=None):
         self.values = values
+        self.stage_data = {}
+        if classification is not None:
+            fingerprint = classification_fingerprint(classification)
+            for stage in values:
+                self.stage_data[stage] = {
+                    "classification_fingerprint": fingerprint,
+                }
 
     def has(self, problem_id, stage):
         return stage in self.values
@@ -23,17 +33,19 @@ class _Cache:
         return self.values.get(stage)
 
     def get_stage_data(self, problem_id, stage):
+        stage_data = dict(self.stage_data.get(stage, {}))
         if stage == "scan":
-            return {
+            stage_data.update({
                 "match_table_contract_version": 2,
                 "subjective_structure_contract_version": 1,
-            }
+            })
         if stage == "tikz":
-            return {"match_table_contract_version": 1}
-        return {}
+            stage_data["match_table_contract_version"] = 1
+        return stage_data
 
     def set(self, problem_id, stage, value, stage_data=None):
         self.values[stage] = value
+        self.stage_data[stage] = stage_data or {}
 
 
 def _main_classification(
@@ -94,11 +106,11 @@ def test_parallel_tikz_failure_is_not_silently_dropped(monkeypatch):
 
 
 def test_full_cache_hit_still_assembles_scan_and_tikz():
+    classification = _main_classification("subjective")
     cache = _Cache({
         "scan": r"\item Example\begin{center}\input{diagram}\end{center}",
         "tikz": r"\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}",
-    })
-    classification = _main_classification("subjective")
+    }, classification=classification)
     orchestrator = ProblemOrchestrator(
         console=Console(file=io.StringIO(), force_terminal=False)
     )
@@ -125,14 +137,14 @@ def test_scan_placeholder_self_heals_no_diagram_classification(monkeypatch):
         return generated, "generic"
 
     monkeypatch.setattr(tikz_router, "generate_tikz_with_routing", generate)
-    cache = _Cache({
-        "scan": r"\item Example\begin{center}\input{diagram}\end{center}",
-    })
     classification = QuestionClassification(
         subject="physics",
         question_type="subjective",
         has_diagram=False,
     )
+    cache = _Cache({
+        "scan": r"\item Example\begin{center}\input{diagram}\end{center}",
+    }, classification=classification)
     orchestrator = ProblemOrchestrator(
         console=Console(file=io.StringIO(), force_terminal=False)
     )
@@ -147,12 +159,23 @@ def test_scan_placeholder_self_heals_no_diagram_classification(monkeypatch):
     assert len(calls) == 1
     assert calls[0]["diagram_context"] == "problem"
     assert cache.values["tikz"] == generated
+    assert cache.stage_data["tikz"]["classification_fingerprint"] == (
+        classification_fingerprint(classification)
+    )
     assert r"\input{diagram}" not in result.latex
     assert r"\begin{tikzpicture}" in result.latex
     assert r"\draw (0,0)--(1,1);" in result.latex
 
 
 def test_option_only_question_removes_spurious_main_placeholder():
+    classification = QuestionClassification(
+        subject="physics",
+        question_type="mcq_sc",
+        has_diagram=False,
+        has_option_diagrams=True,
+        num_option_diagrams=2,
+        option_diagram_type="graph",
+    )
     cache = _Cache({
         "scan": r"""\item Choose the graph.
 \begin{center}\input{diagram}\end{center}
@@ -164,15 +187,7 @@ def test_option_only_question_removes_spurious_main_placeholder():
         "tikz": r"\begin{tikzpicture}\node{duplicate composite};\end{tikzpicture}",
         "options": r"""\def\OptionA{\begin{tikzpicture}\node{A};\end{tikzpicture}}
 \def\OptionB{\begin{tikzpicture}\node{B};\end{tikzpicture}}""",
-    })
-    classification = QuestionClassification(
-        subject="physics",
-        question_type="mcq_sc",
-        has_diagram=False,
-        has_option_diagrams=True,
-        num_option_diagrams=2,
-        option_diagram_type="graph",
-    )
+    }, classification=classification)
     orchestrator = ProblemOrchestrator(
         console=Console(file=io.StringIO(), force_terminal=False)
     )
@@ -188,6 +203,12 @@ def test_option_only_question_removes_spurious_main_placeholder():
 
 
 def test_main_and_option_diagrams_are_both_preserved_once():
+    classification = _main_classification(
+        "mcq_sc",
+        has_option_diagrams=True,
+        num_option_diagrams=2,
+        option_diagram_type="graph",
+    )
     cache = _Cache({
         "scan": r"""\item Use the setup and choose the graph.
 \begin{center}\input{diagram}\end{center}
@@ -202,13 +223,7 @@ def test_main_and_option_diagrams_are_both_preserved_once():
 \def\OptionB{\begin{tikzpicture}\node{wrong B};\end{tikzpicture}}""",
         "options": r"""\def\OptionA{\begin{tikzpicture}\node{A};\end{tikzpicture}}
 \def\OptionB{\begin{tikzpicture}\node{B};\end{tikzpicture}}""",
-    })
-    classification = _main_classification(
-        "mcq_sc",
-        has_option_diagrams=True,
-        num_option_diagrams=2,
-        option_diagram_type="graph",
-    )
+    }, classification=classification)
     orchestrator = ProblemOrchestrator(
         console=Console(file=io.StringIO(), force_terminal=False)
     )
@@ -223,6 +238,81 @@ def test_main_and_option_diagrams_are_both_preserved_once():
     assert result.latex.count(r"\def\OptionB") == 1
     assert "wrong A" not in result.latex
     assert "wrong B" not in result.latex
+
+
+def test_changed_classification_invalidates_scan_tikz_and_option_caches(
+    monkeypatch,
+):
+    old_classification = _main_classification(
+        "mcq_sc",
+        has_option_diagrams=True,
+        num_option_diagrams=2,
+        option_diagram_type="graph",
+        topic="old topic",
+    )
+    current_classification = old_classification.model_copy(
+        update={"topic": "new topic"}
+    )
+    cache = _Cache(
+        {
+            "scan": "old scan",
+            "tikz": "old main diagram",
+            "options": "old option diagrams",
+        },
+        classification=old_classification,
+    )
+    captured = {}
+    orchestrator = ProblemOrchestrator(
+        console=Console(file=io.StringIO(), force_terminal=False)
+    )
+
+    def fake_parallel(*args, **kwargs):
+        captured["scan_cached"] = args[4]
+        captured["tikz_cached"] = args[5]
+        captured["options_cached"] = args[6]
+        return ("new scan", None, None)
+
+    monkeypatch.setattr(orchestrator, "_run_parallel", fake_parallel)
+
+    result = orchestrator.run(
+        "question.png",
+        current_classification,
+        cache=cache,
+        problem_id="changed_classification",
+    )
+
+    assert captured == {
+        "scan_cached": False,
+        "tikz_cached": False,
+        "options_cached": False,
+    }
+    assert result.latex == "new scan"
+
+
+def test_stage_contract_metadata_includes_classification_fingerprint():
+    fingerprint = "classification-sha256"
+
+    assert ProblemOrchestrator._scan_stage_data(
+        "subjective",
+        fingerprint,
+    ) == {
+        "subjective_structure_contract_version": 1,
+        "classification_fingerprint": fingerprint,
+    }
+    assert ProblemOrchestrator._tikz_stage_data(
+        "match",
+        fingerprint,
+    ) == {
+        "match_table_contract_version": 1,
+        "classification_fingerprint": fingerprint,
+    }
+    assert ProblemOrchestrator._option_stage_data(
+        "passage",
+        fingerprint,
+    ) == {
+        "passage_option_contract_version": 1,
+        "classification_fingerprint": fingerprint,
+    }
 
 
 def test_match_diagram_description_requires_row_macros_not_montage():
@@ -286,7 +376,7 @@ def test_subjective_question_refreshes_legacy_scan_cache(monkeypatch):
     )
 
     assert captured["scan_cached"] is False
-    assert captured["tikz_cached"] is True
+    assert captured["tikz_cached"] is False
     assert "OPTIONS_DIAGRAMS" not in result.latex
     assert r"\begin{tasks}" not in result.latex
     assert result.latex.count(r"\begin{tikzpicture}") == 1
@@ -498,7 +588,7 @@ def test_assertion_reason_refreshes_scan_from_old_diagram_contract(monkeypatch):
     )
 
     assert captured["scan_cached"] is False
-    assert captured["tikz_cached"] is True
+    assert captured["tikz_cached"] is False
     assert r"\input{diagram}" not in result.latex
     assert "[Diagram]" not in result.latex
     assert result.latex.count(r"\begin{tikzpicture}") == 1

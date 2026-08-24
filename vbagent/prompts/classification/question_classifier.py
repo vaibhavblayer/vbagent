@@ -1,7 +1,4 @@
-"""Prompt for the canonical question classifier agent.
-
-Single API call that handles both classification and diagram analysis.
-"""
+"""Prompt for the subject-specific detailed question-analysis stage."""
 
 from vbagent.prompts.classification.taxonomy import SUBJECT_TAXONOMY
 
@@ -177,19 +174,17 @@ suggested_tikz_agent selection guide (CRITICAL — pick the MOST SPECIFIC agent)
 
 
 def get_question_classifier_prompt(subject: str = "physics") -> str:
-    """Build the prompt for question and diagram classification."""
+    """Build the prompt for detailed analysis after generic routing."""
     valid_types = _get_valid_types(subject)
     suggested_agents = _get_suggested_agents(subject)
     agent_guide = _get_agent_routing_guide(subject)
     chapter_topic_guide = _get_chapter_topic_guide(subject)
 
-    return f"""You are an expert {subject} question analyzer. In a SINGLE pass, classify the question AND analyze any diagrams present.
+    return f"""You are an expert {subject} question analyzer. A subject-neutral routing stage has already fixed the subject and question type. Analyze curriculum placement and every diagram requirement without reclassifying those routing fields.
 
 Respond with ONLY a valid JSON object:
 
 {{
-    "subject": "physics" | "chemistry" | "mathematics" | "biology",
-    "question_type": "mcq_sc" | "mcq_mc" | "subjective" | "assertion_reason" | "passage" | "match",
     "has_diagram": true | false,
     "confidence": <0.0-1.0>,
 
@@ -216,7 +211,7 @@ Respond with ONLY a valid JSON object:
     "option_diagram_descriptions": ["<desc A>", "<desc B>", ...]
 }}
 
-Question type detection:
+The routed question type in the request has these semantics:
 - mcq_sc: Single correct MCQ
 - mcq_mc: Multiple correct MCQ with a distinct selectable answer-choice block.
   Phrases such as "which of the following" are not sufficient by themselves.

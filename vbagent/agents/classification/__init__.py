@@ -2,8 +2,13 @@
 
 from .question_classifier import (
     QuestionClassification,
+    QuestionRoutingClassification,
+    SubjectSpecificQuestionAnalysis,
+    classification_fingerprint,
+    classify_question_route,
     classify_primary_image,
     classify_question_image,
+    create_question_router,
     create_question_classifier,
     to_diagram_analysis,
     to_primary_classification,
@@ -29,8 +34,13 @@ from vbagent.agents.diagram.tikz_checker import check_and_fix_tikz, validate_tik
 __all__ = [
     # Canonical question classification
     "QuestionClassification",
+    "QuestionRoutingClassification",
+    "SubjectSpecificQuestionAnalysis",
+    "create_question_router",
     "create_question_classifier",
+    "classify_question_route",
     "classify_question_image",
+    "classification_fingerprint",
     "classify_primary_image",
     "to_primary_classification",
     "to_diagram_analysis",

@@ -14,6 +14,7 @@ from typing import Optional
 
 from vbagent.agents.classification.question_classifier import (
     QuestionClassification,
+    classification_fingerprint,
     to_primary_classification,
     to_diagram_analysis,
 )
@@ -92,6 +93,7 @@ class ProblemOrchestrator:
         """
         primary = to_primary_classification(classification)
         diagram_analysis = to_diagram_analysis(classification)
+        dependency_fingerprint = classification_fingerprint(classification)
 
         # Load golden sample
         sample = get_sample(primary.subject, primary.question_type)
@@ -105,7 +107,21 @@ class ProblemOrchestrator:
         needs_options = bool(classification.has_option_diagrams)
 
         # Check cache
-        scan_cached = cache and problem_id and cache.has(problem_id, "scan")
+        scan_cached = bool(
+            cache and problem_id and cache.has(problem_id, "scan")
+        )
+        if scan_cached:
+            scan_cached = self._cache_matches_classification(
+                cache,
+                problem_id,
+                "scan",
+                dependency_fingerprint,
+            )
+            if not scan_cached:
+                self.console.print(
+                    "[dim]Ignoring cached scan: classification dependency "
+                    "changed or is missing.[/dim]"
+                )
         if scan_cached and primary.question_type == "match":
             scan_cached = (
                 cache.get_stage_data(problem_id, "scan").get(
@@ -130,14 +146,42 @@ class ProblemOrchestrator:
                     "subjective_structure_contract_version"
                 ) == _SUBJECTIVE_STRUCTURE_SCAN_CONTRACT_VERSION
             )
-        tikz_cached = cache and problem_id and cache.has(problem_id, "tikz")
+        tikz_cached = bool(
+            cache and problem_id and cache.has(problem_id, "tikz")
+        )
+        if tikz_cached:
+            tikz_cached = self._cache_matches_classification(
+                cache,
+                problem_id,
+                "tikz",
+                dependency_fingerprint,
+            )
+            if not tikz_cached:
+                self.console.print(
+                    "[dim]Ignoring cached TikZ: classification dependency "
+                    "changed or is missing.[/dim]"
+                )
         if tikz_cached and primary.question_type == "match":
             tikz_cached = (
                 cache.get_stage_data(problem_id, "tikz").get(
                     "match_table_contract_version"
                 ) == _MATCH_TIKZ_CONTRACT_VERSION
             )
-        options_cached = cache and problem_id and cache.has(problem_id, "options")
+        options_cached = bool(
+            cache and problem_id and cache.has(problem_id, "options")
+        )
+        if options_cached:
+            options_cached = self._cache_matches_classification(
+                cache,
+                problem_id,
+                "options",
+                dependency_fingerprint,
+            )
+            if not options_cached:
+                self.console.print(
+                    "[dim]Ignoring cached option diagrams: classification "
+                    "dependency changed or is missing.[/dim]"
+                )
         if options_cached and primary.question_type == "passage":
             options_cached = (
                 cache.get_stage_data(problem_id, "options").get(
@@ -161,6 +205,7 @@ class ProblemOrchestrator:
                 image_path, primary, diagram_analysis, sample,
                 scan_cached, tikz_cached, options_cached, cache, problem_id,
                 needs_tikz=needs_tikz, needs_options=needs_options,
+                classification_fingerprint=dependency_fingerprint,
             )
 
         if primary.question_type == "subjective":
@@ -191,6 +236,7 @@ class ProblemOrchestrator:
                 diagram_analysis,
                 cache=cache,
                 problem_id=problem_id,
+                classification_fingerprint=dependency_fingerprint,
             )
             tikz_code = combine_tikz_artifacts(main_artifact, option_artifact)
 
@@ -221,6 +267,7 @@ class ProblemOrchestrator:
         diagram_analysis,
         cache=None,
         problem_id=None,
+        classification_fingerprint=None,
     ) -> str:
         """Generate a main diagram when the scanner exposes a classifier miss."""
         from vbagent.agents.diagram.tikz_router import generate_tikz_with_routing
@@ -240,10 +287,9 @@ class ProblemOrchestrator:
             diagram_context="problem",
         )
         if cache and problem_id and code:
-            stage_data = (
-                {"match_table_contract_version": _MATCH_TIKZ_CONTRACT_VERSION}
-                if primary.question_type == "match"
-                else None
+            stage_data = self._tikz_stage_data(
+                primary.question_type,
+                classification_fingerprint,
             )
             cache.set(problem_id, "tikz", code, stage_data=stage_data)
         self.console.print(f"[green]OK[/green] TikZ complete [dim]{agent}[/dim]")
@@ -285,7 +331,15 @@ class ProblemOrchestrator:
             "combine the panels into one shifted-scope TikZ canvas."
         )
 
-    def _run_scan(self, image_path, primary, sample, cache, problem_id) -> str:
+    def _run_scan(
+        self,
+        image_path,
+        primary,
+        sample,
+        cache,
+        problem_id,
+        classification_fingerprint=None,
+    ) -> str:
         """Run problem-only scanner (no solution extraction)."""
         from vbagent.agents.content_generation.scanner import scan_problem
 
@@ -301,7 +355,10 @@ class ProblemOrchestrator:
         self.console.print("[green]OK[/green] Scan complete")
 
         if cache and problem_id:
-            stage_data = self._scan_stage_data(primary.question_type)
+            stage_data = self._scan_stage_data(
+                primary.question_type,
+                classification_fingerprint,
+            )
             cache.set(
                 problem_id,
                 "scan",
@@ -313,7 +370,8 @@ class ProblemOrchestrator:
 
     def _run_parallel(self, image_path, primary, diagram_analysis, sample,
                       scan_cached, tikz_cached, options_cached, cache, problem_id,
-                      needs_tikz=False, needs_options=False):
+                      needs_tikz=False, needs_options=False,
+                      classification_fingerprint=None):
         """Run scan ∥ tikz ∥ options in parallel (up to 3-way).
 
         Each task caches its result immediately on success so partial
@@ -377,7 +435,10 @@ class ProblemOrchestrator:
                 scan_holder["result"] = result
                 # Cache immediately so partial progress survives
                 if cache and problem_id:
-                    stage_data = self._scan_stage_data(primary.question_type)
+                    stage_data = self._scan_stage_data(
+                        primary.question_type,
+                        classification_fingerprint,
+                    )
                     cache.set(
                         problem_id,
                         "scan",
@@ -417,10 +478,9 @@ class ProblemOrchestrator:
                 state["tikz"]["agent"] = agent
                 # Cache immediately
                 if cache and problem_id and code:
-                    stage_data = (
-                        {"match_table_contract_version": _MATCH_TIKZ_CONTRACT_VERSION}
-                        if primary.question_type == "match"
-                        else None
+                    stage_data = self._tikz_stage_data(
+                        primary.question_type,
+                        classification_fingerprint,
                     )
                     cache.set(
                         problem_id,
@@ -456,11 +516,9 @@ class ProblemOrchestrator:
                 option_holder["result"] = tikz_code
                 # Cache immediately
                 if cache and problem_id and tikz_code:
-                    stage_data = (
-                        {"passage_option_contract_version":
-                         _PASSAGE_OPTION_TIKZ_CONTRACT_VERSION}
-                        if primary.question_type == "passage"
-                        else None
+                    stage_data = self._option_stage_data(
+                        primary.question_type,
+                        classification_fingerprint,
                     )
                     cache.set(
                         problem_id,
@@ -605,26 +663,87 @@ class ProblemOrchestrator:
             raise
 
     @staticmethod
-    def _scan_stage_data(question_type: str) -> Optional[dict]:
+    def _cache_matches_classification(
+        cache,
+        problem_id: str,
+        stage: str,
+        expected_fingerprint: str,
+    ) -> bool:
+        """Return whether a cached artifact belongs to this classification."""
+        return cache.get_stage_data(problem_id, stage).get(
+            "classification_fingerprint"
+        ) == expected_fingerprint
+
+    @staticmethod
+    def _with_classification_fingerprint(
+        stage_data: Optional[dict],
+        fingerprint: Optional[str],
+    ) -> Optional[dict]:
+        """Attach the final-classification dependency to stage metadata."""
+        if fingerprint is None:
+            return stage_data
+        return {
+            **(stage_data or {}),
+            "classification_fingerprint": fingerprint,
+        }
+
+    @classmethod
+    def _scan_stage_data(
+        cls,
+        question_type: str,
+        fingerprint: Optional[str] = None,
+    ) -> Optional[dict]:
         """Return prompt-contract metadata for cached scan artifacts."""
+        stage_data = None
         if question_type == "match":
-            return {"match_table_contract_version": _MATCH_SCAN_CONTRACT_VERSION}
-        if question_type == "passage":
-            return {
+            stage_data = {
+                "match_table_contract_version": _MATCH_SCAN_CONTRACT_VERSION
+            }
+        elif question_type == "passage":
+            stage_data = {
                 "passage_option_contract_version":
                     _PASSAGE_OPTION_SCAN_CONTRACT_VERSION
             }
-        if question_type == "assertion_reason":
-            return {
+        elif question_type == "assertion_reason":
+            stage_data = {
                 "assertion_diagram_contract_version":
                     _ASSERTION_DIAGRAM_SCAN_CONTRACT_VERSION
             }
-        if question_type == "subjective":
-            return {
+        elif question_type == "subjective":
+            stage_data = {
                 "subjective_structure_contract_version":
                     _SUBJECTIVE_STRUCTURE_SCAN_CONTRACT_VERSION
             }
-        return None
+        return cls._with_classification_fingerprint(stage_data, fingerprint)
+
+    @classmethod
+    def _tikz_stage_data(
+        cls,
+        question_type: str,
+        fingerprint: Optional[str] = None,
+    ) -> Optional[dict]:
+        """Return contract metadata for cached main-diagram artifacts."""
+        stage_data = None
+        if question_type == "match":
+            stage_data = {
+                "match_table_contract_version": _MATCH_TIKZ_CONTRACT_VERSION
+            }
+        return cls._with_classification_fingerprint(stage_data, fingerprint)
+
+    @classmethod
+    def _option_stage_data(
+        cls,
+        question_type: str,
+        fingerprint: Optional[str] = None,
+    ) -> Optional[dict]:
+        """Return contract metadata for cached option-diagram artifacts."""
+        stage_data = None
+        if question_type == "passage":
+            stage_data = {
+                "passage_option_contract_version":
+                    _PASSAGE_OPTION_TIKZ_CONTRACT_VERSION
+            }
+        return cls._with_classification_fingerprint(stage_data, fingerprint)
 
 
 def create_problem_orchestrator(use_context: bool = True, console=None) -> ProblemOrchestrator:

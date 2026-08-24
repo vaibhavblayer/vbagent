@@ -19,7 +19,8 @@ if TYPE_CHECKING:
     from vbagent.cache import PipelineCache
 
 
-_QUESTION_CLASSIFICATION_CONTRACT_VERSION = 5
+_QUESTION_ROUTING_CONTRACT_VERSION = 1
+_QUESTION_CLASSIFICATION_CONTRACT_VERSION = 6
 _MATCH_SOLUTION_REPAIR_CONTRACT_VERSION = 1
 
 
@@ -40,6 +41,7 @@ def generate_solution_orchestrated(
     console=None,
     return_result: bool = False,
     generate_diagrams: bool = True,
+    classification_fingerprint: Optional[str] = None,
 ):
     """Generate solution using subject-specific agent + diagram dispatch.
 
@@ -53,6 +55,8 @@ def generate_solution_orchestrated(
         return_result: Return the detailed SolutionResult instead of only
             the final LaTeX. Existing callers keep the string behavior.
         generate_diagrams: Whether to dispatch solution diagram agents.
+        classification_fingerprint: Final-classification dependency key used
+            to validate image-pipeline solution caches.
 
     Returns:
         Combined problem + solution LaTeX with answer marking.
@@ -62,7 +66,21 @@ def generate_solution_orchestrated(
         create_solution_orchestrator,
     )
 
-    solution_cached = cache and problem_id and cache.has(problem_id, "solution")
+    solution_cached = bool(
+        cache and problem_id and cache.has(problem_id, "solution")
+    )
+    if solution_cached and classification_fingerprint is not None:
+        cached_fingerprint = cache.get_stage_data(
+            problem_id,
+            "solution",
+        ).get("classification_fingerprint")
+        if cached_fingerprint != classification_fingerprint:
+            solution_cached = False
+            if console:
+                console.print(
+                    "[dim]Refreshing solution for the current "
+                    "classification...[/dim]"
+                )
 
     if solution_cached:
         if console:
@@ -164,6 +182,7 @@ def generate_solution_orchestrated(
                 "final_answer_latex": result.final_answer_latex,
                 "alternate_solution_recommended": result.alternate_solution_recommended,
                 "alternate_solution_hint": result.alternate_solution_hint,
+                "classification_fingerprint": classification_fingerprint,
             },
         )
 
@@ -356,13 +375,15 @@ def classify_question(
     problem_id: Optional[str] = None,
     console=None,
 ):
-    """Stage 1: Classify the question and diagram in a single API call.
+    """Stage 1: Route generically, then run subject-specific analysis.
 
     Returns:
         QuestionClassification
     """
     from vbagent.agents.classification.question_classifier import (
         QuestionClassification,
+        QuestionRoutingClassification,
+        classify_question_route,
         classify_question_image,
     )
 
@@ -383,15 +404,67 @@ def classify_question(
                 )
         elif console:
             console.print(
-                "[dim]Refreshing classification for the main/option diagram "
+                "[dim]Refreshing subject-specific classification for the "
+                "current contract...[/dim]"
+            )
+
+    routing = None
+    if cache and problem_id and cache.has(problem_id, "routing"):
+        routing_data = cache.get_stage_data(problem_id, "routing")
+        routing_is_current = routing_data.get(
+            "contract_version"
+        ) == _QUESTION_ROUTING_CONTRACT_VERSION
+        if routing_is_current:
+            cached_routing = cache.get(problem_id, "routing")
+            if cached_routing is not None:
+                routing = QuestionRoutingClassification(**cached_routing)
+                if console:
+                    console.print("[dim]Loading cached generic routing...[/dim]")
+        elif console:
+            console.print(
+                "[dim]Refreshing generic subject/type routing for the current "
                 "contract...[/dim]"
             )
 
+    if routing is None:
+        if console:
+            with console.status(
+                "[bold green]Stage 1a: Routing subject & type..."
+            ):
+                routing = classify_question_route(
+                    image_path,
+                    show_spinner=True,
+                )
+        else:
+            routing = classify_question_route(
+                image_path,
+                show_spinner=True,
+            )
+        if cache and problem_id:
+            cache.set(
+                problem_id,
+                "routing",
+                routing.model_dump(),
+                stage_data={
+                    "contract_version": _QUESTION_ROUTING_CONTRACT_VERSION,
+                },
+            )
+
     if console:
-        with console.status("[bold green]Stage 1: Classifying & analyzing..."):
-            result = classify_question_image(image_path, show_spinner=True)
+        with console.status(
+            f"[bold green]Stage 1b: Analyzing {routing.subject} question..."
+        ):
+            result = classify_question_image(
+                image_path,
+                routing=routing,
+                show_spinner=True,
+            )
     else:
-        result = classify_question_image(image_path, show_spinner=True)
+        result = classify_question_image(
+            image_path,
+            routing=routing,
+            show_spinner=True,
+        )
 
     if cache and problem_id:
         cache.set(
