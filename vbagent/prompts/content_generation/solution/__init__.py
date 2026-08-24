@@ -16,6 +16,44 @@ from .final_answer import SUBJECTIVE_FINAL_ANSWER_RULES
 from ..table_format import TABLE_FORMAT_RULES
 
 
+SUBJECTIVE_MULTIPART_SOLUTION_RULES = r"""
+## Multipart Subjective Solution Structure (MANDATORY)
+
+Before writing `solution_latex`, inspect the problem's list structure.
+
+- If the subjective problem contains a nested `enumerate` with multiple
+  question parts, the solution MUST contain a corresponding `enumerate` with
+  exactly one `\item` for each problem part, in the same order.
+- Preserve the problem's local label option when it has one. For example, copy
+  `[label=(\alph*), leftmargin=*]` for (a), (b), ... parts and
+  `[label=(\roman*), leftmargin=*]` for (i), (ii), ... parts. If the problem's
+  `enumerate` has no optional argument, use a plain `\begin{enumerate}` too.
+- Put the complete reasoning for each part inside its own `\item`. An `align*`
+  block inside an item is valid and is the required exception to any rule that
+  says `align*` must be directly inside `solution`.
+- NEVER flatten several parts into one `align*`, type labels or numbers
+  manually in `\intertext`, or separate part solutions only with line breaks.
+- Do not use `tasks` or `\task`; those are for selectable answer choices.
+
+```latex
+\begin{solution}
+\begin{enumerate}[label=(\alph*), leftmargin=*]
+    \item
+    \begin{align*}
+    \intertext{Apply the first condition}
+    x &\geq 0
+    \end{align*}
+    \item
+    \begin{align*}
+    \intertext{Apply the second condition}
+    x &< 2
+    \end{align*}
+\end{enumerate}
+\end{solution}
+```
+"""
+
+
 def get_solution_prompt(question_type: str, subject: str, chapter: Optional[str] = None, topic: Optional[str] = None) -> str:
     """Get solution generation prompt for a question type and subject.
     
@@ -48,6 +86,7 @@ def get_solution_prompt(question_type: str, subject: str, chapter: Optional[str]
 
     prompt += "\n\n" + TABLE_FORMAT_RULES
     if question_type == "subjective":
+        prompt += "\n\n" + SUBJECTIVE_MULTIPART_SOLUTION_RULES
         prompt += "\n\n" + SUBJECTIVE_FINAL_ANSWER_RULES
     return prompt
 
@@ -80,5 +119,6 @@ Provide:
 __all__ = [
     "get_solution_prompt",
     "get_user_template",
+    "SUBJECTIVE_MULTIPART_SOLUTION_RULES",
     "SUBJECTIVE_FINAL_ANSWER_RULES",
 ]

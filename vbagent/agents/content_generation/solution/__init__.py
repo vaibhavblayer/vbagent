@@ -9,8 +9,30 @@ import re
 from typing import Optional
 
 from vbagent.agents.base import create_agent, create_image_message, run_agent_sync
+from vbagent.agents.content_generation.solution.structure import (
+    has_matching_multipart_solution,
+    multipart_enumerate_counts,
+)
 from vbagent.models.solution import SolutionOutput
 from vbagent.prompts.content_generation.solution import get_solution_prompt
+
+
+_MULTIPART_STRUCTURE_RETRY = r"""
+The solution structure is invalid for this multipart subjective problem.
+Regenerate the complete JSON response. In `solution_latex`, mirror every
+multipart `enumerate` from the problem with a corresponding `enumerate` and
+exactly one `\item` per problem part, in the same order. Put each part's full
+reasoning inside its own item and preserve the problem's local `enumerate`
+label option. Do not flatten the parts into one `align*`, do not type part
+numbers or labels manually in `\intertext`, and do not use `tasks` or `\task`.
+"""
+
+
+def _as_solution_output(result) -> SolutionOutput:
+    """Normalize SDK output to the public solution model."""
+    if isinstance(result, SolutionOutput):
+        return result
+    return SolutionOutput(solution_latex=str(result))
 
 
 def generate_solution(
@@ -56,11 +78,43 @@ def generate_solution(
         message = [{"role": "user", "content": user_prompt}]
 
     result = run_agent_sync(agent, message, show_spinner=show_spinner)
+    output = _as_solution_output(result)
 
-    if isinstance(result, SolutionOutput):
-        output = result
-    else:
-        output = SolutionOutput(solution_latex=str(result))
+    if (
+        question_type == "subjective"
+        and not has_matching_multipart_solution(
+            problem_text,
+            output.solution_latex,
+        )
+    ):
+        required_counts = ", ".join(
+            str(count) for count in multipart_enumerate_counts(problem_text)
+        )
+        retry_prompt = (
+            user_prompt
+            + "\n\n"
+            + _MULTIPART_STRUCTURE_RETRY
+            + f"\nRequired direct item count(s): {required_counts}."
+        )
+        if image_path:
+            retry_message = create_image_message(image_path, retry_prompt)
+        else:
+            retry_message = [{"role": "user", "content": retry_prompt}]
+        output = _as_solution_output(
+            run_agent_sync(
+                agent,
+                retry_message,
+                show_spinner=show_spinner,
+            )
+        )
+        if not has_matching_multipart_solution(
+            problem_text,
+            output.solution_latex,
+        ):
+            raise ValueError(
+                "Multipart subjective solution does not mirror the problem's "
+                "enumerate/item structure"
+            )
 
     if (
         question_type == "subjective"

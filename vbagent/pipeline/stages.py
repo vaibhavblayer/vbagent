@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 _QUESTION_ROUTING_CONTRACT_VERSION = 1
 _QUESTION_CLASSIFICATION_CONTRACT_VERSION = 6
 _MATCH_SOLUTION_REPAIR_CONTRACT_VERSION = 1
+_SUBJECTIVE_MULTIPART_SOLUTION_CONTRACT_VERSION = 1
 
 
 
@@ -64,6 +65,14 @@ def generate_solution_orchestrated(
     from vbagent.agents.orchestration.solution_orchestrator import (
         SolutionResult,
         create_solution_orchestrator,
+    )
+    from vbagent.agents.content_generation.solution.structure import (
+        has_multipart_subjective_problem,
+    )
+
+    multipart_subjective = (
+        primary.question_type == "subjective"
+        and has_multipart_subjective_problem(problem_latex)
     )
 
     solution_cached = bool(
@@ -110,6 +119,13 @@ def generate_solution_orchestrated(
             and cached_data.get("match_solution_repair_contract_version")
             != _MATCH_SOLUTION_REPAIR_CONTRACT_VERSION
         )
+        stale_multipart_subjective_cache = (
+            multipart_subjective
+            and cached_data.get(
+                "subjective_multipart_solution_contract_version"
+            )
+            != _SUBJECTIVE_MULTIPART_SOLUTION_CONTRACT_VERSION
+        )
         if stale_subjective_cache:
             if console:
                 console.print(
@@ -121,6 +137,12 @@ def generate_solution_orchestrated(
                 console.print(
                     "[dim yellow]Cached match solution predates option repair; "
                     "regenerating...[/dim yellow]"
+                )
+        elif stale_multipart_subjective_cache:
+            if console:
+                console.print(
+                    "[dim yellow]Cached multipart subjective solution predates "
+                    "structured part formatting; regenerating...[/dim yellow]"
                 )
         elif not return_result:
             return cached_latex
@@ -174,6 +196,11 @@ def generate_solution_orchestrated(
                 "match_solution_repair_contract_version": (
                     _MATCH_SOLUTION_REPAIR_CONTRACT_VERSION
                     if primary.question_type == "match"
+                    else None
+                ),
+                "subjective_multipart_solution_contract_version": (
+                    _SUBJECTIVE_MULTIPART_SOLUTION_CONTRACT_VERSION
+                    if multipart_subjective
                     else None
                 ),
                 "match_option_repaired": result.metadata.get(
