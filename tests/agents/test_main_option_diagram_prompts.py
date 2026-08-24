@@ -84,6 +84,38 @@ def test_complete_panel_collection_routes_without_generic_fallback():
     assert analysis.diagram_features.num_objects == 10
 
 
+def test_mathematics_graph_alias_routes_to_function_graph():
+    classification = QuestionClassification(
+        subject="mathematics",
+        question_type="subjective",
+        has_diagram=True,
+        diagram_type="graph",
+        diagram_category="graphs",
+        diagram_complexity="complex",
+        diagram_elements=["10 roman-labeled Cartesian graph panels"],
+        suggested_tikz_agent="graph",
+    )
+
+    assert classification.diagram_type == "function_graph"
+    assert classification.suggested_tikz_agent == "function_graph"
+
+
+def test_physics_graph_type_is_not_rewritten():
+    classification = QuestionClassification(
+        subject="physics",
+        question_type="subjective",
+        has_diagram=True,
+        diagram_type="graph",
+        diagram_category="graphs",
+        diagram_complexity="moderate",
+        diagram_elements=["position-time graph"],
+        suggested_tikz_agent="graph",
+    )
+
+    assert classification.diagram_type == "graph"
+    assert classification.suggested_tikz_agent == "graph"
+
+
 def test_main_diagram_agent_must_match_diagram_type():
     with pytest.raises(ValidationError, match="must match diagram_type"):
         QuestionClassification(

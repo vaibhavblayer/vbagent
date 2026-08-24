@@ -73,6 +73,29 @@ class QuestionClassification(BaseModel):
         "biology": {"generic"},
     }
 
+    _DIAGRAM_TYPE_ALIASES_BY_SUBJECT: ClassVar[dict[str, dict[str, str]]] = {
+        "mathematics": {
+            "graph": "function_graph",
+        },
+    }
+
+    @model_validator(mode="before")
+    @classmethod
+    def canonicalize_subject_diagram_aliases(cls, data):
+        """Normalize unambiguous model aliases before strict validation."""
+        if not isinstance(data, dict):
+            return data
+
+        aliases = cls._DIAGRAM_TYPE_ALIASES_BY_SUBJECT.get(data.get("subject"), {})
+        if not aliases:
+            return data
+
+        normalized = dict(data)
+        for field_name in ("diagram_type", "suggested_tikz_agent"):
+            value = normalized.get(field_name)
+            normalized[field_name] = aliases.get(value, value)
+        return normalized
+
     @model_validator(mode="after")
     def validate_main_diagram_contract(self) -> "QuestionClassification":
         """Keep a positive main-diagram flag from degrading to generic data."""
