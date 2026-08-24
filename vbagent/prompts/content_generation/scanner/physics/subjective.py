@@ -1,6 +1,7 @@
 """Subjective question scanner prompt."""
 
 from .common import DIAGRAM_PLACEHOLDER
+from .._shared import SUBPART_FORMATTING_RULES
 
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
@@ -34,16 +35,6 @@ Follow this exact structure for your output:
         % FORBIDDEN - raw underscores (causes rendering errors):
         \item The value of $\alpha$ is _____.
         ```
-    *   **Multi-part sub-questions:** If the problem has sub-parts like (a), (b), (c), use `\begin{enumerate}` with `\item` for each sub-part instead of manual `(a) ...\\` formatting. Add `\renewcommand{\labelenumi}{(\alph{enumi})}` before enumerate if (a), (b), (c) labels are needed. Example:
-        ```latex
-        \item In the circuit shown, find
-        \renewcommand{\labelenumi}{(\alph{enumi})}
-        \begin{enumerate}
-            \item the current through the resistor.
-            \item the voltage across the capacitor.
-        \end{enumerate}
-        ```
-
 2.  **Diagram (Optional, place immediately after `\item` line if used)**
 """ + DIAGRAM_PLACEHOLDER + r"""
 
@@ -71,7 +62,7 @@ Adhere to these rules meticulously:
 ---
 
 **Final Check:** Ensure your output is ONLY the LaTeX snippet from `\item` to `\end{solution}` with no extra text or comments.
-"""
+""" + SUBPART_FORMATTING_RULES
 
 USER_TEMPLATE = "Extract LaTeX from this physics question image."
 

@@ -35,6 +35,7 @@ _MATCH_TIKZ_CONTRACT_VERSION = 1
 _PASSAGE_OPTION_SCAN_CONTRACT_VERSION = 1
 _PASSAGE_OPTION_TIKZ_CONTRACT_VERSION = 1
 _ASSERTION_DIAGRAM_SCAN_CONTRACT_VERSION = 1
+_SUBJECTIVE_STRUCTURE_SCAN_CONTRACT_VERSION = 1
 
 
 class ProblemResult:
@@ -98,7 +99,8 @@ class ProblemOrchestrator:
             self.console.print(f"[dim]Loaded sample: {primary.subject}/{primary.question_type}[/dim]")
 
         # Decide what to run
-        # If has_diagram is true, generate TikZ even without a specific diagram_type (fall back to generic)
+        # A positive main-diagram classification has already passed the
+        # complete, subject-specific metadata contract.
         needs_tikz = bool(classification.has_diagram)
         needs_options = bool(classification.has_option_diagrams)
 
@@ -121,6 +123,12 @@ class ProblemOrchestrator:
                 cache.get_stage_data(problem_id, "scan").get(
                     "assertion_diagram_contract_version"
                 ) == _ASSERTION_DIAGRAM_SCAN_CONTRACT_VERSION
+            )
+        if scan_cached and primary.question_type == "subjective":
+            scan_cached = (
+                cache.get_stage_data(problem_id, "scan").get(
+                    "subjective_structure_contract_version"
+                ) == _SUBJECTIVE_STRUCTURE_SCAN_CONTRACT_VERSION
             )
         tikz_cached = cache and problem_id and cache.has(problem_id, "tikz")
         if tikz_cached and primary.question_type == "match":
@@ -154,6 +162,16 @@ class ProblemOrchestrator:
                 scan_cached, tikz_cached, options_cached, cache, problem_id,
                 needs_tikz=needs_tikz, needs_options=needs_options,
             )
+
+        if primary.question_type == "subjective":
+            from vbagent.agents.content_generation.scanner import (
+                _has_forbidden_subjective_structure,
+            )
+
+            if _has_forbidden_subjective_structure(latex):
+                raise ValueError(
+                    "Subjective scan contains forbidden MCQ option structure"
+                )
 
         # Option-only questions must not acquire a second, composite "main"
         # diagram. A genuine main + option question has both flags true and
@@ -259,7 +277,12 @@ class ProblemOrchestrator:
         return (
             f"Reconstruct only the standalone main {diagram_type} diagram in "
             "the question stem. Ignore every diagram inside the answer options. "
-            "Do not output any \\def\\Option definitions."
+            "Do not output any \\def\\Option definitions. If the main diagram "
+            "is a collection of independently labeled figures that the student "
+            "must compare, classify, or discuss, preserve every figure as its "
+            "own locally defined panel command and lay the panels out with "
+            "multicols plus enumerate. Let enumerate own the labels; do not "
+            "combine the panels into one shifted-scope TikZ canvas."
         )
 
     def _run_scan(self, image_path, primary, sample, cache, problem_id) -> str:
@@ -550,7 +573,10 @@ class ProblemOrchestrator:
             option_tikz = cache.get(problem_id, "options")
 
         # Also check for option markers in scanned latex (even if not flagged by classifier)
-        if not run_options and latex and (r'\OptionA' in latex or r'\OptionB' in latex):
+        if (primary.question_type != "subjective"
+                and not run_options
+                and latex
+                and (r'\OptionA' in latex or r'\OptionB' in latex)):
             option_tikz = self._run_option_diagrams_sync(image_path, primary, diagram_analysis)
 
         tikz_code = combine_tikz_artifacts(tikz_code, option_tikz)
@@ -592,6 +618,11 @@ class ProblemOrchestrator:
             return {
                 "assertion_diagram_contract_version":
                     _ASSERTION_DIAGRAM_SCAN_CONTRACT_VERSION
+            }
+        if question_type == "subjective":
+            return {
+                "subjective_structure_contract_version":
+                    _SUBJECTIVE_STRUCTURE_SCAN_CONTRACT_VERSION
             }
         return None
 

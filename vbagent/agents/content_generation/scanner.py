@@ -35,6 +35,31 @@ one-to-many mappings use grouped targets such as P\rightarrow\{I,III\}. Return
 only the required LaTeX.
 """
 
+_SUBJECTIVE_STRUCTURE_RETRY = r"""
+Your previous extraction was invalid because this question is classified as
+subjective. A subjective question must not contain an OPTIONS_DIAGRAMS marker,
+an OptionA/OptionB macro reference, a tasks environment, or any \task command.
+Roman-labeled figures such as (i)--(x) that the student must compare or classify
+form one standalone/main diagram collection in the question stem; they are not
+answer options. Re-extract the complete subjective question using exactly one
+main `\input{diagram}` placeholder and no option structure. Preserve genuine
+textual subparts with `enumerate`. Return only the required LaTeX.
+"""
+
+
+_FORBIDDEN_SUBJECTIVE_STRUCTURE_RE = re.compile(
+    r"OPTIONS_DIAGRAMS|\\begin\{tasks\}|\\end\{tasks\}|"
+    r"\\task\b|\\Option[A-Z]\b",
+    flags=re.IGNORECASE,
+)
+
+
+def _has_forbidden_subjective_structure(latex: Optional[str]) -> bool:
+    """Return whether subjective LaTeX leaked MCQ option structure."""
+    if not latex:
+        return False
+    return bool(_FORBIDDEN_SUBJECTIVE_STRUCTURE_RE.search(latex))
+
 
 def _has_required_match_options(latex: str) -> bool:
     """Return whether a match extraction has one four-option tasks block."""
@@ -46,20 +71,37 @@ def _has_required_match_options(latex: str) -> bool:
     return any(len(re.findall(r"\\task\b", block)) == 4 for block in blocks)
 
 
-def _scan_with_match_option_gate(
+def _scan_with_structure_gate(
     agent,
     image_path: str,
     user_template: str,
     question_type: str,
     show_spinner: bool,
 ) -> str:
-    """Run a scan and retry once if a match question omitted code options."""
+    """Run a scan and retry once when its type-level structure is invalid."""
     message = create_image_message(image_path, user_template)
     raw_latex = run_agent_sync(agent, message, show_spinner=show_spinner)
     latex = clean_latex_output(raw_latex)
-    if question_type != "match" or _has_required_match_options(latex):
+
+    if question_type == "subjective" and _has_forbidden_subjective_structure(latex):
+        retry_message = create_image_message(
+            image_path,
+            f"{user_template}\n\n{_SUBJECTIVE_STRUCTURE_RETRY}",
+        )
+        raw_latex = run_agent_sync(
+            agent,
+            retry_message,
+            show_spinner=show_spinner,
+        )
+        latex = clean_latex_output(raw_latex)
+        if _has_forbidden_subjective_structure(latex):
+            raise ValueError(
+                "Subjective extraction contains forbidden MCQ option structure"
+            )
         return latex
 
+    if question_type != "match" or _has_required_match_options(latex):
+        return latex
     retry_message = create_image_message(
         image_path,
         f"{user_template}\n\n{_MATCH_OPTIONS_RETRY}",
@@ -145,7 +187,7 @@ def scan(
     
     agent = create_scanner_agent(classification.question_type, use_context, subject, sample_reference=sample_reference)
     user_template = get_user_template(subject)
-    latex = _scan_with_match_option_gate(
+    latex = _scan_with_structure_gate(
         agent,
         image_path,
         user_template,
@@ -188,7 +230,7 @@ def scan_with_type(
     
     agent = create_scanner_agent(question_type, use_context, subject)
     user_template = get_user_template(subject)
-    latex = _scan_with_match_option_gate(
+    latex = _scan_with_structure_gate(
         agent,
         image_path,
         user_template,
@@ -264,7 +306,7 @@ def scan_problem(
         agent_type="scanner",
     )
 
-    return _scan_with_match_option_gate(
+    return _scan_with_structure_gate(
         agent,
         image_path,
         user_template,

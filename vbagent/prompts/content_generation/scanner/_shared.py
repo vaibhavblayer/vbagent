@@ -166,6 +166,38 @@ OPTIONS_WITH_DIAGRAMS_BIOLOGY = options_with_diagrams(r"""    ❌ \begin{tikzpic
     ❌ Extracting the diagram code yourself""")
 
 
+SUBPART_FORMATTING_RULES = r"""
+## Subjective Subpart Formatting (MANDATORY)
+
+- A genuine multi-part subjective question with labels such as (a), (b), (c)
+  MUST use a nested `enumerate` environment with one `\item` per subpart.
+- Set the label locally with enumitem syntax:
+  `\begin{enumerate}[label=(\alph*), leftmargin=*]`.
+- For source labels (i), (ii), (iii), use
+  `\begin{enumerate}[label=(\roman*), leftmargin=*]` instead.
+- NEVER type subpart labels manually as prose, for example
+  `(a) first problem \\ (b) second problem`, and do not use manual line breaks
+  as a substitute for list structure.
+- Do NOT use `\renewcommand{\labelenumi}{...}` for a nested list; it can alter
+  the surrounding question-number list. Keep the label option local.
+- `tasks` is only for selectable answer choices. It is NOT a replacement for
+  subjective subquestions or labeled figures that the student must discuss.
+- When the classified question type is `subjective`, output NO
+  `OPTIONS_DIAGRAMS` marker, `\OptionA`-style macro, `tasks` environment, or
+  `\task` command. Roman-labeled figures in its stem remain one main diagram
+  collection and are rendered by the main diagram agent.
+
+```latex
+\item Answer the following:
+\begin{enumerate}[label=(\alph*), leftmargin=*]
+    \item Find the domain.
+    \item Find the range.
+    \item Determine whether the relation is a function.
+\end{enumerate}
+```
+"""
+
+
 __all__ = [
     "MATCH_OPTION_FORMAT_RULES",
     "MATCH_OPTION_FORMAT_RULES_UNMARKED",
@@ -179,6 +211,7 @@ __all__ = [
     "OPTIONS_WITH_DIAGRAMS_CHEMISTRY",
     "OPTIONS_WITH_DIAGRAMS_MATHEMATICS",
     "OPTIONS_WITH_DIAGRAMS_BIOLOGY",
+    "SUBPART_FORMATTING_RULES",
     "PROBLEM_FORMATTING_RULES",
     "SOLUTION_FORMATTING_RULES",
 ]
@@ -197,7 +230,7 @@ PROBLEM_FORMATTING_RULES = r"""
 - Use `\vec{a}` for vectors, `\hat{i}` for unit vectors.
 - Use `\,` for thin space before units: `10\,\mathrm{m/s}`.
 - **Fill-in-the-blank answers:** Use `\underline{\hfill}` or `\underline{\hspace{2cm}}` for blank spaces. NEVER use raw underscores `____` (causes rendering errors).
-"""
+""" + SUBPART_FORMATTING_RULES
 
 # Solution-only formatting rules
 SOLUTION_FORMATTING_RULES = r"""

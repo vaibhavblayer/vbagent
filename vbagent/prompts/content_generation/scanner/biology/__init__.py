@@ -10,6 +10,7 @@ Currently supports: mcq_sc
 """
 
 from .mcq_sc import SYSTEM_PROMPT as MCQ_SC_PROMPT
+from .subjective import SYSTEM_PROMPT as SUBJECTIVE_PROMPT
 from .match import SYSTEM_PROMPT as MATCH_PROMPT
 from .common import (
     TIKZ_GUIDELINES,
@@ -28,7 +29,7 @@ SCANNER_PROMPTS = {
     "matrix_match": MATCH_PROMPT,
     # Other types fall back to mcq_sc for now
     "mcq_mc": MCQ_SC_PROMPT,
-    "subjective": MCQ_SC_PROMPT,
+    "subjective": SUBJECTIVE_PROMPT,
     "assertion_reason": MCQ_SC_PROMPT,
     "passage": MCQ_SC_PROMPT,
 }
@@ -50,6 +51,7 @@ __all__ = [
     "SCANNER_PROMPTS",
     "get_prompt",
     "MCQ_SC_PROMPT",
+    "SUBJECTIVE_PROMPT",
     "MATCH_PROMPT",
     # Common prompt components
     "TIKZ_GUIDELINES",

@@ -14,6 +14,7 @@ from .mcq_format import (
     MCQ_ANSWER_FORMAT_RULES,
 )
 from .table_format import TABLE_FORMAT_RULES
+from .scanner._shared import SUBPART_FORMATTING_RULES
 
 SYSTEM_PROMPT = r"""You are an expert physics educator specializing in question format conversion. Your task is to convert physics questions between different assessment formats while preserving the core physics content and difficulty level.
 
@@ -264,7 +265,10 @@ Therefore, the correct option is (a).
 - For integer type: the final answer MUST be a clean integer; work backwards from the answer to choose parameters
 - For MCQ: all four options should be clean expressions, not messy decimals"""
 
-SYSTEM_PROMPT += "\n\n" + MCQ_ANSWER_FORMAT_RULES + TABLE_FORMAT_RULES
+SYSTEM_PROMPT += (
+    "\n\n" + MCQ_ANSWER_FORMAT_RULES + TABLE_FORMAT_RULES
+    + SUBPART_FORMATTING_RULES
+)
 
 USER_TEMPLATE = r"""Convert this physics question from {source_format} to {target_format}.
 
@@ -301,7 +305,8 @@ FORMAT_INSTRUCTIONS = {
     "subjective": r"""Target Format Instructions (Subjective):
 - Remove all options (no tasks environment)
 - Ask for derivation, explanation, or detailed calculation
-- May include multiple parts (a), (b), (c) if appropriate
+- When multiple parts (a), (b), (c) are appropriate, use a nested enumerate
+  with `[label=(\alph*), leftmargin=*]`; never type the labels manually
 - Solution should show complete working using align* with \intertext{}""",
     
     "integer": r"""Target Format Instructions (Integer Type):
@@ -393,6 +398,8 @@ def get_format_instructions(target_format: str) -> str:
     instructions = FORMAT_INSTRUCTIONS.get(target_format, "") + TABLE_FORMAT_RULES
     if target_format == "match":
         instructions += MATCH_TABLE_DIAGRAM_RULES + MATCH_OPTION_FORMAT_RULES
+    if target_format == "subjective":
+        instructions += SUBPART_FORMATTING_RULES
     if target_format in {"mcq_sc", "mcq_mc", "passage", "match"}:
         instructions += MCQ_ANSWER_FORMAT_RULES
     return instructions

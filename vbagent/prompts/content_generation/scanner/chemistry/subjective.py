@@ -1,6 +1,7 @@
 """Subjective question scanner prompt for chemistry."""
 
 from .common import DIAGRAM_PLACEHOLDER, SOLUTION_STRUCTURE
+from .._shared import SUBPART_FORMATTING_RULES
 
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
@@ -35,8 +36,6 @@ Follow this exact structure for your output:
         % FORBIDDEN - raw underscores (causes rendering errors):
         \item The value of $\alpha$ is _____.
         ```
-    *   **Multi-part sub-questions:** If the problem has sub-parts like (a), (b), (c), use `\begin{enumerate}` with `\item` for each sub-part.
-
 2.  **Diagram (Optional, place immediately after `\item` line if used)**
 """ + DIAGRAM_PLACEHOLDER + r"""
 
@@ -91,7 +90,7 @@ Follow this exact structure for your output:
 ---
 
 **Final Check:** Ensure your output is ONLY the LaTeX snippet from `\item` to `\end{solution}` with no extra text or comments.
-"""
+""" + SUBPART_FORMATTING_RULES
 
 USER_TEMPLATE = "Extract LaTeX from this chemistry question image."
 

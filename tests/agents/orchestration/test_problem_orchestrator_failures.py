@@ -24,13 +24,36 @@ class _Cache:
 
     def get_stage_data(self, problem_id, stage):
         if stage == "scan":
-            return {"match_table_contract_version": 2}
+            return {
+                "match_table_contract_version": 2,
+                "subjective_structure_contract_version": 1,
+            }
         if stage == "tikz":
             return {"match_table_contract_version": 1}
         return {}
 
     def set(self, problem_id, stage, value, stage_data=None):
         self.values[stage] = value
+
+
+def _main_classification(
+    question_type,
+    *,
+    diagram_type="mechanics",
+    diagram_category="mechanics",
+    **kwargs,
+):
+    return QuestionClassification(
+        subject="physics",
+        question_type=question_type,
+        has_diagram=True,
+        diagram_type=diagram_type,
+        diagram_category=diagram_category,
+        diagram_complexity="moderate",
+        diagram_elements=["test diagram"],
+        suggested_tikz_agent=diagram_type,
+        **kwargs,
+    )
 
 
 def test_parallel_tikz_failure_is_not_silently_dropped(monkeypatch):
@@ -75,11 +98,7 @@ def test_full_cache_hit_still_assembles_scan_and_tikz():
         "scan": r"\item Example\begin{center}\input{diagram}\end{center}",
         "tikz": r"\begin{tikzpicture}\draw (0,0)--(1,1);\end{tikzpicture}",
     })
-    classification = QuestionClassification(
-        subject="physics",
-        question_type="subjective",
-        has_diagram=True,
-    )
+    classification = _main_classification("subjective")
     orchestrator = ProblemOrchestrator(
         console=Console(file=io.StringIO(), force_terminal=False)
     )
@@ -184,11 +203,8 @@ def test_main_and_option_diagrams_are_both_preserved_once():
         "options": r"""\def\OptionA{\begin{tikzpicture}\node{A};\end{tikzpicture}}
 \def\OptionB{\begin{tikzpicture}\node{B};\end{tikzpicture}}""",
     })
-    classification = QuestionClassification(
-        subject="physics",
-        question_type="mcq_sc",
-        has_diagram=True,
-        diagram_type="mechanics",
+    classification = _main_classification(
+        "mcq_sc",
         has_option_diagrams=True,
         num_option_diagrams=2,
         option_diagram_type="graph",
@@ -221,6 +237,128 @@ def test_match_diagram_description_requires_row_macros_not_montage():
     assert r"do not output any \def\Option definitions" in description
 
 
+def test_subjective_main_diagram_description_requires_panel_layout():
+    primary = SimpleNamespace(question_type="subjective")
+    diagram = SimpleNamespace(diagram_type="function_graph")
+
+    description = ProblemOrchestrator._main_diagram_description(primary, diagram)
+
+    assert "own locally defined panel command" in description
+    assert "multicols plus enumerate" in description
+    assert "Let enumerate own the labels" in description
+    assert "shifted-scope TikZ canvas" in description
+
+
+def test_subjective_question_refreshes_legacy_scan_cache(monkeypatch):
+    class _LegacySubjectiveCache(_Cache):
+        def get_stage_data(self, problem_id, stage):
+            return {}
+
+    cache = _LegacySubjectiveCache({
+        "scan": (
+            r"\item Which graphs? %% OPTIONS_DIAGRAMS "
+            r"\begin{tasks}(2)\task[(i)] \OptionA\end{tasks}"
+        ),
+        "tikz": r"\begin{tikzpicture}\node{main};\end{tikzpicture}",
+    })
+    classification = _main_classification("subjective")
+    captured = {}
+    orchestrator = ProblemOrchestrator(
+        console=Console(file=io.StringIO(), force_terminal=False)
+    )
+
+    def fake_parallel(*args, **kwargs):
+        captured["scan_cached"] = args[4]
+        captured["tikz_cached"] = args[5]
+        return (
+            r"\item Which graphs?\begin{center}\input{diagram}\end{center}",
+            cache.values["tikz"],
+            None,
+        )
+
+    monkeypatch.setattr(orchestrator, "_run_parallel", fake_parallel)
+
+    result = orchestrator.run(
+        "question.png",
+        classification,
+        cache=cache,
+        problem_id="legacy_subjective",
+    )
+
+    assert captured["scan_cached"] is False
+    assert captured["tikz_cached"] is True
+    assert "OPTIONS_DIAGRAMS" not in result.latex
+    assert r"\begin{tasks}" not in result.latex
+    assert result.latex.count(r"\begin{tikzpicture}") == 1
+
+
+def test_subjective_orchestrator_rejects_option_structure(monkeypatch):
+    classification = _main_classification("subjective")
+    orchestrator = ProblemOrchestrator(
+        console=Console(file=io.StringIO(), force_terminal=False)
+    )
+    invalid = (
+        r"\item Which graphs? %% OPTIONS_DIAGRAMS "
+        r"\begin{tasks}(2)\task[(i)] \OptionA\end{tasks}"
+    )
+
+    monkeypatch.setattr(
+        orchestrator,
+        "_run_parallel",
+        lambda *args, **kwargs: (
+            invalid,
+            r"\begin{tikzpicture}\node{main};\end{tikzpicture}",
+            None,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="forbidden MCQ option structure"):
+        orchestrator.run("question.png", classification)
+
+
+def test_subjective_scan_markers_never_trigger_option_diagram_fallback(monkeypatch):
+    from vbagent.agents.content_generation import scanner
+
+    invalid = (
+        r"\item Which graphs? %% OPTIONS_DIAGRAMS "
+        r"\begin{tasks}(2)\task[(i)] \OptionA\end{tasks}"
+    )
+    monkeypatch.setattr(scanner, "scan_problem", lambda *args, **kwargs: invalid)
+
+    orchestrator = ProblemOrchestrator(
+        console=Console(file=io.StringIO(), force_terminal=False)
+    )
+    monkeypatch.setattr(
+        orchestrator,
+        "_run_option_diagrams_sync",
+        lambda *args, **kwargs: pytest.fail(
+            "subjective scan must not trigger option diagram generation"
+        ),
+    )
+    primary = SimpleNamespace(
+        subject="mathematics",
+        question_type="subjective",
+    )
+
+    latex, tikz_code, option_tikz = orchestrator._run_parallel(
+        "question.png",
+        primary,
+        diagram_analysis=None,
+        sample=None,
+        scan_cached=False,
+        tikz_cached=False,
+        options_cached=False,
+        cache=None,
+        problem_id=None,
+        needs_tikz=False,
+        needs_options=False,
+    )
+
+    assert latex == invalid
+    assert tikz_code is None
+    assert option_tikz is None
+
+
 def test_match_question_refreshes_legacy_scan_and_tikz_cache(monkeypatch):
     class _LegacyMatchCache(_Cache):
         def get_stage_data(self, problem_id, stage):
@@ -230,11 +368,10 @@ def test_match_question_refreshes_legacy_scan_and_tikz_cache(monkeypatch):
         "scan": "legacy scan",
         "tikz": "legacy montage",
     })
-    classification = QuestionClassification(
-        subject="physics",
-        question_type="match",
-        has_diagram=True,
+    classification = _main_classification(
+        "match",
         diagram_type="graph",
+        diagram_category="graphs",
     )
     captured = {}
     orchestrator = ProblemOrchestrator(
@@ -339,12 +476,7 @@ def test_assertion_reason_refreshes_scan_from_old_diagram_contract(monkeypatch):
         "scan": r"\item Old.\begin{center}\text{[Diagram]}\end{center}",
         "tikz": r"\begin{tikzpicture}\node{motion};\end{tikzpicture}",
     })
-    classification = QuestionClassification(
-        subject="physics",
-        question_type="assertion_reason",
-        has_diagram=True,
-        diagram_type="mechanics",
-    )
+    classification = _main_classification("assertion_reason")
     captured = {}
     orchestrator = ProblemOrchestrator(
         console=Console(file=io.StringIO(), force_terminal=False)

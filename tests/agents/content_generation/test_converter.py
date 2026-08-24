@@ -172,6 +172,9 @@ def test_subjective_instructions_no_options():
     assert "remove" in instructions.lower() or "no" in instructions.lower(), (
         "Subjective instructions should mention removing options"
     )
+    assert r"\begin{enumerate}[label=(\alph*), leftmargin=*]" in instructions
+    assert "NEVER type subpart labels manually" in instructions
+    assert "`tasks` is only for selectable answer choices" in instructions
 
 
 def test_integer_instructions_single_number():
