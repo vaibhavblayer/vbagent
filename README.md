@@ -226,12 +226,11 @@ vbagent/
 │   ├── base.py                          # Base agent (create, run, encode image)
 │   ├── classifier.py                    # Backward-compatible classifier facade
 │   ├── classification/                  # Classification system
-│   │   ├── question_classifier.py       # Canonical image question classifier
+│   │   ├── question_classifier.py       # Neutral routing + subject-specific analysis
 │   │   ├── diagram_classifier.py        # Standalone diagram classification
 │   │   ├── difficulty_assessor.py       # Difficulty assessment
 │   │   ├── latex_classifier.py          # LaTeX classification
 │   │   ├── taxonomy_classifier.py       # Taxonomy classification
-│   │   ├── subject_classifier.py        # Standalone subject classification
 │   │   └── schema_builder.py            # Schema builder
 │   ├── content_generation/
 │   │   ├── scanner.py                   # LaTeX extraction agent
