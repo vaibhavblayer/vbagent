@@ -137,6 +137,45 @@ def test_run_appends_separate_subjective_final_answer():
     )
 
 
+def test_run_appends_multipart_subjective_answer_enumerate():
+    orchestrator = _orchestrator()
+    answer = (
+        r"\begin{enumerate}[label=(\alph*), leftmargin=*]"
+        r"\item $x=1$."
+        r"\item $x=2$."
+        r"\end{enumerate}"
+    )
+    orchestrator._call_subject_agent = MagicMock(
+        return_value=SimpleNamespace(
+            solution_latex=(
+                r"\begin{solution}"
+                r"\begin{enumerate}[label=(\alph*), leftmargin=*]"
+                r"\item First.\item Second.\end{enumerate}"
+                r"\end{solution}"
+            ),
+            diagram_requirements=[],
+            answer_type="subjective",
+            answer_value=None,
+            final_answer_latex=answer,
+        )
+    )
+
+    result = orchestrator.run(
+        problem_latex=(
+            r"\item Solve both."
+            r"\begin{enumerate}[label=(\alph*), leftmargin=*]"
+            r"\item First.\item Second.\end{enumerate}"
+        ),
+        subject="mathematics",
+        question_type="subjective",
+    )
+
+    assert result.final_answer_latex == answer
+    assert result.latex.endswith(
+        "\\begin{finalanswer}\n" + answer + "\n\\end{finalanswer}"
+    )
+
+
 def test_run_replaces_existing_subjective_final_answer():
     orchestrator = _orchestrator()
     orchestrator._call_subject_agent = MagicMock(

@@ -128,8 +128,10 @@ class SolutionOutput(BaseModel):
         default=None,
         description=(
             "Concise answer-key-ready LaTeX for a subjective problem. "
-            "Contains no derivation and no surrounding environment; None for "
-            "MCQ and integer-type problems."
+            "For a multipart enumerate problem, contains a matching enumerate "
+            "with one concise item per part. Contains no derivation and no "
+            "surrounding finalanswer environment; None for MCQ and integer-type "
+            "problems."
         ),
     )
 

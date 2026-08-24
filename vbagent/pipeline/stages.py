@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 _QUESTION_ROUTING_CONTRACT_VERSION = 1
 _QUESTION_CLASSIFICATION_CONTRACT_VERSION = 6
 _MATCH_SOLUTION_REPAIR_CONTRACT_VERSION = 1
-_SUBJECTIVE_MULTIPART_SOLUTION_CONTRACT_VERSION = 1
+_SUBJECTIVE_MULTIPART_SOLUTION_CONTRACT_VERSION = 2
 
 
 
@@ -67,6 +67,7 @@ def generate_solution_orchestrated(
         create_solution_orchestrator,
     )
     from vbagent.agents.content_generation.solution.structure import (
+        has_matching_multipart_structure,
         has_multipart_subjective_problem,
     )
 
@@ -121,10 +122,16 @@ def generate_solution_orchestrated(
         )
         stale_multipart_subjective_cache = (
             multipart_subjective
-            and cached_data.get(
-                "subjective_multipart_solution_contract_version"
+            and (
+                cached_data.get(
+                    "subjective_multipart_solution_contract_version"
+                )
+                != _SUBJECTIVE_MULTIPART_SOLUTION_CONTRACT_VERSION
+                or not has_matching_multipart_structure(
+                    problem_latex,
+                    cached_final_answer or "",
+                )
             )
-            != _SUBJECTIVE_MULTIPART_SOLUTION_CONTRACT_VERSION
         )
         if stale_subjective_cache:
             if console:

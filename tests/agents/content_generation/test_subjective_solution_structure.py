@@ -3,7 +3,7 @@
 import pytest
 
 from vbagent.agents.content_generation.solution.structure import (
-    has_matching_multipart_solution,
+    has_matching_multipart_structure,
     has_multipart_subjective_problem,
     multipart_enumerate_counts,
     multipart_enumerate_shapes,
@@ -34,10 +34,13 @@ def _valid_output() -> SolutionOutput:
 \end{solution}
 """,
         answer_type="subjective",
-        final_answer_latex=(
-            r"$D_f=[0,\infty)$; $D_g=(0,\infty)$; "
-            r"$D_h=\mathbb{R}\setminus\{0\}$."
-        ),
+        final_answer_latex=r"""
+\begin{enumerate}
+    \item $D_f=[0,\infty)$.
+    \item $D_g=(0,\infty)$.
+    \item $D_h=\mathbb{R}\setminus\{0\}$.
+\end{enumerate}
+""",
     )
 
 
@@ -52,6 +55,9 @@ def test_subjective_prompts_require_matching_solution_enumerate(subject):
     assert "exactly one `\\item` for each problem part" in prompt
     assert "NEVER flatten several parts into one `align*`" in prompt
     assert r"\begin{enumerate}[label=(\alph*), leftmargin=*]" in prompt
+    assert "`final_answer_latex`" in prompt
+    assert "complete matching `enumerate` block" in prompt
+    assert "Never type `(a)`, `(b)`" in prompt
 
 
 def test_structure_parser_counts_only_direct_items():
@@ -91,8 +97,8 @@ def test_matching_structure_preserves_local_label_option():
     assert multipart_enumerate_shapes(problem) == (
         (r"label=(\alph*),leftmargin=*", 2),
     )
-    assert has_matching_multipart_solution(problem, matching) is True
-    assert has_matching_multipart_solution(problem, wrong_labels) is False
+    assert has_matching_multipart_structure(problem, matching) is True
+    assert has_matching_multipart_structure(problem, wrong_labels) is False
 
 
 def test_matching_structure_rejects_flattened_solution():
@@ -110,9 +116,9 @@ D_3&=\mathbb{R}\setminus\{0\}
 """
 
     assert has_multipart_subjective_problem(MULTIPART_PROBLEM) is True
-    assert has_matching_multipart_solution(MULTIPART_PROBLEM, flattened) is False
+    assert has_matching_multipart_structure(MULTIPART_PROBLEM, flattened) is False
     assert (
-        has_matching_multipart_solution(
+        has_matching_multipart_structure(
             MULTIPART_PROBLEM,
             _valid_output().solution_latex,
         )
@@ -152,10 +158,43 @@ def test_generate_solution_retries_flattened_multipart_output(monkeypatch):
     assert result is not flattened
     assert len(calls) == 2
     assert "Required direct item count(s): 3" in calls[1][0]["content"]
-    assert has_matching_multipart_solution(
+    assert has_matching_multipart_structure(
         MULTIPART_PROBLEM,
         result.solution_latex,
     )
+    assert has_matching_multipart_structure(
+        MULTIPART_PROBLEM,
+        result.final_answer_latex or "",
+    )
+
+
+def test_generate_solution_retries_only_flattened_final_answer(monkeypatch):
+    import vbagent.agents.content_generation.solution as solution_module
+
+    valid = _valid_output()
+    flattened_answer = valid.model_copy(
+        update={"final_answer_latex": "1. First; 2. Second; 3. Third."}
+    )
+    outputs = iter([flattened_answer, valid])
+    calls = []
+    monkeypatch.setattr(solution_module, "create_agent", lambda **kwargs: object())
+
+    def fake_run(*args, **kwargs):
+        calls.append(args[1])
+        return next(outputs)
+
+    monkeypatch.setattr(solution_module, "run_agent_sync", fake_run)
+
+    result = solution_module.generate_solution(
+        problem_text=MULTIPART_PROBLEM,
+        question_type="subjective",
+        subject="mathematics",
+        show_spinner=False,
+    )
+
+    assert result is valid
+    assert len(calls) == 2
+    assert "In `final_answer_latex`" in calls[1][0]["content"]
 
 
 def test_generate_solution_fails_closed_after_invalid_retry(monkeypatch):
@@ -175,7 +214,7 @@ def test_generate_solution_fails_closed_after_invalid_retry(monkeypatch):
 
     with pytest.raises(
         ValueError,
-        match="does not mirror the problem's enumerate/item structure",
+        match="do not mirror the problem's enumerate/item structure",
     ):
         solution_module.generate_solution(
             problem_text=MULTIPART_PROBLEM,

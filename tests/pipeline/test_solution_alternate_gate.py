@@ -280,11 +280,19 @@ def test_multipart_subjective_cache_predating_structure_contract_is_regenerated(
         + r"\item First.\item Second."
         + r"\end{enumerate}\end{solution}"
     )
+    refreshed_answer = (
+        r"\begin{enumerate}\item First.\item Second.\end{enumerate}"
+    )
+    refreshed_latex += (
+        r"\begin{finalanswer}"
+        + refreshed_answer
+        + r"\end{finalanswer}"
+    )
     fake_orchestrator = SimpleNamespace(
         run=lambda **kwargs: SolutionResult(
             latex=refreshed_latex,
             answer_type="subjective",
-            final_answer_latex="First; second.",
+            final_answer_latex=refreshed_answer,
             metadata={},
         )
     )
@@ -311,7 +319,7 @@ def test_multipart_subjective_cache_predating_structure_contract_is_regenerated(
     assert result.latex == refreshed_latex
     assert cache.get_stage_data("problem_1", "solution")[
         "subjective_multipart_solution_contract_version"
-    ] == 1
+    ] == 2
 
 
 def test_compliant_multipart_subjective_solution_is_reused_from_cache(
@@ -334,6 +342,14 @@ def test_compliant_multipart_subjective_solution_is_reused_from_cache(
         + r"\item First.\item Second."
         + r"\end{enumerate}\end{solution}"
     )
+    cached_answer = (
+        r"\begin{enumerate}\item First.\item Second.\end{enumerate}"
+    )
+    cached_latex += (
+        r"\begin{finalanswer}"
+        + cached_answer
+        + r"\end{finalanswer}"
+    )
     cache = PipelineCache(str(tmp_path))
     cache.set(
         "problem_1",
@@ -341,8 +357,8 @@ def test_compliant_multipart_subjective_solution_is_reused_from_cache(
         cached_latex,
         stage_data={
             "answer_type": "subjective",
-            "final_answer_latex": "First; second.",
-            "subjective_multipart_solution_contract_version": 1,
+            "final_answer_latex": cached_answer,
+            "subjective_multipart_solution_contract_version": 2,
         },
     )
     monkeypatch.setattr(
@@ -368,6 +384,68 @@ def test_compliant_multipart_subjective_solution_is_reused_from_cache(
     )
 
     assert result.latex == cached_latex
+
+
+def test_malformed_v2_multipart_final_answer_cache_is_regenerated(
+    tmp_path, monkeypatch
+):
+    from types import SimpleNamespace
+
+    from vbagent.agents.orchestration.solution_orchestrator import SolutionResult
+    from vbagent.cache import PipelineCache
+    from vbagent.models.classification import PrimaryClassification
+    from vbagent.pipeline.stages import generate_solution_orchestrated
+    import vbagent.agents.orchestration.solution_orchestrator as orchestrator_module
+
+    problem = (
+        r"\item Answer both."
+        r"\begin{enumerate}\item First.\item Second.\end{enumerate}"
+    )
+    cache = PipelineCache(str(tmp_path))
+    cache.set(
+        "problem_1",
+        "solution",
+        problem + r"\begin{solution}Cached.\end{solution}",
+        stage_data={
+            "answer_type": "subjective",
+            "final_answer_latex": "1. First; 2. Second.",
+            "subjective_multipart_solution_contract_version": 2,
+        },
+    )
+    answer = r"\begin{enumerate}\item First.\item Second.\end{enumerate}"
+    refreshed = problem + r"\begin{solution}Refreshed.\end{solution}"
+    fake_orchestrator = SimpleNamespace(
+        run=lambda **kwargs: SolutionResult(
+            latex=refreshed,
+            answer_type="subjective",
+            final_answer_latex=answer,
+            metadata={},
+        )
+    )
+    monkeypatch.setattr(
+        orchestrator_module,
+        "create_solution_orchestrator",
+        lambda console=None: fake_orchestrator,
+    )
+    primary = PrimaryClassification(
+        subject="mathematics",
+        question_type="subjective",
+        has_diagram=False,
+    )
+
+    result = generate_solution_orchestrated(
+        image_path="unused.png",
+        primary=primary,
+        problem_latex=problem,
+        cache=cache,
+        problem_id="problem_1",
+        return_result=True,
+    )
+
+    assert result.latex == refreshed
+    assert cache.get_stage_data("problem_1", "solution")[
+        "final_answer_latex"
+    ] == answer
 
 
 def test_stale_match_solution_cache_is_regenerated_for_option_repair(

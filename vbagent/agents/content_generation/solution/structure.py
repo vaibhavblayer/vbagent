@@ -60,15 +60,15 @@ def has_multipart_subjective_problem(problem_latex: str) -> bool:
     return bool(multipart_enumerate_counts(problem_latex))
 
 
-def has_matching_multipart_solution(
+def has_matching_multipart_structure(
     problem_latex: str,
-    solution_latex: str,
+    candidate_latex: str,
 ) -> bool:
-    """Return whether the solution mirrors all multipart enumerate blocks."""
+    """Return whether candidate LaTeX mirrors all multipart problem lists."""
     required = Counter(multipart_enumerate_shapes(problem_latex))
     if not required:
         return True
-    actual = Counter(multipart_enumerate_shapes(solution_latex))
+    actual = Counter(multipart_enumerate_shapes(candidate_latex))
     return all(
         actual[shape] >= block_count
         for shape, block_count in required.items()
@@ -79,5 +79,5 @@ __all__ = [
     "multipart_enumerate_counts",
     "multipart_enumerate_shapes",
     "has_multipart_subjective_problem",
-    "has_matching_multipart_solution",
+    "has_matching_multipart_structure",
 ]

@@ -10,7 +10,13 @@ the JSON object.
   directly after `\item`.
 - Use valid inline LaTeX for variables, formulas, units, and scientific
   notation.
-- Include every requested part, separated clearly with semicolons when useful.
+- For a single-part problem, return one concise answer as plain LaTeX.
+- For a multipart problem whose question parts use `enumerate`, this field MUST
+  be a complete matching `enumerate` block with exactly one concise `\item` per
+  answer, in the same order. Preserve the problem's local label option; use a
+  plain `\begin{enumerate}` when the problem does. Never type `(a)`, `(b)`,
+  `1.`, `2.`, and so on manually, and never flatten multipart answers into a
+  semicolon-separated sentence.
 - Preserve meaningful capitalization, such as point labels $A$, $B$, and $C$,
   vector names, and commands such as `\Delta`.
 - Do not include derivation, reasoning, `\boxed{}`, a `solution` environment,
@@ -21,8 +27,9 @@ the JSON object.
 
 Examples:
 - `"Stable: $C$; unstable: $A$ and $E$."`
-- `"(a) Unstable along the $x$-axis; (b) stable along the $y$-axis."`
 - `"$x_{\mathrm{eq}}=\frac{b}{2a}$, stable."`
+- `"\\begin{enumerate}[label=(\\alph*), leftmargin=*]\\item Unstable along
+  the $x$-axis.\\item Stable along the $y$-axis.\\end{enumerate}"`
 
 The JSON object must therefore include:
 - `answer_type`: `"subjective"`

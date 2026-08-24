@@ -10,7 +10,7 @@ from typing import Optional
 
 from vbagent.agents.base import create_agent, create_image_message, run_agent_sync
 from vbagent.agents.content_generation.solution.structure import (
-    has_matching_multipart_solution,
+    has_matching_multipart_structure,
     multipart_enumerate_counts,
 )
 from vbagent.models.solution import SolutionOutput
@@ -25,6 +25,9 @@ exactly one `\item` per problem part, in the same order. Put each part's full
 reasoning inside its own item and preserve the problem's local `enumerate`
 label option. Do not flatten the parts into one `align*`, do not type part
 numbers or labels manually in `\intertext`, and do not use `tasks` or `\task`.
+In `final_answer_latex`, return a second matching `enumerate` with one concise
+answer `\item` per problem part and the same local label option. Do not flatten
+the answer key into manually numbered prose or a semicolon-separated sentence.
 """
 
 
@@ -33,6 +36,20 @@ def _as_solution_output(result) -> SolutionOutput:
     if isinstance(result, SolutionOutput):
         return result
     return SolutionOutput(solution_latex=str(result))
+
+
+def _has_valid_multipart_output(
+    problem_text: str,
+    output: SolutionOutput,
+) -> bool:
+    """Return whether both detailed and concise multipart outputs match."""
+    return has_matching_multipart_structure(
+        problem_text,
+        output.solution_latex,
+    ) and has_matching_multipart_structure(
+        problem_text,
+        output.final_answer_latex or "",
+    )
 
 
 def generate_solution(
@@ -82,10 +99,7 @@ def generate_solution(
 
     if (
         question_type == "subjective"
-        and not has_matching_multipart_solution(
-            problem_text,
-            output.solution_latex,
-        )
+        and not _has_valid_multipart_output(problem_text, output)
     ):
         required_counts = ", ".join(
             str(count) for count in multipart_enumerate_counts(problem_text)
@@ -107,13 +121,10 @@ def generate_solution(
                 show_spinner=show_spinner,
             )
         )
-        if not has_matching_multipart_solution(
-            problem_text,
-            output.solution_latex,
-        ):
+        if not _has_valid_multipart_output(problem_text, output):
             raise ValueError(
-                "Multipart subjective solution does not mirror the problem's "
-                "enumerate/item structure"
+                "Multipart subjective solution and final answer do not mirror "
+                "the problem's enumerate/item structure"
             )
 
     if (
