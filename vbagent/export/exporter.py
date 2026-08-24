@@ -67,6 +67,7 @@ class Exporter:
     DEFAULT_TEMPLATE = r"""\documentclass[12pt,a4paper]{{article}}
 \usepackage{{amsmath}}
 \usepackage{{amssymb}}
+\DeclareMathOperator{{\cosec}}{{cosec}}
 \usepackage{{graphicx}}
 \usepackage{{tikz}}
 \usepackage{{tasks}}

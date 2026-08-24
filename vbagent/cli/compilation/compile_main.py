@@ -106,6 +106,7 @@ def generate_preamble(subject: str = "physics", title: str = "Problems", include
 \usepackage{tikz, tasks, geometry, xcolor}
 \usetikzlibrary{arrows.meta, patterns, calc, intersections, quotes, angles}
 \usepackage{amsmath, amssymb, amsfonts, mathtools}
+\DeclareMathOperator{\cosec}{cosec}
 \usepackage{comment, multicol}
 \usepackage{multirow}
 \setlength{\columnsep}{10pt}

@@ -49,6 +49,7 @@ def _preamble() -> str:
     return r"""\documentclass[9pt]{extarticle}
 \usepackage[a4paper, margin=1.2cm]{geometry}
 \usepackage{amsmath, amssymb, mathtools}
+\DeclareMathOperator{\cosec}{cosec}
 \usepackage[upright]{fourier}
 \usepackage{enumitem}
 \usepackage{xcolor}

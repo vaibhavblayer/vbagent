@@ -8,6 +8,7 @@ def test_generate_preamble_defines_ansint():
     preamble = generate_preamble(subject="physics", title="Problems", include_all=True)
 
     assert r"\newcommand{\ansint}[1]{\textcolor{red!95}{#1}}" in preamble
+    assert r"\DeclareMathOperator{\cosec}{cosec}" in preamble
     assert r"\usepackage{comment, multicol}" in preamble
     assert r"\usepackage{multirow}" in preamble
     assert r"\usepgfplotslibrary{groupplots}" in preamble
@@ -23,6 +24,7 @@ def test_build_document_defines_ansint():
     document = _build_document(r"\item Example \ansint{5}", subject="physics")
 
     assert r"\newcommand{\ansint}[1]{\textcolor{red!95}{#1}}" in document
+    assert r"\DeclareMathOperator{\cosec}{cosec}" in document
     assert r"\usepackage{comment, multicol}" in document
     assert r"\usepackage{multirow}" in document
     assert r"\usepgfplotslibrary{groupplots}" in document

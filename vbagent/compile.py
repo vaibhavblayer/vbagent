@@ -39,6 +39,7 @@ PREAMBLE_TEMPLATE = r"""\documentclass[preview, border=2mm]{{standalone}}
 
 % --- Math ---
 \usepackage{{amsmath, amssymb, amsthm, mathtools}}
+\DeclareMathOperator{{\cosec}}{{cosec}}
 
 % --- TikZ core + libraries ---
 \usepackage{{tikz}}

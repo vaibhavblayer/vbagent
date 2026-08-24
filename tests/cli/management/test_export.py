@@ -191,6 +191,7 @@ class TestExporter:
         main_content = main_tex.read_text()
         assert "Test DPP" in main_content
         assert "\\documentclass" in main_content
+        assert r"\DeclareMathOperator{\cosec}{cosec}" in main_content
         assert "\\begin{document}" in main_content
         assert "\\end{document}" in main_content
         

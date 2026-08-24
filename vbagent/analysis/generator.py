@@ -52,6 +52,7 @@ def _generate_preamble() -> str:
 \usepackage{comment}
 \usetikzlibrary{arrows.meta, patterns, calc, intersections, quotes, angles}
 \usepackage{amsmath, amssymb, amsfonts, mathtools}
+\DeclareMathOperator{\cosec}{cosec}
 \setlength{\columnsep}{10pt}
 \setlength{\columnseprule}{0.4pt}
 \usepackage[upright]{fourier}

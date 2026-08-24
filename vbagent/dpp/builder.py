@@ -462,6 +462,7 @@ class DPPBuilder:
             r"",
             r"% Packages",
             r"\usepackage{amsmath, amssymb, amsthm, mathtools}",
+            r"\DeclareMathOperator{\cosec}{cosec}",
             r"\usepackage{tikz}",
             r"\usepackage{pgfplots}",
             r"\usepackage[american]{circuitikz}",

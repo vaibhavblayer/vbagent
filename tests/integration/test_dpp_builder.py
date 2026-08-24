@@ -453,6 +453,7 @@ class TestDPPBuilderPreamble:
 
             content = output_path.read_text()
             assert r"\newcommand{\ansint}[1]{\textcolor{red!95}{#1}}" in content
+            assert r"\DeclareMathOperator{\cosec}{cosec}" in content
             assert r"\newenvironment{finalanswer}" in content
             assert r"\excludecomment{finalanswer}" in content
 

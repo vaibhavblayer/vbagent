@@ -14,6 +14,7 @@ PREAMBLE_TEMPLATE = r"""\documentclass[11pt,a4paper]{{article}}
 \usepackage[utf8]{{inputenc}}
 \usepackage[T1]{{fontenc}}
 \usepackage{{amsmath,amssymb}}
+\DeclareMathOperator{{\cosec}}{{cosec}}
 \usepackage[margin=1in]{{geometry}}
 \usepackage{{tikz}}
 \usepackage{{pgfplots}}

@@ -646,6 +646,7 @@ def _generate_thumbnail(tikz_dir: Path, output_png: Path, preamble: str, console
     # Wrap in standalone square document
     doc = r"""\documentclass[border=10mm]{standalone}
 \usepackage{tikz, circuitikz, pgfplots, amsmath, amssymb}
+\DeclareMathOperator{\cosec}{cosec}
 \usetikzlibrary{arrows.meta, patterns, calc, decorations.markings}
 \pgfplotsset{compat=1.18}
 \begin{document}
