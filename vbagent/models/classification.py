@@ -128,7 +128,10 @@ class DiagramAnalysis(BaseModel):
     
     # Valid diagram types per subject (ClassVar to avoid Pydantic field annotation error)
     VALID_TYPES: ClassVar[Dict[str, list[str]]] = {
-        "physics": ["fbd", "circuit", "graph", "optics", "generic"],
+        "physics": [
+            "fbd", "circuit", "gates", "graph", "optics", "mechanics",
+            "wave", "generic",
+        ],
         "chemistry": ["organic_structure", "reaction_mechanism", "chemical_equation", 
                      "energy_diagram", "orbital", "lewis_structure", "generic"],
         "mathematics": ["number_line", "function_graph", "coordinate_geometry", 

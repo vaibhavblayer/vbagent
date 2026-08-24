@@ -34,7 +34,7 @@ def test_same_subject_reuses_classifier_cache_group(monkeypatch):
     question_classifier.classify_question_image("one.png", subject="physics")
     question_classifier.classify_question_image("two.png", subject="physics")
 
-    assert groups == ["vbagent:question-classifier:v3:physics"] * 2
+    assert groups == ["vbagent:question-classifier:v4:physics"] * 2
 
 
 def test_subject_correction_switches_cache_group(monkeypatch):
@@ -62,8 +62,8 @@ def test_subject_correction_switches_cache_group(monkeypatch):
     question_classifier.classify_question_image("chemistry.png")
 
     assert groups == [
-        "vbagent:question-classifier:v3:physics",
-        "vbagent:question-classifier:v3:chemistry",
+        "vbagent:question-classifier:v4:physics",
+        "vbagent:question-classifier:v4:chemistry",
     ]
 
 

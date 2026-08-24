@@ -218,8 +218,11 @@ Respond with ONLY a valid JSON object:
 
 Question type detection:
 - mcq_sc: Single correct MCQ
-- mcq_mc: Multiple correct MCQ (look for "one or more", "which of the following is/are")
-- subjective: Open-ended, numerical answer, derivation
+- mcq_mc: Multiple correct MCQ with a distinct selectable answer-choice block.
+  Phrases such as "which of the following" are not sufficient by themselves.
+- subjective: Open-ended, numerical answer, derivation, or a request to list
+  the labels of qualifying figures from a stem-level panel collection without
+  a separate answer-choice block
 - assertion_reason: Assertion-reason format
 - passage: Multiple questions sharing same context/passage/graph
 - match: Match the following (two columns)
@@ -243,6 +246,17 @@ Diagram analysis rules:
 - Main diagram fields (`diagram_type`, `diagram_category`, `diagram_elements`,
   `diagram_features`, `suggested_tikz_agent`) describe ONLY the standalone/main
   diagram. Option fields describe ONLY the choice diagrams.
+- When `has_diagram=true`, EVERY main-diagram field must be populated:
+  `diagram_type`, `diagram_category`, `diagram_complexity`, a non-empty
+  `diagram_elements` list, a complete `diagram_features` object, and
+  `suggested_tikz_agent`. Never return null/empty main metadata and never rely
+  on a downstream generic fallback.
+- A roman-labeled collection such as (i)--(x) in the question stem, whose
+  figures are being compared or classified, is one main panel collection:
+  `has_diagram=true`, `has_option_diagrams=false`. Record the panel count in
+  `diagram_features.num_objects` and describe the labels and panel types in
+  `diagram_elements`. It is not an MCQ option block merely because the stem
+  says "which of the following".
 - If has_diagram is false, set the main diagram fields to null/empty even when
   has_option_diagrams is true; still populate all option-diagram fields.
 - Analyze ONLY the PROBLEM section diagrams, IGNORE solution diagrams
@@ -258,6 +272,13 @@ Common diagram_type corrections:
 - "ray_diagram" → "optics"
 - "geometry" → "geometric_figure"
 - "molecular_structure" → "organic_structure"
+
+CRITICAL topic → diagram_type mappings (mathematics):
+- Graphs or relations tested with the vertical-line test, including a panel
+  collection containing some non-functions → diagram_type: "function_graph",
+  suggested_tikz_agent: "function_graph", diagram_category: "graphs"
+- Coordinate geometry with explicit lines, circles, or conics →
+  diagram_type: "coordinate_geometry"
 
 CRITICAL topic → diagram_type mappings (physics):
 - Logic gates (AND, OR, NAND, NOR, XOR, combinational) → diagram_type: "gates", suggested_tikz_agent: "gates"

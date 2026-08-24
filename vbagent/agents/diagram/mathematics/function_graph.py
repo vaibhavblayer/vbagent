@@ -1,5 +1,7 @@
 """Function and calculus graph agent using pgfplots."""
 
+import re
+
 from vbagent.agents.diagram.base import DiagramAgent, DiagramAgentConfig
 from vbagent.prompts.diagram.mathematics.function_graph import (
     SYSTEM_PROMPT,
@@ -15,8 +17,12 @@ def _validate_function_graph(tikz_code: str) -> tuple[bool, str]:
         return False, "Missing \\begin{tikzpicture}"
     if "\\end{tikzpicture}" not in tikz_code:
         return False, "Missing \\end{tikzpicture}"
-    has_axis = "\\begin{axis}" in tikz_code or "\\addplot" in tikz_code
-    if not has_axis:
+    has_plot = (
+        "\\begin{axis}" in tikz_code
+        or "\\addplot" in tikz_code
+        or re.search(r"\\(?:draw|path)\b[^;]*\bplot\b", tikz_code, re.DOTALL)
+    )
+    if not has_plot:
         return False, "Missing axis environment or plot command"
     if tikz_code.count("{") != tikz_code.count("}"):
         o, c = tikz_code.count("{"), tikz_code.count("}")

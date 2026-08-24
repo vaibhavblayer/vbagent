@@ -6,6 +6,9 @@ import pytest
 
 from vbagent.agents.diagram import base as diagram_base
 from vbagent.agents.diagram.base import DiagramAgent, DiagramAgentConfig
+from vbagent.agents.diagram.mathematics.function_graph import (
+    validate_function_graph_output,
+)
 from vbagent.prompts.diagram._style_discipline import STYLE_DISCIPLINE
 from vbagent.prompts.diagram.tikz_checker import get_review_checklist
 
@@ -112,6 +115,40 @@ def test_tikz_checker_enforces_same_coordinate_discipline():
     assert "named-path intersections" in checklist
     assert "Do NOT round actual graph data" in checklist
     assert r"($(A)!0.5!(B)$)" in checklist
+
+
+def test_shared_rule_structures_independent_panels_outside_tikz_canvas():
+    assert "Independent Labeled Panels" in STYLE_DISCIPLINE
+    assert r"\def\DiagramOne" in STYLE_DISCIPLINE
+    assert r"\Diagram_1" in STYLE_DISCIPLINE
+    assert r"\begin{multicols}{2}" in STYLE_DISCIPLINE
+    assert r"\begin{enumerate}[label=(\roman*)" in STYLE_DISCIPLINE
+    assert "do not draw `(i)` or `(a)` as TikZ" in STYLE_DISCIPLINE
+    assert "scope[shift=...]" in STYLE_DISCIPLINE
+
+
+def test_function_graph_prompt_calls_out_independent_panel_collections():
+    prompt = import_module(
+        "vbagent.prompts.diagram.mathematics.function_graph"
+    ).SYSTEM_PROMPT
+
+    assert "Collections of Independent Graph Panels" in prompt
+    assert "one oversized `tikzpicture`" in prompt
+    assert "`multicols` + `enumerate`" in prompt
+
+
+def test_function_graph_validator_accepts_plain_tikz_panel_plots():
+    code = r"""\begingroup
+\def\DiagramOne{\begin{tikzpicture}
+\draw[thick] plot[domain=-1:1] (\x,{\x*\x});
+\end{tikzpicture}}
+\DiagramOne
+\endgroup"""
+
+    valid, error = validate_function_graph_output(code)
+
+    assert valid is True
+    assert error == ""
 
 
 @pytest.mark.parametrize("module_name", PHYSICS_PROMPT_MODULES)

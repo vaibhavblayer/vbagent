@@ -255,6 +255,15 @@ Use line styles to distinguish different functions:
 9. **Legend**: Use legend with `font=\tiny` for multiple functions
 10. **Precision**: Use enough decimal places for accuracy
 
+## Collections of Independent Graph Panels
+
+If the source shows several separately labeled graphs to compare or classify,
+preserve them as independent panels. Define one self-contained command per
+panel and place the commands in a `multicols` + `enumerate` layout. Do not make
+one oversized `tikzpicture` and arrange panels with shifted scopes. The shared
+style discipline gives the mandatory grouped macro pattern and makes the list,
+rather than TikZ nodes, responsible for labels such as (i)--(x).
+
 ## Output Format
 
 Generate TikZ code with pgfplots.

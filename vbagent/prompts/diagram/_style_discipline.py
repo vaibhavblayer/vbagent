@@ -191,13 +191,71 @@ them with PGF/TikZ. Simplify construction geometry, not mathematical content.
 - Start with `\begin{tikzpicture}` and end with `\end{tikzpicture}`
   (or separate `\def\OptionA{...}` definitions for MCQ option diagrams, or
   separate `\def\MatchA{...}` definitions for diagrams consumed inside a
-  match-the-column table)
+  match-the-column table). An independent labeled-panel collection is the
+  additional exception described below and starts with `\begingroup`.
 
-### 9. Centering — Always Wrap in `\begin{center}`
+### 9. Independent Labeled Panels — Let LaTeX Own the Layout
+When a problem contains several independent figures labeled (a), (b), ... or
+(i), (ii), ... for the student to compare, classify, or discuss, do NOT draw
+one giant TikZ canvas and position the figures with `scope[shift=...]`.
+
+Instead:
+- Give every panel its own self-contained `tikzpicture` and local coordinates.
+- Define reusable panel commands such as `\DiagramOne`, `\DiagramTwo`, etc.
+  Never write `\Diagram_1`: the underscore is not part of a normal TeX command
+  name.
+- Wrap the definitions and their use in `\begingroup ... \endgroup`, so common
+  names cannot collide with diagrams from another question.
+- Let `enumerate` own the visible labels; do not draw `(i)` or `(a)` as TikZ
+  nodes.
+- Use `multicols` for the page layout, normally two columns, and use local
+  enumitem labels such as `[label=(\roman*), leftmargin=*]`.
+- Put shared drawing primitives such as axes in one local macro and reuse them.
+- A panel command may be reused later in the same grouped artifact; do not
+  redraw the same panel with a second set of coordinates.
+
+```latex
+\begingroup
+\def\PanelAxes{%
+  \draw[thin,<->] (-2,0) -- (2,0) node[right] {$X$};
+  \draw[thin,<->] (0,-1.5) -- (0,1.5) node[above] {$Y$};
+  \node[below right] at (0,0) {$O$};
+}
+\def\DiagramOne{%
+  \begin{tikzpicture}[x=0.75cm,y=0.75cm,
+      baseline=(current bounding box.center)]
+    \PanelAxes
+    \draw[thick] plot[domain=-1.2:1.2,samples=80]
+      ({\x*\x},{\x});
+  \end{tikzpicture}%
+}
+\def\DiagramTwo{%
+  \begin{tikzpicture}[x=0.75cm,y=0.75cm,
+      baseline=(current bounding box.center)]
+    \PanelAxes
+    \draw[thick] (0,0) circle[radius=0.8];
+  \end{tikzpicture}%
+}
+\begin{multicols}{2}
+\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=1em]
+  \item {\centering\DiagramOne\par}
+  \item {\centering\DiagramTwo\par}
+\end{enumerate}
+\end{multicols}
+\endgroup
+```
+
+This rule is for independent panels. Within one coherent physical setup or one
+single diagram containing repeated internal structures, shifted scopes can
+still be appropriate.
+
+### 10. Centering — Always Wrap in `\begin{center}`
 Every `\begin{tikzpicture}...\end{tikzpicture}` block MUST be wrapped in
 `\begin{center}...\end{center}` so diagrams are horizontally centered in the
 document. The exceptions are MCQ option diagrams (inside `\def\OptionA{...}`)
-and matching-table cell diagrams (inside `\def\MatchA{...}`); those stay inline.
+matching-table cell diagrams (inside `\def\MatchA{...}`), and independent panel
+commands consumed by the grouped `multicols`/`enumerate` structure above; those
+stay inline and are centered locally by their list items.
 
 **GOOD (main/solution diagram):**
 ```latex

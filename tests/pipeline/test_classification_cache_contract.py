@@ -22,6 +22,11 @@ class _Cache:
             "subject": "physics",
             "question_type": "mcq_sc",
             "has_diagram": True,
+            "diagram_type": "mechanics",
+            "diagram_category": "mechanics",
+            "diagram_complexity": "moderate",
+            "diagram_elements": ["block and pulley"],
+            "suggested_tikz_agent": "mechanics",
             "has_option_diagrams": True,
         }
 
@@ -49,11 +54,11 @@ def test_stale_classification_cache_is_refreshed(monkeypatch):
 
     assert result is fresh
     assert len(calls) == 1
-    assert cache.saved[1] == {"contract_version": 4}
+    assert cache.saved[1] == {"contract_version": 5}
 
 
 def test_current_classification_cache_is_reused(monkeypatch):
-    cache = _Cache(contract_version=4)
+    cache = _Cache(contract_version=5)
 
     def unexpected_call(*args, **kwargs):
         raise AssertionError("current classification cache should be reused")

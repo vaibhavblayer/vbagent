@@ -5,9 +5,9 @@ vision request.
 """
 
 from dataclasses import replace
-from typing import Optional
+from typing import ClassVar, Optional
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from vbagent.agents.base import (
     create_agent,
@@ -58,6 +58,63 @@ class QuestionClassification(BaseModel):
     option_diagram_type: str = ""
     option_diagram_descriptions: list[str] = Field(default_factory=list)
 
+    _DIAGRAM_TYPES_BY_SUBJECT: ClassVar[dict[str, set[str]]] = {
+        "physics": {
+            "circuit", "gates", "graph", "optics", "mechanics", "wave", "fbd",
+        },
+        "chemistry": {
+            "organic_structure", "reaction_mechanism", "chemical_equation",
+            "energy_diagram", "orbital", "lewis_structure",
+        },
+        "mathematics": {
+            "number_line", "function_graph", "coordinate_geometry",
+            "geometric_figure", "venn_diagram",
+        },
+        "biology": {"generic"},
+    }
+
+    @model_validator(mode="after")
+    def validate_main_diagram_contract(self) -> "QuestionClassification":
+        """Keep a positive main-diagram flag from degrading to generic data."""
+        if self.question_type == "subjective" and self.has_option_diagrams:
+            raise ValueError(
+                "subjective questions cannot contain MCQ option diagrams"
+            )
+        if not self.has_diagram:
+            return self
+
+        missing = []
+        for field_name in (
+            "diagram_type",
+            "diagram_category",
+            "diagram_complexity",
+            "suggested_tikz_agent",
+        ):
+            if getattr(self, field_name) is None:
+                missing.append(field_name)
+        if not self.diagram_elements:
+            missing.append("diagram_elements")
+        if missing:
+            raise ValueError(
+                "has_diagram=true requires complete main-diagram metadata; "
+                f"missing: {', '.join(missing)}"
+            )
+
+        allowed_types = self._DIAGRAM_TYPES_BY_SUBJECT[self.subject]
+        if self.diagram_type not in allowed_types:
+            raise ValueError(
+                f"diagram_type={self.diagram_type!r} is invalid for {self.subject}"
+            )
+        if self.suggested_tikz_agent != self.diagram_type:
+            raise ValueError(
+                "suggested_tikz_agent must match diagram_type for a main diagram"
+            )
+        if self.subject != "biology" and self.diagram_category == "none":
+            raise ValueError(
+                "diagram_category cannot be 'none' when has_diagram=true"
+            )
+        return self
+
 
 def _initial_subject(subject: Optional[str]) -> str:
     """Use an explicit subject or the configured default for the first pass."""
@@ -86,7 +143,7 @@ def create_question_classifier(subject: str = "physics"):
 
 def _classification_cache_group(subject: str) -> str:
     """Return the stable cache group for one version of a subject prompt."""
-    return f"vbagent:question-classifier:v3:{subject}"
+    return f"vbagent:question-classifier:v4:{subject}"
 
 
 def _uses_explicit_prompt_cache(model: str) -> bool:
@@ -190,13 +247,14 @@ def to_diagram_analysis(
     if not result.has_diagram and not result.has_option_diagrams:
         return None
 
+    main = result.has_diagram
     return DiagramAnalysis(
-        diagram_type=result.diagram_type or "generic",
-        diagram_category=result.diagram_category or "none",
-        diagram_complexity=result.diagram_complexity or "simple",
-        diagram_elements=result.diagram_elements,
-        diagram_features=result.diagram_features,
-        suggested_tikz_agent=result.suggested_tikz_agent or "generic",
+        diagram_type=result.diagram_type if main else "generic",
+        diagram_category=result.diagram_category if main else "none",
+        diagram_complexity=result.diagram_complexity if main else "simple",
+        diagram_elements=result.diagram_elements if main else [],
+        diagram_features=result.diagram_features if main else DiagramFeatures(),
+        suggested_tikz_agent=result.suggested_tikz_agent if main else "generic",
         confidence=result.confidence,
         has_option_diagrams=result.has_option_diagrams,
         num_option_diagrams=result.num_option_diagrams,

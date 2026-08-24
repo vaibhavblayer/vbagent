@@ -1,5 +1,12 @@
 """Prompt contracts for separating main and option diagrams."""
 
+import pytest
+from pydantic import ValidationError
+
+from vbagent.agents.classification.question_classifier import (
+    QuestionClassification,
+    to_diagram_analysis,
+)
 from vbagent.prompts.classification.question_classifier import (
     get_question_classifier_prompt,
 )
@@ -14,6 +21,100 @@ def test_classifier_prompt_defines_all_four_diagram_states():
     assert "Option diagrams only: has_diagram=false, has_option_diagrams=true" in prompt
     assert "Both main and option diagrams: has_diagram=true, has_option_diagrams=true" in prompt
     assert "Option diagrams do not make this true" in prompt
+
+
+def test_classifier_prompt_keeps_stem_panel_collections_out_of_option_fields():
+    prompt = get_question_classifier_prompt("mathematics")
+
+    assert "roman-labeled collection such as (i)--(x)" in prompt
+    assert "has_diagram=true`, `has_option_diagrams=false" in prompt
+    assert "EVERY main-diagram field must be populated" in prompt
+    assert 'diagram_type: "function_graph"' in prompt
+
+
+def test_main_diagram_classification_requires_complete_specific_metadata():
+    with pytest.raises(ValidationError, match="complete main-diagram metadata"):
+        QuestionClassification(
+            subject="mathematics",
+            question_type="subjective",
+            has_diagram=True,
+        )
+
+
+def test_subjective_classification_rejects_option_diagrams():
+    with pytest.raises(
+        ValidationError,
+        match="subjective questions cannot contain MCQ option diagrams",
+    ):
+        QuestionClassification(
+            subject="mathematics",
+            question_type="subjective",
+            has_diagram=False,
+            has_option_diagrams=True,
+            num_option_diagrams=10,
+            option_diagram_type="function_graph",
+        )
+
+
+def test_complete_panel_collection_routes_without_generic_fallback():
+    classification = QuestionClassification(
+        subject="mathematics",
+        question_type="subjective",
+        has_diagram=True,
+        diagram_type="function_graph",
+        diagram_category="graphs",
+        diagram_complexity="complex",
+        diagram_elements=["10 roman-labeled Cartesian graph panels"],
+        diagram_features={
+            "has_labels": True,
+            "has_measurements": False,
+            "has_vectors": False,
+            "has_grid": False,
+            "coordinate_system": "cartesian",
+            "num_objects": 10,
+        },
+        suggested_tikz_agent="function_graph",
+    )
+
+    analysis = to_diagram_analysis(classification)
+
+    assert analysis is not None
+    assert analysis.diagram_type == "function_graph"
+    assert analysis.suggested_tikz_agent == "function_graph"
+    assert analysis.diagram_features.num_objects == 10
+
+
+def test_main_diagram_agent_must_match_diagram_type():
+    with pytest.raises(ValidationError, match="must match diagram_type"):
+        QuestionClassification(
+            subject="mathematics",
+            question_type="subjective",
+            has_diagram=True,
+            diagram_type="function_graph",
+            diagram_category="graphs",
+            diagram_complexity="complex",
+            diagram_elements=["graph panels"],
+            suggested_tikz_agent="generic",
+        )
+
+
+def test_physics_main_diagram_keeps_specific_type_during_conversion():
+    classification = QuestionClassification(
+        subject="physics",
+        question_type="subjective",
+        has_diagram=True,
+        diagram_type="mechanics",
+        diagram_category="mechanics",
+        diagram_complexity="moderate",
+        diagram_elements=["block and pulley"],
+        suggested_tikz_agent="mechanics",
+    )
+
+    analysis = to_diagram_analysis(classification)
+
+    assert analysis is not None
+    assert analysis.diagram_type == "mechanics"
+    assert analysis.suggested_tikz_agent == "mechanics"
 
 
 def test_scanner_prompt_does_not_use_main_placeholder_for_option_only_question():
