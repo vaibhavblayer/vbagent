@@ -1045,6 +1045,30 @@ y &= 2
     assert "x &= 1" in lines[4]  # Content preserved
 
 
+def test_format_latex_suppresses_bare_item_and_align_blank_lines():
+    """Bare items and align bodies must not acquire paragraph breaks."""
+    input_latex = r"""\begin{enumerate}
+\item
+
+\begin{align*}
+x &= 1 \\
+
+y &= 2
+
+\end{align*}
+\end{enumerate}"""
+
+    formatted = format_latex(input_latex)
+    align_body = formatted.split(r"\begin{align*}", 1)[1].split(
+        r"\end{align*}", 1
+    )[0]
+
+    assert "\\item\n\n" not in formatted
+    assert "\n\n" not in align_body
+    assert "x &= 1" in align_body
+    assert "y &= 2" in align_body
+
+
 def test_format_latex_preserves_content():
     """Test that format_latex preserves all content."""
     input_latex = r"""\item A ball is thrown

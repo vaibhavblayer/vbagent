@@ -35,6 +35,24 @@ def test_build_document_defines_ansint():
         assert rf"\excludecomment{{{environment}}}" in document
 
 
+def test_build_document_sanitizes_structural_blank_lines():
+    snippet = r"""\item
+
+\begin{align*}
+x &= 1 \\
+
+y &= 2
+\end{align*}"""
+
+    document = _build_document(snippet, subject="mathematics")
+    align_body = document.split(r"\begin{align*}", 1)[1].split(
+        r"\end{align*}", 1
+    )[0]
+
+    assert "\\item\n\\begin{align*}" in document
+    assert "\n\n" not in align_body
+
+
 def test_parse_errors_includes_nearby_generated_source():
     source = "\n".join(f"source line {number}" for number in range(1, 21))
     log = """! Package pgfplots Error: unknown plot command.

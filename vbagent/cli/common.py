@@ -21,6 +21,8 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
+from vbagent.utils.latex import sanitize_latex_blank_lines
+
 if TYPE_CHECKING:
     from rich.console import Console
 
@@ -541,11 +543,13 @@ def format_latex(content: str) -> str:
     if not content:
         return content
 
+    content = sanitize_latex_blank_lines(content)
+
     # --- Phase 1: ensure line breaks before major structural commands ---
     # Insert newline before \begin{...} if not already on its own line
-    content = re.sub(r'(?<!\n)(\\begin\{(?:solution|tasks|center|idea|align\*|tabular|tikzpicture|enumerate))', r'\n\1', content)
+    content = re.sub(r'(?<!\n)(\\begin\{(?:solution|tasks|center|idea|align\*?|tabular|tikzpicture|enumerate))', r'\n\1', content)
     # Insert newline before \end{...} if not already on its own line
-    content = re.sub(r'(?<!\n)(\\end\{(?:solution|tasks|center|idea|align\*|tabular|tikzpicture|enumerate))', r'\n\1', content)
+    content = re.sub(r'(?<!\n)(\\end\{(?:solution|tasks|center|idea|align\*?|tabular|tikzpicture|enumerate))', r'\n\1', content)
     # Insert newline before \item if not already on its own line
     content = re.sub(r'(?<!\n)(\\item(?:\s|\[))', r'\n\1', content)
     # Insert newline before \task if not already on its own line

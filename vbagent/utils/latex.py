@@ -8,6 +8,77 @@ import re
 from typing import Optional
 
 
+_NO_PARAGRAPH_ENVIRONMENTS = frozenset({
+    "align",
+    "align*",
+    "alignat",
+    "alignat*",
+    "aligned",
+    "alignedat",
+    "displaymath",
+    "equation",
+    "equation*",
+    "flalign",
+    "flalign*",
+    "gather",
+    "gather*",
+    "gathered",
+    "math",
+    "multline",
+    "multline*",
+    "split",
+})
+_ENVIRONMENT_TOKEN_PATTERN = re.compile(r"\\(begin|end)\{([^{}]+)\}")
+_BARE_ITEM_PATTERN = re.compile(r"^\\item(?:\[[^\]\n]*\])?\s*(?:%.*)?$")
+
+
+def sanitize_latex_blank_lines(content: str) -> str:
+    """Remove blank lines that have structural meaning or break math environments.
+
+    A blank line starts a new paragraph in TeX. That is never valid inside AMS
+    display-math environments, and it is unwanted between a bare ``\\item`` and
+    the item's first block. Ordinary paragraph breaks are preserved.
+    """
+    if not content:
+        return content
+
+    environment_stack: list[str] = []
+    sanitized_lines: list[str] = []
+
+    for line in content.split("\n"):
+        stripped = line.strip()
+
+        if not stripped:
+            inside_no_paragraph_environment = any(
+                environment in _NO_PARAGRAPH_ENVIRONMENTS
+                for environment in environment_stack
+            )
+            follows_bare_item = bool(
+                sanitized_lines
+                and _BARE_ITEM_PATTERN.fullmatch(sanitized_lines[-1].strip())
+            )
+            if inside_no_paragraph_environment or follows_bare_item:
+                continue
+
+            sanitized_lines.append(line)
+            continue
+
+        sanitized_lines.append(line)
+
+        for token in _ENVIRONMENT_TOKEN_PATTERN.finditer(line):
+            command, environment = token.groups()
+            if command == "begin":
+                environment_stack.append(environment)
+                continue
+
+            for index in range(len(environment_stack) - 1, -1, -1):
+                if environment_stack[index] == environment:
+                    del environment_stack[index:]
+                    break
+
+    return "\n".join(sanitized_lines)
+
+
 def clean_latex_output(latex: str) -> str:
     """Clean LaTeX output by removing markdown code blocks.
     

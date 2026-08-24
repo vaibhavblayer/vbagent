@@ -9,9 +9,10 @@ from hypothesis import given, strategies as st
 
 from vbagent.utils.latex import (
     clean_latex_output,
-    validate_latex_syntax,
-    format_latex_for_display,
     extract_preamble,
+    format_latex_for_display,
+    sanitize_latex_blank_lines,
+    validate_latex_syntax,
 )
 
 
@@ -95,6 +96,51 @@ class TestCleanLatexOutput:
         first_clean = clean_latex_output(latex_content)
         second_clean = clean_latex_output(first_clean)
         assert first_clean == second_clean
+
+
+class TestSanitizeLatexBlankLines:
+    """Tests for structurally unsafe or unwanted paragraph breaks."""
+
+    def test_removes_blank_lines_inside_align(self):
+        source = "\\begin{align*}\nx &= 1 \\\\\n\ny &= 2\n\n\\end{align*}"
+
+        cleaned = sanitize_latex_blank_lines(source)
+        align_body = cleaned.split(r"\begin{align*}", 1)[1].split(
+            r"\end{align*}", 1
+        )[0]
+
+        assert "\n\n" not in align_body
+        assert "x &= 1" in align_body
+        assert "y &= 2" in align_body
+
+    def test_removes_blank_line_after_bare_item(self):
+        source = "\\item\n\nFirst part\n\\item[Note]\n\nSecond part"
+
+        cleaned = sanitize_latex_blank_lines(source)
+
+        assert "\\item\nFirst part" in cleaned
+        assert "\\item[Note]\nSecond part" in cleaned
+
+    def test_preserves_intentional_paragraph_breaks(self):
+        source = "\\item First paragraph\n\nSecond paragraph\n\nOutside paragraph"
+
+        assert sanitize_latex_blank_lines(source) == source
+
+    def test_handles_enumerate_with_nested_align(self):
+        source = r"""\begin{enumerate}
+\item
+
+\begin{align*}
+x &= 1 \\
+
+y &= 2
+\end{align*}
+\end{enumerate}"""
+
+        cleaned = sanitize_latex_blank_lines(source)
+
+        assert "\\item\n\\begin{align*}" in cleaned
+        assert "x &= 1 " + r"\\" + "\ny &= 2" in cleaned
 
 
 class TestValidateLatexSyntax:

@@ -22,6 +22,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from vbagent.utils.latex import sanitize_latex_blank_lines
+
 
 @dataclass
 class CompileResult:
@@ -135,7 +137,7 @@ def _build_document(latex_snippet: str, subject: str = "physics") -> str:
     chemistry_packages = _get_chemistry_packages(subject)
 
     # If snippet starts with \item, wrap in a list
-    content = latex_snippet.strip()
+    content = sanitize_latex_blank_lines(latex_snippet).strip()
     if content.startswith("\\item"):
         content = f"\\begin{{enumerate}}\n{content}\n\\end{{enumerate}}"
     
