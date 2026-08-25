@@ -208,8 +208,9 @@ Instead:
   names cannot collide with diagrams from another question.
 - Let `enumerate` own the visible labels; do not draw `(i)` or `(a)` as TikZ
   nodes.
-- Use `multicols` for the page layout, normally two columns, and use local
-  enumitem labels such as `[label=(\roman*), leftmargin=*]`.
+- Use `multicols` for the page layout, normally two columns, with plain
+  `\begin{enumerate}`. Let the surrounding document's nesting level determine
+  the labels; do not add label options or counter commands.
 - Put shared drawing primitives such as axes in one local macro and reuse them.
 - A panel command may be reused later in the same grouped artifact; do not
   redraw the same panel with a second set of coordinates.
@@ -237,7 +238,7 @@ Instead:
   \end{tikzpicture}%
 }
 \begin{multicols}{2}
-\begin{enumerate}[label=(\roman*),leftmargin=*,itemsep=1em]
+\begin{enumerate}
   \item {\centering\DiagramOne\par}
   \item {\centering\DiagramTwo\par}
 \end{enumerate}

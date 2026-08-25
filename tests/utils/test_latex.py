@@ -4,7 +4,6 @@ Tests the clean_latex_output function and other LaTeX utilities
 extracted to vbagent/utils/latex.py.
 """
 
-import pytest
 from hypothesis import given, strategies as st
 
 from vbagent.utils.latex import (
@@ -12,6 +11,7 @@ from vbagent.utils.latex import (
     extract_preamble,
     format_latex_for_display,
     sanitize_latex_blank_lines,
+    use_plain_enumerates,
     validate_latex_syntax,
 )
 
@@ -141,6 +141,23 @@ y &= 2
 
         assert "\\item\n\\begin{align*}" in cleaned
         assert "x &= 1 " + r"\\" + "\ny &= 2" in cleaned
+
+
+def test_use_plain_enumerates_removes_local_options():
+    source = (
+        r"\renewcommand{\labelenumii}{(\arabic{enumii})}" "\n"
+        r"\begin{enumerate}[label=(\roman*), leftmargin=*]"
+        r"\item First\begin{enumerate}\item Nested\end{enumerate}"
+        r"\end{enumerate}"
+    )
+
+    cleaned = use_plain_enumerates(source)
+
+    assert cleaned.count(r"\begin{enumerate}") == 2
+    assert "[label=" not in cleaned
+    assert r"\labelenumii" not in cleaned
+    assert r"\arabic" not in cleaned
+    assert r"\item First" in cleaned
 
 
 class TestValidateLatexSyntax:

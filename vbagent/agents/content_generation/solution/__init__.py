@@ -15,6 +15,7 @@ from vbagent.agents.content_generation.solution.structure import (
 )
 from vbagent.models.solution import SolutionOutput
 from vbagent.prompts.content_generation.solution import get_solution_prompt
+from vbagent.utils.latex import use_plain_enumerates
 
 
 _MULTIPART_STRUCTURE_RETRY = r"""
@@ -23,10 +24,11 @@ Regenerate the complete JSON response. In `solution_latex`, mirror every
 multipart `enumerate` from the problem with a corresponding `enumerate` and
 exactly one `\item` per problem part, in the same order. Put each part's full
 reasoning inside its own item and preserve the problem's local `enumerate`
-label option. Do not flatten the parts into one `align*`, do not type part
+structure. Use plain `\begin{enumerate}` with no label options or counter
+commands. Do not flatten the parts into one `align*`, do not type part
 numbers or labels manually in `\intertext`, and do not use `tasks` or `\task`.
 In `final_answer_latex`, return a second matching `enumerate` with one concise
-answer `\item` per problem part and the same local label option. Do not flatten
+answer `\item` per problem part, again using plain `\begin{enumerate}`. Do not flatten
 the answer key into manually numbered prose or a semicolon-separated sentence.
 """
 
@@ -36,6 +38,16 @@ def _as_solution_output(result) -> SolutionOutput:
     if isinstance(result, SolutionOutput):
         return result
     return SolutionOutput(solution_latex=str(result))
+
+
+def _use_plain_subjective_enumerates(output: SolutionOutput) -> SolutionOutput:
+    """Normalize agent-emitted subjective lists before validation and use."""
+    output.solution_latex = use_plain_enumerates(output.solution_latex)
+    if output.final_answer_latex:
+        output.final_answer_latex = use_plain_enumerates(
+            output.final_answer_latex
+        )
+    return output
 
 
 def _has_valid_multipart_output(
@@ -96,6 +108,8 @@ def generate_solution(
 
     result = run_agent_sync(agent, message, show_spinner=show_spinner)
     output = _as_solution_output(result)
+    if question_type == "subjective":
+        output = _use_plain_subjective_enumerates(output)
 
     if (
         question_type == "subjective"
@@ -121,6 +135,7 @@ def generate_solution(
                 show_spinner=show_spinner,
             )
         )
+        output = _use_plain_subjective_enumerates(output)
         if not _has_valid_multipart_output(problem_text, output):
             raise ValueError(
                 "Multipart subjective solution and final answer do not mirror "

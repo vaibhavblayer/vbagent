@@ -24,10 +24,9 @@ Before writing `solution_latex`, inspect the problem's list structure.
 - If the subjective problem contains a nested `enumerate` with multiple
   question parts, the solution MUST contain a corresponding `enumerate` with
   exactly one `\item` for each problem part, in the same order.
-- Preserve the problem's local label option when it has one. For example, copy
-  `[label=(\alph*), leftmargin=*]` for (a), (b), ... parts and
-  `[label=(\roman*), leftmargin=*]` for (i), (ii), ... parts. If the problem's
-  `enumerate` has no optional argument, use a plain `\begin{enumerate}` too.
+- Always use plain `\begin{enumerate}`. Do not copy or add `[label=...]`,
+  `\alph`, `\roman`, `\arabic`, or counter redefinitions. The surrounding
+  document and list nesting automatically determine the rendered labels.
 - Put the complete reasoning for each part inside its own `\item`. An `align*`
   block inside an item is valid and is the required exception to any rule that
   says `align*` must be directly inside `solution`.
@@ -37,7 +36,7 @@ Before writing `solution_latex`, inspect the problem's list structure.
 
 ```latex
 \begin{solution}
-\begin{enumerate}[label=(\alph*), leftmargin=*]
+\begin{enumerate}
     \item
     \begin{align*}
     \intertext{Apply the first condition}

@@ -35,12 +35,11 @@ class _Cache:
     def get_stage_data(self, problem_id, stage):
         stage_data = dict(self.stage_data.get(stage, {}))
         if stage == "scan":
-            stage_data.update({
-                "match_table_contract_version": 2,
-                "subjective_structure_contract_version": 1,
-            })
+            stage_data.setdefault("match_table_contract_version", 2)
+            stage_data.setdefault("subjective_structure_contract_version", 2)
         if stage == "tikz":
-            stage_data["match_table_contract_version"] = 1
+            stage_data.setdefault("match_table_contract_version", 1)
+            stage_data.setdefault("subjective_panel_layout_contract_version", 1)
         return stage_data
 
     def set(self, problem_id, stage, value, stage_data=None):
@@ -296,7 +295,14 @@ def test_stage_contract_metadata_includes_classification_fingerprint():
         "subjective",
         fingerprint,
     ) == {
-        "subjective_structure_contract_version": 1,
+        "subjective_structure_contract_version": 2,
+        "classification_fingerprint": fingerprint,
+    }
+    assert ProblemOrchestrator._tikz_stage_data(
+        "subjective",
+        fingerprint,
+    ) == {
+        "subjective_panel_layout_contract_version": 1,
         "classification_fingerprint": fingerprint,
     }
     assert ProblemOrchestrator._tikz_stage_data(
@@ -334,24 +340,57 @@ def test_subjective_main_diagram_description_requires_panel_layout():
     description = ProblemOrchestrator._main_diagram_description(primary, diagram)
 
     assert "own locally defined panel command" in description
-    assert "multicols plus enumerate" in description
-    assert "Let enumerate own the labels" in description
+    assert "multicols plus plain enumerate" in description
+    assert "Let nesting determine the labels" in description
+    assert "do not add label options or counter commands" in description
     assert "shifted-scope TikZ canvas" in description
 
 
-def test_subjective_question_refreshes_legacy_scan_cache(monkeypatch):
-    class _LegacySubjectiveCache(_Cache):
-        def get_stage_data(self, problem_id, stage):
-            return {}
+def test_subjective_main_diagram_uses_plain_enumerate_before_cache(monkeypatch):
+    from vbagent.agents.diagram import tikz_router
 
-    cache = _LegacySubjectiveCache({
+    labelled = (
+        r"\begin{multicols}{2}"
+        r"\begin{enumerate}[label=(\roman*)]"
+        r"\item A\item B\end{enumerate}"
+        r"\end{multicols}"
+    )
+    monkeypatch.setattr(
+        tikz_router,
+        "generate_tikz_with_routing",
+        lambda **kwargs: (labelled, "test-agent"),
+    )
+    cache = _Cache({})
+    orchestrator = ProblemOrchestrator(
+        console=Console(file=io.StringIO(), force_terminal=False)
+    )
+
+    code = orchestrator._run_main_diagram_sync(
+        "question.png",
+        SimpleNamespace(question_type="subjective"),
+        SimpleNamespace(diagram_type="function_graph"),
+        cache=cache,
+        problem_id="problem_1",
+    )
+
+    assert "[label=" not in code
+    assert "[label=" not in cache.values["tikz"]
+    assert cache.stage_data["tikz"] == {
+        "subjective_panel_layout_contract_version": 1
+    }
+
+
+def test_subjective_question_refreshes_legacy_scan_cache(monkeypatch):
+    classification = _main_classification("subjective")
+    cache = _Cache({
         "scan": (
             r"\item Which graphs? %% OPTIONS_DIAGRAMS "
             r"\begin{tasks}(2)\task[(i)] \OptionA\end{tasks}"
         ),
         "tikz": r"\begin{tikzpicture}\node{main};\end{tikzpicture}",
-    })
-    classification = _main_classification("subjective")
+    }, classification=classification)
+    cache.stage_data["scan"]["subjective_structure_contract_version"] = 1
+    cache.stage_data["tikz"]["subjective_panel_layout_contract_version"] = 0
     captured = {}
     orchestrator = ProblemOrchestrator(
         console=Console(file=io.StringIO(), force_terminal=False)

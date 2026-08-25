@@ -122,7 +122,8 @@ def test_shared_rule_structures_independent_panels_outside_tikz_canvas():
     assert r"\def\DiagramOne" in STYLE_DISCIPLINE
     assert r"\Diagram_1" in STYLE_DISCIPLINE
     assert r"\begin{multicols}{2}" in STYLE_DISCIPLINE
-    assert r"\begin{enumerate}[label=(\roman*)" in STYLE_DISCIPLINE
+    assert r"\begin{enumerate}" in STYLE_DISCIPLINE
+    assert "nesting level determine" in STYLE_DISCIPLINE
     assert "do not draw `(i)` or `(a)` as TikZ" in STYLE_DISCIPLINE
     assert "scope[shift=...]" in STYLE_DISCIPLINE
 

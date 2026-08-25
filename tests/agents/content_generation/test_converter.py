@@ -7,7 +7,7 @@
 import re
 
 import pytest
-from hypothesis import given, settings, assume
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from vbagent.agents.content_generation.converter import VALID_FORMATS
@@ -172,9 +172,29 @@ def test_subjective_instructions_no_options():
     assert "remove" in instructions.lower() or "no" in instructions.lower(), (
         "Subjective instructions should mention removing options"
     )
-    assert r"\begin{enumerate}[label=(\alph*), leftmargin=*]" in instructions
+    assert "Always use plain `\\begin{enumerate}`" in instructions
     assert "NEVER type subpart labels manually" in instructions
     assert "`tasks` is only for selectable answer choices" in instructions
+
+
+def test_subjective_conversion_normalizes_enumerate_options(monkeypatch):
+    generated = (
+        r"\item Answer both."
+        r"\begin{enumerate}[label=(\roman*), leftmargin=*]"
+        r"\item First.\item Second.\end{enumerate}"
+    )
+    monkeypatch.setattr(
+        converter_agent,
+        "run_agent_sync",
+        lambda *args, **kwargs: generated,
+    )
+
+    result = converter_agent.convert_format(
+        r"\item Original.", "mcq_sc", "subjective"
+    )
+
+    assert r"\begin{enumerate}" in result
+    assert "[label=" not in result
 
 
 def test_integer_instructions_single_number():

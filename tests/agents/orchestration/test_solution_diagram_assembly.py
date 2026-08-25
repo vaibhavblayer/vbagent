@@ -139,11 +139,15 @@ def test_run_appends_separate_subjective_final_answer():
 
 def test_run_appends_multipart_subjective_answer_enumerate():
     orchestrator = _orchestrator()
-    answer = (
+    labelled_answer = (
         r"\begin{enumerate}[label=(\alph*), leftmargin=*]"
         r"\item $x=1$."
         r"\item $x=2$."
         r"\end{enumerate}"
+    )
+    plain_answer = labelled_answer.replace(
+        r"\begin{enumerate}[label=(\alph*), leftmargin=*]",
+        r"\begin{enumerate}",
     )
     orchestrator._call_subject_agent = MagicMock(
         return_value=SimpleNamespace(
@@ -156,7 +160,7 @@ def test_run_appends_multipart_subjective_answer_enumerate():
             diagram_requirements=[],
             answer_type="subjective",
             answer_value=None,
-            final_answer_latex=answer,
+            final_answer_latex=labelled_answer,
         )
     )
 
@@ -170,9 +174,10 @@ def test_run_appends_multipart_subjective_answer_enumerate():
         question_type="subjective",
     )
 
-    assert result.final_answer_latex == answer
+    assert result.final_answer_latex == plain_answer
+    assert "[label=" not in result.latex
     assert result.latex.endswith(
-        "\\begin{finalanswer}\n" + answer + "\n\\end{finalanswer}"
+        "\\begin{finalanswer}\n" + plain_answer + "\n\\end{finalanswer}"
     )
 
 

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 _QUESTION_ROUTING_CONTRACT_VERSION = 1
 _QUESTION_CLASSIFICATION_CONTRACT_VERSION = 6
 _MATCH_SOLUTION_REPAIR_CONTRACT_VERSION = 1
-_SUBJECTIVE_MULTIPART_SOLUTION_CONTRACT_VERSION = 2
+_SUBJECTIVE_MULTIPART_SOLUTION_CONTRACT_VERSION = 3
 
 
 
@@ -149,7 +149,7 @@ def generate_solution_orchestrated(
             if console:
                 console.print(
                     "[dim yellow]Cached multipart subjective solution predates "
-                    "structured part formatting; regenerating...[/dim yellow]"
+                    "plain nested-list formatting; regenerating...[/dim yellow]"
                 )
         elif not return_result:
             return cached_latex

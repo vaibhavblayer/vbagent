@@ -171,15 +171,14 @@ SUBPART_FORMATTING_RULES = r"""
 
 - A genuine multi-part subjective question with labels such as (a), (b), (c)
   MUST use a nested `enumerate` environment with one `\item` per subpart.
-- Set the label locally with enumitem syntax:
-  `\begin{enumerate}[label=(\alph*), leftmargin=*]`.
-- For source labels (i), (ii), (iii), use
-  `\begin{enumerate}[label=(\roman*), leftmargin=*]` instead.
+- Always use plain `\begin{enumerate}`. The surrounding document and nesting
+  level automatically determine whether labels render as numbers, letters, or
+  Roman numerals.
+- Do NOT add an optional argument such as `[label=...]`, and do not use
+  `\alph`, `\roman`, `\arabic`, or any `\labelenum...` redefinition.
 - NEVER type subpart labels manually as prose, for example
   `(a) first problem \\ (b) second problem`, and do not use manual line breaks
   as a substitute for list structure.
-- Do NOT use `\renewcommand{\labelenumi}{...}` for a nested list; it can alter
-  the surrounding question-number list. Keep the label option local.
 - `tasks` is only for selectable answer choices. It is NOT a replacement for
   subjective subquestions or labeled figures that the student must discuss.
 - When the classified question type is `subjective`, output NO
@@ -189,7 +188,7 @@ SUBPART_FORMATTING_RULES = r"""
 
 ```latex
 \item Answer the following:
-\begin{enumerate}[label=(\alph*), leftmargin=*]
+\begin{enumerate}
     \item Find the domain.
     \item Find the range.
     \item Determine whether the relation is a function.

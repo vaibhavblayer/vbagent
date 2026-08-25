@@ -21,7 +21,7 @@ from vbagent.models.content import ScanResult
 from vbagent.prompts.content_generation.scanner import get_scanner_prompt, get_user_template
 from vbagent.prompts.content_generation.table_format import TABLE_FORMAT_RULES
 from vbagent.references.context import get_context_prompt_section
-from vbagent.utils.latex import clean_latex_output
+from vbagent.utils.latex import clean_latex_output, use_plain_enumerates
 
 
 _MATCH_OPTIONS_RETRY = r"""
@@ -43,7 +43,9 @@ Roman-labeled figures such as (i)--(x) that the student must compare or classify
 form one standalone/main diagram collection in the question stem; they are not
 answer options. Re-extract the complete subjective question using exactly one
 main `\input{diagram}` placeholder and no option structure. Preserve genuine
-textual subparts with `enumerate`. Return only the required LaTeX.
+textual subparts with plain `\begin{enumerate}` and let nesting determine their
+labels. Do not add label options or counter commands. Return only the required
+LaTeX.
 """
 
 
@@ -82,6 +84,8 @@ def _scan_with_structure_gate(
     message = create_image_message(image_path, user_template)
     raw_latex = run_agent_sync(agent, message, show_spinner=show_spinner)
     latex = clean_latex_output(raw_latex)
+    if question_type == "subjective":
+        latex = use_plain_enumerates(latex)
 
     if question_type == "subjective" and _has_forbidden_subjective_structure(latex):
         retry_message = create_image_message(
@@ -94,6 +98,7 @@ def _scan_with_structure_gate(
             show_spinner=show_spinner,
         )
         latex = clean_latex_output(raw_latex)
+        latex = use_plain_enumerates(latex)
         if _has_forbidden_subjective_structure(latex):
             raise ValueError(
                 "Subjective extraction contains forbidden MCQ option structure"

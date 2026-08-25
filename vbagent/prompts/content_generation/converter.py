@@ -306,7 +306,8 @@ FORMAT_INSTRUCTIONS = {
 - Remove all options (no tasks environment)
 - Ask for derivation, explanation, or detailed calculation
 - When multiple parts (a), (b), (c) are appropriate, use a nested enumerate
-  with `[label=(\alph*), leftmargin=*]`; never type the labels manually
+  with plain `\begin{enumerate}`; let nesting render labels automatically and
+  never add label options, counter commands, or manually typed labels
 - Solution should show complete working using align* with \intertext{}""",
     
     "integer": r"""Target Format Instructions (Integer Type):

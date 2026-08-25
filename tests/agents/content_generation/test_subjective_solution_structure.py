@@ -10,6 +10,7 @@ from vbagent.agents.content_generation.solution.structure import (
 )
 from vbagent.models.solution import SolutionOutput
 from vbagent.prompts.content_generation.solution import get_solution_prompt
+from vbagent.prompts.quality.format_checker import get_system_prompt
 
 
 MULTIPART_PROBLEM = r"""
@@ -54,10 +55,18 @@ def test_subjective_prompts_require_matching_solution_enumerate(subject):
     assert "Multipart Subjective Solution Structure (MANDATORY)" in prompt
     assert "exactly one `\\item` for each problem part" in prompt
     assert "NEVER flatten several parts into one `align*`" in prompt
-    assert r"\begin{enumerate}[label=(\alph*), leftmargin=*]" in prompt
+    assert "Always use plain `\\begin{enumerate}`" in prompt
+    assert "nesting automatically determine" in prompt
     assert "`final_answer_latex`" in prompt
     assert "complete matching `enumerate` block" in prompt
     assert "Never type `(a)`, `(b)`" in prompt
+
+
+def test_quality_prompt_keeps_multipart_enumerates_plain():
+    prompt = get_system_prompt("mathematics")
+
+    assert "Use plain `\\begin{enumerate}`" in prompt
+    assert r"\renewcommand{\labelenumi}{(\alph{enumi})}" not in prompt
 
 
 def test_structure_parser_counts_only_direct_items():
@@ -76,7 +85,7 @@ def test_structure_parser_counts_only_direct_items():
     assert multipart_enumerate_counts(latex) == (3, 2)
 
 
-def test_matching_structure_preserves_local_label_option():
+def test_matching_structure_requires_plain_candidate_enumerate():
     problem = r"""
 \item Answer both parts.
 \begin{enumerate}[label=(\alph*), leftmargin=*]
@@ -84,21 +93,59 @@ def test_matching_structure_preserves_local_label_option():
     \item Second
 \end{enumerate}
 """
-    matching = r"""
+    matching_plain = r"""
 \begin{solution}
-\begin{enumerate}[label=(\alph*), leftmargin=*]
+\begin{enumerate}
     \item First solution
     \item Second solution
 \end{enumerate}
 \end{solution}
 """
-    wrong_labels = matching.replace(r"label=(\alph*)", r"label=(\roman*)")
+    labelled_candidate = matching_plain.replace(
+        r"\begin{enumerate}",
+        r"\begin{enumerate}[label=(\roman*), leftmargin=*]",
+    )
 
     assert multipart_enumerate_shapes(problem) == (
         (r"label=(\alph*),leftmargin=*", 2),
     )
-    assert has_matching_multipart_structure(problem, matching) is True
-    assert has_matching_multipart_structure(problem, wrong_labels) is False
+    assert has_matching_multipart_structure(problem, matching_plain) is True
+    assert has_matching_multipart_structure(problem, labelled_candidate) is False
+
+
+def test_generate_solution_normalizes_agent_label_options(monkeypatch):
+    import vbagent.agents.content_generation.solution as solution_module
+
+    labelled = _valid_output().model_copy(
+        update={
+            "solution_latex": _valid_output().solution_latex.replace(
+                r"\begin{enumerate}",
+                r"\begin{enumerate}[label=(\alph*), leftmargin=*]",
+            ),
+            "final_answer_latex": (_valid_output().final_answer_latex or "").replace(
+                r"\begin{enumerate}",
+                r"\begin{enumerate}[label=(\alph*), leftmargin=*]",
+            ),
+        }
+    )
+    calls = []
+    monkeypatch.setattr(solution_module, "create_agent", lambda **kwargs: object())
+    monkeypatch.setattr(
+        solution_module,
+        "run_agent_sync",
+        lambda *args, **kwargs: calls.append(args[1]) or labelled,
+    )
+
+    result = solution_module.generate_solution(
+        problem_text=MULTIPART_PROBLEM,
+        question_type="subjective",
+        subject="mathematics",
+        show_spinner=False,
+    )
+
+    assert len(calls) == 1
+    assert "[label=" not in result.solution_latex
+    assert "[label=" not in (result.final_answer_latex or "")
 
 
 def test_matching_structure_rejects_flattened_solution():

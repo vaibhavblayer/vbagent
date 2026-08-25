@@ -64,14 +64,19 @@ def has_matching_multipart_structure(
     problem_latex: str,
     candidate_latex: str,
 ) -> bool:
-    """Return whether candidate LaTeX mirrors all multipart problem lists."""
-    required = Counter(multipart_enumerate_shapes(problem_latex))
+    """Return whether plain candidate lists mirror all multipart item counts."""
+    required = Counter(multipart_enumerate_counts(problem_latex))
     if not required:
         return True
-    actual = Counter(multipart_enumerate_shapes(candidate_latex))
+
+    candidate_shapes = multipart_enumerate_shapes(candidate_latex)
+    if any(option for option, _ in candidate_shapes):
+        return False
+
+    actual = Counter(count for _, count in candidate_shapes)
     return all(
-        actual[shape] >= block_count
-        for shape, block_count in required.items()
+        actual[item_count] >= block_count
+        for item_count, block_count in required.items()
     )
 
 

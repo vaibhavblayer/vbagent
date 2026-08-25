@@ -9,7 +9,7 @@ Uses openai-agents SDK to convert questions between different formats:
 from typing import Literal
 
 from vbagent.agents.base import create_agent, run_agent_sync
-from vbagent.utils.latex import clean_latex_output
+from vbagent.utils.latex import clean_latex_output, use_plain_enumerates
 from vbagent.prompts.content_generation.converter import (
     SYSTEM_PROMPT,
     USER_TEMPLATE,
@@ -82,6 +82,8 @@ def convert_format(
     
     raw_result = run_agent_sync(converter_agent, message)
     converted = clean_latex_output(raw_result)
+    if target_format == "subjective":
+        converted = use_plain_enumerates(converted)
 
     if target_format == "match" and not _has_required_match_options(converted):
         retry_message = (

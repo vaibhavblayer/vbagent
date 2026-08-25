@@ -135,14 +135,14 @@ SYSTEM_PROMPT_BASE = r"""You are an expert LaTeX formatter for educational conte
 ```latex
 \item In the circuit shown, find
 
-\renewcommand{\labelenumi}{(\alph{enumi})}
 \begin{enumerate}
     \item the current through the resistor.
     \item the voltage across the capacitor.
 \end{enumerate}
 ```
-- Use `\renewcommand{\labelenumi}{(\alph{enumi})}` before enumerate for (a), (b), (c) labels
-- NEVER use `\begin{enumerate}[(a)]` (requires enumerate package)
+- Use plain `\begin{enumerate}` and let the document nesting level determine
+  the rendered labels automatically
+- NEVER add `[label=...]`, `\alph`, `\roman`, `\arabic`, or `\labelenum...`
 - NEVER use manual `(a) ...\\` formatting
 
 **Integer Type:**

@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import re
 import threading
-from pathlib import Path
 from typing import Optional
+
+from vbagent.utils.latex import use_plain_enumerates
 
 
 class SolutionResult:
@@ -97,6 +98,8 @@ class SolutionOrchestrator:
         self.console.print("[green]OK[/green] Solution generated")
 
         solution_latex = solution_output.solution_latex
+        if question_type == "subjective":
+            solution_latex = use_plain_enumerates(solution_latex)
         diagram_reqs = solution_output.diagram_requirements
 
         # Step 2: Dispatch diagram agents (parallel)
@@ -149,6 +152,8 @@ class SolutionOrchestrator:
         final_answer_latex = getattr(solution_output, "final_answer_latex", None)
         if final_answer_latex:
             final_answer_latex = final_answer_latex.strip() or None
+        if question_type == "subjective" and final_answer_latex:
+            final_answer_latex = use_plain_enumerates(final_answer_latex)
         alternate_solution_recommended = bool(
             getattr(solution_output, "alternate_solution_recommended", False)
         )
@@ -165,6 +170,8 @@ class SolutionOrchestrator:
             r'\s*\\begin\{solution\}.*?\\end\{solution\}',
             '', problem_latex, flags=re.DOTALL,
         ).rstrip()
+        if question_type == "subjective":
+            clean_problem = use_plain_enumerates(clean_problem)
         clean_problem = re.sub(
             r'\s*\\begin\{finalanswer\}.*?\\end\{finalanswer\}',
             '', clean_problem, flags=re.DOTALL,

@@ -96,6 +96,32 @@ def test_subjective_structure_gate_accepts_one_main_diagram():
     assert not scanner._has_forbidden_subjective_structure(latex)
 
 
+def test_subjective_scanner_normalizes_enumerate_options(monkeypatch):
+    generated = (
+        r"\item Answer both."
+        r"\begin{enumerate}[label=(\roman*), leftmargin=*]"
+        r"\item First.\item Second.\end{enumerate}"
+    )
+    monkeypatch.setattr(scanner, "create_agent", lambda **kwargs: object())
+    monkeypatch.setattr(scanner, "create_image_message", lambda path, text: text)
+    monkeypatch.setattr(
+        scanner,
+        "run_agent_sync",
+        lambda *args, **kwargs: generated,
+    )
+
+    result = scanner.scan_problem(
+        "question.png",
+        "subjective",
+        use_context=False,
+        subject="mathematics",
+        show_spinner=False,
+    )
+
+    assert r"\begin{enumerate}" in result
+    assert "[label=" not in result
+
+
 def test_subjective_scanner_retries_without_option_structure(monkeypatch):
     valid = (
         r"\item Which graphs are functions? "

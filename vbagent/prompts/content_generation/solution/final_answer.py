@@ -13,10 +13,10 @@ the JSON object.
 - For a single-part problem, return one concise answer as plain LaTeX.
 - For a multipart problem whose question parts use `enumerate`, this field MUST
   be a complete matching `enumerate` block with exactly one concise `\item` per
-  answer, in the same order. Preserve the problem's local label option; use a
-  plain `\begin{enumerate}` when the problem does. Never type `(a)`, `(b)`,
-  `1.`, `2.`, and so on manually, and never flatten multipart answers into a
-  semicolon-separated sentence.
+  answer, in the same order. Always use plain `\begin{enumerate}` with no
+  optional label argument or counter command; nesting automatically determines
+  the rendered labels. Never type `(a)`, `(b)`, `1.`, `2.`, and so on manually,
+  and never flatten multipart answers into a semicolon-separated sentence.
 - Preserve meaningful capitalization, such as point labels $A$, $B$, and $C$,
   vector names, and commands such as `\Delta`.
 - Do not include derivation, reasoning, `\boxed{}`, a `solution` environment,
@@ -28,7 +28,7 @@ the JSON object.
 Examples:
 - `"Stable: $C$; unstable: $A$ and $E$."`
 - `"$x_{\mathrm{eq}}=\frac{b}{2a}$, stable."`
-- `"\\begin{enumerate}[label=(\\alph*), leftmargin=*]\\item Unstable along
+- `"\\begin{enumerate}\\item Unstable along
   the $x$-axis.\\item Stable along the $y$-axis.\\end{enumerate}"`
 
 The JSON object must therefore include:

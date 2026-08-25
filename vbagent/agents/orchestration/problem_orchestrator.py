@@ -29,6 +29,7 @@ from vbagent.pipeline.io import (
 )
 from vbagent.cli.common import format_latex, _get_console
 from vbagent.references.samples import get_sample
+from vbagent.utils.latex import use_plain_enumerates
 
 
 _MATCH_SCAN_CONTRACT_VERSION = 2
@@ -36,7 +37,8 @@ _MATCH_TIKZ_CONTRACT_VERSION = 1
 _PASSAGE_OPTION_SCAN_CONTRACT_VERSION = 1
 _PASSAGE_OPTION_TIKZ_CONTRACT_VERSION = 1
 _ASSERTION_DIAGRAM_SCAN_CONTRACT_VERSION = 1
-_SUBJECTIVE_STRUCTURE_SCAN_CONTRACT_VERSION = 1
+_SUBJECTIVE_STRUCTURE_SCAN_CONTRACT_VERSION = 2
+_SUBJECTIVE_PANEL_TIKZ_CONTRACT_VERSION = 1
 
 
 class ProblemResult:
@@ -167,6 +169,12 @@ class ProblemOrchestrator:
                     "match_table_contract_version"
                 ) == _MATCH_TIKZ_CONTRACT_VERSION
             )
+        if tikz_cached and primary.question_type == "subjective":
+            tikz_cached = (
+                cache.get_stage_data(problem_id, "tikz").get(
+                    "subjective_panel_layout_contract_version"
+                ) == _SUBJECTIVE_PANEL_TIKZ_CONTRACT_VERSION
+            )
         options_cached = bool(
             cache and problem_id and cache.has(problem_id, "options")
         )
@@ -209,6 +217,11 @@ class ProblemOrchestrator:
             )
 
         if primary.question_type == "subjective":
+            if latex:
+                latex = use_plain_enumerates(latex)
+            if tikz_code:
+                tikz_code = use_plain_enumerates(tikz_code)
+
             from vbagent.agents.content_generation.scanner import (
                 _has_forbidden_subjective_structure,
             )
@@ -286,6 +299,8 @@ class ProblemOrchestrator:
             show_spinner=True,
             diagram_context="problem",
         )
+        if primary.question_type == "subjective":
+            code = use_plain_enumerates(code)
         if cache and problem_id and code:
             stage_data = self._tikz_stage_data(
                 primary.question_type,
@@ -327,8 +342,9 @@ class ProblemOrchestrator:
             "is a collection of independently labeled figures that the student "
             "must compare, classify, or discuss, preserve every figure as its "
             "own locally defined panel command and lay the panels out with "
-            "multicols plus enumerate. Let enumerate own the labels; do not "
-            "combine the panels into one shifted-scope TikZ canvas."
+            "multicols plus plain enumerate. Let nesting determine the labels; "
+            "do not add label options or counter commands, and do not combine "
+            "the panels into one shifted-scope TikZ canvas."
         )
 
     def _run_scan(
@@ -473,6 +489,8 @@ class ProblemOrchestrator:
                     show_spinner=True,
                     diagram_context="problem",
                 )
+                if primary.question_type == "subjective":
+                    code = use_plain_enumerates(code)
                 tikz_holder["result"] = code
                 tikz_holder["agent"] = agent
                 state["tikz"]["agent"] = agent
@@ -727,6 +745,11 @@ class ProblemOrchestrator:
         if question_type == "match":
             stage_data = {
                 "match_table_contract_version": _MATCH_TIKZ_CONTRACT_VERSION
+            }
+        elif question_type == "subjective":
+            stage_data = {
+                "subjective_panel_layout_contract_version":
+                    _SUBJECTIVE_PANEL_TIKZ_CONTRACT_VERSION
             }
         return cls._with_classification_fingerprint(stage_data, fingerprint)
 

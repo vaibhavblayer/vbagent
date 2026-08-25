@@ -81,7 +81,7 @@ def test_problem_only_assertion_reason_uses_main_diagram_placeholder(subject):
 
 
 @pytest.mark.parametrize("subject", VALID_SUBJECTS)
-def test_problem_only_subjective_uses_structured_local_subpart_labels(subject):
+def test_problem_only_subjective_uses_plain_nested_enumerate(subject):
     import importlib
 
     module = importlib.import_module(
@@ -89,20 +89,20 @@ def test_problem_only_subjective_uses_structured_local_subpart_labels(subject):
     )
     prompt = module.get_problem_prompt("subjective")
 
-    assert r"\begin{enumerate}[label=(\alph*), leftmargin=*]" in prompt
+    assert "Always use plain `\\begin{enumerate}`" in prompt
     assert "NEVER type subpart labels manually" in prompt
-    assert r"\renewcommand{\labelenumi}" in prompt
-    assert "Do NOT use `\\renewcommand{\\labelenumi}{...}`" in prompt
+    assert "nesting" in prompt
+    assert r"\arabic" in prompt
     assert "`tasks` is only for selectable answer choices" in prompt
 
 
 @pytest.mark.parametrize("subject", VALID_SUBJECTS)
-def test_full_subjective_prompt_uses_shared_subpart_contract(subject):
+def test_full_subjective_prompt_uses_plain_subpart_contract(subject):
     prompt = get_scanner_prompt("subjective", subject)
 
-    assert r"\begin{enumerate}[label=(\alph*), leftmargin=*]" in prompt
+    assert "Always use plain `\\begin{enumerate}`" in prompt
     assert "NEVER type subpart labels manually" in prompt
-    assert r"\renewcommand{\labelenumi}{(\alph{enumi})}" not in prompt
+    assert "nesting" in prompt
     assert "output NO" in prompt
     assert "`OPTIONS_DIAGRAMS` marker" in prompt
     assert "Roman-labeled figures in its stem remain one main diagram" in prompt

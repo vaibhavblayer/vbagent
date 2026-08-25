@@ -247,7 +247,7 @@ def test_stale_subjective_solution_cache_is_regenerated(tmp_path, monkeypatch):
     assert cache.get_stage_data("problem_1", "solution")["final_answer_latex"] == new_answer
 
 
-def test_multipart_subjective_cache_predating_structure_contract_is_regenerated(
+def test_multipart_subjective_v2_cache_is_regenerated(
     tmp_path, monkeypatch
 ):
     from types import SimpleNamespace
@@ -268,10 +268,19 @@ def test_multipart_subjective_cache_predating_structure_contract_is_regenerated(
     cache.set(
         "problem_1",
         "solution",
-        problem + r"\begin{solution}1. First. 2. Second.\end{solution}",
+        (
+            problem
+            + r"\begin{solution}\begin{enumerate}"
+            + r"\item Cached first.\item Cached second."
+            + r"\end{enumerate}\end{solution}"
+        ),
         stage_data={
             "answer_type": "subjective",
-            "final_answer_latex": "First; second.",
+            "final_answer_latex": (
+                r"\begin{enumerate}\item Cached first.\item Cached second."
+                r"\end{enumerate}"
+            ),
+            "subjective_multipart_solution_contract_version": 2,
         },
     )
     refreshed_latex = (
@@ -319,7 +328,7 @@ def test_multipart_subjective_cache_predating_structure_contract_is_regenerated(
     assert result.latex == refreshed_latex
     assert cache.get_stage_data("problem_1", "solution")[
         "subjective_multipart_solution_contract_version"
-    ] == 2
+    ] == 3
 
 
 def test_compliant_multipart_subjective_solution_is_reused_from_cache(
@@ -358,7 +367,7 @@ def test_compliant_multipart_subjective_solution_is_reused_from_cache(
         stage_data={
             "answer_type": "subjective",
             "final_answer_latex": cached_answer,
-            "subjective_multipart_solution_contract_version": 2,
+            "subjective_multipart_solution_contract_version": 3,
         },
     )
     monkeypatch.setattr(
@@ -386,7 +395,7 @@ def test_compliant_multipart_subjective_solution_is_reused_from_cache(
     assert result.latex == cached_latex
 
 
-def test_malformed_v2_multipart_final_answer_cache_is_regenerated(
+def test_malformed_v3_multipart_final_answer_cache_is_regenerated(
     tmp_path, monkeypatch
 ):
     from types import SimpleNamespace
@@ -409,7 +418,7 @@ def test_malformed_v2_multipart_final_answer_cache_is_regenerated(
         stage_data={
             "answer_type": "subjective",
             "final_answer_latex": "1. First; 2. Second.",
-            "subjective_multipart_solution_contract_version": 2,
+            "subjective_multipart_solution_contract_version": 3,
         },
     )
     answer = r"\begin{enumerate}\item First.\item Second.\end{enumerate}"

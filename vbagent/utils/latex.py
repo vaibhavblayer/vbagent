@@ -5,7 +5,6 @@ Extracted from duplicate implementations across the codebase.
 """
 
 import re
-from typing import Optional
 
 
 _NO_PARAGRAPH_ENVIRONMENTS = frozenset({
@@ -30,6 +29,32 @@ _NO_PARAGRAPH_ENVIRONMENTS = frozenset({
 })
 _ENVIRONMENT_TOKEN_PATTERN = re.compile(r"\\(begin|end)\{([^{}]+)\}")
 _BARE_ITEM_PATTERN = re.compile(r"^\\item(?:\[[^\]\n]*\])?\s*(?:%.*)?$")
+_ENUMERATE_WITH_OPTIONS_PATTERN = re.compile(
+    r"\\begin\{enumerate\}\s*\[[^\]]*\]"
+)
+_ENUMERATE_COUNTER_OVERRIDE_LINE_PATTERN = re.compile(
+    r"(?m)^[^\S\r\n]*\\(?:"
+    r"(?:re)?newcommand\s*\{?\\labelenumi{1,4}\}?"
+    r"|def\s*\\labelenumi{1,4}\b"
+    r"|setlist\[enumerate(?:,[^\]]*)?\]"
+    r")[^\r\n]*(?:\r?\n|$)"
+)
+
+
+def use_plain_enumerates(content: str) -> str:
+    """Let document nesting control enumerate labels and layout.
+
+    Subjective question parts, their solutions, and their concise answers all
+    share the surrounding document's list hierarchy. Removing local enumitem
+    options prevents generated content from overriding that hierarchy.
+    """
+    if not content:
+        return content
+    content = _ENUMERATE_COUNTER_OVERRIDE_LINE_PATTERN.sub("", content)
+    return _ENUMERATE_WITH_OPTIONS_PATTERN.sub(
+        lambda _: r"\begin{enumerate}",
+        content,
+    )
 
 
 def sanitize_latex_blank_lines(content: str) -> str:
@@ -176,9 +201,6 @@ def validate_latex_syntax(latex: str) -> tuple[bool, list[str]]:
     # Check matching begin/end environments
     begin_pattern = r'\\begin\{([^}]+)\}'
     end_pattern = r'\\end\{([^}]+)\}'
-    
-    begins = re.findall(begin_pattern, latex)
-    ends = re.findall(end_pattern, latex)
     
     # Track environment stack
     env_stack = []
