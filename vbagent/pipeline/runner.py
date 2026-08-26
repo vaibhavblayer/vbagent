@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from vbagent.cli.common import _get_console, _get_panel, extract_problem_solution
