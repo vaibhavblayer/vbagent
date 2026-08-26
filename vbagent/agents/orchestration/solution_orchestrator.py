@@ -61,6 +61,7 @@ class SolutionOrchestrator:
         self._logging_context = AgentLoggingContext(
             console=self.console,
             quiet=captured.quiet,
+            event_sink=captured.event_sink,
         )
 
     def run(

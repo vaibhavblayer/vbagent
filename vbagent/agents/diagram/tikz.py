@@ -7,6 +7,11 @@ with tool access to search reference files for syntax examples.
 **Validates: Requirements 3.1, 3.2, 3.3, 3.4**
 """
 
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from vbagent.models.classification import ClassificationResult
+
 from vbagent.agents.base import (
     create_agent,
     create_image_message,
@@ -74,7 +79,10 @@ class _SearchTikzReferenceAccessor:
 search_tikz_reference = _SearchTikzReferenceAccessor()
 
 
-def create_tikz_agent(use_context: bool = True, classification: "ClassificationResult | None" = None):
+def create_tikz_agent(
+    use_context: bool = True,
+    classification: "ClassificationResult | None" = None,
+) -> Any:
     """Create a TikZ agent with optional context.
     
     Args:
@@ -110,7 +118,7 @@ def create_tikz_agent(use_context: bool = True, classification: "ClassificationR
     )
 
 
-def get_tikz_context_for_classification(classification) -> str:
+def get_tikz_context_for_classification(classification: "ClassificationResult") -> str:
     """Get TikZ context matched to classification metadata.
     
     Args:

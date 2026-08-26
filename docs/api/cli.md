@@ -13,84 +13,84 @@ Auto-generated API documentation for VBAgent CLI modules.
 
 ## Classification Commands
 
-::: vbagent.cli.classify
+::: vbagent.cli.core.classify
     options:
       show_root_heading: true
       show_source: false
 
 ## Scanning Commands
 
-::: vbagent.cli.scan
+::: vbagent.cli.core.scan
     options:
       show_root_heading: true
       show_source: false
 
 ## Processing Commands
 
-::: vbagent.cli.process
+::: vbagent.cli.core.process
     options:
       show_root_heading: true
       show_source: false
 
 ## TikZ Commands
 
-::: vbagent.cli.tikz
+::: vbagent.cli.generation.tikz
     options:
       show_root_heading: true
       show_source: false
 
 ## Variant Commands
 
-::: vbagent.cli.variant
+::: vbagent.cli.generation.variant
     options:
       show_root_heading: true
       show_source: false
 
 ## Batch Processing
 
-::: vbagent.cli.batch
+::: vbagent.cli.core.batch
     options:
       show_root_heading: true
       show_source: false
 
 ## Quality Assurance
 
-::: vbagent.cli.check
+::: vbagent.cli.quality.check
     options:
       show_root_heading: true
       show_source: false
 
 ## Chat Interface
 
-::: vbagent.cli.chat
+::: vbagent.cli.interfaces.chat
     options:
       show_root_heading: true
       show_source: false
 
 ## Database Management
 
-::: vbagent.cli.db
+::: vbagent.cli.management.db
     options:
       show_root_heading: true
       show_source: false
 
 ## Reference Management
 
-::: vbagent.cli.ref
+::: vbagent.cli.management.ref
     options:
       show_root_heading: true
       show_source: false
 
 ## Configuration
 
-::: vbagent.cli.config
+::: vbagent.cli.management.config
     options:
       show_root_heading: true
       show_source: false
 
 ## Utilities
 
-::: vbagent.cli.util
+::: vbagent.cli.management.util
     options:
       show_root_heading: true
       show_source: false

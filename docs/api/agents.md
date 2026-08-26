@@ -112,7 +112,7 @@ Review and validation:
 
 ### TikZ Checker
 
-::: vbagent.agents.classification.tikz_checker
+::: vbagent.agents.diagram.tikz_checker
     options:
       show_root_heading: true
       show_source: false
@@ -145,7 +145,7 @@ Review and validation:
 
 ### Scanner Agent
 
-::: vbagent.agents.scanner
+::: vbagent.agents.content_generation.scanner
     options:
       show_root_heading: true
       show_source: false
@@ -156,7 +156,7 @@ Review and validation:
 
 ### TikZ Agent
 
-::: vbagent.agents.tikz
+::: vbagent.agents.diagram.tikz
     options:
       show_root_heading: true
       show_source: false
@@ -167,14 +167,14 @@ Review and validation:
 
 ### TikZ Router
 
-::: vbagent.agents.tikz_router
+::: vbagent.agents.diagram.tikz_router
     options:
       show_root_heading: true
       show_source: false
 
 ### Free Body Diagram Agent
 
-::: vbagent.agents.fbd
+::: vbagent.agents.diagram.physics.fbd
     options:
       show_root_heading: true
       show_source: false
@@ -184,7 +184,7 @@ Review and validation:
 
 ### Variant Agent
 
-::: vbagent.agents.variant
+::: vbagent.agents.variants.variant
     options:
       show_root_heading: true
       show_source: false
@@ -195,44 +195,41 @@ Review and validation:
 
 ### Multi-Variant Agent
 
-::: vbagent.agents.multi_variant
+::: vbagent.agents.variants.multi_context_variant
     options:
       show_root_heading: true
       show_source: false
 
 ### Alternate Solution Agent
 
-::: vbagent.agents.alternate
+::: vbagent.agents.content_generation.alternate
     options:
       show_root_heading: true
       show_source: false
       members:
         - generate_alternate
-        - create_alternate_agent
 
 ### Idea Extraction Agent
 
-::: vbagent.agents.idea
+::: vbagent.agents.content_generation.idea
     options:
       show_root_heading: true
       show_source: false
       members:
         - extract_ideas
-        - create_idea_agent
 
 ### Converter Agent
 
-::: vbagent.agents.converter
+::: vbagent.agents.content_generation.converter
     options:
       show_root_heading: true
       show_source: false
       members:
         - convert_format
-        - create_converter_agent
 
 ### Compile Fixer Agent
 
-::: vbagent.agents.compile_fixer
+::: vbagent.agents.quality.latex_fixer
     options:
       show_root_heading: true
       show_source: false
@@ -241,47 +238,43 @@ Review and validation:
 
 ### Reviewer Agent
 
-::: vbagent.agents.reviewer
+::: vbagent.agents.quality.reviewer
     options:
       show_root_heading: true
       show_source: false
       members:
         - review_problem_sync
-        - create_reviewer_agent
 
 ### Solution Checker
 
-::: vbagent.agents.solution_checker
+::: vbagent.agents.quality.solution_checker
     options:
       show_root_heading: true
       show_source: false
       members:
         - check_solution
-        - create_solution_checker_agent
 
 ### Grammar Checker
 
-::: vbagent.agents.grammar_checker
+::: vbagent.agents.quality.grammar_checker
     options:
       show_root_heading: true
       show_source: false
       members:
         - check_grammar
-        - create_grammar_checker_agent
 
 ### Clarity Checker
 
-::: vbagent.agents.clarity_checker
+::: vbagent.agents.quality.clarity_checker
     options:
       show_root_heading: true
       show_source: false
       members:
         - check_clarity
-        - create_clarity_checker_agent
 
 ## Selector Agent
 
-::: vbagent.agents.selector
+::: vbagent.agents.selection.selector
     options:
       show_root_heading: true
       show_source: false

@@ -61,13 +61,16 @@ result = orchestrator.generate_solution(
 - Lazy loading implemented
 - Type hints available
 
-## Commands NOT Integrated (By Design)
+## Other command behavior
 
 ### `vbagent convert`
 **Reason:** Converts between question formats, not solution generation
 
-### `vbagent variant`
-**Reason:** Generates variants from existing LaTeX, not from images
+### `vbagent variant` ✅
+Accepted-parent variants enter the canonical authoring pipeline, which invokes
+the solution orchestrator for an independent solution before answer agreement,
+syllabus, compile, review, and novelty gates. Raw TeX/image variants are no
+longer an unchecked creation path.
 
 ### `vbagent batch`
 **Reason:** Uses `process` command internally, so orchestrator available via `process --orchestrate`

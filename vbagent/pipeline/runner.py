@@ -1,20 +1,11 @@
-"""Pipeline runners.
-
-High-level functions that compose pipeline stages into complete workflows:
-process_image, process_tex_item, process_generated_problem.
-"""
+"""Pipeline runners for image and existing-TeX processing."""
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from vbagent.cli.common import _get_console, _get_panel, extract_problem_solution
-from vbagent.pipeline.io import (
-    has_main_diagram_placeholder,
-    merge_metadata_into_latex,
-    insert_tikz_into_latex,
-)
+from vbagent.pipeline.io import merge_metadata_into_latex
 from vbagent.pipeline.stages import (
     generate_solution_orchestrated,
     assess_difficulty_stage,
@@ -119,116 +110,6 @@ def generate_alternate_solution(problem: str, solution: str, ideas) -> str:
     """Generate an alternate solution using the alternate agent."""
     from vbagent.agents.content_generation.alternate import generate_alternate
     return generate_alternate(problem, solution, ideas)
-
-
-def process_generated_problem(
-    generated,
-    problem_num: int,
-    output_base_dir: Path = Path("agentic"),
-) -> dict:
-    """Process a generated problem through the full pipeline.
-
-    Runs the complete workflow on a generated problem:
-    1. Generate TikZ from diagram_description (if present)
-    2. Classify the LaTeX problem
-    3. Classify its diagram description, if present
-    4. Assess difficulty
-    5. Merge metadata into LaTeX
-    6. Save everything in standard format
-    """
-    from vbagent.agents.classification.latex_classifier import classify_from_latex
-    from vbagent.agents.classification.diagram_classifier import classify_diagram_description
-    from vbagent.agents.classification.difficulty_assessor import assess_difficulty
-    from vbagent.agents.diagram.tikz import generate_tikz
-    import json
-
-    console = _get_console()
-
-    dirs = {
-        "generated": output_base_dir / "generated",
-        "classifications": output_base_dir / "classifications",
-        "diagrams": output_base_dir / "diagrams",
-        "difficulty": output_base_dir / "difficulty",
-        "tikz": output_base_dir / "tikz",
-    }
-    for dir_path in dirs.values():
-        dir_path.mkdir(parents=True, exist_ok=True)
-
-    problem_name = f"problem_{problem_num}"
-
-    # Step 1: Generate TikZ if diagram_description exists
-    tikz_code = None
-    if generated.diagram_description:
-        console.print("[cyan]→ Generating TikZ from description...[/cyan]")
-        try:
-            tikz_code = generate_tikz(description=generated.diagram_description, use_context=True)
-            tikz_file = dirs["tikz"] / f"{problem_name}.tex"
-            tikz_file.write_text(tikz_code)
-            console.print(f"[green]OK TikZ saved to {tikz_file}[/green]")
-            if has_main_diagram_placeholder(generated.problem_latex):
-                generated.problem_latex = insert_tikz_into_latex(generated.problem_latex, tikz_code)
-        except Exception as e:
-            console.print(f"[yellow]! TikZ generation failed: {e}[/yellow]")
-
-    # Step 2: Classify
-    console.print("[cyan]→ Classifying generated problem...[/cyan]")
-    primary = classify_from_latex(generated.problem_latex)
-    classification_file = dirs["classifications"] / f"{problem_name}.json"
-    classification_file.write_text(json.dumps(primary.model_dump(), indent=2))
-    console.print("[green]OK Classification saved[/green]")
-
-    # Step 3: Diagram analysis
-    diagram = None
-    if primary.has_diagram or generated.diagram_description:
-        console.print("[cyan]→ Analyzing diagram...[/cyan]")
-        try:
-            diagram = classify_diagram_description(
-                description=generated.diagram_description or "Generated diagram",
-                primary=primary,
-            )
-            diagram_file = dirs["diagrams"] / f"{problem_name}.json"
-            diagram_file.write_text(json.dumps(diagram.model_dump(), indent=2))
-            console.print("[green]OK Diagram analysis saved[/green]")
-        except Exception as e:
-            console.print(f"[yellow]! Diagram analysis failed: {e}[/yellow]")
-
-    # Step 4: Difficulty assessment
-    console.print("[cyan]→ Assessing difficulty...[/cyan]")
-    difficulty = assess_difficulty(
-        latex_content=generated.problem_latex + "\n\n" + generated.solution_latex,
-        primary=primary,
-        diagram=diagram,
-    )
-    difficulty_file = dirs["difficulty"] / f"{problem_name}.json"
-    difficulty_file.write_text(json.dumps(difficulty.model_dump(), indent=2))
-    console.print("[green]OK Difficulty assessment saved[/green]")
-
-    # Step 5: Merge metadata
-    console.print("[cyan]→ Merging metadata...[/cyan]")
-    latex_with_metadata = merge_metadata_into_latex(
-        latex=generated.problem_latex, primary=primary, diagram=diagram, difficulty=difficulty,
-    )
-
-    # Step 6: Save
-    problem_file = dirs["generated"] / f"{problem_name}.tex"
-    problem_file.write_text(latex_with_metadata)
-    console.print(f"[green]OK Problem saved to {problem_file}[/green]")
-
-    solution_file = dirs["generated"] / f"{problem_name}_solution.tex"
-    solution_file.write_text(generated.solution_latex)
-
-    idea_file = dirs["generated"] / f"{problem_name}_idea.tex"
-    idea_file.write_text(generated.idea_latex)
-
-    return {
-        "problem_path": str(problem_file),
-        "solution_path": str(solution_file),
-        "idea_path": str(idea_file),
-        "tikz_path": str(dirs["tikz"] / f"{problem_name}.tex") if tikz_code else None,
-        "classification": primary.model_dump(),
-        "diagram_analysis": diagram.model_dump() if diagram else None,
-        "difficulty": difficulty.model_dump(),
-    }
 
 
 def process_image(

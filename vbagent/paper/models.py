@@ -119,6 +119,18 @@ class ProblemEntry(BaseModel):
     diagram_status: Literal["none", "generated", "inline"] = "none"
     diagram_description: str = ""  # Text description of diagram needed
     generated_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+    # Canonical authoring provenance. Empty values keep older scanned manifests valid.
+    authoring_run_id: str = ""
+    authoring_spec_id: str = ""
+    exam: str = ""
+    chapter: str = ""
+    chapter_id: str = ""
+    topic_id: str = ""
+    syllabus_version: str = ""
+    syllabus_source_url: str = ""
+    syllabus_source_sha256: str = ""
+    exam_pattern_description: str = ""
+    exam_pattern_source_url: str = ""
 
     @field_validator("serial")
     @classmethod
@@ -140,11 +152,20 @@ class PaperState(BaseModel):
 
     paper_id: str
     subject: str
+    exam: str = ""
     base_dir: str = "agentic"
     problems: list[ProblemEntry] = Field(default_factory=list)
     syllabus_path: str = "syllabus.json"
     serial_numbering: bool = True
     tone: str = ""  # Paper tone/thinking style — preset name or free-form text
+    syllabus_version: str = ""
+    syllabus_source_url: str = ""
+    syllabus_verified_at: str = ""
+    syllabus_source_sha256: str = ""
+    exam_pattern_description: str = ""
+    exam_pattern_source_url: str = ""
+    exam_pattern_verified_at: str = ""
+    authoring_run_ids: list[str] = Field(default_factory=list)
     # Presets: see TONE_PRESETS in this module (e.g. "symmetry-heavy", "mechanistic", "competition-style")
     # Free-form: "focus on energy methods and symmetry arguments, avoid brute-force coordinate geometry"
     created_at: str = Field(default_factory=lambda: datetime.now().isoformat())
@@ -194,17 +215,6 @@ class CoverageReport(BaseModel):
 # Generation Results
 # ---------------------------------------------------------------------------
 
-class GeneratedProblemResult(BaseModel):
-    """Output from ProblemGenerator for a single problem."""
-
-    problem_tex: str
-    solution_tex: str = ""
-    combined_tex: str = ""
-    target: GenerationTarget
-    strategy_used: str
-    diagram_description: str = ""  # From idea generator — text description of needed diagram
-
-
 class GenerationReport(BaseModel):
     """Summary of a generation run (single or batch)."""
 
@@ -214,6 +224,12 @@ class GenerationReport(BaseModel):
     problems: list[ProblemEntry] = Field(default_factory=list)
     coverage_before: float = 0.0
     coverage_after: float = 0.0
+    authoring_run_id: str = ""
+    authoring_run_dir: str = ""
+    accepted: int = 0
+    needs_review: int = 0
+    rejected: int = 0
+    failed: int = 0
 
 
 class SolutionReport(BaseModel):

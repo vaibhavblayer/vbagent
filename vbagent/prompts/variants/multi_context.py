@@ -36,7 +36,9 @@ Return ONLY the raw LaTeX code snippet for the new problem, starting precisely w
 - Use `\vec{a}`, `\frac{a}{b}`, `\text{m}` with braces
 - Use `\hat{i}`, `\hat{j}`, `\hat{k}` for unit vectors
 - Use `\left( ... \right)`, `\left[ ... \right]` for brackets
-- Use `\ \text{m}`, `\ \text{s}`, `\ \text{ms}^{-1}` for units
+- Use unambiguous SI units such as `\ \mathrm{m}`, `\ \mathrm{s}`,
+  `\ \mathrm{m/s}`, and `\ \mathrm{m/s^2}`. Never concatenate metre and
+  second as `\text{ms}^{-1}` or `\text{ms}^{-2}`.
 
 ## Quality Requirements
 

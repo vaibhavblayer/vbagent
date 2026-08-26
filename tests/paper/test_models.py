@@ -6,7 +6,6 @@ Covers: round-trip serialization, validation rules, tone presets registry.
 import pytest
 from vbagent.paper.models import (
     CoverageReport,
-    GeneratedProblemResult,
     GenerationReport,
     GenerationTarget,
     HintReport,
@@ -103,10 +102,12 @@ class TestProblemEntry:
             topic="organic", subtopic="alkenes", difficulty="hard",
             question_type="mcq_sc", concepts=["addition", "markovnikov"],
             source="generated", qa_status="passed", solution_status="inline",
+            syllabus_source_url="https://example.test/syllabus.pdf",
         )
         restored = ProblemEntry.model_validate_json(entry.model_dump_json())
         assert restored.serial == 5
         assert restored.concepts == ["addition", "markovnikov"]
+        assert restored.syllabus_source_url == "https://example.test/syllabus.pdf"
 
 
 class TestPaperState:
@@ -180,14 +181,6 @@ class TestCoverageReport:
 # ---------------------------------------------------------------------------
 
 class TestGenerationResults:
-    def test_generated_problem_result(self):
-        r = GeneratedProblemResult(
-            problem_tex="\\item Q", solution_tex="\\begin{solution}A\\end{solution}",
-            combined_tex="\\item Q\n\n\\begin{solution}A\\end{solution}",
-            target=GenerationTarget(topic="optics"), strategy_used="idea_generator",
-        )
-        assert r.strategy_used == "idea_generator"
-
     def test_generation_report(self):
         r = GenerationReport(total_requested=5, total_generated=4, total_passed_qa=3)
         assert r.total_generated == 4

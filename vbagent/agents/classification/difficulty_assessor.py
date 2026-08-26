@@ -105,7 +105,10 @@ def assess_difficulty(
     diagram: Optional[DiagramAnalysis] = None,
     tikz_code: Optional[str] = None,
     subject: Optional[str] = None,
-    show_spinner: bool = True
+    show_spinner: bool = True,
+    exam: Optional[str] = None,
+    exam_pattern_description: Optional[str] = None,
+    target_difficulty_score: Optional[int] = None,
 ) -> DifficultyAssessment:
     """Assess difficulty after LaTeX extraction.
     
@@ -116,6 +119,9 @@ def assess_difficulty(
         tikz_code: Generated TikZ code (if available)
         subject: Subject override
         show_spinner: Whether to show animated spinner
+        exam: Target exam used as the student-population calibration baseline
+        exam_pattern_description: Versioned response-format rule for that exam
+        target_difficulty_score: Requested score, supplied only as a comparison target
         
     Returns:
         DifficultyAssessment with detailed metadata
@@ -130,6 +136,22 @@ def assess_difficulty(
 
 **Question Type:** {primary.question_type}
 **Has Diagram:** {primary.has_diagram}
+"""
+
+    if exam:
+        requested_target = (
+            f"{target_difficulty_score}/10"
+            if target_difficulty_score is not None
+            else "not supplied"
+        )
+        context += f"""
+**Target Exam:** {exam}
+**Exam Response Format:** {exam_pattern_description or 'custom/unspecified'}
+**Requested Difficulty Target:** {requested_target}
+
+Calibrate the observed score relative to a prepared candidate for this target
+exam. Assess independently from the actual problem and solution; do not copy
+the requested target merely to make it pass.
 """
     
     if diagram:

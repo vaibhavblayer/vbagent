@@ -10,7 +10,11 @@ Supports two modes:
 
 import re
 from dataclasses import dataclass
-from typing import Optional
+from typing import TYPE_CHECKING, Any, Optional
+
+if TYPE_CHECKING:
+    from vbagent.models.classification import ClassificationResult
+    from vbagent.models.diagram import TikZValidation
 
 from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.prompts.diagram.tikz_checker import (
@@ -105,9 +109,9 @@ Use these as style references for corrections:
 
 def create_tikz_checker_agent(
     use_context: bool = True,
-    classification=None,
+    classification: "ClassificationResult | None" = None,
     diagram_type: Optional[str] = None,
-):
+) -> Any:
     """Create a TikZ checker agent with optional reference context.
     
     Args:
@@ -547,7 +551,7 @@ def validate_tikz(
     auto_fix: bool = True,
     compile_test: bool = True,
     cache_group_id: Optional[str] = None,
-):
+) -> "TikZValidation":
     """Validate and fix TikZ code, returning structured TikZValidation.
 
     Args:

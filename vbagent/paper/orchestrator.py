@@ -3,17 +3,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from vbagent.tex import format_tex
 
-from .generator import ProblemGenerator
 from .manifest import PaperManifest
 from .models import (
-    CoverageReport,
-    GeneratedProblemResult,
     GenerationReport,
-    GenerationTarget,
     HintReport,
     HintResult,
     PaperState,
@@ -23,6 +19,9 @@ from .models import (
 )
 from .qa import QAPipeline
 from .syllabus import SyllabusManager
+
+if TYPE_CHECKING:
+    from vbagent.authoring.models import AuthoringRequest
 
 
 class PaperOrchestrator:
@@ -45,9 +44,147 @@ class PaperOrchestrator:
         self.config = config
         self.console = console
         self.manifest = PaperManifest(self.base_dir)
-        self.generator = ProblemGenerator(config, console)
         self.qa_pipeline = QAPipeline(config, console)
         self.syllabus_mgr = SyllabusManager()
+
+    # ------------------------------------------------------------------
+    # Canonical accepted-only creation
+    # ------------------------------------------------------------------
+
+    def author_problems(
+        self,
+        request: "AuthoringRequest",
+        *,
+        max_attempts: int = 3,
+        concurrency: int = 2,
+        include_existing_coverage: bool = True,
+    ) -> GenerationReport:
+        """Author and import only candidates accepted by the canonical pipeline.
+
+        The paper manifest is a consumer of the durable authoring ledger, not a
+        second generation implementation. Replaying a completed run is idempotent
+        because imported entries retain their immutable ``authoring_spec_id``.
+        """
+        from vbagent.authoring.api import execute_authoring, plan_authoring
+        from vbagent.authoring.results import AuthoredCandidate
+        from vbagent.paper.models import TONE_PRESETS
+
+        state = self.manifest.load()
+        if self.manifest.exists() and state.problems:
+            if state.subject and state.subject != request.subject:
+                raise ValueError(
+                    f"paper subject is {state.subject!r}, but authoring request is {request.subject!r}"
+                )
+            if state.exam and state.exam != request.exam:
+                raise ValueError(
+                    f"paper exam is {state.exam!r}, but authoring request is {request.exam!r}"
+                )
+
+        effective_tone = request.tone or state.tone
+        if effective_tone:
+            effective_tone = TONE_PRESETS.get(request.subject, {}).get(
+                effective_tone,
+                effective_tone,
+            )
+            request = request.model_copy(update={"tone": effective_tone})
+
+        authoring_dir = self.base_dir / "authoring"
+        plan = plan_authoring(
+            request,
+            output_dir=authoring_dir,
+            include_existing_coverage=include_existing_coverage,
+        )
+        if (
+            state.problems
+            and state.syllabus_source_sha256
+            and state.syllabus_source_sha256 != plan.catalog_source_sha256
+        ):
+            raise ValueError(
+                "paper is bound to a different syllabus snapshot; start a new paper "
+                "or explicitly migrate its existing problems"
+            )
+
+        execution = execute_authoring(
+            plan.request,
+            authoring_dir,
+            max_attempts=max_attempts,
+            concurrency=concurrency,
+            include_existing_coverage=False,
+        )
+
+        state.subject = plan.request.subject
+        state.exam = plan.request.exam
+        state.syllabus_version = plan.catalog_version
+        state.syllabus_source_url = plan.catalog_source_url
+        state.syllabus_verified_at = plan.catalog_verified_at
+        state.syllabus_source_sha256 = plan.catalog_source_sha256
+        state.exam_pattern_description = plan.exam_pattern_description
+        state.exam_pattern_source_url = plan.exam_pattern_source_url
+        state.exam_pattern_verified_at = plan.exam_pattern_verified_at
+        if plan.plan_id not in state.authoring_run_ids:
+            state.authoring_run_ids.append(plan.plan_id)
+
+        imported: list[ProblemEntry] = []
+        imported_spec_ids = {entry.authoring_spec_id for entry in state.problems if entry.authoring_spec_id}
+        for item in execution.items:
+            if item["status"] != "accepted" or not item.get("last_candidate_json"):
+                continue
+            candidate = AuthoredCandidate.model_validate_json(item["last_candidate_json"])
+            spec = candidate.spec
+            if spec.spec_id in imported_spec_ids:
+                continue
+            if not candidate.final_latex:
+                raise ValueError(f"accepted authoring item {spec.spec_id} has no final LaTeX")
+
+            serial = self.manifest.get_next_serial(state)
+            filename = f"Problem_{serial}.tex"
+            self._save_problem(candidate.final_latex, filename)
+            entry = ProblemEntry(
+                serial=serial,
+                filename=filename,
+                subject=spec.subject,
+                exam=spec.exam,
+                chapter=spec.chapter,
+                chapter_id=spec.chapter_id,
+                topic=spec.topic,
+                topic_id=spec.topic_id,
+                subtopic=spec.topic,
+                difficulty=spec.difficulty_band,
+                question_type=spec.question_type.value,
+                concepts=list(spec.required_concepts),
+                source="generated",
+                qa_status="passed",
+                solution_status="inline",
+                diagram_status="inline" if candidate.diagram_code else "none",
+                diagram_description=candidate.diagram_description,
+                authoring_run_id=plan.plan_id,
+                authoring_spec_id=spec.spec_id,
+                syllabus_version=spec.syllabus_version,
+                syllabus_source_url=spec.syllabus_source_url,
+                syllabus_source_sha256=spec.syllabus_source_sha256,
+                exam_pattern_description=spec.exam_pattern_description,
+                exam_pattern_source_url=spec.exam_pattern_source_url,
+            )
+            state.problems.append(entry)
+            imported_spec_ids.add(spec.spec_id)
+            imported.append(entry)
+            self._cache_content(f"paper_{serial}", "scan", candidate.final_latex)
+            self.console.print(f"[green]  OK {filename}[/green] ← accepted {spec.spec_id[:12]}")
+
+        self.manifest.save(state)
+        stats = execution.stats
+        return GenerationReport(
+            total_requested=plan.request.count,
+            total_generated=len(imported),
+            total_passed_qa=len(imported),
+            problems=imported,
+            authoring_run_id=plan.plan_id,
+            authoring_run_dir=str(execution.run_dir),
+            accepted=stats["accepted"],
+            needs_review=stats["needs_review"],
+            rejected=stats["rejected"],
+            failed=stats["failed"],
+        )
 
     # ------------------------------------------------------------------
     # Init
@@ -106,195 +243,26 @@ class PaperOrchestrator:
         return state
 
     # ------------------------------------------------------------------
-    # Standalone generation
-    # ------------------------------------------------------------------
-
-    def generate_standalone(
-        self,
-        topic: str,
-        question_type: str = "subjective",
-        difficulty: str = "medium",
-        concepts: Optional[list[str]] = None,
-        idea: Optional[str] = None,
-        with_solution: bool = True,
-        tone: str = "",
-        with_diagram: bool = True,
-    ) -> GeneratedProblemResult:
-        state = self.manifest.load()
-        # Use explicit tone arg, fall back to paper-level tone
-        effective_tone = tone or state.tone
-
-        # Collect already-covered subtopics for diversity
-        covered = self._covered_subtopics(state, topic)
-
-        target = GenerationTarget(
-            topic=topic, difficulty=difficulty, question_type=question_type,
-            concepts=concepts or [], strategy="idea_generator",
-            seed_ideas=[idea] if idea else [],
-        )
-
-        self.console.print(f"[bold green]Generating {topic} {question_type}...[/bold green]")
-        result = self.generator.generate(
-            target, with_solution=with_solution, tone=effective_tone,
-            avoid_subtopics=covered,
-        )
-
-        serial = self.manifest.get_next_serial(state)
-        filename = f"Problem_{serial}.tex"
-
-        # Auto-diagram: if idea generator provided a diagram description, generate TikZ
-        diagram_desc = result.diagram_description
-        diagram_status = "none"
-        if with_diagram and diagram_desc:
-            subject = state.subject or self.config.subject
-            tikz_code = self._generate_diagram(diagram_desc, subject, result.problem_tex)
-            if tikz_code:
-                result = self._inject_tikz(result, tikz_code)
-                diagram_status = "generated"
-
-        self._save_problem(result.combined_tex, filename)
-
-        entry = ProblemEntry(
-            serial=serial, filename=filename, subject=self.config.subject,
-            topic=topic, difficulty=difficulty, question_type=question_type,
-            concepts=concepts or [], source="generated",
-            solution_status="inline" if with_solution else "none",
-            diagram_status=diagram_status,
-            diagram_description=diagram_desc,
-        )
-
-        # Cache problem
-        self._cache_content(f"paper_{serial}", "scan", result.combined_tex)
-
-        # Post-generation classification — enrich subtopic, concepts, difficulty
-        classification = self._classify_generated(result.problem_tex, state.subject or self.config.subject, topic)
-        if classification:
-            entry.subtopic = classification.subtopic or entry.subtopic
-            entry.concepts = classification.concepts or entry.concepts
-            entry.difficulty = classification.difficulty or entry.difficulty
-            self.console.print(f"[dim]  ↳ classified: {entry.subtopic} | {entry.concepts}[/dim]")
-
-        self.manifest.add_problem(state, entry)
-        self.console.print(f"[green]OK[/green] {filename} generated")
-        return result
-
-    # ------------------------------------------------------------------
-    # Syllabus-driven generation
-    # ------------------------------------------------------------------
-
-    def generate_problems(
-        self,
-        count: int = 1,
-        take_idea_from: Optional[list[int]] = None,
-        with_solution: bool = True,
-    ) -> GenerationReport:
-        state = self.manifest.load()
-        self._load_syllabus()
-
-        coverage_before = self.syllabus_mgr.analyze_coverage(state.problems).overall_coverage_pct
-        generated: list[ProblemEntry] = []
-
-        for _ in range(count):
-            coverage = self.syllabus_mgr.analyze_coverage(state.problems)
-            if coverage.overall_coverage_pct >= 100.0:
-                break
-
-            target = self.syllabus_mgr.select_next_target(coverage)
-
-            seed_problems = None
-            if take_idea_from:
-                seed_problems = [
-                    self._load_problem_tex(s, state) for s in take_idea_from
-                    if any(p.serial == s for p in state.problems)
-                ]
-                if len(seed_problems) == 1:
-                    target.strategy = "cross_topic"
-                elif len(seed_problems) >= 2:
-                    target.strategy = "combiner"
-
-            self.console.print(f"[dim]  → Generating {target.topic} ({target.difficulty})...[/dim]")
-            result = self.generator.generate(
-                target, seed_problems, with_solution, tone=state.tone,
-                avoid_subtopics=self._covered_subtopics(state, target.topic),
-            )
-
-            qa_result = self.qa_pipeline.run(result.problem_tex, result.solution_tex)
-            final_tex = qa_result.fixed_tex if (not qa_result.passed and qa_result.fixed_tex) else result.combined_tex
-
-            # Auto-diagram if idea generator provided description
-            diagram_desc = result.diagram_description
-            diagram_status = "none"
-            if diagram_desc:
-                tikz_code = self._generate_diagram(diagram_desc, state.subject, result.problem_tex)
-                if tikz_code:
-                    # Inject into final_tex
-                    final_tex = final_tex + "\n\n" + tikz_code
-                    diagram_status = "generated"
-
-            serial = self.manifest.get_next_serial(state)
-            filename = f"Problem_{serial}.tex"
-            self._save_problem(final_tex, filename)
-
-            entry = ProblemEntry(
-                serial=serial, filename=filename, subject=state.subject,
-                topic=target.topic, subtopic=target.subtopic,
-                difficulty=target.difficulty, question_type=target.question_type,
-                concepts=target.concepts,
-                source="seeded" if take_idea_from else "generated",
-                seed_from=take_idea_from or [],
-                qa_status="passed" if qa_result.passed else "failed",
-                solution_status="inline" if with_solution else "none",
-                diagram_status=diagram_status,
-                diagram_description=diagram_desc,
-            )
-
-            # Post-generation classification
-            classification = self._classify_generated(result.problem_tex, state.subject, target.topic)
-            if classification:
-                entry.subtopic = classification.subtopic or entry.subtopic
-                entry.concepts = classification.concepts or entry.concepts
-                entry.difficulty = classification.difficulty or entry.difficulty
-
-            state.problems.append(entry)
-            self.manifest.save(state)
-            self.syllabus_mgr.update_after_generation(entry)
-            generated.append(entry)
-            self.console.print(f"[green]  OK {filename}[/green]")
-
-        coverage_after = self.syllabus_mgr.analyze_coverage(state.problems).overall_coverage_pct
-        return GenerationReport(
-            total_requested=count, total_generated=len(generated),
-            total_passed_qa=sum(1 for p in generated if p.qa_status == "passed"),
-            problems=generated, coverage_before=coverage_before,
-            coverage_after=coverage_after,
-        )
-
-    def generate_batch(
-        self, per_topic: dict[str, int], with_solution: bool = True,
-    ) -> GenerationReport:
-        all_generated: list[ProblemEntry] = []
-        for topic, count in per_topic.items():
-            for _ in range(count):
-                result = self.generate_standalone(
-                    topic=topic, with_solution=with_solution,
-                )
-                state = self.manifest.load()
-                if state.problems:
-                    all_generated.append(state.problems[-1])
-        return GenerationReport(
-            total_requested=sum(per_topic.values()),
-            total_generated=len(all_generated), problems=all_generated,
-        )
-
-    # ------------------------------------------------------------------
     # Solution generation (independent)
     # ------------------------------------------------------------------
 
-    def generate_solutions(self, problem_ids: Optional[list[int]] = None) -> SolutionReport:
+    def generate_solutions(
+        self,
+        problem_ids: Optional[list[int]] = None,
+        *,
+        regenerate: bool = False,
+    ) -> SolutionReport:
         state = self.manifest.load()
-        targets = [p for p in state.problems if p.serial in problem_ids] if problem_ids else [
-            p for p in state.problems if p.solution_status in ("none", "inline")
-        ]
+        if problem_ids:
+            targets = [problem for problem in state.problems if problem.serial in problem_ids]
+        elif regenerate:
+            targets = list(state.problems)
+        else:
+            targets = [
+                problem
+                for problem in state.problems
+                if problem.solution_status in ("none", "inline")
+            ]
 
         results = []
         for entry in targets:
@@ -453,28 +421,6 @@ Respond with JSON: {{"hint_text": "...", "hint_style": "{hint_style}", "key_conc
             self.console.print(f"[dim yellow]  WARN diagram generation skipped: {e}[/dim yellow]")
             return None
 
-    def _inject_tikz(self, result: GeneratedProblemResult, tikz_code: str) -> GeneratedProblemResult:
-        """Inject TikZ code into the problem tex, before the solution if present."""
-        # Place diagram after the problem statement, before solution
-        if result.solution_tex and result.solution_tex in result.combined_tex:
-            combined = result.combined_tex.replace(
-                result.solution_tex,
-                "\n\n" + tikz_code + "\n\n" + result.solution_tex,
-            )
-        else:
-            combined = result.problem_tex + "\n\n" + tikz_code
-            if result.solution_tex:
-                combined += "\n\n" + result.solution_tex
-
-        return GeneratedProblemResult(
-            problem_tex=result.problem_tex + "\n\n" + tikz_code,
-            solution_tex=result.solution_tex,
-            combined_tex=combined,
-            target=result.target,
-            strategy_used=result.strategy_used,
-            diagram_description=result.diagram_description,
-        )
-
     def generate_diagrams(self, problem_ids: Optional[list[int]] = None, description: Optional[str] = None) -> list[dict]:
         """Add diagrams to existing problems.
 
@@ -593,13 +539,6 @@ Be precise and specific. The subtopic should be narrower than the topic "{topic}
         except Exception as e:
             self.console.print(f"[dim yellow]  WARN classification skipped: {e}[/dim yellow]")
             return None
-
-    def _covered_subtopics(self, state: PaperState, topic: str) -> list[str]:
-        """Collect subtopics already generated for a given topic."""
-        return list({
-            p.subtopic for p in state.problems
-            if p.topic == topic and p.subtopic
-        })
 
     def enrich_problems(self, problem_ids: Optional[list[int]] = None) -> list[dict]:
         """Batch retroactive classification for problems with empty subtopics."""
@@ -1087,8 +1026,3 @@ Be precise and specific. The subtopic should be narrower than the topic "{topic}
             archive = shutil.make_archive(str(zip_path), "zip", tmp, "paper")
             self.console.print(f"[green]OK[/green] Exported: {archive}")
             return archive
-
-    def _load_syllabus(self) -> None:
-        syllabus_path = self.base_dir / "syllabus.json"
-        if syllabus_path.exists() and not self.syllabus_mgr.syllabus:
-            self.syllabus_mgr = SyllabusManager.load(syllabus_path)

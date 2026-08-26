@@ -214,94 +214,49 @@ def tikz_tool(
 
 
 def variant_tool(
+    parent_spec_id: str,
     variant_type: str,
-    tex: Optional[str] = None,
-    image: Optional[str] = None,
     count: int = 1,
-    output: Optional[str] = None,
-    compile: bool = False
+    output_dir: str = "agentic/authoring",
+    seed: int = 0,
+    human_review: bool = False,
+    max_attempts: int = 3,
+    concurrency: int = 2,
+    max_lineage_depth: int = 2,
+    max_variants_per_parent: int = 12,
 ) -> dict[str, Any]:
-    """Generate problem variants.
-    
-    Args:
-        variant_type: Type of variant to generate.
-                     Valid values: numerical, context, conceptual, calculus, multi
-        tex: Path to TeX file containing problem(s)
-        image: Path to image file (will be scanned first)
-        count: Number of variants to generate per problem (default: 1)
-        output: Output TeX file path for saving results
-        compile: Whether to compile variants to validate
-        
-    Returns:
-        Dictionary containing:
-            - variants: List of generated variant LaTeX strings
-            - variant_type: Type of variant generated
-            - count: Number of variants generated
-            - output_path: Path where output was saved (if output specified)
-    """
-    from vbagent.agents.variants.variant import generate_variant as gen_variant
-    from vbagent.agents.classification.question_classifier import classify_primary_image as classify
-    from vbagent.agents.content_generation.scanner import scan
-    from vbagent.compile import compile_and_retry
-    from vbagent.agents.quality.latex_fixer import fix_latex
-    from vbagent.config import get_config
-    
-    # Validate variant type
-    valid_types = ["numerical", "context", "conceptual", "calculus", "multi"]
+    """Author controlled variants of an accepted canonical parent."""
+    from vbagent.authoring.api import execute_variants
+    from vbagent.authoring.models import AcceptancePolicy
+
+    valid_types = ["numerical", "context", "conceptual", "calculus"]
     if variant_type not in valid_types:
         raise ValueError(f"Invalid variant_type. Must be one of: {', '.join(valid_types)}")
-    
-    # Validate input
-    if not image and not tex:
-        raise ValueError("Either 'image' or 'tex' must be provided")
-    
-    # Get source LaTeX
-    source_latex = ""
-    if image:
-        image_path = Path(image)
-        if not image_path.exists():
-            raise FileNotFoundError(f"Image file not found: {image}")
-        
-        classification = classify(image)
-        scan_result = scan(image, classification)
-        source_latex = scan_result.latex
-    elif tex:
-        tex_path = Path(tex)
-        if not tex_path.exists():
-            raise FileNotFoundError(f"TeX file not found: {tex}")
-        source_latex = tex_path.read_text()
-    
-    # Generate variants
-    all_variants = []
-    for i in range(count):
-        result = gen_variant(source_latex, variant_type, ideas_result=None)
-        
-        # Compile if requested
-        if compile:
-            subject = get_config().subject
-            result, _ = compile_and_retry(
-                result,
-                retry_fn=fix_latex,
-                subject=subject,
-                console=None,
-                verbose=False,
-            )
-        
-        all_variants.append(result)
-    
-    # Save to file if output specified
-    output_path = None
-    if output and all_variants:
-        output_path = Path(output)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        combined = "\n\n% --- Variant ---\n\n".join(all_variants)
-        output_path.write_text(combined)
-    
+
+    execution = execute_variants(
+        parent_spec_id,
+        output_dir,
+        count=count,
+        variant_families={variant_type: 1.0},
+        seed=seed,
+        acceptance=AcceptancePolicy(human_review_required=human_review),
+        max_attempts=max_attempts,
+        concurrency=concurrency,
+        max_lineage_depth=max_lineage_depth,
+        max_variants_per_parent=max_variants_per_parent,
+    )
+    accepted = execution.accepted_candidates
     return {
-        "variants": all_variants,
+        "run_id": execution.plan.plan_id,
+        "status": execution.stats["status"],
+        "stats": execution.stats,
+        "parent_spec_id": parent_spec_id,
+        "variants": [candidate.get("final_latex", "") for candidate in accepted],
+        "candidates": accepted,
         "variant_type": variant_type,
-        "count": len(all_variants),
-        "output_path": str(output_path) if output_path else None
+        "count": len(accepted),
+        "run_dir": str(execution.run_dir),
+        "database_path": str(execution.database_path),
     }
 
 
@@ -722,29 +677,23 @@ def register_core_tools(registry: "ToolRegistry") -> None:
     # Register variant tool
     registry.register(
         name="variant",
-        description="Generate problem variants with controlled modifications. "
-                   "Can create numerical variants (change numbers), context variants (change scenario), "
-                   "conceptual variants (change physics concept), or calculus variants (add calculus).",
+        description="Create controlled variants of an accepted canonical parent. Every result passes "
+                   "independent solution, syllabus, compile, review, and novelty gates.",
         parameters={
             "type": "object",
             "properties": {
                 "variant_type": {
                     "type": "string",
-                    "enum": ["numerical", "context", "conceptual", "calculus", "multi"],
+                    "enum": ["numerical", "context", "conceptual", "calculus"],
                     "description": "Type of variant to generate. "
                                  "numerical: change only numbers; "
                                  "context: change scenario; "
                                  "conceptual: change physics concept; "
-                                 "calculus: add calculus elements; "
-                                 "multi: combine multiple problems"
+                                 "calculus: add calculus elements"
                 },
-                "tex": {
+                "parent_spec_id": {
                     "type": "string",
-                    "description": "Path to TeX file containing problem(s)"
-                },
-                "image": {
-                    "type": "string",
-                    "description": "Path to image file (will be scanned first)"
+                    "description": "Accepted canonical authoring spec ID"
                 },
                 "count": {
                     "type": "integer",
@@ -752,17 +701,34 @@ def register_core_tools(registry: "ToolRegistry") -> None:
                     "default": 1,
                     "minimum": 1
                 },
-                "output": {
+                "output_dir": {
                     "type": "string",
-                    "description": "Output TeX file path for saving results"
+                    "description": "Authoring directory containing the parent ledger",
+                    "default": "agentic/authoring"
                 },
-                "compile": {
+                "seed": {
+                    "type": "integer",
+                    "default": 0
+                },
+                "human_review": {
                     "type": "boolean",
-                    "description": "Whether to compile variants to validate them",
+                    "description": "Hold passing variants for human approval",
                     "default": False
+                },
+                "max_attempts": {
+                    "type": "integer", "minimum": 1, "maximum": 20, "default": 3
+                },
+                "concurrency": {
+                    "type": "integer", "minimum": 1, "maximum": 32, "default": 2
+                },
+                "max_lineage_depth": {
+                    "type": "integer", "minimum": 1, "maximum": 5, "default": 2
+                },
+                "max_variants_per_parent": {
+                    "type": "integer", "minimum": 1, "maximum": 1000, "default": 12
                 }
             },
-            "required": ["variant_type"]
+            "required": ["parent_spec_id", "variant_type"]
         },
         function=variant_tool
     )
@@ -1745,90 +1711,121 @@ def register_dpp_tools(registry: "ToolRegistry") -> None:
 def generate_problem_tool(
     idea: str,
     topic: str,
+    exam: str,
+    subject: str,
+    chapter: str,
     concepts: Optional[list[str]] = None,
-    question_type: str = "passage",
-    num_questions: int = 2,
+    question_type: str = "mcq_sc",
+    count: int = 1,
+    num_questions: int = 3,
     difficulty: str = "medium",
     with_diagram: bool = True,
-    output_dir: str = "agentic/generated",
-    run_pipeline: bool = True
+    output_dir: str = "agentic/authoring",
+    syllabus_path: Optional[str] = None,
+    seed: int = 0,
+    human_review: bool = False,
+    max_attempts: int = 3,
+    concurrency: int = 2,
+    run_pipeline: bool = True,
 ) -> dict[str, Any]:
-    """Generate a complete problem from an idea or concept description.
-    
-    Uses Agent 5 (Idea Generator) to create a problem, then optionally runs
-    the full pipeline (TikZ generation, classification, difficulty assessment).
-    
-    Args:
-        idea: Description of the problem idea (e.g., "double block friction system")
-        topic: Topic for the problem (e.g., "Mechanics", "Thermodynamics")
-        concepts: List of specific concepts to cover (optional)
-        question_type: Type of question (mcq_sc, mcq_mc, passage, subjective, etc.)
-        num_questions: Number of questions (for passage type)
-        difficulty: Target difficulty level (easy, medium, hard)
-        with_diagram: Whether to include diagrams
-        output_dir: Directory to save generated files
-        run_pipeline: Whether to run full pipeline (classification, TikZ, difficulty)
-        
-    Returns:
-        Dictionary containing:
-            - problem_latex: Generated problem LaTeX
-            - solution_latex: Generated solution LaTeX
-            - idea_latex: Core concepts and ideas
-            - diagram_description: Description of diagram if generated
-            - saved_to: Path where problem was saved
-            - metadata: Classification and difficulty metadata (if run_pipeline=True)
+    """Create syllabus-scoped problems through the canonical acceptance pipeline.
+
+    Draft-only generation is deliberately unavailable: every persisted result is
+    independently solved, adjudicated, syllabus-checked, compiled, reviewed, and
+    novelty-checked before it is counted as accepted coverage.
     """
-    from vbagent.agents.content_generation.idea_generator import generate_from_idea
-    from vbagent.pipeline.runner import process_generated_problem
-    from pathlib import Path
-    
-    # Prepare concepts list
-    if concepts is None:
-        concepts = []
-    
-    # Prepare ideas list from the main idea
-    ideas = [idea]
-    
-    # Generate problem using Agent 5
-    generated = generate_from_idea(
-        ideas=ideas,
-        concepts=concepts,
-        topic=topic,
-        difficulty=difficulty,
-        question_type=question_type
-    )
-    
-    # Create output directory
-    output_path = Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
-    
-    # Find next available problem number
-    existing = list(output_path.glob("problem_*.tex"))
-    next_num = len(existing) + 1
-    problem_file = output_path / f"problem_{next_num}.tex"
-    
-    # Save basic problem
-    problem_file.write_text(generated.problem_latex)
-    
-    result = {
-        "problem_latex": generated.problem_latex,
-        "solution_latex": generated.solution_latex,
-        "idea_latex": generated.idea_latex,
-        "diagram_description": generated.diagram_description,
-        "saved_to": str(problem_file),
-        "generation_metadata": generated.generation_metadata
-    }
-    
-    # Run full pipeline if requested
-    if run_pipeline:
-        pipeline_result = process_generated_problem(
-            generated=generated,
-            problem_num=next_num,
-            output_base_dir=Path(output_dir).parent if output_dir != "agentic/generated" else Path("agentic")
+    from vbagent.authoring.api import execute_authoring
+    from vbagent.authoring.models import AuthoringRequest
+
+    if not run_pipeline:
+        raise ValueError(
+            "run_pipeline=False is no longer supported; durable acceptance gates cannot be bypassed"
         )
-        result["metadata"] = pipeline_result
-        result["saved_to"] = pipeline_result.get("problem_path", str(problem_file))
-    
+    if count < 1:
+        raise ValueError("count must be at least 1")
+    if num_questions < 2 or num_questions > 10:
+        raise ValueError("num_questions must be between 2 and 10")
+    if difficulty not in {"easy", "medium", "hard"}:
+        raise ValueError("difficulty must be easy, medium, or hard")
+
+    difficulty_score = {"easy": 3, "medium": 5, "hard": 8}[difficulty]
+    request = AuthoringRequest(
+        exam=exam,
+        subject=subject,
+        chapter=chapter,
+        topics=[topic],
+        syllabus_path=syllabus_path,
+        count=count,
+        question_types={question_type: 1.0},
+        difficulties={difficulty_score: 1.0},
+        diagram_ratio=1.0 if with_diagram else 0.0,
+        passage_question_count=num_questions,
+        required_concepts=list(concepts or []),
+        seed_ideas=[idea],
+        seed=seed,
+        acceptance={"human_review_required": human_review},
+    )
+    execution = execute_authoring(
+        request,
+        output_dir,
+        max_attempts=max_attempts,
+        concurrency=concurrency,
+    )
+
+    candidates: list[dict[str, Any]] = []
+    review_candidates: list[dict[str, Any]] = []
+    for item in execution.items:
+        if item.get("status") not in {"accepted", "needs_review"}:
+            continue
+        if not item.get("last_candidate_json"):
+            continue
+        candidate = json.loads(item["last_candidate_json"])
+        artifact_dir = Path(item["artifact_dir"]) if item.get("artifact_dir") else None
+        candidate["saved_to"] = (
+            str(artifact_dir.parent.parent / "problem.tex") if artifact_dir else None
+        )
+        if item["status"] == "accepted":
+            candidates.append(candidate)
+        else:
+            review_candidates.append(candidate)
+
+    rejected = int(execution.stats.get("rejected", 0) or 0)
+    failed = int(execution.stats.get("failed", 0) or 0)
+    result: dict[str, Any] = {
+        "run_id": execution.plan.plan_id,
+        "status": execution.stats["status"],
+        "complete": rejected == 0 and failed == 0,
+        "stats": execution.stats,
+        "catalog": {
+            "exam": execution.plan.request.exam,
+            "subject": execution.plan.request.subject,
+            "version": execution.plan.catalog_version,
+            "source_sha256": execution.plan.catalog_source_sha256,
+            "allowed_question_types": [
+                question_type.value
+                for question_type in execution.plan.allowed_question_types
+            ],
+            "exam_pattern_description": execution.plan.exam_pattern_description,
+            "exam_pattern_source_url": execution.plan.exam_pattern_source_url,
+        },
+        "planned_distributions": execution.plan.distributions,
+        "run_dir": str(execution.run_dir),
+        "database_path": str(execution.database_path),
+        "candidates": candidates,
+        "needs_review_candidates": review_candidates,
+    }
+    if len(candidates) == 1:
+        candidate = candidates[0]
+        result.update(
+            {
+                "problem_latex": candidate.get("problem_latex", ""),
+                "solution_latex": candidate.get("independent_solution_latex", ""),
+                "final_latex": candidate.get("final_latex", ""),
+                "idea_latex": candidate.get("idea_latex", ""),
+                "diagram_description": candidate.get("diagram_description", ""),
+                "saved_to": candidate.get("saved_to"),
+            }
+        )
     return result
 
 
@@ -1840,8 +1837,8 @@ def register_generation_tools(registry: "ToolRegistry") -> None:
     """
     registry.register(
         name="generate_problem",
-        description="Generate a complete physics/chemistry problem from an idea or concept description. "
-                   "Creates problem statement, solution, and optionally diagrams with full metadata.",
+        description="Create syllabus-scoped problems from an idea through the durable acceptance pipeline. "
+                   "Only independently verified, compiled, reviewed, novel results are accepted.",
         parameters={
             "type": "object",
             "properties": {
@@ -1854,6 +1851,19 @@ def register_generation_tools(registry: "ToolRegistry") -> None:
                     "type": "string",
                     "description": "Topic for the problem (e.g., 'Mechanics', 'Thermodynamics', 'Kinematics')"
                 },
+                "exam": {
+                    "type": "string",
+                    "description": "Versioned exam syllabus ID, e.g. jee_main or neet"
+                },
+                "subject": {
+                    "type": "string",
+                    "enum": ["physics", "chemistry", "mathematics", "biology"],
+                    "description": "Subject in the selected syllabus catalog"
+                },
+                "chapter": {
+                    "type": "string",
+                    "description": "Exact or uniquely resolvable chapter in the selected catalog"
+                },
                 "concepts": {
                     "type": "array",
                     "items": {"type": "string"},
@@ -1861,16 +1871,23 @@ def register_generation_tools(registry: "ToolRegistry") -> None:
                 },
                 "question_type": {
                     "type": "string",
-                    "enum": ["mcq_sc", "mcq_mc", "subjective", "passage", "assertion_reason", "match"],
+                    "enum": ["mcq_sc", "mcq_mc", "subjective", "integer", "passage", "assertion_reason", "match"],
                     "description": "Type of question to generate",
-                    "default": "passage"
+                    "default": "mcq_sc"
+                },
+                "count": {
+                    "type": "integer",
+                    "description": "Number of independently accepted problems to plan",
+                    "minimum": 1,
+                    "maximum": 100000,
+                    "default": 1
                 },
                 "num_questions": {
                     "type": "integer",
-                    "description": "Number of questions (relevant for passage type)",
-                    "minimum": 1,
+                    "description": "Exact number of subquestions for passage problems",
+                    "minimum": 2,
                     "maximum": 10,
-                    "default": 2
+                    "default": 3
                 },
                 "difficulty": {
                     "type": "string",
@@ -1885,16 +1902,43 @@ def register_generation_tools(registry: "ToolRegistry") -> None:
                 },
                 "output_dir": {
                     "type": "string",
-                    "description": "Directory to save generated files",
-                    "default": "agentic/generated"
+                    "description": "Directory containing the durable authoring database and run artifacts",
+                    "default": "agentic/authoring"
+                },
+                "syllabus_path": {
+                    "type": "string",
+                    "description": "Optional path to a custom versioned syllabus catalog"
+                },
+                "seed": {
+                    "type": "integer",
+                    "description": "Deterministic planning seed",
+                    "default": 0
+                },
+                "human_review": {
+                    "type": "boolean",
+                    "description": "Hold passing candidates for explicit human approval",
+                    "default": False
+                },
+                "max_attempts": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20,
+                    "default": 3
+                },
+                "concurrency": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 32,
+                    "default": 2
                 },
                 "run_pipeline": {
                     "type": "boolean",
-                    "description": "Whether to run full pipeline (TikZ generation, classification, difficulty assessment)",
+                    "enum": [True],
+                    "description": "Deprecated compatibility flag; acceptance pipeline is always required",
                     "default": True
                 }
             },
-            "required": ["idea", "topic"]
+            "required": ["idea", "topic", "exam", "subject", "chapter"]
         },
         function=generate_problem_tool
     )

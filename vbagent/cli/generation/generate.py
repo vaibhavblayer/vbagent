@@ -10,7 +10,6 @@ Unified generation command that handles all input modes:
 from __future__ import annotations
 
 import json
-import re
 import time
 from pathlib import Path
 
@@ -20,12 +19,6 @@ from vbagent.cli.common import _get_console
 
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
-
-
-def _slugify(text: str) -> str:
-    """Turn a topic string into a safe filename slug."""
-    s = re.sub(r"[^\w\s-]", "", text.lower().strip())
-    return re.sub(r"[\s-]+", "_", s)[:60] or "topic"
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -43,14 +36,21 @@ def _slugify(text: str) -> str:
               help="Directory with scans/*.tex (extracts \\begin{idea} blocks)")
 @click.option("-t", "--topic", default=None, help="Topic for generation")
 @click.option("--idea", default=None, help="Specific idea description")
-@click.option("--type", "question_type", default="subjective",
+@click.option("--exam", default=None, help="Exam syllabus ID for topic authoring (required with --topic)")
+@click.option("--subject", default=None,
+              type=click.Choice(["physics", "chemistry", "mathematics", "biology"]),
+              help="Subject for topic authoring (required with --topic)")
+@click.option("--chapter", default=None, help="Syllabus chapter for topic authoring (required with --topic)")
+@click.option("--syllabus", "syllabus_path", type=click.Path(exists=True, dir_okay=False),
+              help="Custom versioned syllabus JSON")
+@click.option("--type", "question_type", default=None,
               type=click.Choice(["mcq_sc", "mcq_mc", "subjective", "integer",
                                  "passage", "match", "assertion_reason"]),
-              help="Question type [default: subjective]")
+              help="Question type [default: mcq_sc for topic authoring; subjective for media ingestion]")
 @click.option("-d", "--difficulty", default="medium",
               type=click.Choice(["easy", "medium", "hard"]),
               help="Difficulty [default: medium]")
-@click.option("-c", "--count", default=1, type=int,
+@click.option("-c", "--count", default=1, type=click.IntRange(1, 100_000),
               help="Number of problems to generate per input [default: 1]")
 @click.option("--solve/--no-solve", default=True,
               help="Generate solution [default: on]")
@@ -60,12 +60,19 @@ def _slugify(text: str) -> str:
               help="Output directory [default: agentic/generated]")
 @click.option("--no-cache", "no_cache", is_flag=True,
               help="Skip cache — always re-generate even if cached")
+@click.option("--max-attempts", type=click.IntRange(1, 20), default=3, show_default=True,
+              help="Maximum accepted-pipeline attempts per authored problem")
+@click.option("--concurrency", type=click.IntRange(1, 32), default=2, show_default=True)
+@click.option("--seed", type=int, default=0, show_default=True)
+@click.option("--human-review/--automatic-acceptance", default=False, show_default=True)
 @click.option("-v", "--verbose", is_flag=True, help="Verbose output")
 def generate(
     image_path, from_index, to_index, item,
     ideas_dir, scans_dir,
-    topic, idea, question_type, difficulty, count,
-    solve, diagram, output, no_cache, verbose,
+    topic, idea, exam, subject, chapter, syllabus_path,
+    question_type, difficulty, count,
+    solve, diagram, output, no_cache, max_attempts, concurrency, seed,
+    human_review, verbose,
 ):
     """Generate problems from sketches, ideas, or topics.
 
@@ -104,19 +111,59 @@ def generate(
         vbagent generate --from-ideas agentic/ideas/ --type mcq_sc
         vbagent generate --from-scans agentic/scans/ --difficulty hard
         vbagent generate --from-scans agentic/scans/ --from 1 --to 5
-        vbagent generate --topic "Electromagnetic Induction" --type integer
-        vbagent generate --topic "SHM" --idea "spring-mass on incline" -c 3
+        vbagent generate --topic "Electromagnetic Induction" --exam jee_main --subject physics --chapter electromagnetic_induction --type integer
+        vbagent generate --topic "SHM" --exam jee_main --subject physics --chapter oscillations --idea "spring-mass on incline" -c 3
         vbagent generate --from-scans agentic/scans/ --no-cache
     """
+    # Topic authoring has one authoritative path.  Sketch and extracted-idea
+    # modes remain ingestion workflows because they start from source media,
+    # not an exam syllabus specification.
+    if topic and not image_path and not ideas_dir and not scans_dir:
+        if not exam or not subject or not chapter:
+            raise click.UsageError(
+                "--topic authoring requires --exam, --subject, and --chapter so syllabus scope is explicit"
+            )
+        if not solve:
+            raise click.UsageError(
+                "--no-solve is not supported for syllabus authoring; an independent solution is an acceptance gate"
+            )
+        if no_cache:
+            raise click.UsageError(
+                "--no-cache is not supported for durable syllabus authoring; use a different --seed for a new plan"
+            )
+        try:
+            return _run_canonical_topic_authoring(
+                topic=topic,
+                idea=idea,
+                exam=exam,
+                subject=subject,
+                chapter=chapter,
+                syllabus_path=syllabus_path,
+                question_type=question_type or "mcq_sc",
+                difficulty=difficulty,
+                count=count,
+                diagram=diagram,
+                output=output,
+                max_attempts=max_attempts,
+                concurrency=concurrency,
+                seed=seed,
+                human_review=human_review,
+            )
+        except click.ClickException:
+            raise
+        except (FileNotFoundError, KeyError, ValueError, RuntimeError) as exc:
+            raise click.ClickException(str(exc)) from exc
+
     from vbagent.pipeline.generate import (
         GenerationResult,
         generate_from_sketch,
         generate_from_ideas_dir,
-        generate_from_topic,
         _save_generation,
     )
     from vbagent.pipeline.io import generate_image_paths_from_range
     from vbagent.config import get_config
+
+    question_type = question_type or "subjective"
 
     console = _get_console()
     output_base = Path(output)
@@ -127,6 +174,7 @@ def generate(
     if from_index and to_index and from_index > to_index:
         console.print("[red]Error:[/red] --from must be <= --to")
         raise SystemExit(1)
+
 
     item_range = None
     if from_index or to_index:
@@ -244,43 +292,6 @@ def generate(
                 else:
                     console.print(f"  [green]OK[/green] {base_name}")
 
-        # Mode 3: From topic
-        elif topic:
-            for c in range(count):
-                slug = _slugify(topic)
-                base_name = slug if count == 1 else f"{slug}_{c+1}"
-                console.print(f"\n[bold]{base_name}" +
-                              (f" ({c+1}/{count})" if count > 1 else "") + "[/bold]")
-
-                t_start = time.time()
-                problem_tex, solution_tex, tikz_code, meta, idea_latex = generate_from_topic(
-                    topic=topic,
-                    question_type=question_type,
-                    difficulty=difficulty,
-                    idea=idea or "",
-                    with_solution=solve,
-                    with_diagram=diagram,
-                    output_dir=mode_dir,
-                    base_name=base_name,
-                    console=console,
-                )
-
-                result = GenerationResult(
-                    base_name=base_name, output_dir=mode_dir,
-                    problem_tex=problem_tex, solution_tex=solution_tex,
-                    tikz_code=tikz_code, idea_latex=idea_latex,
-                    generation_meta={**meta, "question_type": question_type,
-                                     "difficulty": difficulty},
-                    source="topic", elapsed=time.time() - t_start,
-                )
-                if not meta.get("cached"):
-                    saved = _save_generation(result)
-                all_results.append(result)
-                if meta.get("cached"):
-                    console.print(f"  [green]OK[/green] {base_name} (cached)")
-                else:
-                    console.print(f"  [green]OK[/green] {base_name}")
-
         # Save manifest
         if all_results:
             manifest = {
@@ -317,3 +328,66 @@ def generate(
             import traceback
             traceback.print_exc()
         raise SystemExit(1)
+
+
+def _run_canonical_topic_authoring(
+    *,
+    topic: str,
+    idea: str | None,
+    exam: str,
+    subject: str,
+    chapter: str,
+    syllabus_path: str | None,
+    question_type: str,
+    difficulty: str,
+    count: int,
+    diagram: bool,
+    output: str,
+    max_attempts: int,
+    concurrency: int,
+    seed: int,
+    human_review: bool,
+):
+    from vbagent.authoring.api import execute_authoring
+    from vbagent.authoring.models import AuthoringRequest
+
+    difficulty_score = {"easy": 3, "medium": 5, "hard": 8}[difficulty]
+    request = AuthoringRequest(
+        exam=exam,
+        subject=subject,
+        chapter=chapter,
+        topics=[topic],
+        syllabus_path=syllabus_path,
+        count=count,
+        question_types={question_type: 1},
+        difficulties={difficulty_score: 1},
+        diagram_ratio=1.0 if diagram else 0.0,
+        seed_ideas=[idea] if idea else [],
+        seed=seed,
+        acceptance={"human_review_required": human_review},
+    )
+    output_path = Path(output).expanduser().resolve() / "topics"
+    console = _get_console()
+    execution = execute_authoring(
+        request,
+        output_path,
+        max_attempts=max_attempts,
+        concurrency=concurrency,
+    )
+    plan = execution.plan
+    console.print(
+        f"[cyan]Canonical authoring plan:[/cyan] {plan.plan_id} "
+        f"({len(plan.items)} item(s), catalog {plan.catalog_version})"
+    )
+    stats = execution.stats
+    console.print(
+        f"[bold green]Authoring complete[/bold green] accepted={stats['accepted']}, "
+        f"needs_review={stats['needs_review']}, rejected={stats['rejected']}, "
+        f"failed={stats['failed']}, attempts={stats['attempts']}"
+    )
+    console.print(f"Run: {plan.plan_id}\nOutput: {execution.run_dir}")
+    if stats["rejected"] or stats["failed"]:
+        raise click.ClickException(
+            "topic authoring completed without accepting every requested item; "
+            "inspect the durable run evidence"
+        )

@@ -20,7 +20,6 @@ from vbagent.pipeline.runner import (
     process_image,
     process_image_unified,
     process_tex_item,
-    process_generated_problem,
     generate_alternate_solution,
 )
 
@@ -33,6 +32,5 @@ __all__ = [
     "process_image",
     "process_image_unified",
     "process_tex_item",
-    "process_generated_problem",
     "generate_alternate_solution",
 ]

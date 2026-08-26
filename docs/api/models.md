@@ -2,30 +2,30 @@
 
 Auto-generated API documentation for VBAgent Pydantic models.
 
-## Classification Models (v1)
+## Classification Models
 
 ::: vbagent.models.classification
     options:
       show_root_heading: true
       show_source: false
 
-## Classification Models (v2)
+## Content Models
 
-::: vbagent.models.classification_v2
+::: vbagent.models.content
     options:
       show_root_heading: true
       show_source: false
 
-## Scan Models
+## Diagram Models
 
-::: vbagent.models.scan
+::: vbagent.models.diagram
     options:
       show_root_heading: true
       show_source: false
 
-## Idea Models
+## Metadata Models
 
-::: vbagent.models.idea
+::: vbagent.models.metadata
     options:
       show_root_heading: true
       show_source: false
@@ -44,9 +44,30 @@ Auto-generated API documentation for VBAgent Pydantic models.
       show_root_heading: true
       show_source: false
 
-## Batch Models
+## Orchestration Models
 
-::: vbagent.models.batch
+::: vbagent.models.orchestration
+    options:
+      show_root_heading: true
+      show_source: false
+
+## Quality Models
+
+::: vbagent.models.quality
+    options:
+      show_root_heading: true
+      show_source: false
+
+## Solution Models
+
+::: vbagent.models.solution
+    options:
+      show_root_heading: true
+      show_source: false
+
+## Workflow Models
+
+::: vbagent.models.workflow
     options:
       show_root_heading: true
       show_source: false

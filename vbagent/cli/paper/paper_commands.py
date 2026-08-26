@@ -1,9 +1,25 @@
 """CLI commands for paper orchestrator."""
 
+from functools import wraps
 import click
 from pathlib import Path
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
+
+
+def _paper_authoring_errors(function):
+    """Render expected canonical-authoring failures without a traceback."""
+
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
+        except click.ClickException:
+            raise
+        except (FileNotFoundError, KeyError, ValueError, RuntimeError) as exc:
+            raise click.ClickException(str(exc)) from exc
+
+    return wrapped
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
@@ -12,9 +28,9 @@ def paper():
 
     \b
     Quick Start:
-        vbagent paper generate --topic electrostatics --type mcq_sc
+        vbagent paper generate --exam jee_main --subject physics --chapter electrostatics --topic electric_field --type mcq_sc
         vbagent paper init --from-problems ./agentic/scans/ --subject physics
-        vbagent paper generate --count 10
+        vbagent paper generate --exam jee_main --subject physics --chapter kinematics --count 10
         vbagent paper solve
         vbagent paper hint
         vbagent paper status
@@ -54,49 +70,115 @@ def init(source_dir, subject, target, force, tone, paper_dir):
 
 
 @paper.command()
+@click.option("--exam", required=True, help="Versioned exam syllabus ID, e.g. jee_main or neet")
+@click.option(
+    "--subject",
+    required=True,
+    type=click.Choice(["physics", "chemistry", "mathematics", "biology"]),
+)
+@click.option("--chapter", required=True, help="Exact or uniquely resolvable syllabus chapter")
 @click.option("-t", "--topic", help="Topic for standalone generation")
-@click.option("--type", "question_type", default="subjective", help="Question type (mcq_sc, mcq_mc, subjective, passage, etc.)")
-@click.option("-d", "--difficulty", default="medium", help="Difficulty (easy/medium/hard)")
+@click.option(
+    "--type",
+    "question_type",
+    default="mcq_sc",
+    type=click.Choice(
+        ["mcq_sc", "mcq_mc", "subjective", "integer", "assertion_reason", "passage", "match"]
+    ),
+    show_default=True,
+)
+@click.option(
+    "-d",
+    "--difficulty",
+    default="medium",
+    type=click.Choice(["easy", "medium", "hard"], case_sensitive=False),
+    show_default=True,
+)
 @click.option("--idea", help="Idea description for the problem")
-@click.option("-c", "--count", default=1, type=int, help="Number of problems to generate")
-@click.option("--take-idea-from", help="Comma-separated serial numbers to seed from")
-@click.option("--no-solution", is_flag=True, help="Skip solution generation")
+@click.option(
+    "-c",
+    "--count",
+    default=1,
+    type=click.IntRange(1, 100_000),
+    show_default=True,
+    help="Number of problems to generate",
+)
+@click.option("--concept", "concepts", multiple=True, help="Required concept; repeat as needed")
+@click.option("--syllabus", "syllabus_path", type=click.Path(exists=True, dir_okay=False))
+@click.option("--syllabus-version", "expected_syllabus_version")
+@click.option("--passage-questions", type=click.IntRange(2, 10), default=3, show_default=True)
+@click.option("--diagram-ratio", type=click.FloatRange(0.0, 1.0), default=0.0, show_default=True)
+@click.option("--no-solution", is_flag=True, help="Deprecated; accepted authoring always requires an independent solution")
 @click.option("--tone", default="", help="Tone override (preset name or free-form, see 'paper tones')")
-@click.option("--no-diagram", is_flag=True, help="Skip auto-diagram generation")
+@click.option("--seed", type=int, default=0, show_default=True)
+@click.option("--max-attempts", type=click.IntRange(1, 20), default=3, show_default=True)
+@click.option("--concurrency", type=click.IntRange(1, 32), default=2, show_default=True)
+@click.option("--human-review/--automatic-acceptance", default=False, show_default=True)
 @click.option("--paper-dir", default="agentic", help="Base directory")
-def generate(topic, question_type, difficulty, idea, count, take_idea_from, no_solution, tone, no_diagram, paper_dir):
-    """Generate problems — standalone or syllabus-driven.
+@_paper_authoring_errors
+def generate(
+    exam, subject, chapter, topic, question_type, difficulty, idea, count,
+    concepts, syllabus_path, expected_syllabus_version, passage_questions,
+    diagram_ratio, no_solution, tone, seed, max_attempts, concurrency,
+    human_review, paper_dir,
+):
+    """Create paper problems through durable syllabus-scoped authoring.
 
     \b
     Examples:
-        vbagent paper generate --topic electrostatics --type mcq_sc
-        vbagent paper generate --topic kinematics --idea "projectile on incline"
-        vbagent paper generate --count 5
-        vbagent paper generate --take-idea-from 1,2,3 --count 2
-        vbagent paper generate --topic optics --no-solution
+        vbagent paper generate --exam jee_main --subject physics --chapter electrostatics --topic electric_field --type mcq_sc
+        vbagent paper generate --exam jee_main --subject physics --chapter kinematics --topic projectile_motion --idea "projectile on incline"
+        vbagent paper generate --exam neet --subject physics --chapter optics --count 20 --concurrency 4
     """
     from vbagent.paper.orchestrator import PaperOrchestrator
     from vbagent.cli.common import _get_console
 
     console = _get_console()
     orch = PaperOrchestrator(base_dir=Path(paper_dir), console=console)
-
-    idea_from = [int(x.strip()) for x in take_idea_from.split(",")] if take_idea_from else None
-
-    if topic:
-        for _ in range(count):
-            orch.generate_standalone(
-                topic=topic, question_type=question_type, difficulty=difficulty,
-                idea=idea, with_solution=not no_solution, tone=tone,
-                with_diagram=not no_diagram,
-            )
-    else:
-        report = orch.generate_problems(
-            count=count, take_idea_from=idea_from, with_solution=not no_solution,
+    if no_solution:
+        raise click.UsageError(
+            "--no-solution cannot be used for creation; an independent solution is a required acceptance gate"
         )
-        console.print(f"\n[bold]Generated {report.total_generated}/{report.total_requested}[/bold]")
-        if report.coverage_before or report.coverage_after:
-            console.print(f"Coverage: {report.coverage_before:.0f}% → {report.coverage_after:.0f}%")
+    difficulty_score = {"easy": 3, "medium": 5, "hard": 8}.get(difficulty.lower())
+
+    from vbagent.authoring.models import AuthoringRequest
+
+    request = AuthoringRequest(
+        exam=exam,
+        subject=subject,
+        chapter=chapter,
+        topics=[topic] if topic else [],
+        syllabus_path=syllabus_path,
+        expected_syllabus_version=expected_syllabus_version,
+        count=count,
+        question_types={question_type: 1.0},
+        difficulties={difficulty_score: 1.0},
+        diagram_ratio=diagram_ratio,
+        passage_question_count=passage_questions,
+        required_concepts=list(concepts),
+        seed_ideas=[idea] if idea else [],
+        tone=tone,
+        seed=seed,
+        acceptance={"human_review_required": human_review},
+    )
+    report = orch.author_problems(
+        request,
+        max_attempts=max_attempts,
+        concurrency=concurrency,
+    )
+    console.print(
+        f"\n[bold]Imported {report.total_generated}/{report.total_requested} accepted problem(s)[/bold]"
+    )
+    console.print(
+        f"Run accepted={report.accepted}, needs_review={report.needs_review}, "
+        f"rejected={report.rejected}, failed={report.failed}"
+    )
+    console.print(f"Authoring run: {report.authoring_run_id}\nArtifacts: {report.authoring_run_dir}")
+    if report.total_generated != report.total_requested:
+        raise click.ClickException(
+            "paper authoring did not import every requested accepted problem; "
+            "inspect or resume the durable authoring run"
+        )
 
 
 @paper.command()
@@ -111,7 +193,7 @@ def solve(problems, regenerate, paper_dir):
     console = _get_console()
     orch = PaperOrchestrator(base_dir=Path(paper_dir), console=console)
     ids = [int(x.strip()) for x in problems.split(",")] if problems else None
-    report = orch.generate_solutions(problem_ids=ids)
+    report = orch.generate_solutions(problem_ids=ids, regenerate=regenerate)
     console.print(f"[bold]Solved {report.solved}/{report.total}[/bold]")
 
 

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 import json
 import os
 import re
@@ -44,21 +44,37 @@ class AgentLoggingContext:
 
     console: Console
     quiet: bool = False
+    event_sink: Callable[[dict[str, Any]], None] | None = None
 
 
-def configure_agent_logging(*, output_console: Console | None = None, quiet: bool = False) -> None:
+def configure_agent_logging(
+    *,
+    output_console: Console | None = None,
+    quiet: bool = False,
+    event_sink: Callable[[dict[str, Any]], None] | None = None,
+) -> None:
     """Configure agent rendering for the current thread."""
     _logging_context.value = AgentLoggingContext(
         console=output_console or console,
         quiet=quiet,
+        event_sink=event_sink,
     )
 
 
 @contextmanager
-def agent_logging_context(*, output_console: Console | None = None, quiet: bool = False):
+def agent_logging_context(
+    *,
+    output_console: Console | None = None,
+    quiet: bool = False,
+    event_sink: Callable[[dict[str, Any]], None] | None = None,
+):
     """Temporarily configure logging without leaking state to later calls."""
     previous = capture_agent_logging_context()
-    configure_agent_logging(output_console=output_console, quiet=quiet)
+    configure_agent_logging(
+        output_console=output_console,
+        quiet=quiet,
+        event_sink=event_sink,
+    )
     try:
         yield capture_agent_logging_context()
     finally:
@@ -130,8 +146,9 @@ def _event_log_path() -> Path | None:
 
 def record_agent_event(event: str, agent_name: str, **fields) -> None:
     """Append a metadata-only lifecycle event when event logging is enabled."""
+    context = capture_agent_logging_context()
     path = _event_log_path()
-    if path is None:
+    if path is None and context.event_sink is None:
         return
 
     payload = {
@@ -144,6 +161,15 @@ def record_agent_event(event: str, agent_name: str, **fields) -> None:
         payload["stage"] = tag
     payload.update(_sanitize_event_fields(fields))
 
+    if context.event_sink is not None:
+        try:
+            context.event_sink(dict(payload))
+        except Exception:
+            # Usage capture is diagnostic and must not invalidate a response.
+            pass
+
+    if path is None:
+        return
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         line = json.dumps(payload, ensure_ascii=False, default=str)

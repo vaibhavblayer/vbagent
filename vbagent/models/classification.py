@@ -23,7 +23,7 @@ from .diagram import (
 # Enums
 QuestionType = Literal[
     "mcq_sc", "mcq_mc", "subjective",
-    "assertion_reason", "passage", "match"
+    "integer", "assertion_reason", "passage", "match"
 ]
 
 Subject = Literal["physics", "chemistry", "mathematics", "biology"]

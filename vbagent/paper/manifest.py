@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import tempfile
 import uuid
 from pathlib import Path
+
+from pydantic import ValidationError
 
 from .models import PaperState, ProblemEntry
 
@@ -26,15 +30,17 @@ class PaperManifest:
         try:
             data = json.loads(self._manifest_path.read_text(encoding="utf-8"))
             return PaperState.model_validate(data)
-        except Exception:
-            return self._create_default()
+        except (OSError, UnicodeError, json.JSONDecodeError, ValidationError) as exc:
+            raise ValueError(
+                f"cannot load paper manifest {self._manifest_path}: {exc}"
+            ) from exc
 
     def save(self, state: PaperState) -> None:
         state.update_timestamp()
         self.base_dir.mkdir(parents=True, exist_ok=True)
-        self._manifest_path.write_text(
-            state.model_dump_json(indent=2, exclude_none=True),
-            encoding="utf-8",
+        _atomic_write_text(
+            self._manifest_path,
+            state.model_dump_json(indent=2, exclude_none=True) + "\n",
         )
 
     def add_problem(self, state: PaperState, entry: ProblemEntry) -> int:
@@ -69,3 +75,26 @@ class PaperManifest:
             subject="physics",
             base_dir=str(self.base_dir),
         )
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    """Replace a text file atomically without leaving partial JSON behind."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary: str | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+            temporary = handle.name
+        os.replace(temporary, path)
+    finally:
+        if temporary and os.path.exists(temporary):
+            os.unlink(temporary)

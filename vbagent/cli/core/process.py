@@ -27,7 +27,6 @@ from vbagent.pipeline.io import (
 from vbagent.pipeline.runner import (
     process_image,
     process_tex_item,
-    process_generated_problem as process_generated_problem,
     generate_alternate_solution as generate_alternate_solution,
 )
 from vbagent.cli.common import (

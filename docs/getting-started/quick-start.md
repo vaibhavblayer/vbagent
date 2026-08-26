@@ -33,7 +33,25 @@ agentic/
 └── tikz/problem_1.tex
 ```
 
-## 3. Try the Chat Interface
+## 3. Author a syllabus-scoped problem
+
+Inspect the plan without making API calls:
+
+```bash
+vbagent author preflight \
+  --exam jee_main \
+  --subject physics \
+  --chapter kinematics \
+  --topic "Projectile Motion" \
+  --type mcq_sc \
+  --count 4
+```
+
+Then replace `preflight` with `run` and add `--output agentic/authoring`.
+Only candidates that pass the independent solution, answer, syllabus,
+difficulty, compile, review, and novelty gates are accepted.
+
+## 4. Try the Chat Interface
 
 ```bash
 vbagent chat
@@ -41,12 +59,12 @@ vbagent chat
 
 **Example conversation:**
 ```
-You: "Generate a passage problem on friction in Mechanics with 3 questions"
+You: "Generate a JEE Main Physics single-correct MCQ from Laws of Motion on friction"
 
 Agent: *generates complete problem with TikZ and metadata*
 ```
 
-## 4. Create a DPP Set
+## 5. Create a DPP Set
 
 ```bash
 vbagent dpp create -n 10
@@ -66,8 +84,12 @@ vbagent batch continue
 ### Generate Variants
 
 ```bash
-vbagent variant -i question.png --type numerical -n 3
+vbagent variant --parent-spec-id ACCEPTED_SPEC_ID --type numerical --count 3 \
+  --output agentic/authoring
 ```
+
+Variants require an accepted canonical parent and pass the same full acceptance
+pipeline as original problems.
 
 ### Database Management
 

@@ -28,6 +28,8 @@ class TestPaperCLI:
     def test_paper_generate_help(self, runner):
         result = runner.invoke(paper, ["generate", "--help"])
         assert result.exit_code == 0
+        assert "--exam" in result.output
+        assert "--chapter" in result.output
         assert "--topic" in result.output
         assert "--tone" in result.output
         assert "--no-solution" in result.output
@@ -118,68 +120,114 @@ class TestInitCommand:
 
 
 class TestGenerateCommand:
+    @staticmethod
+    def _report():
+        return MagicMock(
+            total_generated=1,
+            total_requested=1,
+            accepted=1,
+            needs_review=0,
+            rejected=0,
+            failed=0,
+            authoring_run_id="run-1",
+            authoring_run_dir="/tmp/run-1",
+        )
+
     @patch("vbagent.paper.orchestrator.PaperOrchestrator")
     @patch("vbagent.cli.common._get_console")
-    def test_generate_standalone(self, mock_console, mock_orch_cls, runner, tmp_path):
+    def test_generate_routes_to_canonical_authoring(self, mock_console, mock_orch_cls, runner, tmp_path):
         mock_console.return_value = MagicMock()
         mock_orch = MagicMock()
+        mock_orch.author_problems.return_value = self._report()
         mock_orch_cls.return_value = mock_orch
 
         result = runner.invoke(paper, [
-            "generate", "--topic", "electrostatics", "--type", "mcq_sc",
+            "generate",
+            "--exam", "jee_main",
+            "--subject", "physics",
+            "--chapter", "electrostatics",
+            "--topic", "electric_field",
+            "--type", "mcq_sc",
             "--paper-dir", str(tmp_path),
         ])
         assert result.exit_code == 0
-        mock_orch.generate_standalone.assert_called_once()
-        call_kwargs = mock_orch.generate_standalone.call_args[1]
-        assert call_kwargs["topic"] == "electrostatics"
-        assert call_kwargs["question_type"] == "mcq_sc"
+        mock_orch.author_problems.assert_called_once()
+        request = mock_orch.author_problems.call_args.args[0]
+        assert request.exam == "jee_main"
+        assert request.subject == "physics"
+        assert request.chapter == "electrostatics"
+        assert request.topics == ["electric_field"]
+        assert request.question_types == {"mcq_sc": 1.0}
 
     @patch("vbagent.paper.orchestrator.PaperOrchestrator")
     @patch("vbagent.cli.common._get_console")
     def test_generate_with_tone(self, mock_console, mock_orch_cls, runner, tmp_path):
         mock_console.return_value = MagicMock()
         mock_orch = MagicMock()
+        mock_orch.author_problems.return_value = self._report()
         mock_orch_cls.return_value = mock_orch
 
         result = runner.invoke(paper, [
-            "generate", "--topic", "mechanics", "--tone", "energy-methods",
+            "generate",
+            "--exam", "jee_main",
+            "--subject", "physics",
+            "--chapter", "kinematics",
+            "--tone", "energy-methods",
             "--paper-dir", str(tmp_path),
         ])
         assert result.exit_code == 0
-        call_kwargs = mock_orch.generate_standalone.call_args[1]
-        assert call_kwargs["tone"] == "energy-methods"
+        request = mock_orch.author_problems.call_args.args[0]
+        assert request.tone == "energy-methods"
+        assert request.question_types == {"mcq_sc": 1.0}
 
     @patch("vbagent.paper.orchestrator.PaperOrchestrator")
     @patch("vbagent.cli.common._get_console")
-    def test_generate_no_solution(self, mock_console, mock_orch_cls, runner, tmp_path):
+    def test_generate_no_solution_is_rejected(self, mock_console, mock_orch_cls, runner, tmp_path):
         mock_console.return_value = MagicMock()
         mock_orch = MagicMock()
         mock_orch_cls.return_value = mock_orch
 
         result = runner.invoke(paper, [
-            "generate", "--topic", "optics", "--no-solution",
+            "generate",
+            "--exam", "jee_main",
+            "--subject", "physics",
+            "--chapter", "optics",
+            "--no-solution",
             "--paper-dir", str(tmp_path),
         ])
-        assert result.exit_code == 0
-        call_kwargs = mock_orch.generate_standalone.call_args[1]
-        assert call_kwargs["with_solution"] is False
+        assert result.exit_code == 2
+        assert "independent solution is a required acceptance gate" in result.output
+        mock_orch.author_problems.assert_not_called()
 
     @patch("vbagent.paper.orchestrator.PaperOrchestrator")
     @patch("vbagent.cli.common._get_console")
-    def test_generate_syllabus_driven(self, mock_console, mock_orch_cls, runner, tmp_path):
+    def test_generate_entire_chapter(self, mock_console, mock_orch_cls, runner, tmp_path):
         mock_console.return_value = MagicMock()
         mock_orch = MagicMock()
-        mock_orch.generate_problems.return_value = MagicMock(
-            total_generated=3, total_requested=5, coverage_before=50.0, coverage_after=80.0,
-        )
+        report = self._report()
+        report.total_generated = 3
+        report.total_requested = 5
+        mock_orch.author_problems.return_value = report
         mock_orch_cls.return_value = mock_orch
 
         result = runner.invoke(paper, [
-            "generate", "--count", "5", "--paper-dir", str(tmp_path),
+            "generate",
+            "--exam", "jee_main",
+            "--subject", "physics",
+            "--chapter", "kinematics",
+            "--count", "5",
+            "--paper-dir", str(tmp_path),
         ])
-        assert result.exit_code == 0
-        mock_orch.generate_problems.assert_called_once()
+        assert result.exit_code == 1
+        assert "did not import every requested" in result.output
+        request = mock_orch.author_problems.call_args.args[0]
+        assert request.count == 5
+        assert request.topics == []
+
+    def test_generate_requires_exact_identity(self, runner):
+        result = runner.invoke(paper, ["generate", "--subject", "physics"])
+        assert result.exit_code == 2
+        assert "--exam" in result.output
 
 
 class TestEnrichCommand:

@@ -142,7 +142,7 @@ def prompt_review_action(suggestion: "Suggestion", console: "Console") -> Review
     return prompt_full_review(console)
 
 
-def apply_suggestion(suggestion: "Suggestion", problem_id: str = ""):
+def apply_suggestion(suggestion: "Suggestion", problem_id: str = "") -> "DiffResult":
     """Apply an approved suggestion to the file.
     
     Args:

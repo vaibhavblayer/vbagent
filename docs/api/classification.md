@@ -116,7 +116,7 @@ validation = validate_tikz(tikz_code, auto_fix=True)
 
 ## TikZ Checker
 
-::: vbagent.agents.classification.tikz_checker
+::: vbagent.agents.diagram.tikz_checker
     options:
       show_root_heading: true
       show_source: false

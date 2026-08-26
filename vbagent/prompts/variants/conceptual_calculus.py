@@ -43,7 +43,9 @@ Return ONLY the raw LaTeX code snippet, starting exactly with `\item` and ending
 - Use `\vec{a}`, `\frac{a}{b}`, `\text{m}` with braces
 - Use `\hat{i}`, `\hat{j}`, `\hat{k}` for unit vectors
 - Use `\left( ... \right)`, `\left[ ... \right]` for brackets
-- Use `\ \text{m}`, `\ \text{s}`, `\ \text{N}`, `\ \text{J}` for units
+- Use `\ \mathrm{m}`, `\ \mathrm{s}`, `\ \mathrm{N}`, and `\ \mathrm{J}`
+  for units; write compound units unambiguously as `\ \mathrm{m/s}` or
+  `\ \mathrm{m/s^2}`.
 """
 
 USER_TEMPLATE = """Create a conceptual-calculus variant of this physics problem:

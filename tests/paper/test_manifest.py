@@ -87,14 +87,15 @@ class TestPaperManifest:
         # Disk has 20, manifest has 5 → next should be 21
         assert manifest.get_next_serial(state) == 21
 
-    def test_corrupt_manifest_creates_fresh(self, tmp_path):
+    def test_corrupt_manifest_fails_closed(self, tmp_path):
         manifest_path = tmp_path / "manifest.json"
         manifest_path.write_text("not valid json {{{", encoding="utf-8")
 
         manifest = PaperManifest(base_dir=tmp_path)
-        state = manifest.load()
-        assert isinstance(state, PaperState)
-        assert state.problems == []
+        with pytest.raises(ValueError, match="cannot load paper manifest"):
+            manifest.load()
+
+        assert manifest_path.read_text(encoding="utf-8") == "not valid json {{{"
 
     def test_save_creates_directory(self, tmp_path):
         nested = tmp_path / "deep" / "nested" / "dir"

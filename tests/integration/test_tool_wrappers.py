@@ -1,7 +1,9 @@
 """Tests for tool wrapper functions."""
 
+import json
 import pytest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock, patch, MagicMock
 from vbagent.orchestrator.tools import ToolRegistry
 from vbagent.orchestrator.tool_wrappers import (
@@ -10,6 +12,7 @@ from vbagent.orchestrator.tool_wrappers import (
     tikz_tool,
     variant_tool,
     convert_tool,
+    generate_problem_tool,
     register_core_tools
 )
 
@@ -161,60 +164,170 @@ class TestTikzTool:
 
 class TestVariantTool:
     """Tests for variant_tool wrapper."""
-    
-    @patch('vbagent.agents.variants.variant.generate_variant')
-    @patch('vbagent.orchestrator.tool_wrappers.Path')
-    def test_variant_tool_basic(self, mock_path, mock_gen_variant):
-        """Test basic variant tool execution."""
-        mock_path_instance = MagicMock()
-        mock_path_instance.exists.return_value = True
-        mock_path_instance.read_text.return_value = "\\item Original problem"
-        mock_path.return_value = mock_path_instance
-        
-        mock_gen_variant.return_value = "\\item Variant problem"
-        
+
+    @staticmethod
+    def _execution(candidates):
+        return SimpleNamespace(
+            plan=SimpleNamespace(plan_id="variant-run"),
+            stats={"status": "completed", "accepted": len(candidates)},
+            accepted_candidates=candidates,
+            run_dir=Path("/tmp/authoring/runs/variant-run"),
+            database_path=Path("/tmp/authoring/.vbagent_authoring.db"),
+        )
+
+    @patch('vbagent.authoring.api.execute_variants')
+    def test_variant_tool_basic(self, execute_variants):
+        execute_variants.return_value = self._execution(
+            [{"final_latex": "\\item Variant problem"}]
+        )
+
         result = variant_tool(
+            parent_spec_id="parent-spec",
             variant_type="numerical",
-            tex="problem.tex",
             count=1
         )
-        
+
         assert result["variant_type"] == "numerical"
         assert result["count"] == 1
-        assert len(result["variants"]) == 1
         assert result["variants"][0] == "\\item Variant problem"
-        assert result["output_path"] is None
+        assert result["parent_spec_id"] == "parent-spec"
+        assert execute_variants.call_args.args[:2] == ("parent-spec", "agentic/authoring")
+        assert execute_variants.call_args.kwargs["variant_families"] == {"numerical": 1.0}
     
     def test_variant_tool_invalid_type(self):
         """Test variant tool with invalid type."""
         with pytest.raises(ValueError, match="Invalid variant_type"):
-            variant_tool(variant_type="invalid", tex="problem.tex")
-    
-    def test_variant_tool_no_input(self):
-        """Test variant tool with no input raises error."""
-        with pytest.raises(ValueError, match="Either 'image' or 'tex'"):
-            variant_tool(variant_type="numerical")
-    
-    @patch('vbagent.agents.variants.variant.generate_variant')
-    @patch('vbagent.orchestrator.tool_wrappers.Path')
-    def test_variant_tool_multiple_variants(self, mock_path, mock_gen_variant):
+            variant_tool(parent_spec_id="parent-spec", variant_type="invalid")
+
+    @patch('vbagent.authoring.api.execute_variants')
+    def test_variant_tool_multiple_variants(self, execute_variants):
         """Test generating multiple variants."""
-        mock_path_instance = MagicMock()
-        mock_path_instance.exists.return_value = True
-        mock_path_instance.read_text.return_value = "\\item Original"
-        mock_path.return_value = mock_path_instance
-        
-        mock_gen_variant.side_effect = ["\\item Variant 1", "\\item Variant 2", "\\item Variant 3"]
-        
+        execute_variants.return_value = self._execution(
+            [{"final_latex": f"\\item Variant {index}"} for index in range(1, 4)]
+        )
+
         result = variant_tool(
+            parent_spec_id="parent-spec",
             variant_type="context",
-            tex="problem.tex",
             count=3
         )
-        
+
         assert result["count"] == 3
         assert len(result["variants"]) == 3
-        assert mock_gen_variant.call_count == 3
+        assert execute_variants.call_args.kwargs["count"] == 3
+
+
+class TestGenerateProblemTool:
+    @staticmethod
+    def _execution():
+        candidate = {
+            "problem_latex": r"\item Problem",
+            "independent_solution_latex": r"\begin{solution}Work\end{solution}",
+            "final_latex": r"\item Problem\begin{solution}Work\end{solution}",
+            "idea_latex": "",
+            "diagram_description": "",
+        }
+        request = SimpleNamespace(exam="jee_main", subject="physics")
+        plan = SimpleNamespace(
+            plan_id="author-run",
+            request=request,
+            catalog_version="2026.1",
+            catalog_source_sha256="catalog-sha",
+            allowed_question_types=(SimpleNamespace(value="mcq_sc"),),
+            exam_pattern_description="Four-option single-correct MCQ.",
+            exam_pattern_source_url="https://example.test/pattern.pdf",
+            distributions={"topic": {"projectile_motion": 1}},
+        )
+        return SimpleNamespace(
+            plan=plan,
+            stats={"status": "completed", "accepted": 1},
+            items=(
+                {
+                    "status": "accepted",
+                    "last_candidate_json": json.dumps(candidate),
+                    "artifact_dir": "/tmp/authoring/items/spec/attempts/attempt-1",
+                },
+            ),
+            run_dir=Path("/tmp/authoring/runs/author-run"),
+            database_path=Path("/tmp/authoring/.vbagent_authoring.db"),
+        )
+
+    @patch("vbagent.authoring.api.execute_authoring")
+    def test_routes_exact_syllabus_identity_to_authoring(self, execute_authoring):
+        execute_authoring.return_value = self._execution()
+
+        result = generate_problem_tool(
+            idea="projectile on an incline",
+            topic="projectile_motion",
+            exam="jee_main",
+            subject="physics",
+            chapter="kinematics",
+            question_type="mcq_sc",
+            with_diagram=False,
+        )
+
+        request = execute_authoring.call_args.args[0]
+        assert request.exam == "jee_main"
+        assert request.subject == "physics"
+        assert request.chapter == "kinematics"
+        assert request.topics == ["projectile_motion"]
+        assert request.question_types == {"mcq_sc": 1.0}
+        assert request.diagram_ratio == 0.0
+        assert result["run_id"] == "author-run"
+        assert result["final_latex"].startswith(r"\item Problem")
+
+    def test_rejects_pipeline_bypass(self):
+        with pytest.raises(ValueError, match="cannot be bypassed"):
+            generate_problem_tool(
+                idea="idea",
+                topic="projectile_motion",
+                exam="jee_main",
+                subject="physics",
+                chapter="kinematics",
+                run_pipeline=False,
+            )
+
+    @patch("vbagent.authoring.api.execute_authoring")
+    def test_defaults_to_exam_compatible_single_choice(self, execute_authoring):
+        execute_authoring.return_value = self._execution()
+
+        generate_problem_tool(
+            idea="projectile on an incline",
+            topic="projectile_motion",
+            exam="jee_main",
+            subject="physics",
+            chapter="kinematics",
+            with_diagram=False,
+        )
+
+        request = execute_authoring.call_args.args[0]
+        assert request.question_types == {"mcq_sc": 1.0}
+
+    @patch("vbagent.authoring.api.execute_authoring")
+    def test_rejected_authoring_candidate_is_not_returned_as_usable(self, execute_authoring):
+        execution = self._execution()
+        execution.stats = {
+            "status": "completed",
+            "accepted": 0,
+            "needs_review": 0,
+            "rejected": 1,
+            "failed": 0,
+        }
+        execution.items[0]["status"] = "rejected"
+        execute_authoring.return_value = execution
+
+        result = generate_problem_tool(
+            idea="projectile on an incline",
+            topic="projectile_motion",
+            exam="jee_main",
+            subject="physics",
+            chapter="kinematics",
+            with_diagram=False,
+        )
+
+        assert result["complete"] is False
+        assert result["candidates"] == []
+        assert "final_latex" not in result
 
 
 class TestConvertTool:
@@ -315,6 +428,13 @@ class TestRegisterCoreTools:
         variant_tool_def = registry.get_tool("variant")
         assert variant_tool_def is not None
         assert "variant_type" in variant_tool_def.parameters["properties"]
+        assert "parent_spec_id" in variant_tool_def.parameters["required"]
+
+        generate_tool_def = registry.get_tool("generate_problem")
+        assert generate_tool_def is not None
+        assert {"idea", "topic", "exam", "subject", "chapter"}.issubset(
+            generate_tool_def.parameters["required"]
+        )
         
         convert_tool_def = registry.get_tool("convert")
         assert convert_tool_def is not None

@@ -84,16 +84,42 @@ their solved versions. `--in-place` instead updates selected input files
 directly and cannot be combined with `--output`. Files/items that already
 contain a complete `solution` environment are skipped automatically.
 
-## Variant Generation
+## Syllabus authoring
 
-### variant
-Generate problem variants.
+### author
+
+Plan a batch without API calls, then execute it durably:
 
 ```bash
-vbagent variant -t problem.tex --type numerical
-vbagent variant -t problem.tex --type context -n 3
-vbagent variant -t problem.tex --type conceptual
-vbagent variant -t problem.tex --type multi --context ref1.tex ref2.tex
+vbagent author catalogs
+vbagent author preflight --exam jee_main --subject physics --chapter kinematics --count 20
+vbagent author run --exam jee_main --subject physics --chapter kinematics \
+  --topic "Projectile Motion" --type mcq_sc:3 --type integer:1 \
+  --difficulty medium:3 --difficulty hard:1 --count 20 \
+  --concurrency 4 --output agentic/authoring
+```
+
+Resume and inspect by the printed immutable run ID:
+
+```bash
+vbagent author status --run-id RUN_ID --output agentic/authoring
+vbagent author continue --run-id RUN_ID --output agentic/authoring
+vbagent author cancel --run-id RUN_ID --output agentic/authoring
+```
+
+See [Syllabus-driven problem authoring](problem-generation.md) for distributions,
+custom catalogs, human review, the Python API, and acceptance gates.
+
+## Variant generation
+
+### variant
+Create controlled variants from an accepted canonical parent.
+
+```bash
+vbagent variant --parent-spec-id SPEC_ID --type numerical --count 3 \
+  --output agentic/authoring
+vbagent variant --parent-spec-id SPEC_ID --type context --type conceptual \
+  --count 8 --output agentic/authoring
 ```
 
 **Variant Types:**
@@ -101,7 +127,10 @@ vbagent variant -t problem.tex --type multi --context ref1.tex ref2.tex
 - `context` - Change scenario
 - `conceptual` - Change physics concept
 - `calculus` - Add calculus elements
-- `multi` - Combine multiple problems
+
+Raw TeX and images are not unchecked creation parents. The parent must be
+accepted in the same durable ledger; lineage, syllabus identity, fan-out, and
+artifact hashes are enforced before child generation.
 
 ### alternate
 Generate alternate solutions.
@@ -447,8 +476,9 @@ vbagent batch continue
 # Scan with validation
 vbagent scan -i question.png -c --assess-difficulty
 
-# Generate variants with compilation
-vbagent variant -t problem.tex --type numerical -c
+# Generate accepted-parent variants (compilation is mandatory)
+vbagent variant --parent-spec-id SPEC_ID --type numerical --count 3 \
+  --output agentic/authoring
 
 # Review everything
 vbagent check solution

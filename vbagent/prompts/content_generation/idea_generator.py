@@ -3,7 +3,7 @@
 
 def get_idea_generator_prompt(subject: str = "physics") -> str:
     """Get idea generator prompt."""
-    return f"""You are an expert {subject} problem generator for competitive exams (JEE Advanced / JEE Mains / NEET level). Generate a complete, well-structured problem from the given ideas and concepts.
+    return f"""You are an expert {subject} problem generator for competitive examinations. Generate a complete, well-structured problem from the supplied authoring specification. The passed exam, chapter, exact syllabus topic, question type, difficulty, and construction constraints are authoritative; never silently substitute a different syllabus scope.
 
 You MUST respond with ONLY a valid JSON object:
 
@@ -40,23 +40,20 @@ with the horizontal, the angular velocity of the rod is
 Find the angular velocity of a rod.
 ```
 
-### Difficulty Calibration
+### Exam-relative difficulty calibration
 
-**Easy (JEE Mains level):**
-- Direct formula application, 1–2 step solution
-- Standard textbook scenarios (block on incline, simple circuit, direct integration)
-- Single concept tested
+The passed exam and exact 1–10 difficulty score are authoritative. Calibrate
+within that exam's official syllabus and format; never import harder
+out-of-syllabus material merely to make a problem difficult.
 
-**Medium (JEE Mains–Advanced bridge):**
-- 2–4 step solution, requires combining 2 concepts
-- Non-obvious setup requiring a key insight
-- Moderate algebraic manipulation
+**Easy (1–3):** direct but non-trivial application, usually 1–2 reasoning steps.
 
-**Hard (JEE Advanced level):**
-- Multi-step reasoning (4+ steps), combines 3+ concepts
-- Requires creative approach or non-standard technique
-- Tricky constraints, edge cases, or counter-intuitive results
-- Problems where the "obvious" approach fails
+**Medium (4–7):** several linked steps or a meaningful conceptual choice, all
+within the target exam's expected depth.
+
+**Hard (8–10):** demanding at the upper edge of the target exam, using subtle
+constraints, careful modelling, or multi-concept reasoning without drifting to
+a different exam or syllabus.
 
 ### MCQ Distractor Design (CRITICAL for mcq_sc / mcq_mc)
 Options must be **plausible** — each wrong option should correspond to a common mistake:
@@ -113,7 +110,7 @@ Same as mcq_sc but multiple options can have \\ans.
 - The problem MUST explicitly ask for a numerical value
 - End with "The value of ... is" or "... is equal to" phrasing
 - \\ansint{{N}} goes at the very end of the \\item, after \\hrulefill
-- Answer must be a non-negative integer (0–999 for JEE Advanced)
+- Answer must be an integer valid under the passed exam's numerical-answer rules
 
 ### Passage / Comprehensive Paragraph
 ```latex
@@ -265,10 +262,10 @@ When the problem needs a diagram, provide a clear description in `diagram_descri
 - Use $g = 10 \\ \\mathrm{{m/s^2}}$ unless the problem specifically needs $9.8$
 
 ## Integer Type Problems (\\ansint) — Additional Rules:
-- The answer marker is \\ansint{{N}} where N is a non-negative integer
+- The answer marker is \\ansint{{N}} where N is the exact integer answer
 - Place \\ansint{{N}} at the END of the \\item line, after \\hrulefill
 - Work BACKWARDS: pick the integer answer first, then design the problem parameters to yield it
-- Common JEE integer range: 0–9 (single digit) or 0–999
+- Follow the passed exam's rounding, sign, and response-range rules
 - The problem statement must make it clear a numerical answer is expected
 
 Respond with ONLY the JSON object."""

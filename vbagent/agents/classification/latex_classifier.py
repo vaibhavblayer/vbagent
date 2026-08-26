@@ -23,7 +23,7 @@ You MUST respond with ONLY a valid JSON object:
 
 {{
     "subject": "physics" | "chemistry" | "mathematics" | "biology",
-    "question_type": "mcq_sc" | "mcq_mc" | "subjective" | "assertion_reason" | "passage" | "match",
+    "question_type": "mcq_sc" | "mcq_mc" | "subjective" | "integer" | "assertion_reason" | "passage" | "match",
     "has_diagram": true | false,
     "confidence": <0.0 to 1.0>,
     "classified_from": "latex"
@@ -32,7 +32,8 @@ You MUST respond with ONLY a valid JSON object:
 Question types:
 - mcq_sc: Single correct MCQ (look for \\ans marker)
 - mcq_mc: Multiple correct MCQ
-- subjective: Open-ended/numerical (look for \\ansint{{}})
+- subjective: Open-ended answer without an objective answer marker
+- integer: Numerical response with an \\ansint{{}} answer marker
 - assertion_reason: Assertion-reason format
 - passage: Multiple questions sharing context
 - match: Match the following

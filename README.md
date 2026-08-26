@@ -69,11 +69,12 @@ vbagent solve -t scanned-problems/ --in-place --no-diagram --from 1 --to 5 --exc
 | Core | `solve` | Generate solutions from an existing TeX project |
 | Core | `classify` | Classify question type |
 | Core | `batch` | Batch process multiple images with resume |
+| Author | `author` | Plan, run, resume, review, and audit syllabus-driven creation |
 | Generate | `tikz` | Generate TikZ/PGF diagrams |
 | Generate | `fbd` | Free body diagram generation |
 | Generate | `idea` | Extract physics concepts |
 | Generate | `alternate` | Generate alternate solutions |
-| Generate | `variant` | Generate problem variants |
+| Generate | `variant` | Create fully validated variants from an accepted parent |
 | Generate | `convert` | Convert between question formats |
 | Quality | `check` | QA review with interactive approval |
 | Quality | `compile` | Compile LaTeX to PDF |
@@ -92,40 +93,59 @@ vbagent solve -t scanned-problems/ --in-place --no-diagram --from 1 --to 5 --exc
 | Interface | `mcp` | MCP server for external agents |
 | Paper | `paper` | Paper orchestration (init, generate, solve, hint, compile, export) |
 
-### Paper Orchestrator
+### Syllabus authoring and papers
 
-End-to-end paper generation workflow:
+Preflight a large batch without API calls, then run it through the durable
+accepted-only pipeline:
 
 ```bash
-# Initialize a paper project
-vbagent paper init physics --title "JEE Advanced 2025" --problems 4
+vbagent author catalogs
+vbagent author preflight --exam jee_main --subject physics --chapter kinematics --count 20
+vbagent author run --exam jee_main --subject physics --chapter kinematics \
+  --type mcq_sc:3 --type integer:1 --count 100 --concurrency 6 \
+  --output agentic/authoring
+```
 
-# Generate problems from syllabus topics
-vbagent paper generate /path/to/paper/
+Paper creation consumes only accepted authoring artifacts:
+
+```bash
+# Optionally initialize from existing TeX problems
+vbagent paper init --from-problems ./existing --subject physics --paper-dir ./jee-paper
+
+# Author and import accepted problems
+vbagent paper generate --exam jee_main --subject physics --chapter kinematics \
+  --topic "Projectile Motion" --type mcq_sc --count 20 --paper-dir ./jee-paper
 
 # Generate solutions for all problems
-vbagent paper solve /path/to/paper/
+vbagent paper solve --paper-dir ./jee-paper
 
 # Generate hints
-vbagent paper hint /path/to/paper/
+vbagent paper hint --paper-dir ./jee-paper
 
 # Compile to main.tex (stitches problems + solutions + hints + ideas + remarks)
-vbagent paper compile /path/to/paper/
+vbagent paper compile --pdf --paper-dir ./jee-paper
 
 # Compile only solutions
-vbagent paper compile /path/to/paper/ --only solutions
+vbagent paper compile --only solutions --paper-dir ./jee-paper
 
 # Compile only hints
-vbagent paper compile /path/to/paper/ --only hints
+vbagent paper compile --only hints --paper-dir ./jee-paper
 
 # Export zip for Overleaf
-vbagent paper export /path/to/paper/
+vbagent paper export --paper-dir ./jee-paper
 ```
+
+Each candidate is independently solved, answer-adjudicated, syllabus-checked,
+difficulty-checked, compiled with `pdflatex`, reviewed, and checked for novelty
+before it can count as accepted coverage. Runs persist in SQLite and can be
+continued by run ID after interruption. See the
+[problem authoring guide](docs/user-guide/problem-generation.md).
 
 Paper directory structure:
 ```
 paper_dir/
-├── manifest.yaml          # Paper config (subject, title, problems)
+├── manifest.json          # Paper state and exact authoring provenance
+├── authoring/             # Durable runs, SQLite ledger, gate evidence, artifacts
 ├── main.tex               # Compiled output
 ├── scans/                 # Per-problem .tex files (problem + solution + hint + idea + remark)
 │   ├── Problem_1.tex
@@ -373,10 +393,9 @@ vbagent/
 ├── paper/                               # Paper orchestrator
 │   ├── __init__.py
 │   ├── models.py                        # Paper data models
-│   ├── manifest.py                      # Manifest YAML handling
+│   ├── manifest.py                      # Atomic JSON manifest handling
 │   ├── syllabus.py                      # Syllabus topic definitions
-│   ├── generator.py                     # Problem generation
-│   ├── orchestrator.py                  # Paper orchestrator (compile, export, assemble)
+│   ├── orchestrator.py                  # Accepted-authoring consumer, compile, export, assemble
 │   └── qa.py                            # Paper QA
 │
 ├── pipeline/                            # Processing pipeline
@@ -450,7 +469,7 @@ tests/
 │   └── management/                      # test_config.py, test_export_tools.py, test_export.py
 ├── integration/                         # test_context.py, test_dpp_builder.py, test_import_performance.py, ...
 ├── models/                              # test_version_store.py
-├── paper/                               # test_cli.py, test_generator.py, test_manifest.py, test_models.py, ...
+├── paper/                               # test_cli.py, test_authoring.py, test_manifest.py, test_models.py, ...
 ├── ui/                                  # test_ui_components.py
 └── utils/                               # test_formatting.py, test_latex.py, test_tex_parser.py
 ```

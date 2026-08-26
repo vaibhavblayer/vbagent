@@ -1,191 +1,244 @@
-# Problem Generation
+# Syllabus-driven problem authoring
 
-**NEW in v0.2.2:** Generate complete physics problems from ideas using natural language!
+VBAgent has one authoritative workflow for creating exam problems from a
+syllabus. The CLI, Python API, paper workflow, chat tool, and MCP tool all build
+the same immutable `AuthoringRequest` and use the same durable authoring ledger.
 
-## Overview
+## What acceptance means
 
-VBAgent can now generate complete problems from scratch using Agent 5 (Idea Generator) with full pipeline integration:
+A draft is not counted as a created problem. Each candidate must pass, in
+order:
 
-- Problem statement + solution + alternate solution
-- TikZ diagrams from description
-- Classification metadata
-- Difficulty assessment
-- Standard output format
+1. deterministic LaTeX and question-type structure checks;
+2. routed diagram generation when the specification requires one;
+3. an independent solution;
+4. independent subject and question-type classification;
+5. answer agreement/adjudication;
+6. exact exam, chapter, topic, concept, and format alignment;
+7. independent difficulty assessment;
+8. a real `pdflatex` compilation;
+9. reviewer approval; and
+10. accepted-only novelty checks across prior runs using the same syllabus
+    snapshot.
 
-## Using Chat Interface
+Failed candidates are retried up to `--max-attempts`. Only accepted artifacts
+count toward coverage. Runs, attempts, gate evidence, token usage, and artifacts
+are stored under the output directory with a SQLite ledger, so interrupted runs
+can resume safely. A command exits non-zero if any requested item exhausts its
+attempts as `rejected` or `failed`; the durable run remains available for
+inspection and resumption.
 
-The easiest way to generate problems:
+## Built-in and custom syllabuses
+
+List the catalogs bundled with the installed release:
 
 ```bash
-$ vbagent chat
+vbagent author catalogs
 ```
 
-### Example 1: Minimal Input
+The current built-ins are versioned JEE Main Physics and NEET Physics 2026
+snapshots. For another exam or subject, pass a versioned JSON catalog with
+`--syllabus`. Custom catalogs fail closed unless they declare both the allowed
+question types and a response-format description. A minimal catalog looks like
+this:
 
-```
-You: "Create a problem on friction"
-
-Agent: "What topic is this for? (e.g., Mechanics, Dynamics)"
-You: "Mechanics"
-
-Agent: "What type of question? (mcq_sc, passage, subjective)"
-You: "passage"
-
-Agent: "How many questions?"
-You: "3"
-
-Agent: "Should I include diagrams?"
-You: "yes"
-
-Agent: *generates complete problem*
-```
-
-### Example 2: Full Details Upfront
-
-```
-You: "Generate a passage problem on double block friction system in 
-      Mechanics with 3 questions, medium difficulty, with diagrams"
-
-Agent: *directly generates without asking*
-```
-
-## What You Get
-
-Complete problem with:
-
-- ✅ Generated LaTeX (problem + solution + ideas)
-- ✅ TikZ diagram (auto-generated from description)
-- ✅ Classification metadata (Agent 4)
-- ✅ Diagram analysis (Agent 2)
-- ✅ Difficulty assessment (Agent 3)
-- ✅ All metadata merged into LaTeX
-
-**Output structure:**
-```
-agentic/
-├── generated/
-│   ├── problem_1.tex          (with metadata comments)
-│   ├── problem_1_solution.tex
-│   └── problem_1_idea.tex
-├── classifications/problem_1.json
-├── diagrams/problem_1.json
-├── difficulty/problem_1.json
-└── tikz/problem_1.tex
+```json
+{
+  "metadata": {
+    "exam": "my_exam",
+    "subject": "chemistry",
+    "version": "2026.1",
+    "source_url": "https://example.edu/official-syllabus.pdf",
+    "verified_at": "2026-08-26",
+    "allowed_question_types": ["mcq_sc", "subjective"],
+    "exam_pattern_description": "Four-option single-correct MCQs and written open-response questions.",
+    "exam_pattern_source_url": "https://example.edu/official-pattern.pdf",
+    "exam_pattern_verified_at": "2026-08-26"
+  },
+  "chapters": [
+    {
+      "id": "my_exam.chemistry.equilibrium",
+      "title": "Equilibrium",
+      "topics": [
+        {
+          "id": "my_exam.chemistry.equilibrium.ionic",
+          "title": "Ionic equilibrium",
+          "aliases": ["pH and buffers"]
+        }
+      ]
+    }
+  ]
+}
 ```
 
-Same format as image/tex processing!
+Stable IDs, the catalog SHA-256, version, allowed formats, exam-pattern rule,
+and source URLs are copied into every generation specification and accepted
+paper entry. Unsupported formats fail during preflight, before an API call. In
+the bundled 2026 profiles, JEE Main Physics permits `mcq_sc` and `integer`, while
+NEET Physics permits `mcq_sc`.
 
-## Parameters
+## Preflight before spending API calls
 
-When generating problems, you can specify:
+Preflight resolves the exact syllabus scope and shows the complete distribution
+without calling a model:
 
-- **idea** (required): What the problem is about
-  - Example: "double block friction system"
-  
-- **topic** (required): Physics topic
-  - Example: "Mechanics", "Thermodynamics", "Kinematics"
-  
-- **question_type** (optional): Type of question
-  - Options: `mcq_sc`, `mcq_mc`, `passage`, `subjective`, `assertion_reason`, `match`
-  - Default: `passage`
-  
-- **num_questions** (optional): Number of questions (for passage)
-  - Range: 1-10
-  - Default: 2
-  
-- **difficulty** (optional): Target difficulty
-  - Options: `easy`, `medium`, `hard`
-  - Default: `medium`
-  
-- **with_diagram** (optional): Include diagrams
-  - Default: `true`
-  
-- **concepts** (optional): Specific concepts to cover
-  - Example: ["friction", "normal force", "energy conservation"]
-
-## Example Conversations
-
-### Physics Problem
-
-```
-You: "I want to create a problem on projectile motion"
-
-Agent: "What topic?"
-You: "Kinematics"
-
-Agent: "What type of question?"
-You: "mcq_sc"
-
-Agent: "Difficulty level?"
-You: "hard"
-
-Agent: "Include diagrams?"
-You: "yes"
-
-Agent: *generates MCQ with trajectory diagram*
+```bash
+vbagent author preflight \
+  --exam jee_main \
+  --subject physics \
+  --chapter kinematics \
+  --topic "Projectile Motion" \
+  --count 20 \
+  --type mcq_sc:3 \
+  --type integer:1 \
+  --difficulty medium:3 \
+  --difficulty hard:1 \
+  --diagram-ratio 0.25 \
+  --seed 42
 ```
 
-### Chemistry Problem
+Omit `--topic` to balance the batch across all topics in the selected chapter.
+Chapter and topic names, stable IDs, and unique aliases are accepted; ambiguous
+or missing values fail before generation.
 
+`--diagram-ratio` controls diagrams required by the problem statement. An
+independent solution may still include a concise explanatory visual when it
+improves the reasoning; that does not turn the question into a diagram-dependent
+item.
+
+## Run and resume a large batch
+
+```bash
+vbagent author run \
+  --exam jee_main \
+  --subject physics \
+  --chapter kinematics \
+  --count 200 \
+  --type mcq_sc:3 \
+  --type integer:1 \
+  --difficulty 3:1 \
+  --difficulty 5:2 \
+  --difficulty 8:1 \
+  --cognitive apply:2 \
+  --cognitive analyze:1 \
+  --representation numerical:2 \
+  --representation graphical:1 \
+  --diagram-ratio 0.2 \
+  --concurrency 6 \
+  --max-attempts 3 \
+  --output agentic/authoring
 ```
-You: "Generate a passage on chemical equilibrium in Physical Chemistry, 
-      4 questions, medium difficulty"
 
-Agent: *generates complete passage with reactions and diagrams*
+Use the printed run ID for operations:
+
+```bash
+vbagent author status --run-id RUN_ID --output agentic/authoring
+vbagent author continue --run-id RUN_ID --output agentic/authoring
+vbagent author cancel --run-id RUN_ID --output agentic/authoring
 ```
 
-### Mathematics Problem
+With `--human-review`, otherwise-passing candidates stop in `needs_review`:
 
+```bash
+vbagent author review \
+  --run-id RUN_ID \
+  --spec-id SPEC_ID \
+  --approve \
+  --reason "Checked wording, answer, and diagram" \
+  --output agentic/authoring
 ```
-You: "Create a calculus problem on integration by parts"
 
-Agent: "What difficulty?"
-You: "medium"
+Approval re-runs accepted-only novelty before promoting the artifact.
 
-Agent: *generates problem with step-by-step solution*
+The ledger stores each immutable item specification once and keeps the run
+header compact. A no-API benchmark with 10,000 planned items completes planning
+and durable insertion in roughly two seconds on a development machine. Actual
+throughput is dominated by the seven or eight independent model calls plus a
+real LaTeX compile per attempt. For portfolios larger than one operational
+window, use deterministic chapter/topic runs and resume them independently;
+this bounds API budgets, failure remediation, and review queues without losing
+cross-run coverage balancing or novelty checks.
+
+## Controlled variants
+
+Variants can only descend from an accepted canonical parent in the same ledger.
+Raw TeX or images are not accepted as unchecked parents.
+
+```bash
+vbagent variant \
+  --parent-spec-id SPEC_ID \
+  --type numerical \
+  --type context \
+  --count 8 \
+  --output agentic/authoring
 ```
 
-## Tips
+Parent artifact hashes, lineage roots/depth, syllabus identity, and per-parent
+fan-out limits are checked transactionally. Each child passes the full
+acceptance pipeline independently. Controlled variants currently support
+Physics single-correct MCQs because the underlying variant prompts are scoped to
+that contract. Numerical variants intentionally retain the parent's conceptual
+blueprint, so novelty requires an exact artifact change plus different numerical
+values and recalculation. Context, conceptual, and calculus variants must also
+be blueprint-novel after excluding their immediate parent. The reviewer sees
+both parent and child.
 
-1. **Be specific about the concept:** "double block friction" is better than just "friction"
+## Paper creation
 
-2. **Mention key concepts:** Helps generate focused problems
-   ```
-   "Create a problem on friction covering normal force and energy conservation"
-   ```
+The paper workflow consumes accepted authoring artifacts; it does not have a
+second generator:
 
-3. **Specify diagram needs:** If you want specific diagram elements
-   ```
-   "Generate with free body diagram showing all forces"
-   ```
+```bash
+vbagent paper generate \
+  --exam jee_main \
+  --subject physics \
+  --chapter kinematics \
+  --topic "Projectile Motion" \
+  --type mcq_sc \
+  --count 20 \
+  --concurrency 4 \
+  --paper-dir ./jee-kinematics
+```
 
-4. **Use natural language:** The agent understands conversational input
-   ```
-   "I need a tough passage problem on thermodynamics with 3 questions"
-   ```
+Replaying the same run is idempotent by specification ID. A paper refuses to mix
+accepted items from different exam, subject, or syllabus snapshots.
 
-## Workflow
+## Python API
 
-1. **Generate** → Problem created by Agent 5
-2. **TikZ** → Diagram generated from description
-3. **Classify** → Agent 4 analyzes the problem
-4. **Analyze** → Agent 2 analyzes diagram
-5. **Assess** → Agent 3 assesses difficulty
-6. **Merge** → All metadata added to LaTeX
-7. **Save** → Standard format output
+```python
+from vbagent.authoring import AuthoringRequest, execute_authoring
 
-## Time Estimates
+request = AuthoringRequest(
+    exam="jee_main",
+    subject="physics",
+    chapter="kinematics",
+    topics=["Projectile Motion"],
+    count=20,
+    question_types={"mcq_sc": 3, "integer": 1},
+    difficulties={5: 3, 8: 1},
+    diagram_ratio=0.25,
+    seed=42,
+)
 
-- Problem generation: ~30-40 seconds
-- TikZ generation: ~5-10 minutes (complex diagrams)
-- Classification: ~1-2 seconds
-- Diagram analysis: ~10 seconds
-- Difficulty assessment: ~15-20 seconds
+execution = execute_authoring(
+    request,
+    "agentic/authoring",
+    max_attempts=3,
+    concurrency=4,
+)
 
-**Total:** ~6-12 minutes for complete problem with diagram
+print(execution.plan.plan_id)
+print(execution.stats)
+print(execution.accepted_candidates)
+```
 
-## Next Steps
+Use `plan_authoring()` when only an immutable plan is needed, and
+`execute_variants()` for accepted-parent variants.
 
-- [Chat Interface Guide](chat.md)
-- [CLI Commands](cli-commands.md)
-- [API Reference](../api/agents.md)
+## Media-derived generation
+
+`vbagent generate -i`, `--from-ideas`, and `--from-scans` remain media/idea
+transformation workflows. They do not claim syllabus coverage. For any problem
+that must count against an exam syllabus, use `author run`, topic-scoped
+`generate`, `paper generate`, or the authoring API with exact exam, subject, and
+chapter identity.
