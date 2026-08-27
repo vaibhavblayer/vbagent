@@ -10,26 +10,33 @@ Uses openai-agents SDK to generate different types of problem variants:
 from typing import Any, Optional
 
 from vbagent.agents.base import create_agent, run_agent_sync
-from vbagent.references.context import get_context_prompt_section
-from vbagent.utils.latex import clean_latex_output
 from vbagent.models.content import IdeaResult
-from vbagent.prompts.variants.numerical import (
-    SYSTEM_PROMPT as NUMERICAL_SYSTEM_PROMPT,
-    USER_TEMPLATE as NUMERICAL_USER_TEMPLATE,
-)
-from vbagent.prompts.variants.context import (
-    SYSTEM_PROMPT as CONTEXT_SYSTEM_PROMPT,
-    USER_TEMPLATE as CONTEXT_USER_TEMPLATE,
-)
 from vbagent.prompts.variants.conceptual import (
     SYSTEM_PROMPT as CONCEPTUAL_SYSTEM_PROMPT,
+)
+from vbagent.prompts.variants.conceptual import (
     USER_TEMPLATE as CONCEPTUAL_USER_TEMPLATE,
 )
 from vbagent.prompts.variants.conceptual_calculus import (
     SYSTEM_PROMPT as CALCULUS_SYSTEM_PROMPT,
+)
+from vbagent.prompts.variants.conceptual_calculus import (
     USER_TEMPLATE as CALCULUS_USER_TEMPLATE,
 )
-
+from vbagent.prompts.variants.context import (
+    SYSTEM_PROMPT as CONTEXT_SYSTEM_PROMPT,
+)
+from vbagent.prompts.variants.context import (
+    USER_TEMPLATE as CONTEXT_USER_TEMPLATE,
+)
+from vbagent.prompts.variants.numerical import (
+    SYSTEM_PROMPT as NUMERICAL_SYSTEM_PROMPT,
+)
+from vbagent.prompts.variants.numerical import (
+    USER_TEMPLATE as NUMERICAL_USER_TEMPLATE,
+)
+from vbagent.references.context import get_context_prompt_section
+from vbagent.utils.latex import clean_latex_output
 
 # Mapping of variant types to their prompts
 VARIANT_PROMPTS = {
@@ -99,6 +106,14 @@ def create_variant_agent(variant_type: str, use_context: bool = True):
     context = get_context_prompt_section("variants", use_context)
     if context:
         system_prompt = system_prompt + "\n" + context
+
+    system_prompt += (
+        "\n\nComponent selection: an explicit include_solution/include_idea "
+        "request overrides the default output format above. If a component is "
+        "false, do not generate it or hide it in comments or another component. "
+        "The question and its answer markers are always required. An idea, when "
+        "requested, is a concise conceptual hint in an idea environment, not a worked solution."
+    )
     
     return create_agent(
         name=f"Variant-{variant_type}",
@@ -113,6 +128,9 @@ def generate_variant(
     ideas: Optional[IdeaResult] = None,
     use_context: bool = True,
     classification: Optional[Any] = None,
+    *,
+    include_solution: bool = True,
+    include_idea: bool = False,
 ) -> str:
     """Generate a variant of the source problem.
     
@@ -129,6 +147,8 @@ def generate_variant(
         ideas: Optional IdeaResult with extracted concepts (used for context)
         use_context: Whether to include reference context in prompt
         classification: Optional ClassificationResult for cross_topic variants
+        include_solution: Include a worked solution now, or defer it
+        include_idea: Include a concise conceptual idea after the question/solution
         
     Returns:
         The generated variant in LaTeX format
@@ -141,6 +161,8 @@ def generate_variant(
     
     # Cross-topic uses its own multi-stage pipeline
     if variant_type == "cross_topic":
+        if not include_solution or include_idea:
+            raise ValueError("component selection is supported for standard variants only")
         from .cross_topic import analyze_cross_topic, generate_cross_topic_variant
         
         # Extract classification info if available
@@ -187,6 +209,12 @@ def generate_variant(
     
     # Format the user message
     message = user_template.format(source_latex=source_latex)
+    message += (
+        f"\n\nComponent selection: include_solution={str(include_solution).lower()}, "
+        f"include_idea={str(include_idea).lower()}. "
+        "Return the question followed only by the selected components. "
+        "When solutions are deferred, do not produce a worked derivation or an alternate solution."
+    )
     
     # Add ideas context if provided
     if ideas and ideas.concepts:

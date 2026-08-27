@@ -12,6 +12,29 @@ class DefaultAuthoringAgents:
     """Use existing vbagent agents behind a stable authoring-stage API."""
 
     def generate_draft(self, spec: GenerationSpec, retry_context: str | None = None):
+        if spec.source_kind.value == "completion":
+            import re
+
+            from vbagent.models.classification import GeneratedProblem
+
+            solution = spec.parent_solution_latex if spec.include_solution else ""
+            if spec.include_solution and not solution:
+                solved = self.solve_independently(spec, spec.parent_problem_latex, "tikzpicture" in spec.parent_problem_latex)
+                match = re.search(r"\\begin\{solution\}.*?\\end\{solution\}", solved.latex, re.DOTALL)
+                if not match:
+                    raise ValueError("solution agent returned no solution for the existing question")
+                solution = match.group(0)
+            idea = spec.parent_idea_latex if spec.include_idea else ""
+            if spec.include_idea and not idea:
+                from vbagent.agents.content_generation.idea import generate_idea_latex
+
+                idea = generate_idea_latex(spec.parent_problem_latex + "\n\n" + solution, subject=spec.subject)
+            return GeneratedProblem(
+                problem_latex=spec.parent_problem_latex,
+                solution_latex=solution,
+                idea_latex=idea,
+                generation_metadata={"completion_of": spec.parent_spec_id},
+            )
         if spec.source_kind.value == "variant":
             return self._generate_variant_draft(spec, retry_context=retry_context)
 
@@ -48,6 +71,8 @@ class DefaultAuthoringAgents:
             random_seed=spec.random_seed,
             retry_feedback=retry_context,
             passage_question_count=spec.passage_question_count,
+            include_solution=spec.include_solution,
+            include_idea=spec.include_idea,
         )
 
     @staticmethod
@@ -69,25 +94,29 @@ class DefaultAuthoringAgents:
             source_latex=source,
             variant_type=spec.variant_family.value,
             use_context=True,
+            include_solution=spec.include_solution,
+            include_idea=spec.include_idea,
         )
         solution_match = re.search(
             r"\\begin\{solution\}.*?\\end\{solution\}",
             generated,
             flags=re.DOTALL,
         )
-        if not solution_match:
+        if spec.include_solution and not solution_match:
             raise ValueError("variant agent returned no complete solution environment")
-        problem = generated[: solution_match.start()].strip()
-        solution = solution_match.group(0).strip()
+        idea_match = re.search(r"\\begin\{idea\}.*?\\end\{idea\}", generated, re.DOTALL)
+        if spec.include_idea and not idea_match:
+            raise ValueError("variant agent returned no complete idea environment")
+        boundary = min(
+            (match.start() for match in (solution_match, idea_match) if match),
+            default=len(generated),
+        )
+        problem = generated[:boundary].strip()
+        solution = solution_match.group(0).strip() if spec.include_solution and solution_match else ""
         return GeneratedProblem(
             problem_latex=problem,
             solution_latex=solution,
-            idea_latex=(
-                "\\begin{idea}\n"
-                f"Controlled {spec.variant_family.value} variant of accepted parent "
-                f"{spec.parent_spec_id}.\n"
-                "\\end{idea}"
-            ),
+            idea_latex=idea_match.group(0).strip() if spec.include_idea and idea_match else "",
             diagram_description=None,
             generation_metadata={
                 "source_kind": "variant",
@@ -123,7 +152,9 @@ class DefaultAuthoringAgents:
         return {"code": code, "agent": str(agent)}
 
     def solve_independently(self, spec: GenerationSpec, problem_latex: str, has_diagram: bool):
-        from vbagent.agents.orchestration.solution_orchestrator import create_solution_orchestrator
+        from vbagent.agents.orchestration.solution_orchestrator import (
+            create_solution_orchestrator,
+        )
 
         return create_solution_orchestrator().run(
             problem_latex=problem_latex,

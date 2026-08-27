@@ -1,0 +1,183 @@
+{
+  "DIVERSITY IN LIVING WORLD": {
+    "topics": [
+      "Characteristics of living organisms and biodiversity",
+      "Need for biological classification",
+      "Taxonomy, systematics, species and taxonomic hierarchy",
+      "Binomial nomenclature",
+      "Five-kingdom classification",
+      "Salient features and major-group classification of Monera",
+      "Salient features and major-group classification of Protista",
+      "Salient features and major-group classification of Fungi",
+      "Lichens, viruses and viroids",
+      "Salient features and major groups of algae",
+      "Salient features and major groups of bryophytes",
+      "Salient features and major groups of pteridophytes",
+      "Salient features and major groups of gymnosperms",
+      "Non-chordate animal classification up to phylum",
+      "Chordate animal classification up to class"
+    ],
+    "description": "Classification, taxonomy and diversity of microorganisms, plants and animals"
+  },
+  "STRUCTURAL ORGANISATION IN ANIMALS AND PLANTS": {
+    "topics": [
+      "Morphology and modifications of flowering plants",
+      "Plant tissues",
+      "Anatomy and functions of roots, stems and leaves",
+      "Cymose and racemose inflorescences",
+      "Flower, fruit and seed morphology and anatomy",
+      "Families Malvaceae, Cruciferae, Leguminosae, Compositae and Gramineae",
+      "Animal tissues",
+      "Morphology and anatomy of frog",
+      "Digestive, circulatory, respiratory, nervous and reproductive systems of frog"
+    ],
+    "description": "Plant morphology and anatomy, animal tissues and frog organ systems"
+  },
+  "CELL STRUCTURE AND FUNCTION": {
+    "topics": [
+      "Cell theory and the cell as the basic unit of life",
+      "Prokaryotic and eukaryotic cell structure",
+      "Plant and animal cells",
+      "Cell envelope, cell membrane and cell wall",
+      "Endomembrane system: endoplasmic reticulum, Golgi bodies, lysosomes and vacuoles",
+      "Mitochondria, ribosomes, plastids and microbodies",
+      "Cytoskeleton, cilia, flagella and centrioles",
+      "Nucleus, nuclear membrane, chromatin and nucleolus",
+      "Structure and function of proteins, carbohydrates, lipids and nucleic acids",
+      "Enzyme types, properties and action",
+      "Enzyme classification and nomenclature",
+      "Cell cycle, mitosis and meiosis and their significance"
+    ],
+    "description": "Cells, organelles, biomolecules, enzymes and cell division"
+  },
+  "PLANT PHYSIOLOGY": {
+    "topics": [
+      "Photosynthesis as autotrophic nutrition, sites and pigments",
+      "Photochemical and biosynthetic phases of photosynthesis",
+      "Cyclic and non-cyclic photophosphorylation",
+      "Chemiosmotic hypothesis",
+      "Photorespiration and C3 and C4 pathways",
+      "Factors affecting photosynthesis",
+      "Gas exchange and cellular respiration",
+      "Glycolysis, fermentation, TCA cycle and electron transport system",
+      "ATP yield, amphibolic pathways and respiratory quotient",
+      "Seed germination",
+      "Plant-growth phases, growth rate and conditions of growth",
+      "Differentiation, dedifferentiation and redifferentiation",
+      "Sequence of developmental processes in a plant cell",
+      "Auxin, gibberellin, cytokinin, ethylene and abscisic acid"
+    ],
+    "description": "Photosynthesis, respiration, plant growth and growth regulation"
+  },
+  "HUMAN PHYSIOLOGY": {
+    "topics": [
+      "Human respiratory system and respiratory organs in animals",
+      "Mechanism and regulation of breathing and gas exchange",
+      "Transport and regulation of respiratory gases and respiratory volumes",
+      "Asthma, emphysema and occupational respiratory disorders",
+      "Blood composition, blood groups and coagulation",
+      "Lymph composition and function",
+      "Human heart, blood vessels, cardiac cycle, cardiac output and ECG",
+      "Double circulation and regulation of cardiac activity",
+      "Hypertension, coronary artery disease, angina and heart failure",
+      "Ammonotelism, ureotelism and uricotelism",
+      "Human excretory system, urine formation and osmoregulation",
+      "Renin-angiotensin system, atrial natriuretic factor, ADH and diabetes insipidus",
+      "Other excretory organs and excretory disorders",
+      "Dialysis and artificial kidney",
+      "Ciliary, flagellar and muscular movement",
+      "Skeletal-muscle contractile proteins and muscle contraction",
+      "Skeletal system, joints and their functions",
+      "Muscular and skeletal disorders",
+      "Neurons, nerves and human central, peripheral and visceral nervous systems",
+      "Generation and conduction of nerve impulses",
+      "Endocrine glands, hormones and the human endocrine system",
+      "Mechanism of hormone action and hormones as messengers and regulators",
+      "Endocrine hypoactivity, hyperactivity and related disorders"
+    ],
+    "description": "Respiration, circulation, excretion, movement, neural control and endocrine regulation"
+  },
+  "REPRODUCTION": {
+    "topics": [
+      "Flower structure and development of male and female gametophytes",
+      "Pollination types, agencies, examples and outbreeding devices",
+      "Pollen-pistil interaction and double fertilization",
+      "Development of endosperm, embryo, seed and fruit",
+      "Apomixis, parthenocarpy and polyembryony",
+      "Male and female human reproductive systems and microscopic anatomy of testis and ovary",
+      "Spermatogenesis, oogenesis and menstrual cycle",
+      "Fertilization, blastocyst formation, implantation, pregnancy and placenta",
+      "Parturition and lactation",
+      "Reproductive health and prevention of sexually transmitted diseases",
+      "Birth control, contraception and medical termination of pregnancy",
+      "Amniocentesis",
+      "Infertility and assisted reproductive technologies: IVF, ZIFT and GIFT"
+    ],
+    "description": "Flowering-plant reproduction, human reproduction and reproductive health"
+  },
+  "GENETICS AND EVOLUTION": {
+    "topics": [
+      "Mendelian inheritance and heredity and variation",
+      "Incomplete dominance, codominance, multiple alleles and blood-group inheritance",
+      "Pleiotropy and elementary polygenic inheritance",
+      "Chromosome theory of inheritance and chromosomes and genes",
+      "Sex determination in humans, birds and honey bees",
+      "Linkage and crossing over",
+      "Sex-linked inheritance of haemophilia and colour blindness",
+      "Mendelian and chromosomal disorders in humans",
+      "Search for genetic material and DNA as genetic material",
+      "DNA and RNA structure and DNA packaging",
+      "DNA replication, central dogma, transcription, genetic code and translation",
+      "Gene expression and regulation and the lac operon",
+      "Genome, Human Genome Project and DNA fingerprinting",
+      "Protein biosynthesis",
+      "Origin of life and evidence for biological evolution",
+      "Darwin's contribution and modern synthetic theory of evolution",
+      "Mutation, recombination, natural selection and types of natural selection",
+      "Gene flow, genetic drift and Hardy-Weinberg principle",
+      "Adaptive radiation and human evolution"
+    ],
+    "description": "Inheritance, molecular genetics and evolutionary mechanisms"
+  },
+  "BIOLOGY AND HUMAN WELFARE": {
+    "topics": [
+      "Health, disease, pathogens and parasites",
+      "Malaria, filariasis, ascariasis, typhoid and pneumonia",
+      "Common cold, amoebiasis, ringworm, dengue and chikungunya",
+      "Basic immunology and vaccines",
+      "Cancer, HIV and AIDS",
+      "Adolescence and drug, alcohol and tobacco abuse",
+      "Microbes in household food processing and industrial production",
+      "Microbes in sewage treatment and energy generation",
+      "Microbes as biocontrol agents and biofertilizers"
+    ],
+    "description": "Human disease, immunity, substance abuse and beneficial microbes"
+  },
+  "BIOTECHNOLOGY AND ITS APPLICATIONS": {
+    "topics": [
+      "Principles and processes of biotechnology",
+      "Genetic engineering and recombinant DNA technology",
+      "Human insulin and vaccine production",
+      "Gene therapy",
+      "Genetically modified organisms and Bt crops",
+      "Transgenic animals",
+      "Biosafety, biopiracy and patents"
+    ],
+    "description": "Genetic engineering and medical, agricultural and societal applications"
+  },
+  "ECOLOGY AND ENVIRONMENT": {
+    "topics": [
+      "Organisms and environment",
+      "Mutualism, competition, predation and parasitism",
+      "Population growth, birth rate, death rate and age distribution",
+      "Ecosystem patterns and components",
+      "Productivity and decomposition",
+      "Energy flow and pyramids of number, biomass and energy",
+      "Concept, patterns and importance of biodiversity",
+      "Loss and conservation of biodiversity",
+      "Biodiversity hotspots, endangered organisms, extinction and Red Data Book",
+      "Biosphere reserves, national parks, sanctuaries and sacred groves"
+    ],
+    "description": "Populations, ecosystems, biodiversity and conservation"
+  }
+}

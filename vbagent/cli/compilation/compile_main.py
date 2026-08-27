@@ -4,15 +4,14 @@ Generates a main.tex file that compiles all processed problems with proper
 preamble, packages, and structure.
 """
 
-from pathlib import Path
-from typing import Optional, List
 import os
 import re
+from pathlib import Path
+from typing import List, Optional
 
 import click
 
 from ..common import _get_console
-
 
 _MISSING_DIAGRAM_PREFIX = "VBAGENT MISSING DIAGRAM: "
 
@@ -214,6 +213,14 @@ def generate_main_tex(
         Generated LaTeX content
     """
     scans_path = Path(scans_dir)
+    output_path = Path(output_file)
+    relative_scans = Path(
+        os.path.relpath(scans_path.resolve(), output_path.parent.resolve())
+    ).as_posix()
+
+    def problem_input(problem: str) -> str:
+        filename = f"{problem}.tex"
+        return filename if relative_scans == "." else f"{relative_scans}/{filename}"
     
     # Discover problems
     all_problems = discover_problem_files(scans_path)
@@ -265,7 +272,6 @@ def generate_main_tex(
 \begin{enumerate}"""
 
     if needs_staging:
-        output_path = Path(output_file)
         staging_dir = output_path.parent / ".vbagent_compile" / output_path.stem
         staging_dir.mkdir(parents=True, exist_ok=True)
         for p in problems:
@@ -275,9 +281,8 @@ def generate_main_tex(
                 os.path.relpath(staged_path.resolve(), output_path.parent.resolve())
             ).as_posix()
             body += f"\n\\input{{{relative_path}}}"
-    elif use_foreach and problem_range:
+    elif use_foreach and all(re.fullmatch(r"problem_\d+", p) for p in problems):
         # Use \foreach loop (compact)
-        start, end = problem_range
         # Extract just the numbers
         numbers = []
         for p in problems:
@@ -290,14 +295,17 @@ def generate_main_tex(
             # Determine the pattern (e.g., "problem_\i" or "Problem_\i")
             if problems:
                 first = problems[0]
-                prefix = re.sub(r'\d+', '', first)
+                prefix = re.sub(r'\d+$', '', first)
+                relative_pattern = f"{prefix}\\i.tex"
+                if relative_scans != ".":
+                    relative_pattern = f"{relative_scans}/{relative_pattern}"
                 body += f"\n\\foreach \\i in {{{numbers_str}}} {{\n"
-                body += f"  \\input{{{scans_dir}/{prefix}\\i.tex}}\n"
+                body += f"  \\input{{{relative_pattern}}}\n"
                 body += "}\n"
     else:
         # Use explicit \input statements
         for p in problems:
-            body += f"\n\\input{{{scans_dir}/{p}.tex}}"
+            body += f"\n\\input{{{problem_input(p)}}}"
     
     body += r"""
 \end{enumerate}
@@ -489,7 +497,7 @@ def compile(
         console.print(f"[green]OK[/green] Generated {output}")
         
         if verbose:
-            console.print(f"\n[dim]Preview:[/dim]")
+            console.print("\n[dim]Preview:[/dim]")
             # Show first 20 lines
             lines = content.split("\n")
             preview = "\n".join(lines[:20])
@@ -498,9 +506,9 @@ def compile(
                 console.print(f"[dim]... ({len(lines) - 20} more lines)[/dim]")
         
         # Show compilation command
-        console.print(f"\n[cyan]To compile:[/cyan]")
+        console.print("\n[cyan]To compile:[/cyan]")
         console.print(f"  pdflatex {output}")
-        console.print(f"  # or")
+        console.print("  # or")
         console.print(f"  latexmk -pdf {output}")
         
     except ValueError as e:

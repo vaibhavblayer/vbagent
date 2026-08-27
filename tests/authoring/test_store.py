@@ -1,11 +1,16 @@
 import hashlib
 import json
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 
 import pytest
 
 from vbagent.authoring.models import AuthoringRequest
+from vbagent.authoring.paths import (
+    generated_artifact_path,
+    generated_manifest_path,
+    generated_output_root,
+    generated_problem_path,
+)
 from vbagent.authoring.planner import AuthoringPlanner
 from vbagent.authoring.results import (
     REQUIRED_ACCEPTANCE_GATES,
@@ -61,8 +66,51 @@ def _candidate(spec, status=CandidateStatus.ACCEPTED, failed_gate=None):
                     "requests": 2,
                     "input_tokens": 100,
                     "output_tokens": 20,
+                    "cached_tokens": 20,
+                    "cache_write_tokens": 30,
+                    "ordinary_input_tokens": 50,
+                    "cache_read_requests": 1,
+                    "cache_reported_requests": 2,
+                    "cache_metrics_reported_calls": 2,
+                    "cache_metrics_reported_input_tokens": 100,
+                    "effective_input_eligible_tokens": 100,
+                    "effective_input_cost_units": 89.5,
                     "duration_seconds": 1.5,
-                }
+                },
+                "profiles": {"profile-a": 2},
+                "cache_domains": {"org-main:global": 2},
+                "profile_usage": {
+                    "profile-a": {
+                        "requests": 2,
+                        "input_tokens": 100,
+                        "output_tokens": 20,
+                        "cached_tokens": 20,
+                        "cache_write_tokens": 30,
+                        "ordinary_input_tokens": 50,
+                        "cache_read_requests": 1,
+                        "cache_reported_requests": 2,
+                        "cache_metrics_reported_input_tokens": 100,
+                        "effective_input_eligible_tokens": 100,
+                        "effective_input_cost_units": 89.5,
+                        "failovers": 0,
+                    }
+                },
+                "cache_domain_usage": {
+                    "org-main:global": {
+                        "requests": 2,
+                        "input_tokens": 100,
+                        "output_tokens": 20,
+                        "cached_tokens": 20,
+                        "cache_write_tokens": 30,
+                        "ordinary_input_tokens": 50,
+                        "cache_read_requests": 1,
+                        "cache_reported_requests": 2,
+                        "cache_metrics_reported_input_tokens": 100,
+                        "effective_input_eligible_tokens": 100,
+                        "effective_input_cost_units": 89.5,
+                        "failovers": 0,
+                    }
+                },
             }
         },
     )
@@ -132,6 +180,11 @@ def test_rejected_attempt_retries_with_evidence_then_accepts(tmp_path):
         )
 
         assert status is ItemStatus.PENDING
+        assert not generated_artifact_path(
+            tmp_path / "out",
+            plan.plan_id,
+            claimed.spec,
+        ).exists()
         retry = store.claim_next(plan.plan_id, "worker")
         assert retry.attempt == 2
         assert "spec_alignment" in retry.retry_reason
@@ -151,7 +204,20 @@ def test_rejected_attempt_retries_with_evidence_then_accepts(tmp_path):
         assert stats["accepted"] == 1
         assert stats["attempts"] == 2
         assert store.accepted_coverage(plan.plan_id)["topic"] == {retry.spec.topic_id: 1}
-        assert store.usage_summary(plan.plan_id)["requests"] == 4
+        usage = store.usage_summary(plan.plan_id)
+        assert usage["requests"] == 4
+        assert usage["cache_hit_percent"] == 20.0
+        assert usage["cache_write_percent"] == 30.0
+        assert usage["cache_request_hit_percent"] == 50.0
+        assert usage["effective_input_multiplier"] == 0.895
+        assert usage["profiles"] == {"profile-a": 4}
+        assert usage["cache_domains"] == {"org-main:global": 4}
+        assert usage["profile_usage"]["profile-a"]["cache_hit_percent"] == 20.0
+        assert usage["profile_usage"]["profile-a"]["cache_write_percent"] == 30.0
+        assert (
+            usage["cache_domain_usage"]["org-main:global"]["requests"]
+            == 4
+        )
         assert store.failure_reasons(plan.plan_id) == {"spec_alignment": 1}
 
 
@@ -180,6 +246,17 @@ def test_atomic_artifacts_preserve_every_attempt_and_promote_acceptance(tmp_path
             / f"problem_{claimed.spec.ordinal:06d}_{claimed.spec.spec_id[:12]}.tex"
         )
         assert accepted_copy.exists()
+        published = generated_artifact_path(
+            tmp_path / "out",
+            plan.plan_id,
+            claimed.spec,
+        )
+        assert published.read_text(encoding="utf-8") == accepted.final_latex + "\n"
+        manifest_path = generated_manifest_path(tmp_path / "out", plan.plan_id)
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert manifest["generated_output_dir"] == str(generated_output_root(tmp_path / "out"))
+        assert manifest["artifacts"][0]["path"] == str(generated_problem_path(tmp_path / "out", 1))
+        assert manifest["topics"] == [claimed.spec.topic]
 
 
 def test_failed_ledger_commit_does_not_leave_promoted_acceptance(tmp_path):
@@ -216,6 +293,11 @@ def test_failed_ledger_commit_does_not_leave_promoted_acceptance(tmp_path):
         )
         assert not (claimed.output_dir / "problem.tex").exists()
         assert not accepted_copy.exists()
+        assert not generated_artifact_path(
+            tmp_path / "out",
+            plan.plan_id,
+            claimed.spec,
+        ).exists()
         attempts = store.conn.execute(
             "SELECT COUNT(*) FROM authoring_attempts WHERE spec_id = ?",
             (claimed.spec.spec_id,),
@@ -262,6 +344,73 @@ def test_overlap_lease_and_expired_item_lease_are_safe(tmp_path):
         recovered = store.claim_next(plan.plan_id, "new-worker")
         assert recovered.spec.spec_id == first.spec.spec_id
         assert recovered.attempt == 2
+
+
+def test_store_persists_live_item_stages_for_reconnecting_status_clients(tmp_path):
+    plan = _plan(count=1)
+    with AuthoringStore(tmp_path) as store:
+        store.create_run(plan, tmp_path / "out", max_attempts=1)
+        assert store.run_progress(plan.plan_id)["current_stage"] == "awaiting_start"
+
+        claimed = store.claim_next(plan.plan_id, "worker-a")
+        assert store.set_item_stage(claimed, "solving_independently") is True
+
+        progress = store.run_progress(plan.plan_id)
+        assert progress["current_stage"] == "solving_independently"
+        assert progress["stage_counts"] == {"solving_independently": 1}
+        assert progress["active_stages"] == [
+            {
+                "spec_id": claimed.spec.spec_id,
+                "ordinal": claimed.spec.ordinal,
+                "attempt": 1,
+                "stage": "solving_independently",
+                "stage_updated_at": progress["stage_updated_at"],
+                "worker_id": "worker-a",
+                "chapter": claimed.spec.chapter,
+                "topic": claimed.spec.topic,
+            }
+        ]
+
+
+def test_progress_separates_live_drafts_retries_and_individual_acceptance(tmp_path):
+    plan = _plan(count=3)
+    with AuthoringStore(tmp_path) as store:
+        store.create_run(plan, tmp_path / "out", max_attempts=3)
+        assert store.acquire_run_lease(plan.plan_id, "runner", 3600)
+        assert store.run_progress(plan.plan_id)["progress_counts"]["drafted"] == 0
+        first = store.claim_next(plan.plan_id, "worker-a")
+        second = store.claim_next(plan.plan_id, "worker-b")
+        store.set_item_stage(first, "solving_independently")
+        store.set_item_stage(second, "drafting")
+
+        counts = store.run_progress(plan.plan_id)["progress_counts"]
+        assert counts["drafted"] == 1
+        assert counts["checking"] == 1
+        assert counts["accepted"] == 0
+        assert counts["not_started"] == 1
+
+        rejected = _candidate(first.spec, CandidateStatus.REJECTED, "spec_alignment")
+        artifact_dir, digest = store.write_candidate_artifacts(first, rejected)
+        store.record_candidate(first, rejected, artifact_dir=artifact_dir, artifact_sha256=digest, retry_base_seconds=0)
+        progress = store.run_progress(plan.plan_id)
+        assert progress["progress_counts"]["retrying"] == 1
+        assert progress["progress_counts"]["drafted"] == 1
+        assert progress["latest_failure"]["gate"] == "spec_alignment"
+        assert progress["latest_failure"]["ordinal"] == first.spec.ordinal
+
+        retry = store.claim_next(plan.plan_id, "worker-c")
+        store.set_item_stage(retry, "drafting")
+        # Retrying a draft does not erase evidence that this item was drafted.
+        assert store.run_progress(plan.plan_id)["progress_counts"]["drafted"] == 1
+
+        accepted = _candidate(second.spec)
+        artifact_dir, digest = store.write_candidate_artifacts(second, accepted)
+        store.record_candidate(second, accepted, artifact_dir=artifact_dir, artifact_sha256=digest)
+        counts = store.run_progress(plan.plan_id)["progress_counts"]
+        assert counts["accepted"] == 1
+        assert counts["drafted"] == 2
+        assert counts["total"] == 3
+        assert store.stats(plan.plan_id)["status"] == "running"
 
 
 def test_item_lease_renewal_and_infrastructure_abandon_are_owner_bound(tmp_path):

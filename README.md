@@ -43,6 +43,20 @@ vbagent config set tikz -m gpt-5.6-sol        # Override tikz model
 vbagent config set default -m gpt-5.6-luna    # Change global default
 ```
 
+Official GPT-5.6 calls automatically reuse stable agent prefixes through
+explicit prompt caching. Multi-key rotation is cache-aware: declare the same
+cache domain only for profiles in the same OpenAI organization and processing
+region; undeclared profiles remain safely isolated.
+
+```bash
+vbagent keys add --name project-a --api-key "$OPENAI_PROJECT_A_KEY" \
+  --cache-domain openai-org-main:global
+vbagent keys list
+```
+
+See [configuration](docs/getting-started/configuration.md#openai-prompt-caching-and-profile-rotation)
+for sharding, failover, and cache metric semantics.
+
 ## CLI Usage
 
 ### Quick Start
@@ -82,6 +96,7 @@ vbagent solve -t scanned-problems/ --in-place --no-diagram --from 1 --to 5 --exc
 | Manage | `config` | Configure models, providers, settings |
 | Manage | `ref` | Manage reference context files |
 | Manage | `cache` | Cache management |
+| Manage | `keys` | Cache-aware OpenAI profile rotation and usage limits |
 | Manage | `db` | SQLite question bank |
 | Manage | `metadata` | Question bank metadata |
 | Manage | `export` | Export LaTeX (flat, structured, project) |
@@ -89,8 +104,8 @@ vbagent solve -t scanned-problems/ --in-place --no-diagram --from 1 --to 5 --exc
 | Manage | `util` | File utilities (rename, count, clean) |
 | Manage | `extans` | Extract answers from LaTeX |
 | Manage | `screenshot` | Screenshot utilities |
-| Interface | `chat` | Interactive conversational interface |
-| Interface | `mcp` | MCP server for external agents |
+| Interface | `chat` | Transparent natural-language authoring with complete tool traces |
+| Interface | `mcp` | Typed natural-language authoring server for MCP hosts |
 | Paper | `paper` | Paper orchestration (init, generate, solve, hint, compile, export) |
 
 ### Syllabus authoring and papers
@@ -105,6 +120,9 @@ vbagent author run --exam jee_main --subject physics --chapter kinematics \
   --type mcq_sc:3 --type integer:1 --count 100 --concurrency 6 \
   --output agentic/authoring
 ```
+
+Bundled official 2026 catalogs cover JEE Main Mathematics, Physics, and
+Chemistry, plus NEET Physics, Chemistry, and Biology.
 
 Paper creation consumes only accepted authoring artifacts:
 
@@ -140,6 +158,55 @@ difficulty-checked, compiled with `pdflatex`, reviewed, and checked for novelty
 before it can count as accepted coverage. Runs persist in SQLite and can be
 continued by run ID after interruption. See the
 [problem authoring guide](docs/user-guide/problem-generation.md).
+
+Human copies use stable names: `agentic/generated/problem_1.tex`, `problem_2.tex`,
+and so on, with one JSON sidecar per problem. Each TeX file contains the question
+and its selected components. The existing CLI assembler, answer extractor, and
+PDF compiler create `main.tex`, `answer_key.tex`, and `main.pdf` in the project
+root, using relative inputs into `agentic/generated`. Run IDs, attempts, and
+build reports stay under `agentic/authoring`.
+
+Use `--no-idea-component` for questions with solutions only, or `--no-solution`
+for questions with ideas only. Deferred solutions are not generated behind the
+scenes; those files are labelled unverified drafts. Later, `vbagent author
+complete --run-id RUN_ID` adds missing components to the same numbered files.
+Exhausted drafts await an author decision to keep, revise, or reject; liking a
+draft does not bypass its correctness checks.
+
+For natural-language authoring, use the transparent built-in chat host:
+
+```bash
+vbagent chat --output agentic/authoring
+```
+
+It opens before loading the MCP server or Agents SDK, then uses deferred
+tool-search namespaces so only relevant schemas enter model context. `You:` and
+`VBAgent:` messages and all tool I/O are formatted JSON. Normal answers stay
+brief, and the model/token line is intentionally compact. A direct request to
+create or generate problems starts in the background immediately after the
+deterministic plan is shown; plan/preflight/ambiguous intent gets a direct
+confirmation question answered with `yes` or `no`. Explicit start, resume, and
+document-rebuild requests authorize only that action and run. While it runs, a
+toolbar polls the durable ledger and shows the live
+agent stage, latest run ID, chapter/topic, status, and accepted count without a
+new message. Detached agent input/output is also streamed above the live prompt.
+On completion the chat reports every saved deliverable and displays full generated
+LaTeX (the first 20 for a large run; `/results RUN_ID` streams all of them).
+Other consequential actions ask directly for `yes` or `no`; `/approve`,
+`/decline`, and `confirm` remain available as aliases. Up and Down browse the
+current process's message history, and one Ctrl+C cancels cleanly.
+To connect another MCP-capable host to the same workspace through stdio:
+
+```bash
+vbagent mcp --output agentic/authoring
+```
+
+The host first inspects catalogs and creates a no-model-call plan. Starting or
+resuming requires explicit user authorization: either the original direct
+creation instruction or a later confirmation. Execution continues in a detached
+worker while status, cancellation, pagination, review, and accepted/evidence
+resources remain available. The authoring agents retain their configured
+GPT-5.6 Luna/Terra/Sol routing and cache-aware profile rotation.
 
 Paper directory structure:
 ```
@@ -236,8 +303,8 @@ vbagent/
 │   ├── cache/
 │   │   └── cache_commands.py            # Cache management commands
 │   ├── interfaces/
-│   │   ├── chat.py                      # Chat interface
-│   │   ├── mcp.py                       # MCP server
+│   │   ├── chat.py                      # Transparent MCP-backed CLI chat
+│   │   ├── mcp.py                       # Typed authoring MCP server
 │   │   └── ui.py                        # UI helpers
 │   └── paper/
 │       └── paper_commands.py            # Paper orchestrator CLI (init, generate, solve, hint, compile, export)
@@ -423,8 +490,8 @@ vbagent/
 │   ├── content_cache.py                 # Content cache
 │   └── metadata_manager.py             # Metadata manager
 │
-├── orchestrator/                        # Chat orchestrator
-│   ├── conversation.py                  # Conversation handler
+├── orchestrator/                        # Generic tool adapters
+│   ├── conversation.py                  # Legacy conversation handler
 │   ├── tools.py                         # Tool definitions
 │   └── tool_wrappers.py               # Tool wrappers
 │
@@ -435,7 +502,8 @@ vbagent/
 │   └── exporter.py                      # LaTeX exporter
 │
 ├── mcp/
-│   └── server.py                        # MCP server
+│   ├── chat.py                          # Cache-aware FastMCP chat bridge
+│   └── server.py                        # FastMCP authoring server
 │
 ├── metadata/
 │   └── store.py                         # Metadata store
@@ -465,7 +533,7 @@ tests/
 │   └── variants/                        # test_variant.py
 ├── cli/
 │   ├── core/                            # test_batch.py, test_process.py
-│   ├── interfaces/                      # test_chat_cli.py, test_chat_interface.py, test_mcp_server.py
+│   ├── interfaces/                      # test_chat_cli.py, test_mcp_server.py
 │   └── management/                      # test_config.py, test_export_tools.py, test_export.py
 ├── integration/                         # test_context.py, test_dpp_builder.py, test_import_performance.py, ...
 ├── models/                              # test_version_store.py

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import json
+from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 
 from rich.console import Console
@@ -11,6 +12,7 @@ from rich.console import Console
 from vbagent.config import VBAgentConfig
 from vbagent.ui.logging import (
     agent_logging_context,
+    agent_task_context,
     log_agent_input,
     log_agent_output,
     log_agent_usage,
@@ -37,8 +39,9 @@ def _set_level(monkeypatch, level: str):
     monkeypatch.setattr(vbagent.config, "get_config", lambda: config)
 
 
-def test_info_mode_logs_json_input_usage_and_output(monkeypatch):
-    _set_level(monkeypatch, "INFO")
+def test_debug_mode_logs_detailed_json_input_usage_and_output(monkeypatch):
+    _set_level(monkeypatch, "DEBUG")
+    monkeypatch.setenv("VBAGENT_LOG_FILE", "off")
     stream = io.StringIO()
     output = Console(file=stream, force_terminal=False, width=160)
 
@@ -71,6 +74,53 @@ def test_info_mode_logs_json_input_usage_and_output(monkeypatch):
     assert '"output": "full generated output"' in rendered
 
 
+def test_info_usage_stays_compact_json(monkeypatch):
+    _set_level(monkeypatch, "INFO")
+    stream = io.StringIO()
+    with agent_logging_context(output_console=Console(file=stream)):
+        log_agent_usage("Draft", model="gpt-5.6-terra", usage=_usage(), duration=3.2)
+    lines = stream.getvalue().strip().splitlines()
+    assert len(lines) == 2
+    usage = json.loads(lines[1])
+    assert usage["event"] == "usage"
+    assert usage["tokens"]["input"] == 3200
+    assert "response_id" not in usage
+
+
+def test_detached_worker_records_raw_jsonl_and_sanitizes_images(monkeypatch, capsys):
+    _set_level(monkeypatch, "INFO")
+    monkeypatch.setenv("VBAGENT_AGENT_IO_FORMAT", "jsonl")
+    prompt = "First line\nSecond line → range"
+    with agent_logging_context():
+        with agent_task_context("item 002 · abc123"):
+            log_agent_input("Math", {"prompt": prompt, "image": "data:image/png;base64," + "A" * 300}, "terra")
+            log_agent_output("Math", {"problem_latex": "\\item Question\n\\begin{tasks}(2)"}, 1.0)
+        log_agent_input("After", "No task", "luna")
+
+    events = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert [event["event"] for event in events] == ["input", "output", "input"]
+    assert events[0]["vbagent_io"] == 1
+    assert events[0]["input"]["prompt"] == prompt
+    assert "AAAA" not in events[0]["input"]["image"]
+    assert events[0]["task"] == "item 002 · abc123"
+    assert "task" not in events[2]
+
+
+def test_parallel_worker_records_do_not_interleave(monkeypatch, capsys):
+    _set_level(monkeypatch, "INFO")
+    monkeypatch.setenv("VBAGENT_AGENT_IO_FORMAT", "jsonl")
+
+    def emit(index):
+        with agent_task_context(f"item {index}"):
+            log_agent_output("Math", {"index": index, "body": "generated line\n" * 1000}, 1.0)
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        list(executor.map(emit, range(12)))
+    events = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert len(events) == 12
+    assert {event["output"]["index"] for event in events} == set(range(12))
+
+
 def test_debug_mode_keeps_full_scanner_output(monkeypatch):
     _set_level(monkeypatch, "DEBUG")
     monkeypatch.setenv("VBAGENT_LOG_FILE", "off")
@@ -87,6 +137,24 @@ def test_debug_mode_keeps_full_scanner_output(monkeypatch):
     assert "[OUTPUT] Scanner" in rendered
     assert "chars total" not in rendered
     assert rendered.count("generated output") > 300
+
+
+def test_explicit_full_agent_io_keeps_complete_worker_input_and_output(monkeypatch):
+    _set_level(monkeypatch, "INFO")
+    monkeypatch.setenv("VBAGENT_FULL_AGENT_IO", "1")
+    stream = io.StringIO()
+    output = Console(file=stream, force_terminal=False, width=120)
+    long_input = "complete input " * 300
+    long_output = "complete output " * 300
+
+    with agent_logging_context(output_console=output):
+        log_agent_input("Authoring Draft", long_input, "gpt-5.6-terra")
+        log_agent_output("Authoring Draft", long_output, 2.0)
+
+    rendered = stream.getvalue()
+    assert "chars total" not in rendered
+    assert rendered.count("complete input") > 250
+    assert rendered.count("complete output") > 250
 
 
 def test_quiet_mode_suppresses_ui_but_keeps_jsonl_events(monkeypatch, tmp_path):
@@ -146,3 +214,66 @@ def test_quiet_pipeline_context_is_restored_after_call(monkeypatch):
 
     assert "[USAGE] After" in stream.getvalue()
     assert "Worker" not in stream.getvalue()
+
+
+def test_request_level_cache_hits_and_gpt56_effective_input_are_reported(monkeypatch, tmp_path):
+    _set_level(monkeypatch, "INFO")
+    event_log = tmp_path / "events.jsonl"
+    monkeypatch.setenv("VBAGENT_LOG_FILE", str(event_log))
+    usage = _usage()
+    usage.request_usage_entries = [
+        SimpleNamespace(
+            input_tokens_details=SimpleNamespace(cached_tokens=0, cache_write_tokens=800)
+        ),
+        SimpleNamespace(
+            input_tokens_details=SimpleNamespace(cached_tokens=400, cache_write_tokens=800)
+        ),
+        SimpleNamespace(
+            input_tokens_details=SimpleNamespace(cached_tokens=800, cache_write_tokens=0)
+        ),
+    ]
+
+    with agent_logging_context(
+        output_console=Console(file=io.StringIO()),
+        quiet=True,
+    ):
+        log_agent_usage(
+            "Authoring",
+            model="gpt-5.6-sol",
+            usage=usage,
+            key_name="profile-a",
+            cache_domain="org-main:global",
+        )
+
+    tokens = json.loads(event_log.read_text())["tokens"]
+    assert tokens["cache_metrics_reported"] is True
+    assert tokens["cache_read_requests"] == 2
+    assert tokens["cache_reported_requests"] == 3
+    assert tokens["cache_request_hit_percent"] == 66.7
+    assert tokens["ordinary_input"] == 400
+    assert tokens["effective_input_multiplier"] == 0.7875
+
+
+def test_missing_cache_metrics_are_not_reported_as_request_misses(monkeypatch, tmp_path):
+    _set_level(monkeypatch, "INFO")
+    event_log = tmp_path / "events.jsonl"
+    monkeypatch.setenv("VBAGENT_LOG_FILE", str(event_log))
+    usage = SimpleNamespace(
+        input_tokens=100,
+        output_tokens=10,
+        requests=1,
+        input_tokens_details=SimpleNamespace(),
+        output_tokens_details=SimpleNamespace(reasoning_tokens=0),
+    )
+
+    with agent_logging_context(
+        output_console=Console(file=io.StringIO()),
+        quiet=True,
+    ):
+        log_agent_usage("ThirdParty", model="other-model", usage=usage)
+
+    tokens = json.loads(event_log.read_text())["tokens"]
+    assert tokens["cache_metrics_reported"] is False
+    assert tokens["cache_reported_requests"] == 0
+    assert tokens["cache_request_hit_percent"] is None
+    assert tokens["effective_input_multiplier"] is None

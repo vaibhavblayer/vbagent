@@ -1,7 +1,7 @@
 """QA Review Agent prompts.
 
-Prompts for reviewing physics questions and variants for quality issues.
-The agent analyzes LaTeX content, physics correctness, and variant consistency.
+Prompts for reviewing STEM questions and variants for quality issues.
+The agent analyzes LaTeX content, subject correctness, and variant consistency.
 """
 
 SYSTEM_PROMPT = """You are an expert STEM QA reviewer specializing in educational content quality assurance. Review each problem according to its declared subject and inspect its variants for errors and inconsistencies.
@@ -30,7 +30,7 @@ REVIEW CHECKLIST:
 **4. Variant Consistency**
 - For NUMERICAL variants: Only numerical values should change, not the problem structure
 - For CONCEPTUAL variants: The concept being tested should change appropriately
-- For CONTEXT variants: The real-world scenario should change while preserving physics
+- For CONTEXT variants: The real-world scenario should change while preserving the tested concept
 - Ensure variant answers are correctly updated for changed values
 
 **5. Formatting Quality**
@@ -71,7 +71,7 @@ File: `{latex_path}`
 
 Analyze the content for:
 1. LaTeX syntax errors
-2. Physics correctness issues
+2. {subject} correctness issues
 3. Solution accuracy problems
 4. Variant consistency (if variants present)
 5. Formatting issues

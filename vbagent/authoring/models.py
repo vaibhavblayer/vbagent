@@ -9,7 +9,6 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-
 Subject = Literal["physics", "chemistry", "mathematics", "biology"]
 
 
@@ -52,6 +51,7 @@ class DiagramPolicy(str, Enum):
 class SourceKind(str, Enum):
     ORIGINAL = "original"
     VARIANT = "variant"
+    COMPLETION = "completion"
 
 
 class VariantFamily(str, Enum):
@@ -109,10 +109,12 @@ class SyllabusCatalog(BaseModel):
     version: str
     source: str
     source_url: str = ""
+    official_source_sha256: str = ""
     verified_at: str = ""
     allowed_question_types: tuple[QuestionType, ...] = tuple(QuestionType)
     exam_pattern_description: str = ""
     exam_pattern_source_url: str = ""
+    exam_pattern_source_sha256: str = ""
     exam_pattern_verified_at: str = ""
     source_sha256: str
     chapters: tuple[CatalogChapter, ...]
@@ -188,6 +190,9 @@ class AuthoringRequest(BaseModel):
     seed: int = 0
     existing_accepted_counts: dict[str, int] = Field(default_factory=dict)
     acceptance: AcceptancePolicy = Field(default_factory=AcceptancePolicy)
+    include_solution: bool = True
+    include_idea: bool = True
+    completion_parent_spec_ids: list[str] = Field(default_factory=list)
 
     # Controlled accepted-parent variants. These fields are normally populated
     # by ``execute_variants`` rather than entered directly by users.
@@ -338,8 +343,10 @@ class GenerationSpec(BaseModel):
     syllabus_version: str
     syllabus_source_sha256: str
     syllabus_source_url: str = ""
+    syllabus_official_source_sha256: str = ""
     exam_pattern_description: str = ""
     exam_pattern_source_url: str = ""
+    exam_pattern_source_sha256: str = ""
     exam_pattern_verified_at: str = ""
     chapter_id: str
     chapter: str
@@ -361,6 +368,8 @@ class GenerationSpec(BaseModel):
     tone: str = ""
     random_seed: int
     acceptance: AcceptancePolicy
+    include_solution: bool = True
+    include_idea: bool = True
     source_kind: SourceKind = SourceKind.ORIGINAL
     variant_family: VariantFamily | None = None
     parent_spec_id: str | None = None
@@ -368,6 +377,10 @@ class GenerationSpec(BaseModel):
     lineage_depth: int = Field(default=0, ge=0, le=5)
     parent_problem_latex: str = ""
     parent_artifact_sha256: str = ""
+    parent_idea_latex: str = ""
+    parent_solution_latex: str = ""
+    parent_final_latex: str = ""
+    parent_was_accepted: bool = False
 
     @property
     def difficulty_band(self) -> Literal["easy", "medium", "hard"]:
@@ -393,10 +406,12 @@ class AuthoringPlan(BaseModel):
     catalog_version: str
     catalog_source: str
     catalog_source_url: str = ""
+    catalog_official_source_sha256: str = ""
     catalog_verified_at: str = ""
     allowed_question_types: tuple[QuestionType, ...] = tuple(QuestionType)
     exam_pattern_description: str = ""
     exam_pattern_source_url: str = ""
+    exam_pattern_source_sha256: str = ""
     exam_pattern_verified_at: str = ""
     catalog_source_sha256: str
     items: tuple[GenerationSpec, ...]

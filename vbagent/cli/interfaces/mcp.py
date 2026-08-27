@@ -1,105 +1,73 @@
-"""CLI command for running vbagent as an MCP server."""
+"""CLI command for the authoring-focused MCP server."""
 
-import asyncio
+from __future__ import annotations
+
 import logging
+import sys
 
 import click
 from rich.console import Console
 
 from vbagent.mcp.server import MCPServer
-from vbagent.orchestrator.tools import ToolRegistry
-from vbagent.orchestrator.tool_wrappers import register_core_tools
 
-
-console = Console()
+console = Console(stderr=True)
 
 
 @click.command()
 @click.option(
-    '--verbose', '-v',
-    is_flag=True,
-    help='Enable verbose logging'
+    "--output",
+    default="agentic/authoring",
+    show_default=True,
+    type=click.Path(file_okay=False),
+    help="Server-controlled authoring workspace used by every MCP tool.",
 )
-def mcp(verbose: bool):
-    """Run vbagent as an MCP (Model Context Protocol) server.
-    
-    This starts vbagent in MCP server mode, exposing all tools via the
-    Model Context Protocol for integration with external agents like
-    Kiro, Cursor, and Claude Desktop.
-    
-    The server uses stdio transport and communicates via stdin/stdout.
-    
-    Example:
-        vbagent mcp
-        vbagent mcp --verbose
-    
-    Configuration:
-        Add to your MCP client configuration (e.g., Kiro's mcp.json):
-        
+@click.option(
+    "--transport",
+    type=click.Choice(["stdio", "sse", "streamable-http"]),
+    default="stdio",
+    show_default=True,
+)
+@click.option("--host", default="127.0.0.1", show_default=True)
+@click.option("--port", type=click.IntRange(1, 65535), default=8000, show_default=True)
+@click.option("--verbose", "-v", is_flag=True, help="Enable debug logs on stderr.")
+def mcp(output: str, transport: str, host: str, port: int, verbose: bool) -> None:
+    """Serve durable problem authoring through Model Context Protocol.
+
+    The MCP host supplies the natural-language model. VBAgent exposes typed
+    catalog, plan, start, status, pagination, cancellation, review, variant,
+    and artifact operations backed by the same ledger as ``vbagent author``.
+
+    Stdio example for an MCP client configuration:
+
+    \b
         {
           "mcpServers": {
-            "vbagent": {
+            "vbagent-authoring": {
               "command": "vbagent",
-              "args": ["mcp"],
-              "env": {
-                "OPENAI_API_KEY": "your-api-key-here"
-              }
-            }
-          }
-        }
-        
-        Or use environment variable references:
-        
-        {
-          "mcpServers": {
-            "vbagent": {
-              "command": "vbagent",
-              "args": ["mcp"],
-              "env": {
-                "OPENAI_API_KEY": "${OPENAI_API_KEY}",
-                "XAI_API_KEY": "${XAI_API_KEY}",
-                "GOOGLE_API_KEY": "${GOOGLE_API_KEY}"
-              }
+              "args": ["mcp", "--output", "agentic/authoring"]
             }
           }
         }
     """
-    # Configure logging
-    if verbose:
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
-    else:
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(levelname)s: %(message)s'
-        )
-    
+    logging.basicConfig(
+        level=logging.DEBUG if verbose else logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        stream=sys.stderr,
+    )
     try:
-        # Apply provider config early to ensure API keys are set
-        from vbagent.config import apply_provider_config
-        apply_provider_config()
-        
-        # Create tool registry and register all tools
-        registry = ToolRegistry()
-        register_core_tools(registry)
-        
-        # Create and run MCP server
-        server = MCPServer(registry)
-        
-        # Run the async server
-        asyncio.run(server.run())
-        
+        server = MCPServer(
+            output_root=output,
+            host=host,
+            port=port,
+            log_level="DEBUG" if verbose else "INFO",
+        )
+        server.run(transport=transport)
     except KeyboardInterrupt:
-        console.print("\n[yellow]MCP server stopped by user[/yellow]")
-    except Exception as e:
-        console.print(f"[red]Error:[/red] {e}")
-        if verbose:
-            import traceback
-            console.print(traceback.format_exc())
-        raise click.Abort()
+        console.print("MCP server stopped.")
+    except Exception as exc:
+        logging.getLogger(__name__).exception("MCP server failed")
+        raise click.ClickException(str(exc)) from exc
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     mcp()

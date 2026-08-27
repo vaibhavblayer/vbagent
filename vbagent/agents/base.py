@@ -1,9 +1,8 @@
 """Base agent utilities using OpenAI Agents SDK."""
 
-import base64
 import asyncio
+import base64
 import contextlib
-import logging
 import os
 import threading
 import time
@@ -15,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, TypeVar
 if TYPE_CHECKING:
     from agents import Agent, ModelSettings
 
-from vbagent.config import get_model, get_model_settings, apply_provider_config
+from vbagent.config import apply_provider_config, get_model, get_model_settings
 
 # Global lock to prevent concurrent spinners
 _spinner_lock = threading.Lock()
@@ -29,7 +28,6 @@ _max_concurrent_requests = max(
 _request_slots = threading.BoundedSemaphore(_max_concurrent_requests)
 
 T = TypeVar("T")
-logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -39,6 +37,8 @@ class PinnedRequestCredentials:
     api_key: Optional[str]
     base_url: Optional[str]
     key_name: Optional[str]
+    cache_domain: Optional[str] = None
+    managed_profile: bool = False
 
 
 @dataclass(frozen=True)
@@ -207,12 +207,13 @@ def create_agent(
 def _resolve_request_credentials(
     model: str,
     affinity_key: str | None = None,
-) -> tuple[Optional[str], Optional[str], Optional[str]]:
+    excluded_key_names: set[str] | None = None,
+) -> PinnedRequestCredentials:
     """Resolve per-request credentials without relying on shared SDK clients.
 
-    Returns ``(api_key, base_url, key_name)``.  ``key_name`` is retained so
-    usage is attributed to the key selected for this request even when other
-    requests run concurrently.
+    Managed-profile selection is fail-closed: once an API profile file is
+    configured, disabled, exhausted, or cooling-down profiles cannot silently
+    fall through to an unrelated environment key.
     """
     from vbagent.config import PROVIDERS, get_config
 
@@ -221,26 +222,23 @@ def _resolve_request_credentials(
     key_name: Optional[str] = None
 
     if not config.base_url:
-        try:
-            from vbagent.api_keys import KeyManager
+        from vbagent.api_keys import KeyManager
 
-            manager = KeyManager.get_instance()
-            if manager.is_enabled():
-                api_key = manager.get_key_for_model(model, affinity_key=affinity_key)
-                if api_key and manager.config:
-                    selected = next(
-                        (item for item in manager.config.keys if item.api_key == api_key),
-                        None,
-                    )
-                    key_name = selected.name if selected else None
-        except Exception as exc:
-            # Preserve the existing fallback to explicit config/environment.
-            logger.warning(
-                "API profile selection failed for %s; falling back to configured credentials: %s",
+        manager = KeyManager.get_instance()
+        if manager.is_configured():
+            selected = manager.select_key_for_model(
                 model,
-                exc,
+                affinity_key=affinity_key,
+                excluded_names=excluded_key_names or (),
+                reserve=True,
             )
-            api_key = None
+            return PinnedRequestCredentials(
+                selected.api_key,
+                None,
+                selected.key_name,
+                selected.cache_domain,
+                True,
+            )
 
     if api_key is None:
         api_key = config.api_key
@@ -261,31 +259,35 @@ def _resolve_request_credentials(
         if api_key:
             key_name = "OPENAI_API_KEY"
 
-    return api_key, config.base_url, key_name
+    return PinnedRequestCredentials(api_key, config.base_url, key_name)
 
 
 def _create_request_provider(
     model: str,
     credentials: PinnedRequestCredentials | None = None,
     affinity_key: str | None = None,
+    excluded_key_names: set[str] | None = None,
 ):
     """Create an SDK provider and HTTP client owned by one agent request."""
     from agents.models.openai_provider import OpenAIProvider
     from openai import AsyncOpenAI
 
     if credentials is None:
-        api_key, base_url, key_name = _resolve_request_credentials(
+        pinned = _resolve_request_credentials(
             model,
             affinity_key=affinity_key,
+            excluded_key_names=excluded_key_names,
         )
     else:
-        api_key = credentials.api_key
-        base_url = credentials.base_url
-        key_name = credentials.key_name
-    client = AsyncOpenAI(api_key=api_key, base_url=base_url)
-    provider = OpenAIProvider(openai_client=client)
-    pinned = PinnedRequestCredentials(api_key, base_url, key_name)
-    return provider, client, key_name, pinned
+        pinned = credentials
+    try:
+        client = AsyncOpenAI(api_key=pinned.api_key, base_url=pinned.base_url)
+        provider = OpenAIProvider(openai_client=client)
+    except BaseException:
+        if credentials is None and pinned.managed_profile:
+            _release_managed_profile(pinned.key_name)
+        raise
+    return provider, client, pinned.key_name, pinned
 
 
 async def _execute_agent_run(
@@ -295,12 +297,22 @@ async def _execute_agent_run(
     group_id: str | None = None,
     previous_response_id: str | None = None,
     credentials: PinnedRequestCredentials | None = None,
+    allow_cache_sharding: bool = True,
 ):
-    """Execute one SDK run with an isolated client and real cancellation."""
+    """Execute one SDK run with cache routing, failover, and cancellation."""
     from agents import RunConfig
+
+    from vbagent.agents.prompt_cache import prepare_prompt_cache
 
     Runner = _get_runner_class()
     model = str(agent.model or "default")
+    cache_plan = prepare_prompt_cache(
+        agent,
+        input_text,
+        group_id=group_id,
+        previous_response_id=previous_response_id,
+        allow_sharding=allow_cache_sharding,
+    )
     queued_at = time.monotonic()
     acquired = False
     while not acquired:
@@ -310,61 +322,131 @@ async def _execute_agent_run(
 
     queue_duration = time.monotonic() - queued_at
     request_started = time.monotonic()
-    client = None
     key_name = None
+    cache_domain = None
+    excluded_key_names: set[str] = set()
+    last_provider_error: BaseException | None = None
+    failover_count = 0
     try:
-        if credentials is None:
-            created = _create_request_provider(model, affinity_key=group_id)
-        else:
-            created = _create_request_provider(model, credentials)
-        provider, client, key_name = created[:3]
-        pinned = (
-            created[3]
-            if len(created) > 3
-            else credentials or PinnedRequestCredentials(None, None, key_name)
-        )
-        from ..ui.logging import log_agent_started
-
-        log_agent_started(
-            agent.name,
-            model=model,
-            queue_duration=queue_duration,
-            key_name=key_name,
-            has_image=_input_has_image(input_text),
-            reasoning=_extract_reasoning(agent),
-        )
-        try:
-            run = Runner.run(
-                agent,
-                input=input_text,
-                run_config=RunConfig(
-                    model_provider=provider,
-                    group_id=group_id,
-                ),
-                previous_response_id=previous_response_id,
-            )
-            if timeout is None:
-                result = await run
-            else:
+        while True:
+            client = None
+            pinned = credentials
+            try:
                 try:
-                    result = await asyncio.wait_for(run, timeout=timeout)
-                except TimeoutError as exc:
-                    raise TimeoutError(
-                        f"{agent.name} timed out after {timeout:.0f}s (model: {model})"
-                    ) from exc
-            request_duration = time.monotonic() - request_started
-            return result, key_name, queue_duration, request_duration, pinned
-        finally:
-            # Client cleanup must not turn a successfully received response
-            # into an apparent request failure.
-            if client is not None:
-                with contextlib.suppress(Exception):
-                    await client.close()
+                    if credentials is None:
+                        provider_kwargs = {"affinity_key": cache_plan.affinity_key}
+                        if excluded_key_names:
+                            provider_kwargs["excluded_key_names"] = excluded_key_names
+                        created = _create_request_provider(model, **provider_kwargs)
+                    else:
+                        created = _create_request_provider(model, credentials)
+                except Exception as selection_error:
+                    if last_provider_error is not None:
+                        raise last_provider_error from selection_error
+                    raise
+
+                provider, client, key_name = created[:3]
+                pinned = (
+                    created[3]
+                    if len(created) > 3
+                    else credentials or PinnedRequestCredentials(None, None, key_name)
+                )
+                cache_domain = pinned.cache_domain
+                from ..ui.logging import log_agent_started
+
+                log_agent_started(
+                    agent.name,
+                    model=model,
+                    queue_duration=queue_duration if failover_count == 0 else 0.0,
+                    key_name=key_name,
+                    cache_domain=cache_domain,
+                    cache_group_id=cache_plan.cache_group_id,
+                    profile_attempt=failover_count + 1,
+                    has_image=_input_has_image(cache_plan.input_data),
+                    reasoning=_extract_reasoning(agent),
+                )
+                run = Runner.run(
+                    agent,
+                    input=cache_plan.input_data,
+                    run_config=RunConfig(
+                        model_provider=provider,
+                        model_settings=cache_plan.model_settings,
+                        group_id=cache_plan.trace_group_id,
+                    ),
+                    previous_response_id=previous_response_id,
+                )
+                if timeout is None:
+                    result = await run
+                else:
+                    try:
+                        remaining = timeout - (time.monotonic() - request_started)
+                        if remaining <= 0:
+                            raise TimeoutError
+                        result = await asyncio.wait_for(run, timeout=remaining)
+                    except TimeoutError as exc:
+                        raise TimeoutError(
+                            f"{agent.name} timed out after {timeout:.0f}s (model: {model})"
+                        ) from exc
+
+                usage = result.context_wrapper.usage if result.context_wrapper else None
+                actual_model = _extract_actual_model(result) or model
+                _track_usage(actual_model, usage, key_name)
+                request_duration = time.monotonic() - request_started
+                return (
+                    result,
+                    key_name,
+                    cache_domain,
+                    queue_duration,
+                    request_duration,
+                    pinned,
+                    cache_plan.cache_group_id,
+                )
+            except BaseException as exc:
+                status_code = _provider_status_code(exc)
+                may_failover = (
+                    credentials is None
+                    and previous_response_id is None
+                    and pinned is not None
+                    and pinned.managed_profile
+                    and bool(key_name)
+                    and status_code in {401, 403, 429}
+                )
+                if may_failover:
+                    from ..ui.logging import record_agent_event
+
+                    cooldown = 60.0 if status_code == 429 else 300.0
+                    _mark_profile_unavailable(key_name, cooldown)
+                    excluded_key_names.add(key_name)
+                    failover_count += 1
+                    last_provider_error = exc
+                    record_agent_event(
+                        "profile_failover",
+                        agent.name,
+                        model=model,
+                        key_name=key_name,
+                        cache_domain=cache_domain,
+                        cache_group_id=cache_plan.cache_group_id,
+                        status_code=status_code,
+                        next_attempt=failover_count + 1,
+                    )
+                    continue
+                raise
+            finally:
+                # Cleanup and reservation release must not invalidate a valid
+                # response or leak capacity after a failed provider attempt.
+                if client is not None:
+                    with contextlib.suppress(Exception):
+                        await client.close()
+                if credentials is None and pinned is not None and pinned.managed_profile:
+                    _release_managed_profile(pinned.key_name)
     except BaseException as exc:
         with contextlib.suppress(Exception):
             exc._vbagent_metadata = {
                 "model": model,
                 "key_name": key_name,
+                "cache_domain": cache_domain,
+                "cache_group_id": cache_plan.cache_group_id,
+                "profile_failovers": failover_count,
                 "queue_duration": queue_duration,
                 "request_duration": time.monotonic() - request_started,
             }
@@ -372,6 +454,30 @@ async def _execute_agent_run(
     finally:
         if acquired:
             _request_slots.release()
+
+
+def _provider_status_code(error: BaseException) -> int | None:
+    """Extract an HTTP status from OpenAI SDK and compatible errors."""
+    value = getattr(error, "status_code", None)
+    if isinstance(value, int):
+        return value
+    response = getattr(error, "response", None)
+    value = getattr(response, "status_code", None)
+    return value if isinstance(value, int) else None
+
+
+def _mark_profile_unavailable(key_name: str, cooldown_seconds: float) -> None:
+    """Put one managed profile in a process-local provider cooldown."""
+    from vbagent.api_keys import KeyManager
+
+    KeyManager.get_instance().mark_profile_unavailable(key_name, cooldown_seconds)
+
+
+def _release_managed_profile(key_name: str | None) -> None:
+    """Release the request reservation held by one managed profile."""
+    from vbagent.api_keys import KeyManager
+
+    KeyManager.get_instance().release_profile(key_name)
 
 
 def _run_coroutine_sync(factory: Callable[[], Awaitable[T]]) -> T:
@@ -486,7 +592,13 @@ async def run_agent(agent: "Agent", input_text: str | list) -> Any:
         The agent's final output (string or structured type)
     """
     import time
-    from ..ui.logging import log_agent_input, log_agent_output, log_agent_error, log_agent_usage
+
+    from ..ui.logging import (
+        log_agent_error,
+        log_agent_input,
+        log_agent_output,
+        log_agent_usage,
+    )
     
     model = agent.model or "default"
     reasoning = _extract_reasoning(agent)
@@ -496,9 +608,15 @@ async def run_agent(agent: "Agent", input_text: str | list) -> Any:
     
     start_time = time.time()
     try:
-        result, key_name, queue_duration, request_duration, _ = await _execute_agent_run(
-            agent, input_text, timeout=None
-        )
+        (
+            result,
+            key_name,
+            cache_domain,
+            queue_duration,
+            request_duration,
+            _,
+            cache_group_id,
+        ) = await _execute_agent_run(agent, input_text, timeout=None)
         duration = time.time() - start_time
         
         # Extract usage, response ID, and actual model
@@ -506,14 +624,14 @@ async def run_agent(agent: "Agent", input_text: str | list) -> Any:
         response_id = _extract_response_id(result)
         actual_model = _extract_actual_model(result) or model
         
-        _track_usage(actual_model, usage, key_name)
-        
         log_agent_usage(agent.name, model=actual_model, duration=duration,
                         usage=usage, response_id=response_id,
                         has_image=has_image, reasoning=reasoning,
                         queue_duration=queue_duration,
                         request_duration=request_duration,
-                        key_name=key_name)
+                        key_name=key_name,
+                        cache_domain=cache_domain,
+                        cache_group_id=cache_group_id)
         log_agent_output(agent.name, result.final_output, duration)
         
         return result.final_output
@@ -551,6 +669,9 @@ def _run_agent_sync_impl(
         TimeoutError: If timeout is exceeded
     """
     import time
+
+    from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+
     from ..ui.logging import (
         get_agent_console,
         log_agent_error,
@@ -558,7 +679,6 @@ def _run_agent_sync_impl(
         log_agent_output,
         log_agent_usage,
     )
-    from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
     
     # Get agent info for display
     model = agent.model or "default"
@@ -594,7 +714,15 @@ def _run_agent_sync_impl(
                         reasoning=reasoning,
                         total=None,
                     )
-                    run_result, key_name, queue_duration, request_duration, pinned = _run_coroutine_sync(
+                    (
+                        run_result,
+                        key_name,
+                        cache_domain,
+                        queue_duration,
+                        request_duration,
+                        pinned,
+                        effective_cache_group_id,
+                    ) = _run_coroutine_sync(
                         lambda: _execute_agent_run(
                             agent,
                             input_text,
@@ -602,10 +730,19 @@ def _run_agent_sync_impl(
                             group_id=group_id,
                             previous_response_id=previous_response_id,
                             credentials=credentials,
+                            allow_cache_sharding=not return_continuation,
                         )
                     )
         else:
-            run_result, key_name, queue_duration, request_duration, pinned = _run_coroutine_sync(
+            (
+                run_result,
+                key_name,
+                cache_domain,
+                queue_duration,
+                request_duration,
+                pinned,
+                effective_cache_group_id,
+            ) = _run_coroutine_sync(
                 lambda: _execute_agent_run(
                     agent,
                     input_text,
@@ -613,6 +750,7 @@ def _run_agent_sync_impl(
                     group_id=group_id,
                     previous_response_id=previous_response_id,
                     credentials=credentials,
+                    allow_cache_sharding=not return_continuation,
                 )
             )
     except BaseException as exc:
@@ -629,8 +767,6 @@ def _run_agent_sync_impl(
     # Get the actual model used (from API response)
     actual_model = _extract_actual_model(run_result) or model
     
-    _track_usage(actual_model, usage, key_name)
-    
     # Always show compact completion line with token usage
     log_agent_usage(agent.name, model=actual_model, duration=duration,
                     usage=usage, response_id=response_id,
@@ -638,7 +774,8 @@ def _run_agent_sync_impl(
                     queue_duration=queue_duration,
                     request_duration=request_duration,
                     key_name=key_name,
-                    cache_group_id=group_id)
+                    cache_domain=cache_domain,
+                    cache_group_id=effective_cache_group_id)
     
     # Log full output
     log_agent_output(agent.name, final_output, duration)
@@ -698,6 +835,11 @@ def run_agent_sync_continued(
     timeout: float | None = None,
 ) -> ContinuedAgentResult:
     """Run one grouped Responses turn and return state for the next turn."""
+    if previous_response_id is not None and credentials is None:
+        raise ValueError(
+            "credentials from the previous ContinuedAgentResult are required "
+            "when previous_response_id is supplied"
+        )
     return _run_agent_sync_impl(
         agent,
         input_text,

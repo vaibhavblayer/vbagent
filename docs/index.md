@@ -10,7 +10,7 @@
 
 ## What is VBAgent?
 
-VBAgent is a comprehensive multi-agent system for processing physics, chemistry, mathematics, and biology questions. It combines AI-powered agents to handle everything from image scanning to problem generation, with a natural language chat interface.
+VBAgent is a comprehensive multi-agent system for processing physics, chemistry, mathematics, and biology questions. It combines AI-powered agents for image processing and durable syllabus-driven problem authoring, with natural-language access through MCP.
 
 ## Key Features
 
@@ -23,13 +23,20 @@ VBAgent is a comprehensive multi-agent system for processing physics, chemistry,
 - **Agent 6:** Problem Combiner - Combine multiple problems
 - **Agent 7:** TikZ Checker - Automatic validation and fixing
 
-### 💬 **Conversational Interface**
-Generate complete problems from natural language:
+### 💬 **Natural-language MCP authoring**
+Use the transparent built-in host:
 ```bash
-$ vbagent chat
-You: "Create a passage problem on double block friction"
-Agent: *generates problem with TikZ, metadata, and everything*
+$ vbagent chat --output agentic/authoring
 ```
+
+It shows every controller and typed tool input/output and locally confirms
+model execution. Or connect another MCP-capable host to the server:
+```bash
+$ vbagent mcp --output agentic/authoring
+```
+
+Ask the host to inspect the syllabus and plan a batch. VBAgent starts model
+calls only after the plan is shown and explicitly confirmed.
 
 ### 📊 **Complete Pipeline**
 - Image → LaTeX extraction
@@ -56,8 +63,11 @@ vbagent init
 # Process an image
 vbagent process -i question.png
 
-# Or use chat interface
-vbagent chat
+# Talk naturally to the durable authoring workflow
+vbagent chat --output agentic/authoring
+
+# Or expose it to another MCP host
+vbagent mcp --output agentic/authoring
 ```
 
 ## Use Cases
@@ -92,7 +102,7 @@ Input (Image/LaTeX/Idea)
 ### v0.2.2 - Conversational Problem Generation
 - ✨ Generate problems from ideas using natural language
 - 🤖 Full pipeline integration (TikZ, classification, difficulty)
-- 💬 Interactive clarification in chat interface
+- 💬 Typed natural-language authoring through MCP
 - 📦 Complete metadata like image/tex processing
 
 [See full changelog →](https://github.com/vaibhavblayer/vbagent/releases)
@@ -102,7 +112,7 @@ Input (Image/LaTeX/Idea)
 - [Installation Guide](getting-started/installation.md)
 - [Quick Start Tutorial](getting-started/quick-start.md)
 - [CLI Commands Reference](user-guide/cli-commands.md)
-- [Chat Interface Guide](user-guide/chat.md)
+- [Natural-language MCP Guide](user-guide/chat.md)
 - [Problem Generation](user-guide/problem-generation.md)
 - [API Reference](api/agents.md)
 

@@ -10,6 +10,10 @@ from pathlib import Path
 from typing import Any
 
 from vbagent.authoring.models import AcceptancePolicy, AuthoringPlan, AuthoringRequest
+from vbagent.authoring.paths import (
+    generated_collection_manifest_path,
+    generated_output_root,
+)
 from vbagent.authoring.planner import AuthoringPlanner
 from vbagent.authoring.service import AuthoringRunService
 from vbagent.authoring.store import AuthoringStore
@@ -22,6 +26,8 @@ class AuthoringExecution:
     items: tuple[dict[str, Any], ...]
     output_dir: Path
     run_dir: Path
+    generated_dir: Path
+    generated_manifest_path: Path
     database_path: Path
 
     @property
@@ -50,6 +56,24 @@ def execute_authoring(
         output_dir=output,
         include_existing_coverage=include_existing_coverage,
     )
+    return _execute_plan(
+        plan,
+        output,
+        max_attempts=max_attempts,
+        concurrency=concurrency,
+        start=start,
+    )
+
+
+def _execute_plan(
+    plan: AuthoringPlan,
+    output: Path,
+    *,
+    max_attempts: int,
+    concurrency: int,
+    start: bool,
+) -> AuthoringExecution:
+    """Persist and execute the exact immutable plan supplied by the caller."""
     with AuthoringStore(output) as store:
         store.create_run(
             plan,
@@ -66,6 +90,8 @@ def execute_authoring(
         items=items,
         output_dir=output,
         run_dir=output / "runs" / plan.plan_id,
+        generated_dir=generated_output_root(output),
+        generated_manifest_path=generated_collection_manifest_path(output),
         database_path=database_path,
     )
 
@@ -118,6 +144,38 @@ def execute_variants(
     again transactionally when the run is created, preventing parallel callers
     from exceeding lineage limits.
     """
+    output = Path(output_dir).expanduser().resolve()
+    plan = plan_variants(
+        parent_spec_id,
+        output,
+        count=count,
+        variant_families=variant_families,
+        seed=seed,
+        acceptance=acceptance,
+        max_lineage_depth=max_lineage_depth,
+        max_variants_per_parent=max_variants_per_parent,
+    )
+    return _execute_plan(
+        plan,
+        output,
+        max_attempts=max_attempts,
+        concurrency=concurrency,
+        start=start,
+    )
+
+
+def plan_variants(
+    parent_spec_id: str,
+    output_dir: str | Path,
+    *,
+    count: int = 1,
+    variant_families: dict[str, float] | None = None,
+    seed: int = 0,
+    acceptance: AcceptancePolicy | dict[str, Any] | None = None,
+    max_lineage_depth: int = 2,
+    max_variants_per_parent: int = 12,
+) -> AuthoringPlan:
+    """Plan accepted-parent variants without executing model calls."""
     output = Path(output_dir).expanduser().resolve()
     with AuthoringStore(output) as store:
         item = store.get_item(parent_spec_id)
@@ -173,11 +231,8 @@ def execute_variants(
         max_lineage_depth=max_lineage_depth,
         max_variants_per_parent=max_variants_per_parent,
     )
-    return execute_authoring(
+    return plan_authoring(
         request,
-        output,
-        max_attempts=max_attempts,
-        concurrency=concurrency,
-        start=start,
+        output_dir=output,
         include_existing_coverage=False,
     )

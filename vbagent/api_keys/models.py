@@ -5,8 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
-
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 DEFAULT_MODEL_CATEGORIES = {
     # Sol remains in the standard-capability quota. Terra and Luna share the
@@ -49,6 +48,14 @@ class ApiKeyConfig(BaseModel):
 
     name: str = Field(description="Friendly name for the key")
     api_key: str = Field(description="OpenAI API key")
+    cache_domain: str | None = Field(
+        default=None,
+        description=(
+            "Prompt-cache scope shared by profiles in the same OpenAI "
+            "organization and processing region. Missing values are isolated "
+            "to this profile."
+        ),
+    )
     limits: dict[str, CategoryLimits] = Field(
         default_factory=lambda: {
             "standard": CategoryLimits(daily_limit=1_000_000),
@@ -57,6 +64,20 @@ class ApiKeyConfig(BaseModel):
         description="Token limits per model category",
     )
     enabled: bool = Field(default=True, description="Whether this key is active")
+
+    @field_validator("cache_domain")
+    @classmethod
+    def normalize_cache_domain(cls, value: str | None) -> str | None:
+        """Treat blank cache domains as the safe, profile-isolated default."""
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
+    @property
+    def effective_cache_domain(self) -> str:
+        """Return the declared cache domain or a profile-specific fallback."""
+        return self.cache_domain or f"profile:{self.name}"
 
 
 class KeyManagerConfig(BaseModel):

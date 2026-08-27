@@ -49,7 +49,10 @@ class StubPipeline:
         )
 
 
-def test_service_executes_concurrently_retries_and_resumes_from_ledger(tmp_path):
+def test_service_executes_concurrently_retries_and_resumes_from_ledger(
+    tmp_path,
+    monkeypatch,
+):
     plan = AuthoringPlanner().plan(
         AuthoringRequest(
             exam="jee_main",
@@ -64,6 +67,12 @@ def test_service_executes_concurrently_retries_and_resumes_from_ledger(tmp_path)
     )
     attempts = {"lock": threading.Lock()}
     contexts = []
+    assembled = []
+    monkeypatch.setattr(
+        "vbagent.authoring.publication.assemble_generated_run",
+        lambda store, run_id, **_kwargs: assembled.append(run_id)
+        or {"status": "completed"},
+    )
 
     with AuthoringStore(tmp_path) as store:
         store.create_run(plan, tmp_path / "out", max_attempts=2, concurrency=3)
@@ -85,6 +94,8 @@ def test_service_executes_concurrently_retries_and_resumes_from_ledger(tmp_path)
         assert second_contexts[0] is None
         assert "difficulty" in second_contexts[1]
         assert len(store.accepted_documents(plan.plan_id)) == 4
+        assert assembled == [plan.plan_id]
+        assert store.run_progress(plan.plan_id)["current_stage"] == "completed"
 
         # Completed runs are idempotent and do not execute their items again.
         again = AuthoringRunService(store, pipeline_factory=factory).execute(plan.plan_id)

@@ -12,9 +12,19 @@ def test_format_latex_answer_key_uses_requested_layout():
 
     assert "\\begin{center}\n    \\textsc{Answer Key}\n\\end{center}" in output
     assert "\\begin{multicols}{7}" in output
+    assert output.startswith("\\begin{multicols}{7}[\n\\begin{center}")
     assert "    \\item (a)" in output
     assert "    \\item (3)" in output
     assert output.endswith("\\end{multicols}")
+
+
+def test_format_latex_can_bound_columns_to_the_available_answers():
+    one_answer = _format_latex({1: "B"}, max_columns=1)
+    two_answers = _format_latex({1: "B", 2: "4"}, max_columns=2)
+
+    assert "multicols" not in one_answer
+    assert "    \\item (b)" in one_answer
+    assert "\\begin{multicols}{2}" in two_answers
 
 
 def test_subjective_answer_key_preserves_latex_and_uses_two_columns():

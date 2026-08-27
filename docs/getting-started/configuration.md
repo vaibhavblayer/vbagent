@@ -144,6 +144,56 @@ Prompt and model output bodies are not written to JSONL. Quiet parallel workers
 suppress terminal rendering while still writing lifecycle events when event
 logging is enabled.
 
+### OpenAI prompt caching and profile rotation
+
+Official GPT-5.6 agent calls automatically use an explicit cache breakpoint
+after the stable agent instructions and a stable `prompt_cache_key`. This
+applies to the existing scan, solve, classify, diagram, review, and syllabus
+authoring agents; individual workflows do not need separate cache code.
+
+Configure multiple OpenAI profiles with the key manager:
+
+```bash
+vbagent keys add --name project-a --api-key "$OPENAI_PROJECT_A_KEY" \
+  --cache-domain openai-org-main:global
+vbagent keys add --name project-b --api-key "$OPENAI_PROJECT_B_KEY" \
+  --cache-domain openai-org-main:global
+vbagent keys list
+```
+
+`cache-domain` is a local routing label, not a value discovered or verified by
+OpenAI. Give profiles the same label **only** when their keys belong to the same
+OpenAI organization and processing region. Prompt caches are scoped by those
+provider boundaries. When the option is omitted, VBAgent safely treats the
+profile as an isolated cache domain. Restore that default with:
+
+```bash
+vbagent keys update project-b --isolated-cache
+```
+
+A stable cache group first selects a domain with rendezvous hashing. The
+configured `least_used`, `round_robin`, or `random` strategy then rotates only
+among profiles inside that domain. A terminal 401, 403, or 429 can fail over to
+another managed profile; a `previous_response_id` chain remains pinned to its
+original credentials.
+
+Cache routes use four deterministic shards by default so large parallel batches
+do not overload one provider cache route. For lower-throughput runs, one shard
+maximizes warm-cache reuse. Increase the value only for sustained high request
+rates:
+
+```bash
+export VBAGENT_PROMPT_CACHE_SHARDS=1   # valid range: 1-64
+```
+
+Lifecycle and authoring usage records distinguish token cache reads, cache
+writes, and request-level hits. Request hit percentage is shown as `n/a` when
+the SDK/provider does not supply per-request usage entries. For GPT-5.6,
+`effective_input_multiplier` applies the current ordinary/read/write cache
+multipliers to make write-heavy cold runs visible. See the
+[OpenAI prompt caching guide](https://developers.openai.com/api/docs/guides/prompt-caching)
+for the provider contract and current pricing multipliers.
+
 ## Programmatic Configuration
 
 ```python

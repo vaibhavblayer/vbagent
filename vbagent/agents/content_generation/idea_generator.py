@@ -3,7 +3,7 @@
 Generates complete problems from physics/chemistry ideas and concepts.
 """
 
-from typing import Optional, List
+from typing import List, Optional
 
 from vbagent.agents.base import create_agent, run_agent_sync
 from vbagent.config import get_config
@@ -19,6 +19,12 @@ def create_idea_generator_agent(subject: Optional[str] = None):
         subject = get_config().subject
 
     prompt = get_idea_generator_prompt(subject)
+    prompt += (
+        "\n\nThe caller may explicitly request only selected components. "
+        "Follow include_solution/include_idea instructions in the request: "
+        "return empty strings for omitted fields, do not generate hidden solutions "
+        "or move omitted content into metadata. The question is always required."
+    )
 
     # Import AgentOutputSchema to disable strict schema
     from agents import AgentOutputSchema
@@ -55,6 +61,8 @@ def generate_from_idea(
     random_seed: Optional[int] = None,
     retry_feedback: Optional[str] = None,
     passage_question_count: Optional[int] = None,
+    include_solution: bool = True,
+    include_idea: bool = True,
 ) -> GeneratedProblem:
     """Generate a problem from ideas.
 
@@ -82,6 +90,8 @@ def generate_from_idea(
         random_seed: Stable creative seed from the immutable item specification
         retry_feedback: Evidence from a prior rejected attempt that must be corrected
         passage_question_count: Exact number of passage subquestions when applicable
+        include_solution: Whether to generate the solution component now
+        include_idea: Whether to generate an idea component
 
     Returns:
         GeneratedProblem with complete content
@@ -161,6 +171,11 @@ to a neighbouring chapter merely because it is related. Apply the requested
 cognitive level, reasoning lens, representation, and construction family in
 the actual problem rather than mentioning them as labels.{diagram_instruction}
 
-Generate a complete, well-structured problem with solution."""
+Requested components override the default full-content recipe:
+- Always return the complete question in problem_latex.
+- solution_latex: {'provide a complete solution' if include_solution else 'return an empty string; the author explicitly deferred solutions'}.
+- idea_latex: {'provide a concise conceptual idea, not a worked solution' if include_idea else 'return an empty string; no idea component was requested'}.
+- alternate_solution_latex: {'optional when useful' if include_solution else 'return an empty string'}.
+Do not include omitted components in the question or metadata instead."""
 
     return run_agent_sync(agent, context)

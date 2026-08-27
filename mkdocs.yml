@@ -63,7 +63,7 @@ nav:
   - User Guide:
     - CLI Commands: user-guide/cli-commands.md
     - Problem Generation: user-guide/problem-generation.md
-    - Chat Interface: user-guide/chat.md
+    - Natural-language CLI and MCP: user-guide/chat.md
     - Image Processing: user-guide/image-processing.md
     - Batch Processing: user-guide/batch-processing.md
     - Database Management: user-guide/database.md

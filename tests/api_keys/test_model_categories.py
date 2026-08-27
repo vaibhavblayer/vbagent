@@ -1,5 +1,7 @@
 """Tests for current Sol/Terra/Luna API-key quota routing."""
 
+import pytest
+
 from vbagent.api_keys.manager import KeyManager
 from vbagent.api_keys.models import KeyManagerConfig
 
@@ -48,3 +50,17 @@ def test_legacy_mapping_is_persisted_when_manager_loads(tmp_path, monkeypatch):
 
     assert "gpt-5.6-terra" not in saved["model_categories"]["standard"]
     assert "gpt-5.6-terra" in saved["model_categories"]["mini"]
+
+
+def test_invalid_profile_file_is_configured_but_fails_closed(tmp_path, monkeypatch):
+    config_path = tmp_path / "api_keys.json"
+    lock_path = tmp_path / "api_keys.lock"
+    config_path.write_text("{not-json")
+    monkeypatch.setattr(KeyManager, "_config_path", config_path)
+    monkeypatch.setattr(KeyManager, "_lock_path", lock_path)
+
+    manager = KeyManager()
+
+    assert manager.is_configured()
+    with pytest.raises(RuntimeError, match="could not be loaded"):
+        manager.select_key_for_model("gpt-5.6-sol")

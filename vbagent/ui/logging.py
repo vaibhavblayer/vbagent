@@ -1,21 +1,25 @@
 """Structured agent logging and compact terminal rendering."""
 
-from dataclasses import dataclass
-from contextlib import contextmanager
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Any, Callable
 import json
 import os
 import re
+import sys
 import threading
 import traceback
+from contextlib import contextmanager
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Callable
 
+from rich import box
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.text import Text
-from rich import box
+
+from vbagent.cache_metrics import gpt56_effective_input_multiplier
+from vbagent.ui.agent_io import IO_VERSION, render_agent_io
 
 # Shared default console. CLI code should obtain it through get_agent_console().
 console = Console()
@@ -125,6 +129,17 @@ def set_task_tag(tag: str | None):
     _task_tag.value = tag
 
 
+@contextmanager
+def agent_task_context(tag: str):
+    """Label concurrent item traces and restore the caller's tag afterward."""
+    previous = getattr(_task_tag, "value", None)
+    set_task_tag(tag)
+    try:
+        yield
+    finally:
+        set_task_tag(previous)
+
+
 def _get_tagged_name(agent_name: str) -> str:
     """Return 'Tag › AgentName' if a task tag is set, else just agent_name."""
     tag = getattr(_task_tag, "value", None)
@@ -202,24 +217,10 @@ def log_agent_input(agent_name, input_data, model=None):
     if not _should_render("INFO"):
         return
 
-    display_name = _get_tagged_name(agent_name)
-    title = f"[INPUT] {display_name}"
-    if model:
-        title += f" : {model}"
-    
-    body = _format_dict({
-        "agent": display_name,
+    _emit_agent_io("input", agent_name, {
         "model": model,
         "input": _sanitize_dict(input_data),
-    }, _MAX_JSON_LEN)
-    with _log_lock:
-        output = get_agent_console()
-        output.print()
-        output.print(Panel(
-            body, title=title, title_align="left",
-            border_style="#3b82f6", box=box.SIMPLE,
-            padding=(1, 2),
-        ))
+    })
 
 
 def log_agent_output(agent_name, output_data, duration=None):
@@ -227,37 +228,43 @@ def log_agent_output(agent_name, output_data, duration=None):
     if not _should_render("INFO"):
         return
 
-    display_name = _get_tagged_name(agent_name)
-    title = f"[OUTPUT] {display_name}"
-    if duration is not None:
-        title += f" : {duration:.2f}s"
-    
-    skip_truncation = any(
-        keyword in agent_name.lower()
-        for keyword in ("scanner", "solution", "problem")
-    )
     if hasattr(output_data, "model_dump"):
         serialized_output = output_data.model_dump()
     else:
         serialized_output = output_data
-    body = _format_dict({
-        "agent": display_name,
+    _emit_agent_io("output", agent_name, {
         "duration": f"{duration:.2f}s" if duration is not None else None,
         "output": _sanitize_dict(serialized_output),
-    }, 999999 if skip_truncation else _MAX_JSON_LEN)
-    
+    })
+
+
+def _emit_agent_io(event: str, agent_name: str, fields: dict[str, Any]) -> None:
+    """Write raw JSONL in detached workers; render once in an interactive CLI."""
+    payload = {
+        "vbagent_io": IO_VERSION,
+        "event": event,
+        "agent": agent_name,
+        **_sanitize_dict(fields),
+    }
+    tag = getattr(_task_tag, "value", None)
+    if tag:
+        payload["task"] = tag
     with _log_lock:
-        output = get_agent_console()
-        output.print()
-        output.print(Panel(
-            body, title=title, title_align="left",
-            border_style="#22c55e", box=box.SIMPLE,
-            padding=(1, 2),
-        ))
+        if os.environ.get("VBAGENT_AGENT_IO_FORMAT", "").lower() == "jsonl":
+            # A single locked write keeps parallel agent records separate.
+            sys.stdout.write(json.dumps(payload, ensure_ascii=False, default=str) + "\n")
+            sys.stdout.flush()
+        else:
+            render_agent_io(
+                get_agent_console(),
+                payload,
+                detailed_usage=_configured_level() == "DEBUG",
+            )
 
 
 def log_agent_started(agent_name, *, model="", queue_duration=0.0,
-                      key_name=None, has_image=False, reasoning="none"):
+                      key_name=None, cache_domain=None, cache_group_id=None,
+                      profile_attempt=1, has_image=False, reasoning="none"):
     """Record the point at which a queued request receives an API slot."""
     record_agent_event(
         "request_started",
@@ -265,6 +272,9 @@ def log_agent_started(agent_name, *, model="", queue_duration=0.0,
         model=model,
         queue_duration=round(queue_duration, 4),
         key_name=key_name,
+        cache_domain=cache_domain,
+        cache_group_id=cache_group_id,
+        profile_attempt=profile_attempt,
         has_image=has_image,
         reasoning=reasoning,
     )
@@ -281,6 +291,14 @@ def log_agent_error(agent_name, error, **metadata):
     record_agent_event(event, agent_name, error_type=err_type, error=err_msg, **details)
 
     if not _should_render("ERROR"):
+        return
+
+    if os.environ.get("VBAGENT_AGENT_IO_FORMAT", "").lower() == "jsonl":
+        _emit_agent_io("error", agent_name, {
+            "error_type": err_type,
+            "error": err_msg,
+            **details,
+        })
         return
 
     if _configured_level() != "DEBUG":
@@ -318,7 +336,7 @@ def log_agent_error(agent_name, error, **metadata):
 def log_agent_usage(agent_name, *, model="", duration=0.0, usage=None,
                     response_id=None, has_image=False, reasoning="none",
                     queue_duration=0.0, request_duration=None, key_name=None,
-                    cache_group_id=None):
+                    cache_domain=None, cache_group_id=None):
     """Record completion and render structured JSON usage metadata."""
 
     short_model = model.replace("openai/", "") if model else "?"
@@ -328,8 +346,14 @@ def log_agent_usage(agent_name, *, model="", duration=0.0, usage=None,
         "output": 0,
         "cached": 0,
         "cache_write": 0,
+        "ordinary_input": 0,
         "cache_hit_percent": 0.0,
         "cache_write_percent": 0.0,
+        "cache_metrics_reported": False,
+        "cache_read_requests": 0,
+        "cache_reported_requests": 0,
+        "cache_request_hit_percent": None,
+        "effective_input_multiplier": None,
         "reasoning": 0,
         "requests": 0,
     }
@@ -341,6 +365,13 @@ def log_agent_usage(agent_name, *, model="", duration=0.0, usage=None,
         cache_write = 0
         reasoning_tok = 0
         inp_details = getattr(usage, "input_tokens_details", None)
+        cache_metrics_reported = bool(
+            inp_details is not None
+            and (
+                hasattr(inp_details, "cached_tokens")
+                or hasattr(inp_details, "cache_write_tokens")
+            )
+        )
         if inp_details:
             cached = getattr(inp_details, "cached_tokens", 0) or 0
             cache_write = getattr(inp_details, "cache_write_tokens", 0) or 0
@@ -348,13 +379,48 @@ def log_agent_usage(agent_name, *, model="", duration=0.0, usage=None,
         if out_details:
             reasoning_tok = getattr(out_details, "reasoning_tokens", 0) or 0
 
+        cache_read_requests = 0
+        cache_reported_requests = 0
+        for entry in list(getattr(usage, "request_usage_entries", None) or []):
+            details = getattr(entry, "input_tokens_details", None)
+            if details is None or not (
+                hasattr(details, "cached_tokens")
+                or hasattr(details, "cache_write_tokens")
+            ):
+                continue
+            cache_reported_requests += 1
+            if (getattr(details, "cached_tokens", 0) or 0) > 0:
+                cache_read_requests += 1
+
+        ordinary_input = max(0, inp - cached - cache_write)
+        normalized_model = short_model.lower()
+        effective_input_multiplier = None
+        if inp and cache_metrics_reported and normalized_model.startswith("gpt-5.6"):
+            effective_input_multiplier = gpt56_effective_input_multiplier(
+                input_tokens=inp,
+                ordinary_input_tokens=ordinary_input,
+                cached_tokens=cached,
+                cache_write_tokens=cache_write,
+                metrics_complete=True,
+            )
+
         data.update({
             "input": inp,
             "output": out,
             "cached": cached,
             "cache_write": cache_write,
+            "ordinary_input": ordinary_input,
             "cache_hit_percent": round((cached / inp) * 100, 1) if inp else 0.0,
             "cache_write_percent": round((cache_write / inp) * 100, 1) if inp else 0.0,
+            "cache_metrics_reported": cache_metrics_reported,
+            "cache_read_requests": cache_read_requests,
+            "cache_reported_requests": cache_reported_requests,
+            "cache_request_hit_percent": (
+                round((cache_read_requests / cache_reported_requests) * 100, 1)
+                if cache_reported_requests
+                else None
+            ),
+            "effective_input_multiplier": effective_input_multiplier,
             "reasoning": reasoning_tok,
             "requests": getattr(usage, "requests", 0) or 0,
         })
@@ -368,6 +434,7 @@ def log_agent_usage(agent_name, *, model="", duration=0.0, usage=None,
         request_duration=round(actual_request_duration, 4),
         queue_duration=round(queue_duration, 4),
         key_name=key_name,
+        cache_domain=cache_domain,
         cache_group_id=cache_group_id,
         response_id=response_id,
         has_image=has_image,
@@ -379,7 +446,6 @@ def log_agent_usage(agent_name, *, model="", duration=0.0, usage=None,
         return
 
     usage_payload = {
-        "agent": _get_tagged_name(agent_name),
         "status": "completed",
         "duration": f"{duration:.1f}s",
         "request_duration": f"{actual_request_duration:.1f}s",
@@ -389,20 +455,11 @@ def log_agent_usage(agent_name, *, model="", duration=0.0, usage=None,
         "image": has_image,
         "tokens": data,
         "key_name": key_name,
+        "cache_domain": cache_domain,
         "cache_group": cache_group_id,
         "response_id": response_id,
     }
-    with _log_lock:
-        output = get_agent_console()
-        output.print()
-        output.print(Panel(
-            _format_dict(usage_payload, _MAX_JSON_LEN),
-            title=f"[USAGE] {_get_tagged_name(agent_name)}",
-            title_align="left",
-            border_style="#a78bfa",
-            box=box.SIMPLE,
-            padding=(1, 2),
-        ))
+    _emit_agent_io("usage", agent_name, usage_payload)
 
 
 def _compact_number(value: int) -> str:

@@ -1,0 +1,264 @@
+{
+  "SOME BASIC CONCEPTS IN CHEMISTRY": {
+    "topics": [
+      "Nature of matter and Dalton's atomic theory",
+      "Atoms, molecules, elements and compounds",
+      "Laws of chemical combination",
+      "Atomic and molecular masses, mole concept and molar mass",
+      "Percentage composition and empirical and molecular formulae",
+      "Chemical equations and stoichiometry"
+    ],
+    "description": "Matter, chemical laws, mole calculations and stoichiometry"
+  },
+  "ATOMIC STRUCTURE": {
+    "topics": [
+      "Electromagnetic radiation, photoelectric effect and hydrogen spectrum",
+      "Bohr model of hydrogen, orbital radii and energies and limitations of the model",
+      "Dual nature of matter and de Broglie relation",
+      "Heisenberg uncertainty principle and elementary quantum mechanics",
+      "Quantum mechanical model and atomic orbitals as one-electron wave functions",
+      "Radial variation of wave functions and probability densities for 1s and 2s orbitals",
+      "Principal, angular momentum and magnetic quantum numbers",
+      "Shapes of s, p and d orbitals",
+      "Electron spin and spin quantum number",
+      "Aufbau principle, Pauli exclusion principle and Hund's rule",
+      "Electronic configurations and stability of half-filled and filled orbitals"
+    ],
+    "description": "Atomic models, quantum numbers, orbitals and electronic configuration"
+  },
+  "CHEMICAL BONDING AND MOLECULAR STRUCTURE": {
+    "topics": [
+      "Kossel-Lewis approach and ionic and covalent bonds",
+      "Formation of ionic bonds and factors affecting ionic bond formation",
+      "Lattice enthalpy calculations",
+      "Electronegativity, Fajan's rule and dipole moment",
+      "VSEPR theory and shapes of simple molecules",
+      "Valence bond theory, hybridization with s, p and d orbitals and resonance",
+      "Molecular orbital theory, LCAOs and bonding and antibonding orbitals",
+      "Sigma and pi bonds",
+      "MO configurations of homonuclear diatomic molecules, bond order, bond length and bond energy",
+      "Elementary metallic bonding",
+      "Hydrogen bonding and its applications"
+    ],
+    "description": "Ionic, covalent, metallic and hydrogen bonding and molecular geometry"
+  },
+  "CHEMICAL THERMODYNAMICS": {
+    "topics": [
+      "Systems, surroundings, extensive and intensive properties and state functions",
+      "Entropy and types of thermodynamic processes",
+      "First law of thermodynamics, work, heat, internal energy and enthalpy",
+      "Heat capacity, molar heat capacity and Hess's law",
+      "Enthalpies of bond dissociation, combustion, formation and atomization",
+      "Enthalpies of sublimation, phase transition, hydration, ionization and solution",
+      "Second law, spontaneity, entropy of the universe and Gibbs energy criteria",
+      "Standard Gibbs energy change and equilibrium constant"
+    ],
+    "description": "Thermodynamic laws, energy changes, entropy and spontaneity"
+  },
+  "SOLUTIONS": {
+    "topics": [
+      "Molality, molarity, mole fraction and mass and volume percentages",
+      "Vapour pressure of solutions and Raoult's law",
+      "Ideal and non-ideal solutions and vapour-pressure composition plots",
+      "Relative lowering of vapour pressure",
+      "Depression of freezing point and elevation of boiling point",
+      "Osmotic pressure",
+      "Molecular-mass determination using colligative properties",
+      "Abnormal molar mass and van't Hoff factor"
+    ],
+    "description": "Concentration, solution vapour pressure and colligative properties"
+  },
+  "EQUILIBRIUM": {
+    "topics": [
+      "Dynamic equilibrium",
+      "Solid-liquid, liquid-gas, gas-gas and solid-gas physical equilibria",
+      "Henry's law and general characteristics of physical equilibria",
+      "Law of chemical equilibrium and equilibrium constants Kp and Kc",
+      "Gibbs energy in chemical equilibrium",
+      "Effects of concentration, pressure, temperature and catalysts and Le Chatelier's principle",
+      "Strong and weak electrolytes and ionization",
+      "Arrhenius, Bronsted-Lowry and Lewis concepts of acids and bases",
+      "Acid-base equilibria, multistage ionization and ionization constants",
+      "Ionization of water, pH and common-ion effect",
+      "Salt hydrolysis and pH of salt solutions",
+      "Solubility products of sparingly soluble salts",
+      "Buffer solutions"
+    ],
+    "description": "Physical, chemical and ionic equilibria"
+  },
+  "REDOX REACTIONS AND ELECTROCHEMISTRY": {
+    "topics": [
+      "Electronic concepts of oxidation and reduction",
+      "Oxidation numbers and balancing redox reactions",
+      "Electrolytic and metallic conduction",
+      "Conductance and molar conductivity in electrolytic solutions",
+      "Kohlrausch's law and its applications",
+      "Electrolytic and galvanic cells and types of electrodes",
+      "Standard electrode potentials and half-cell and cell reactions",
+      "EMF measurement and Nernst equation applications",
+      "Cell potential and Gibbs energy change",
+      "Dry cells, lead accumulators and fuel cells"
+    ],
+    "description": "Redox accounting, conductivity and electrochemical cells"
+  },
+  "CHEMICAL KINETICS": {
+    "topics": [
+      "Rates of chemical reactions and factors affecting rate",
+      "Elementary and complex reactions",
+      "Order and molecularity of reactions",
+      "Rate laws, rate constants and units",
+      "Differential and integral forms of zero-order reactions and half-life",
+      "Differential and integral forms of first-order reactions and half-life",
+      "Temperature dependence, Arrhenius theory and activation energy",
+      "Collision theory of bimolecular gaseous reactions without derivation"
+    ],
+    "description": "Reaction rates, rate laws, temperature effects and collision theory"
+  },
+  "CLASSIFICATION OF ELEMENTS AND PERIODICITY IN PROPERTIES": {
+    "topics": [
+      "Modern periodic law and present form of the periodic table",
+      "s, p, d and f block elements",
+      "Periodic trends in atomic and ionic radii, ionization enthalpy and electron gain enthalpy",
+      "Periodic trends in valence, oxidation states and chemical reactivity"
+    ],
+    "description": "Periodic classification and trends in elemental properties"
+  },
+  "P-BLOCK ELEMENTS": {
+    "topics": [
+      "Group 13 to Group 18 elements",
+      "Electronic configurations and trends in physical and chemical properties across periods and down groups",
+      "Unique behaviour of the first element in each p-block group"
+    ],
+    "description": "General trends and first-element anomalies in Groups 13-18"
+  },
+  "D- AND F-BLOCK ELEMENTS": {
+    "topics": [
+      "Occurrence, electronic configuration and characteristics of transition elements",
+      "Physical properties, ionization enthalpy, oxidation states and atomic radii of first-row transition elements",
+      "Colour, catalysis, magnetism and complex formation of transition elements",
+      "Interstitial compounds and alloy formation",
+      "Preparation, properties and uses of potassium dichromate and potassium permanganate",
+      "Lanthanoid electronic configuration, oxidation states and lanthanoid contraction",
+      "Actinoid electronic configuration and oxidation states"
+    ],
+    "description": "Transition and inner-transition elements and their characteristic chemistry"
+  },
+  "COORDINATION COMPOUNDS": {
+    "topics": [
+      "Werner's theory of coordination compounds",
+      "Ligands, coordination number, denticity and chelation",
+      "IUPAC nomenclature of mononuclear coordination compounds",
+      "Isomerism in coordination compounds",
+      "Valence-bond approach to coordination bonding",
+      "Basic crystal-field theory, colour and magnetic properties",
+      "Coordination compounds in qualitative analysis, metal extraction and biological systems"
+    ],
+    "description": "Nomenclature, structure, bonding and uses of coordination compounds"
+  },
+  "PURIFICATION AND CHARACTERISATION OF ORGANIC COMPOUNDS": {
+    "topics": [
+      "Crystallization, sublimation, distillation and differential extraction",
+      "Chromatography principles and applications",
+      "Qualitative detection of nitrogen, sulphur, phosphorus and halogens",
+      "Basic quantitative estimation of carbon, hydrogen, nitrogen, halogens, sulphur and phosphorus",
+      "Empirical and molecular formula calculations in organic quantitative analysis"
+    ],
+    "description": "Purification and qualitative and quantitative organic analysis"
+  },
+  "SOME BASIC PRINCIPLES OF ORGANIC CHEMISTRY": {
+    "topics": [
+      "Tetravalency of carbon and shapes of simple molecules using s and p hybridization",
+      "Classification by functional groups and compounds containing halogens, oxygen, nitrogen and sulphur",
+      "Homologous series",
+      "Structural and stereoisomerism",
+      "Trivial and IUPAC nomenclature",
+      "Homolytic and heterolytic covalent-bond fission",
+      "Free radicals, carbocations and carbanions and their stability",
+      "Electrophiles and nucleophiles",
+      "Inductive, electromeric, resonance and hyperconjugative effects",
+      "Substitution, addition, elimination and rearrangement reactions"
+    ],
+    "description": "Structure, nomenclature, intermediates and reaction principles in organic chemistry"
+  },
+  "HYDROCARBONS": {
+    "topics": [
+      "Hydrocarbon classification, isomerism, IUPAC nomenclature, preparation, properties and reactions",
+      "Alkane conformations using Sawhorse and Newman projections",
+      "Mechanism of halogenation of alkanes",
+      "Alkene geometrical isomerism and electrophilic-addition mechanism",
+      "Addition of hydrogen, halogens, water and hydrogen halides to alkenes",
+      "Markovnikov and peroxide effects, ozonolysis and alkene polymerization",
+      "Acidic character and addition and polymerization reactions of alkynes",
+      "Benzene structure, aromaticity and electrophilic substitution",
+      "Halogenation, nitration and Friedel-Crafts alkylation and acylation",
+      "Directive influence of functional groups in monosubstituted benzene"
+    ],
+    "description": "Alkanes, alkenes, alkynes and aromatic hydrocarbons"
+  },
+  "ORGANIC COMPOUNDS CONTAINING HALOGENS": {
+    "topics": [
+      "Preparation, properties and reactions of organic halogen compounds",
+      "Nature of the carbon-halogen bond",
+      "Mechanisms of substitution reactions",
+      "Uses and environmental effects of chloroform, iodoform, freons and DDT"
+    ],
+    "description": "Halo compounds, substitution mechanisms and environmental effects"
+  },
+  "ORGANIC COMPOUNDS CONTAINING OXYGEN": {
+    "topics": [
+      "Preparation, properties, reactions and uses of oxygen-containing organic compounds",
+      "Identification of primary, secondary and tertiary alcohols",
+      "Mechanism of dehydration of alcohols",
+      "Acidic nature and electrophilic substitution of phenols",
+      "Halogenation, nitration, sulphonation and Reimer-Tiemann reaction of phenols",
+      "Structure of ethers",
+      "Carbonyl group and relative reactivity of aldehydes and ketones",
+      "Nucleophilic addition to carbonyl compounds with HCN, ammonia derivatives and Grignard reagents",
+      "Oxidation and Wolff-Kishner and Clemmensen reductions of carbonyl compounds",
+      "Acidity of alpha hydrogen, aldol condensation, Cannizzaro and haloform reactions",
+      "Chemical tests distinguishing aldehydes and ketones",
+      "Acidic strength of carboxylic acids and factors affecting it"
+    ],
+    "description": "Alcohols, phenols, ethers, carbonyl compounds and carboxylic acids"
+  },
+  "ORGANIC COMPOUNDS CONTAINING NITROGEN": {
+    "topics": [
+      "Preparation, properties, reactions and uses of nitrogen-containing organic compounds",
+      "Nomenclature, classification and structure of amines",
+      "Basic character of amines",
+      "Identification of primary, secondary and tertiary amines",
+      "Diazonium salts and their importance in organic synthesis"
+    ],
+    "description": "Amines and diazonium salts"
+  },
+  "BIOMOLECULES": {
+    "topics": [
+      "Importance and general introduction to biomolecules",
+      "Classification of carbohydrates into aldoses and ketoses",
+      "Glucose, fructose, sucrose, lactose and maltose",
+      "Alpha-amino acids, peptide bonds and polypeptides",
+      "Primary, secondary, tertiary and quaternary protein structures and denaturation",
+      "Enzymes",
+      "Classification and functions of vitamins",
+      "Chemical constitution and biological functions of DNA and RNA",
+      "General introduction to hormones"
+    ],
+    "description": "Carbohydrates, proteins, vitamins, nucleic acids and hormones"
+  },
+  "PRINCIPLES RELATED TO PRACTICAL CHEMISTRY": {
+    "topics": [
+      "Detection of nitrogen, sulphur and halogens in organic compounds",
+      "Detection of hydroxyl, carbonyl, carboxyl and amino functional groups",
+      "Preparation chemistry of Mohr's salt and potash alum",
+      "Preparation chemistry of acetanilide, p-nitroacetanilide, aniline yellow and iodoform",
+      "Acid-base titrations and indicators",
+      "Oxalic acid versus potassium permanganate and Mohr's salt versus potassium permanganate titrations",
+      "Qualitative analysis of specified cations and anions",
+      "Enthalpy of solution of copper sulphate",
+      "Enthalpy of neutralization of a strong acid and strong base",
+      "Preparation of lyophilic and lyophobic sols",
+      "Kinetic study of iodide ions with hydrogen peroxide at room temperature"
+    ],
+    "description": "Functional-group tests, preparations, titrations, salt analysis and experiments"
+  }
+}

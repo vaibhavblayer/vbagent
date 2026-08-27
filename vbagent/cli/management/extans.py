@@ -11,7 +11,6 @@ import yaml
 
 from ..common import _get_console
 
-
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 
@@ -64,7 +63,7 @@ def extans(
         vbagent extans --format latex -o answer_key.tex
         vbagent extans main.tex --add
     """
-    from vbagent.tex import parse_main_tex, extract_answer_details_from_problem
+    from vbagent.tex import extract_answer_details_from_problem, parse_main_tex
     
     console = _get_console()
     if main_file_arg and main_file_option:
@@ -206,6 +205,8 @@ def _infer_answer_kind(answer: str) -> str:
 def _format_latex(
     answers: dict[int, Optional[str]],
     answer_kinds: Optional[dict[int, Optional[str]]] = None,
+    *,
+    max_columns: int | None = None,
 ) -> str:
     """Format answers as a type-aware LaTeX answer key."""
     kinds = {
@@ -216,13 +217,22 @@ def _format_latex(
         for index, answer in answers.items()
     }
     columns = 2 if "subjective" in kinds.values() else 7
-    lines = [
+    if max_columns is not None:
+        if max_columns < 1:
+            raise ValueError("max_columns must be at least 1")
+        columns = min(columns, max_columns)
+    heading = [
         "\\begin{center}",
         "    \\textsc{Answer Key}",
         "\\end{center}",
-        f"\\begin{{multicols}}{{{columns}}}",
-        "\\begin{enumerate}",
     ]
+    if columns > 1:
+        # The optional heading moves with the first answer row when space is
+        # tight; a separate center environment could be orphaned on the prior page.
+        lines = [f"\\begin{{multicols}}{{{columns}}}[", *heading, "]"]
+    else:
+        lines = [*heading, "\\nopagebreak[4]"]
+    lines.append("\\begin{enumerate}")
     for i, ans in answers.items():
         if ans is None:
             lines.append("    \\item N/A")
@@ -233,5 +243,6 @@ def _format_latex(
         else:
             lines.append(f"    \\item {ans}")
     lines.append("\\end{enumerate}")
-    lines.append("\\end{multicols}")
+    if columns > 1:
+        lines.append("\\end{multicols}")
     return "\n".join(lines)

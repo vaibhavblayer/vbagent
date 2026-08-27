@@ -60,9 +60,14 @@ Auto-generated API documentation for VBAgent CLI modules.
       show_root_heading: true
       show_source: false
 
-## Chat Interface
+## MCP Authoring Interface
 
 ::: vbagent.cli.interfaces.chat
+    options:
+      show_root_heading: true
+      show_source: false
+
+::: vbagent.cli.interfaces.mcp
     options:
       show_root_heading: true
       show_source: false

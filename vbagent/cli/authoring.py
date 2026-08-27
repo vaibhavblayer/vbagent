@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from functools import wraps
 import json
+from functools import wraps
 from pathlib import Path
 
 import click
 from rich.table import Table
 
 from vbagent.cli.common import _get_console
-
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
@@ -31,12 +30,14 @@ def _authoring_errors(function):
 
 
 def _raise_if_incomplete(stats: dict, *, label: str = "authoring run") -> None:
+    needs_review = int(stats.get("needs_review", 0) or 0)
     rejected = int(stats.get("rejected", 0) or 0)
     failed = int(stats.get("failed", 0) or 0)
-    if rejected or failed:
+    if needs_review or rejected or failed:
         raise click.ClickException(
             f"{label} completed without accepting every requested item "
-            f"(rejected={rejected}, failed={failed}); inspect the durable run evidence"
+            f"(needs_review={needs_review}, rejected={rejected}, failed={failed}); "
+            "inspect the durable run evidence"
         )
 
 
@@ -96,6 +97,8 @@ def _request_options(function):
         click.option("--tone", default=""),
         click.option("--seed", type=int, default=0, show_default=True),
         click.option("--human-review/--automatic-acceptance", default=False, show_default=True),
+        click.option("--solution/--no-solution", "include_solution", default=True, show_default=True),
+        click.option("--idea-component/--no-idea-component", "include_idea", default=True, show_default=True),
     ]
     for option in reversed(options):
         function = option(function)
@@ -113,10 +116,10 @@ def author():
 @_authoring_errors
 def preflight(save_path=None, **kwargs):
     """Resolve syllabus scope and show the full variety plan without API calls."""
-    from vbagent.authoring.planner import AuthoringPlanner
+    from vbagent.authoring.application import AuthoringApplication
 
     request = _build_request(kwargs)
-    plan = AuthoringPlanner().plan(request)
+    plan = AuthoringApplication().preview(request)
     _show_plan(plan)
     if save_path:
         path = Path(save_path).expanduser().resolve()
@@ -140,27 +143,32 @@ def preflight(save_path=None, **kwargs):
 @_authoring_errors
 def run_authoring(output, max_attempts, concurrency, start, existing_coverage, **kwargs):
     """Create a durable authoring run and execute its acceptance pipeline."""
-    from vbagent.authoring.api import execute_authoring, plan_authoring
+    from vbagent.authoring.application import AuthoringApplication
     from vbagent.authoring.store import AuthoringStore
 
     console = _get_console()
     request = _build_request(kwargs)
     output_path = Path(output).expanduser().resolve()
-    plan = plan_authoring(
+    application = AuthoringApplication(output_path)
+    prepared = application.plan(
         request,
-        output_dir=output_path,
+        max_attempts=max_attempts,
+        concurrency=concurrency,
         include_existing_coverage=existing_coverage,
     )
+    with AuthoringStore(output_path) as store:
+        plan = store.load_plan(prepared.run_id)
     _show_plan(plan)
     console.print(f"[green]Durable run:[/green] {plan.plan_id}")
+    if not start:
+        console.print(
+            f"Start later with: vbagent author continue --run-id {plan.plan_id} --output {output_path}"
+        )
+        return
     try:
-        execution = execute_authoring(
-            plan.request,
-            output_path,
-            max_attempts=max_attempts,
+        result = application.execute_foreground(
+            plan.plan_id,
             concurrency=concurrency,
-            start=start,
-            include_existing_coverage=False,
         )
     except KeyboardInterrupt:
         console.print(
@@ -168,14 +176,9 @@ def run_authoring(output, max_attempts, concurrency, start, existing_coverage, *
             f"vbagent author continue --run-id {plan.plan_id} --output {output_path}"
         )
         raise click.Abort()
-    if not start:
-        console.print(
-            f"Start later with: vbagent author continue --run-id {plan.plan_id} --output {output_path}"
-        )
-        return
-    with AuthoringStore(execution.database_path) as store:
-        _show_status(store, plan.plan_id, execution.stats)
-    _raise_if_incomplete(execution.stats)
+    with AuthoringStore(output_path) as store:
+        _show_status(store, plan.plan_id, result.stats)
+    _raise_if_incomplete(result.stats)
 
 
 @author.command()
@@ -184,31 +187,55 @@ def run_authoring(output, max_attempts, concurrency, start, existing_coverage, *
 @_authoring_errors
 def status(run_id, output):
     """Show durable status, attempts, failures, usage, and accepted coverage."""
+    from vbagent.authoring.application import AuthoringApplication
     from vbagent.authoring.store import AuthoringStore
 
-    with AuthoringStore(Path(output).expanduser().resolve()) as store:
-        _show_status(store, run_id, store.stats(run_id))
+    output_path = Path(output).expanduser().resolve()
+    result = AuthoringApplication(output_path).status(run_id)
+    with AuthoringStore(output_path) as store:
+        _show_status(store, run_id, result.stats)
 
 
 @author.command(name="continue")
 @click.option("--run-id", required=True)
 @click.option("-o", "--output", default="agentic/authoring", show_default=True)
 @click.option("--concurrency", type=click.IntRange(1, 32), default=None)
+@click.option("--rebuild-only", is_flag=True, help="Export and assemble existing items without generation calls")
+@click.option(
+    "--problem-number", "problem_numbers", multiple=True, type=click.IntRange(min=1),
+    help="With --rebuild-only, include only these problem_N.tex files; repeat for each number.",
+)
 @_authoring_errors
-def continue_authoring(run_id, output, concurrency):
+def continue_authoring(run_id, output, concurrency, rebuild_only, problem_numbers):
     """Resume an interrupted or deliberately paused authoring run."""
-    from vbagent.authoring.service import AuthoringRunService
+    from vbagent.authoring.application import AuthoringApplication
     from vbagent.authoring.store import AuthoringStore, RunStatus
 
-    with AuthoringStore(Path(output).expanduser().resolve()) as store:
+    output_path = Path(output).expanduser().resolve()
+    application = AuthoringApplication(output_path)
+    if problem_numbers and not rebuild_only:
+        raise click.UsageError("--problem-number requires --rebuild-only")
+    if rebuild_only:
+        result = application.start(
+            run_id, confirmed=True, rebuild_only=True,
+            problem_numbers=list(problem_numbers) if problem_numbers else None,
+        )
+        with AuthoringStore(output_path) as store:
+            _show_status(store, run_id, result.status.stats)
+        publication = result.status.publication or {}
+        if publication.get("status") in {"failed", "compile_failed"}:
+            raise click.ClickException(publication.get("error") or "assembly failed")
+        return
+    with AuthoringStore(output_path) as store:
         run = store.get_run(run_id)
-        service = AuthoringRunService(store)
-        if run["status"] == RunStatus.CANCELLED.value:
-            stats = service.resume(run_id, concurrency=concurrency)
-        else:
-            stats = service.execute(run_id, concurrency=concurrency)
-        _show_status(store, run_id, stats)
-    _raise_if_incomplete(stats)
+    result = application.execute_foreground(
+        run_id,
+        concurrency=concurrency,
+        resume_cancelled=run["status"] == RunStatus.CANCELLED.value,
+    )
+    with AuthoringStore(output_path) as store:
+        _show_status(store, run_id, result.stats)
+    _raise_if_incomplete(result.stats)
 
 
 @author.command()
@@ -218,45 +245,87 @@ def continue_authoring(run_id, output, concurrency):
 @_authoring_errors
 def cancel(run_id, output, reason):
     """Request cooperative cancellation without losing completed artifacts."""
-    from vbagent.authoring.service import AuthoringRunService
+    from vbagent.authoring.application import AuthoringApplication
     from vbagent.authoring.store import AuthoringStore
 
-    with AuthoringStore(Path(output).expanduser().resolve()) as store:
-        AuthoringRunService(store).cancel(run_id, reason)
-        _show_status(store, run_id, store.stats(run_id))
+    output_path = Path(output).expanduser().resolve()
+    result = AuthoringApplication(output_path).cancel(run_id, reason)
+    with AuthoringStore(output_path) as store:
+        _show_status(store, run_id, result.status.stats)
 
 
 @author.command()
 @click.option("--run-id", required=True)
 @click.option("--spec-id", required=True)
-@click.option("--approve/--reject", default=None, required=True)
+@click.option("--approve/--reject", default=None)
+@click.option("--decision", type=click.Choice(["approve", "reject", "keep", "revise"]))
 @click.option("--reason", required=True)
 @click.option("-o", "--output", default="agentic/authoring", show_default=True)
 @_authoring_errors
-def review(run_id, spec_id, approve, reason, output):
+def review(run_id, spec_id, approve, decision, reason, output):
     """Record the required human decision for one needs-review candidate."""
+    from vbagent.authoring.application import AuthoringApplication
     from vbagent.authoring.store import AuthoringStore
 
-    with AuthoringStore(Path(output).expanduser().resolve()) as store:
-        store.review_item(run_id, spec_id, approve=approve, reason=reason)
-        _show_status(store, run_id, store.stats(run_id))
+    output_path = Path(output).expanduser().resolve()
+    result = AuthoringApplication(output_path).review(
+        run_id,
+        spec_id,
+        approve=approve,
+        reason=reason,
+        decision=decision,
+    )
+    with AuthoringStore(output_path) as store:
+        _show_status(store, run_id, result.run_status.stats)
+
+
+@author.command(name="complete")
+@click.option("--run-id", required=True)
+@click.option("--spec-id", "spec_ids", multiple=True)
+@click.option("-o", "--output", default="agentic/authoring", show_default=True)
+@click.option("--solution/--no-solution", "include_solution", default=True)
+@click.option("--idea-component/--no-idea-component", "include_idea", default=True)
+@click.option("--concurrency", type=click.IntRange(1, 32), default=2)
+@_authoring_errors
+def complete_components(run_id, spec_ids, output, include_solution, include_idea, concurrency):
+    """Add missing parts to existing questions, preserving their numbered files."""
+    from vbagent.authoring.application import AuthoringApplication
+    from vbagent.authoring.completion import plan_completion
+    from vbagent.authoring.store import AuthoringStore
+
+    output_path = Path(output).expanduser().resolve()
+    plan = plan_completion(output_path, run_id, spec_ids=list(spec_ids), include_solution=include_solution, include_idea=include_idea)
+    with AuthoringStore(output_path) as store:
+        store.create_run(plan, output_path, max_attempts=3, concurrency=concurrency)
+    _show_plan(plan)
+    result = AuthoringApplication(output_path).execute_foreground(plan.plan_id, concurrency=concurrency)
+    with AuthoringStore(output_path) as store:
+        _show_status(store, plan.plan_id, result.stats)
+    _raise_if_incomplete(result.stats)
 
 
 @author.command()
 def catalogs():
     """List built-in exam/subject syllabus catalogs actually available."""
-    from vbagent.authoring.catalog import SyllabusCatalogLoader
+    from vbagent.authoring.application import AuthoringApplication
 
     console = _get_console()
-    pairs = SyllabusCatalogLoader.available()
-    if not pairs:
+    result = AuthoringApplication().list_catalogs()
+    if not result.catalogs:
         console.print("[yellow]No built-in syllabus catalogs found.[/yellow]")
         return
     table = Table(title="Built-in syllabus catalogs")
     table.add_column("Exam")
     table.add_column("Subject")
-    for exam, subject in pairs:
-        table.add_row(exam, subject)
+    table.add_column("Version")
+    table.add_column("Question types")
+    for catalog in result.catalogs:
+        table.add_row(
+            catalog.exam,
+            catalog.subject,
+            catalog.version,
+            ", ".join(catalog.allowed_question_types),
+        )
     console.print(table)
 
 
@@ -284,6 +353,8 @@ def _build_request(values):
         seed_ideas=list(values.get("seed_ideas") or ()),
         tone=values.get("tone") or "",
         seed=values["seed"],
+        include_solution=values["include_solution"],
+        include_idea=values["include_idea"],
         acceptance={"human_review_required": values["human_review"]},
     )
 
@@ -340,20 +411,108 @@ def _show_plan(plan):
 
 
 def _show_status(store, run_id, stats=None):
+    from vbagent.authoring.paths import (
+        generated_collection_manifest_path,
+        generated_output_root,
+    )
+
     console = _get_console()
     stats = stats or store.stats(run_id)
     console.print(f"\n[bold]Authoring run {run_id}[/bold]")
     console.print(
         f"Status: {stats['status']} | total={stats['total']} | accepted={stats['accepted']} | "
+        f"unverified_drafts={stats.get('draft', 0)} | "
         f"needs_review={stats['needs_review']} | rejected={stats['rejected']} | "
         f"failed={stats['failed']} | pending={stats['pending']} | attempts={stats['attempts']}"
     )
+    progress = store.run_progress(run_id)
+    console.print(f"Stage: {progress['current_stage'] or 'idle'}")
+    counts = progress["progress_counts"]
+    console.print(
+        f"Progress: drafted={counts['drafted']}/{counts['total']} | "
+        f"checking={counts['checking']} | retrying={counts['retrying']} | "
+        f"not_started={counts['not_started']}"
+    )
+    if progress["latest_failure"]:
+        failure = progress["latest_failure"]
+        console.print(
+            f"Latest failed check: #{failure['ordinal']} attempt {failure['attempt']} "
+            f"| {failure['gate']} | {failure['summary']}",
+            markup=False,
+        )
+    for active in progress["active_stages"]:
+        console.print(
+            f"  #{active['ordinal']} {active['stage']} | {active['topic']} | "
+            f"attempt={active['attempt']}"
+        )
     usage = store.usage_summary(run_id)
     console.print(
         f"Usage: requests={usage['requests']}, input={usage['input_tokens']}, "
         f"output={usage['output_tokens']}, cached={usage['cached_tokens']}, "
+        f"cache_write={usage['cache_write_tokens']}, "
         f"duration={usage['duration_seconds']:.1f}s"
     )
+    request_hit = usage.get("cache_request_hit_percent")
+    multiplier = usage.get("effective_input_multiplier")
+    console.print(
+        "Cache: "
+        f"token_hit={usage.get('cache_hit_percent', 0.0):.2f}%, "
+        f"write={usage.get('cache_write_percent', 0.0):.2f}%, "
+        f"request_hit={f'{request_hit:.2f}%' if request_hit is not None else 'n/a'}, "
+        f"effective_input={f'{multiplier:.4f}x' if multiplier is not None else 'n/a'}, "
+        f"failovers={usage.get('profile_failovers', 0)}"
+    )
+    profile_usage = usage.get("profile_usage") or {}
+    domain_usage = usage.get("cache_domain_usage") or {}
+    if profile_usage:
+        console.print("Profiles:")
+        for name, bucket in sorted(profile_usage.items()):
+            console.print(f"  {_format_cache_usage_bucket(name, bucket)}")
+    elif usage.get("profiles"):
+        console.print(
+            "Profiles: "
+            + ", ".join(
+                f"{name}={count}"
+                for name, count in sorted(usage["profiles"].items())
+            )
+        )
+    if domain_usage:
+        console.print("Cache domains:")
+        for name, bucket in sorted(domain_usage.items()):
+            console.print(f"  {_format_cache_usage_bucket(name, bucket)}")
+    elif usage.get("cache_domains"):
+        console.print(
+            "Cache domains: "
+            + ", ".join(
+                f"{name}={count}"
+                for name, count in sorted(usage["cache_domains"].items())
+            )
+        )
     failures = store.failure_reasons(run_id)
     if failures:
         console.print("Failures: " + ", ".join(f"{name}={count}" for name, count in failures.items()))
+    run = store.get_run(run_id)
+    generated_dir = generated_output_root(Path(run["output_dir"]))
+    manifest = generated_collection_manifest_path(Path(run["output_dir"]))
+    console.print(f"Generated output: {generated_dir}")
+    if manifest.is_file():
+        console.print(f"Generated manifest: {manifest}")
+        publication = json.loads(manifest.read_text(encoding="utf-8")).get("publication") or {}
+        for label, key in (("Main TeX", "main_tex_path"), ("PDF", "pdf_path"), ("Answer key", "answer_key_path")):
+            if publication.get(key):
+                console.print(f"{label}: {publication[key]}")
+        if publication.get("error"):
+            console.print(f"Assembly: {publication['error']}", markup=False)
+    if stats.get("needs_review"):
+        console.print("Author decision needed: keep, revise, approve when checks pass, or reject. No draft was rejected automatically.")
+
+
+def _format_cache_usage_bucket(name: str, bucket: dict) -> str:
+    request_hit = bucket.get("cache_request_hit_percent")
+    request_hit_text = f"{request_hit:.2f}%" if request_hit is not None else "n/a"
+    return (
+        f"{name}: requests={bucket.get('requests', 0)}, "
+        f"token_hit={bucket.get('cache_hit_percent', 0.0):.2f}%, "
+        f"write={bucket.get('cache_write_percent', 0.0):.2f}%, "
+        f"request_hit={request_hit_text}, failovers={bucket.get('failovers', 0)}"
+    )

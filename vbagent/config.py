@@ -406,7 +406,8 @@ class AgentModelConfig:
         if self.max_tokens is not None:
             settings_dict["max_tokens"] = self.max_tokens
 
-        # Enable data sharing for incentive-tier pricing and prompt caching
+        # Retain Responses so previous_response_id continuation workflows work.
+        # Prompt caching is configured independently by the base agent runner.
         settings_dict["store"] = True
 
         return ModelSettings(**settings_dict)

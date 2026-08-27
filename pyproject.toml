@@ -14,7 +14,8 @@ dependencies = [
     "rich>=13.0.0",
     "pyyaml>=6.0.0",
     "jsonschema>=4.0.0",
-    "mcp>=1.0.0",
+    "mcp>=1.23.1,<2.0.0",
+    "prompt-toolkit>=3.0.53,<4.0.0",
 ]
 
 [project.optional-dependencies]
@@ -36,7 +37,8 @@ all = [
     "rich>=13.0.0",
     "pyyaml>=6.0.0",
     "jsonschema>=4.0.0",
-    "mcp>=1.0.0",
+    "mcp>=1.23.1,<2.0.0",
+    "prompt-toolkit>=3.0.53,<4.0.0",
 ]
 
 [project.scripts]

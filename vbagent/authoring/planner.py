@@ -23,7 +23,6 @@ from vbagent.authoring.models import (
     VariantFamily,
 )
 
-
 DEFAULT_LENSES: dict[str, dict[str, float]] = {
     "physics": {
         "conceptual": 1,
@@ -156,8 +155,10 @@ class AuthoringPlanner:
                     "syllabus_version": catalog.version,
                     "syllabus_source_sha256": catalog.source_sha256,
                     "syllabus_source_url": catalog.source_url,
+                    "syllabus_official_source_sha256": catalog.official_source_sha256,
                     "exam_pattern_description": catalog.exam_pattern_description,
                     "exam_pattern_source_url": catalog.exam_pattern_source_url,
+                    "exam_pattern_source_sha256": catalog.exam_pattern_source_sha256,
                     "exam_pattern_verified_at": catalog.exam_pattern_verified_at,
                     "chapter_id": chapter.id,
                     "chapter": chapter.title,
@@ -181,6 +182,8 @@ class AuthoringPlanner:
                     "tone": request.tone,
                     "random_seed": _derived_seed(request.seed, "item", index + 1),
                     "acceptance": request.acceptance,
+                    "include_solution": request.include_solution,
+                    "include_idea": request.include_idea,
                     "source_kind": (
                         SourceKind.VARIANT if request.variant_parent_spec_id else SourceKind.ORIGINAL
                     ),
@@ -206,12 +209,14 @@ class AuthoringPlanner:
             "catalog_contract": {
                 "version": catalog.version,
                 "source_url": catalog.source_url,
+                "official_source_sha256": catalog.official_source_sha256,
                 "verified_at": catalog.verified_at,
                 "allowed_question_types": [
                     question_type.value for question_type in catalog.allowed_question_types
                 ],
                 "exam_pattern_description": catalog.exam_pattern_description,
                 "exam_pattern_source_url": catalog.exam_pattern_source_url,
+                "exam_pattern_source_sha256": catalog.exam_pattern_source_sha256,
                 "exam_pattern_verified_at": catalog.exam_pattern_verified_at,
             },
             "items": [
@@ -254,7 +259,7 @@ class AuthoringPlanner:
 
         # draft, independent solve, classification, answer adjudication,
         # specification alignment, difficulty assessment, and final review.
-        estimated_calls = request.count * 7 + sum(
+        estimated_calls = request.count * (7 if request.include_solution else 1) + sum(
             item.diagram_policy is DiagramPolicy.REQUIRED for item in items
         )
         return AuthoringPlan(
@@ -263,10 +268,12 @@ class AuthoringPlanner:
             catalog_version=catalog.version,
             catalog_source=catalog.source,
             catalog_source_url=catalog.source_url,
+            catalog_official_source_sha256=catalog.official_source_sha256,
             catalog_verified_at=catalog.verified_at,
             allowed_question_types=catalog.allowed_question_types,
             exam_pattern_description=catalog.exam_pattern_description,
             exam_pattern_source_url=catalog.exam_pattern_source_url,
+            exam_pattern_source_sha256=catalog.exam_pattern_source_sha256,
             exam_pattern_verified_at=catalog.exam_pattern_verified_at,
             catalog_source_sha256=catalog.source_sha256,
             items=tuple(items),

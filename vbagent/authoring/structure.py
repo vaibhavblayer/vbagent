@@ -14,7 +14,6 @@ from vbagent.authoring.models import (
 from vbagent.authoring.novelty import variant_stem_similarity
 from vbagent.pipeline.io import has_main_diagram_placeholder
 
-
 _VISUAL_RE = re.compile(
     r"\\(?:begin\{(?:tikzpicture|circuitikz|axis)\}|includegraphics)",
     flags=re.IGNORECASE,
@@ -33,7 +32,16 @@ def validate_draft_structure(
     diagram_description: str = "",
 ) -> list[str]:
     """Return deterministic contract violations without invoking an agent."""
-    issues = _validate_problem_structure(spec, problem_latex, diagram_description)
+    issues = _validate_problem_structure(
+        spec,
+        problem_latex,
+        diagram_description,
+        final=spec.source_kind is SourceKind.COMPLETION,
+    )
+    if not spec.include_solution:
+        if solution_latex.strip():
+            issues.append("solution was deferred and must be empty")
+        return issues
     solution = solution_latex.strip()
     solution_starts = len(re.findall(r"\\begin\{solution\}", solution))
     solution_ends = len(re.findall(r"\\end\{solution\}", solution))
@@ -183,6 +191,12 @@ def _validate_problem_structure(
 def validate_final_structure(spec: GenerationSpec, final_latex: str) -> list[str]:
     """Validate both the independent solution and final question representation."""
     issues: list[str] = []
+    if not spec.include_solution:
+        if re.search(r"\\begin\{(?:solution|alternatesolution)\}", final_latex):
+            issues.append("deferred-solution draft contains a solution")
+        question = re.split(r"\\begin\{idea\}", final_latex, maxsplit=1)[0]
+        issues.extend(_validate_problem_structure(spec, question, final=True))
+        return issues
     solution_starts = list(re.finditer(r"\\begin\{solution\}", final_latex))
     solution_ends = list(re.finditer(r"\\end\{solution\}", final_latex))
     if len(solution_starts) != 1 or len(solution_ends) != 1:

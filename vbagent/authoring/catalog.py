@@ -15,6 +15,71 @@ from vbagent.authoring.models import (
     SyllabusCatalog,
 )
 
+_JEE_MAIN_2026_SYLLABUS_URL = (
+    "https://cdnbbsr.s3waas.gov.in/s3f8e59f4b2fe7c5705bf878bbd494ccdf/"
+    "uploads/2025/10/202510311323551056.pdf"
+)
+_JEE_MAIN_2026_PATTERN_URL = (
+    "https://cdnbbsr.s3waas.gov.in/s3f8e59f4b2fe7c5705bf878bbd494ccdf/"
+    "uploads/2025/11/202511021649722475.pdf"
+)
+_JEE_MAIN_2026_SYLLABUS_SHA256 = "7cad9da2a12065444828f744bd9f1a93a2dd0d9bd54c32a6d92d94a769e4f905"
+_JEE_MAIN_2026_PATTERN_SHA256 = "b18d5d608dda0a274eaa1bcaa4127e0ab7e49d2fd0e78840bd9c96707400960e"
+_NEET_2026_SYLLABUS_URL = (
+    "https://www.nmc.org.in/MCIRest/open/getDocument?path=%2FDocuments%2FPublic%2F"
+    "Portal%2FLatestNews%2FPublic+Notice_NEET_removed.pdf"
+)
+_NEET_2026_PATTERN_URL = (
+    "https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/"
+    "uploads/2026/02/202602231394640855.pdf"
+)
+_NEET_2026_SYLLABUS_SHA256 = "39dbf78828116ebfe5cf7d1063b28db6b72148156d5364ba7a7381afeed4d750"
+_NEET_2026_PATTERN_SHA256 = "2b688f32bc58e5d5acdc4d61c8e6795a81419c40887a7e5c40b7d163174b4925"
+_SUBJECT_LABELS = {
+    "biology": "Biology",
+    "chemistry": "Chemistry",
+    "mathematics": "Mathematics",
+    "physics": "Physics",
+}
+
+
+def _builtin_provenance() -> dict[tuple[str, str], dict[str, Any]]:
+    """Return official 2026 syllabus and exam-pattern provenance by catalog."""
+    provenance: dict[tuple[str, str], dict[str, Any]] = {}
+    for subject in ("mathematics", "physics", "chemistry"):
+        label = _SUBJECT_LABELS[subject]
+        provenance[("jee_main", subject)] = {
+            "version": "2026.1",
+            "source_url": _JEE_MAIN_2026_SYLLABUS_URL,
+            "official_source_sha256": _JEE_MAIN_2026_SYLLABUS_SHA256,
+            "verified_at": "2026-08-27",
+            "allowed_question_types": ["mcq_sc", "integer"],
+            "exam_pattern_description": (
+                f"JEE Main Paper 1 {label} uses four-option single-correct MCQs and "
+                "numerical-value questions. Numerical answers are rounded to the nearest integer."
+            ),
+            "exam_pattern_source_url": _JEE_MAIN_2026_PATTERN_URL,
+            "exam_pattern_source_sha256": _JEE_MAIN_2026_PATTERN_SHA256,
+            "exam_pattern_verified_at": "2026-08-27",
+        }
+    for subject in ("physics", "chemistry", "biology"):
+        label = _SUBJECT_LABELS[subject]
+        provenance[("neet", subject)] = {
+            "version": "2026.1",
+            "source_url": _NEET_2026_SYLLABUS_URL,
+            "official_source_sha256": _NEET_2026_SYLLABUS_SHA256,
+            "verified_at": "2026-08-27",
+            "allowed_question_types": ["mcq_sc"],
+            "exam_pattern_description": (
+                f"NEET (UG) {label} uses multiple-choice questions with four options "
+                "and one correct or best answer."
+            ),
+            "exam_pattern_source_url": _NEET_2026_PATTERN_URL,
+            "exam_pattern_source_sha256": _NEET_2026_PATTERN_SHA256,
+            "exam_pattern_verified_at": "2026-08-27",
+        }
+    return provenance
+
 
 class CatalogResolutionError(ValueError):
     """Raised when a passed chapter or topic cannot be resolved uniquely."""
@@ -57,44 +122,7 @@ class SyllabusCatalogLoader:
     """Load built-in or user-provided syllabus snapshots."""
 
     DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "syllabus"
-    BUILTIN_PROVENANCE: dict[tuple[str, str], dict[str, Any]] = {
-        ("jee_main", "physics"): {
-            "version": "2026.1",
-            "source_url": (
-                "https://cdnbbsr.s3waas.gov.in/s3f8e59f4b2fe7c5705bf878bbd494ccdf/"
-                "uploads/2025/10/202510311323551056.pdf"
-            ),
-            "verified_at": "2026-08-26",
-            "allowed_question_types": ["mcq_sc", "integer"],
-            "exam_pattern_description": (
-                "JEE Main Paper 1 Physics uses four-option single-correct MCQs and "
-                "numerical-value questions. Numerical answers are rounded to the nearest integer."
-            ),
-            "exam_pattern_source_url": (
-                "https://cdnbbsr.s3waas.gov.in/s3f8e59f4b2fe7c5705bf878bbd494ccdf/"
-                "uploads/2025/11/202511021649722475.pdf"
-            ),
-            "exam_pattern_verified_at": "2026-08-26",
-        },
-        ("neet", "physics"): {
-            "version": "2026.1",
-            "source_url": (
-                "https://www.nmc.org.in/MCIRest/open/getDocument?path=%2FDocuments%2FPublic%2F"
-                "Portal%2FLatestNews%2FPublic+Notice_NEET_removed.pdf"
-            ),
-            "verified_at": "2026-08-26",
-            "allowed_question_types": ["mcq_sc"],
-            "exam_pattern_description": (
-                "NEET (UG) Physics uses multiple-choice questions with four options "
-                "and one correct or best answer."
-            ),
-            "exam_pattern_source_url": (
-                "https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/"
-                "uploads/2026/02/202602231394640855.pdf"
-            ),
-            "exam_pattern_verified_at": "2026-08-26",
-        },
-    }
+    BUILTIN_PROVENANCE = _builtin_provenance()
 
     @classmethod
     def available(cls) -> list[tuple[str, str]]:
@@ -169,10 +197,14 @@ class SyllabusCatalogLoader:
             version=version,
             source=str(syllabus_path),
             source_url=str(metadata.get("source_url", "")),
+            official_source_sha256=str(metadata.get("official_source_sha256", "")),
             verified_at=str(metadata.get("verified_at", "")),
             allowed_question_types=allowed_question_types,
             exam_pattern_description=str(metadata.get("exam_pattern_description", "")),
             exam_pattern_source_url=str(metadata.get("exam_pattern_source_url", "")),
+            exam_pattern_source_sha256=str(
+                metadata.get("exam_pattern_source_sha256", "")
+            ),
             exam_pattern_verified_at=str(metadata.get("exam_pattern_verified_at", "")),
             source_sha256=source_sha256,
             chapters=tuple(chapters),
@@ -183,6 +215,9 @@ class SyllabusCatalogLoader:
                 update={
                     "version": provenance.get("version", catalog.version),
                     "source_url": provenance.get("source_url", catalog.source_url),
+                    "official_source_sha256": provenance.get(
+                        "official_source_sha256", catalog.official_source_sha256
+                    ),
                     "verified_at": provenance.get("verified_at", catalog.verified_at),
                     "allowed_question_types": _parse_allowed_question_types(
                         provenance.get("allowed_question_types")
@@ -192,6 +227,10 @@ class SyllabusCatalogLoader:
                     ),
                     "exam_pattern_source_url": provenance.get(
                         "exam_pattern_source_url", catalog.exam_pattern_source_url
+                    ),
+                    "exam_pattern_source_sha256": provenance.get(
+                        "exam_pattern_source_sha256",
+                        catalog.exam_pattern_source_sha256,
                     ),
                     "exam_pattern_verified_at": provenance.get(
                         "exam_pattern_verified_at", catalog.exam_pattern_verified_at

@@ -51,18 +51,25 @@ Then replace `preflight` with `run` and add `--output agentic/authoring`.
 Only candidates that pass the independent solution, answer, syllabus,
 difficulty, compile, review, and novelty gates are accepted.
 
-## 4. Try the Chat Interface
+## 4. Talk to the authoring workflow
+
+Use the built-in transparent CLI host:
 
 ```bash
-vbagent chat
+vbagent chat --output agentic/authoring
 ```
 
-**Example conversation:**
-```
-You: "Generate a JEE Main Physics single-correct MCQ from Laws of Motion on friction"
+It shows each controller and tool input/output and asks locally before model
+execution begins. Or connect an external MCP host through stdio:
 
-Agent: *generates complete problem with TikZ and metadata*
+```bash
+vbagent mcp --output agentic/authoring
 ```
+
+Then ask the host to plan a syllabus-scoped batch. It will inspect the catalog,
+show the resolved distribution and estimated model calls, request confirmation,
+and dispatch a durable worker. Closing the conversation does not discard the
+run.
 
 ## 5. Create a DPP Set
 
@@ -104,5 +111,5 @@ vbagent db query --topic Mechanics --difficulty medium
 ## Next Steps
 
 - [CLI Commands Reference](../user-guide/cli-commands.md)
-- [Chat Interface Guide](../user-guide/chat.md)
+- [Natural-language MCP Guide](../user-guide/chat.md)
 - [Problem Generation](../user-guide/problem-generation.md)

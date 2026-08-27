@@ -154,7 +154,7 @@ def test_exam_profile_provenance_is_part_of_plan_identity():
     first = planner.plan(request, catalog)
     changed = planner.plan(
         request,
-        catalog.model_copy(update={"exam_pattern_verified_at": "2026-08-27"}),
+        catalog.model_copy(update={"exam_pattern_verified_at": "2099-01-01"}),
     )
 
     assert first.plan_id != changed.plan_id

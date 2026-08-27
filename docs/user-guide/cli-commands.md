@@ -226,23 +226,40 @@ vbagent check apply <version_id>
 vbagent check stats --days 7
 ```
 
-## Conversational Interface
+## Natural-language MCP interface
 
 ### chat
-Interactive chat with LLM orchestration.
+
+Run the built-in transparent conversational host. It discovers the same FastMCP
+tools, renders messages and tool I/O as formatted JSON, mirrors detached agent
+I/O, and locally authorizes direct creation intent while keeping plan-only or
+ambiguous requests behind `confirm`. A compact toolbar continuously tracks the
+latest background generation and its current durable agent stage. On completion
+it reports project-root `main.tex`, `answer_key.tex`, and `main.pdf`, with stable
+problem paths such as `agentic/generated/problem_1.tex` and a JSON sidecar.
+`/results [RUN_ID]` displays full authored LaTeX with validation status. Chat
+supports independently selected solution/idea components, deferred component
+completion on the same files, and an end-of-run keep/revise/reject decision for
+review-pending drafts. See the [authoring guide](problem-generation.md).
 
 ```bash
-vbagent chat
+vbagent chat --output agentic/authoring
+vbagent chat --message "Plan 20 JEE Main kinematics problems"
+vbagent chat --model gpt-5.6-terra
 ```
-
-Access all vbagent functions through natural language.
 
 ### mcp
-Run as MCP server for external agents.
+Run the typed, durable authoring server for an MCP-capable conversational host.
 
 ```bash
-vbagent mcp
+vbagent mcp --output agentic/authoring
 ```
+
+The host model handles conversation. The server exposes catalog inspection,
+no-model-call planning, intent-or-confirmation-authorized detached execution, status,
+pagination, cancellation/resume, review, variants, and accepted/evidence
+resources. Use `--transport streamable-http` or `--transport sse` only for a
+trusted local client; stdio is the default.
 
 ## Question Bank Management
 

@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 
-from vbagent.authoring.models import AuthoringRequest
-from vbagent.authoring.pipeline import AuthoringPipeline
+from vbagent.authoring.models import AuthoringRequest, DiagramPolicy, SourceKind
+from vbagent.authoring.pipeline import AuthoringPipeline, _aggregate_usage
 from vbagent.authoring.planner import AuthoringPlanner
 from vbagent.authoring.results import CandidateStatus
 from vbagent.models.classification import DifficultyAssessment, PrimaryClassification
@@ -138,7 +138,11 @@ def _plan(**updates):
 
 def test_complete_pipeline_accepts_only_after_every_gate():
     agents = FakeAgents()
-    candidate = AuthoringPipeline(agents=agents).run(_plan().items[0])
+    stages = []
+    candidate = AuthoringPipeline(
+        agents=agents,
+        progress_callback=stages.append,
+    ).run(_plan().items[0])
 
     assert candidate.status is CandidateStatus.ACCEPTED
     assert candidate.accepted
@@ -149,6 +153,89 @@ def test_complete_pipeline_accepts_only_after_every_gate():
         "draft", "solve", "classify", "answer", "alignment",
         "difficulty", "compile", "review",
     ]
+    assert stages == [
+        "drafting",
+        "validating_draft_structure",
+        "solving_independently",
+        "validating_final_structure",
+        "classifying_problem",
+        "adjudicating_answer",
+        "checking_syllabus_alignment",
+        "assessing_difficulty",
+        "compiling_item",
+        "reviewing_quality",
+        "checking_novelty",
+        "finalizing_item",
+    ]
+
+
+def test_idea_only_draft_skips_every_solution_agent_and_is_not_accepted():
+    agents = FakeAgents()
+    candidate = AuthoringPipeline(agents=agents).run(_plan(include_solution=False).items[0])
+    assert agents.calls == ["draft", "compile"]
+    assert candidate.status is CandidateStatus.DRAFT
+    assert candidate.draft_solution_latex == ""
+    assert candidate.independent_solution_latex == ""
+    assert r"\begin{solution}" not in candidate.final_latex
+    assert r"\begin{idea}" in candidate.final_latex
+    assert not candidate.accepted
+
+
+def test_solution_only_output_has_no_idea_but_keeps_all_validation_gates():
+    agents = FakeAgents()
+    candidate = AuthoringPipeline(agents=agents).run(_plan(include_idea=False).items[0])
+    assert candidate.status is CandidateStatus.ACCEPTED
+    assert "solve" in agents.calls
+    assert r"\begin{solution}" in candidate.final_latex
+    assert r"\begin{idea}" not in candidate.final_latex
+    assert candidate.idea_latex == ""
+
+
+def test_question_only_output_is_a_structural_draft():
+    agents = FakeAgents()
+    candidate = AuthoringPipeline(agents=agents).run(_plan(include_solution=False, include_idea=False).items[0])
+    assert candidate.status is CandidateStatus.DRAFT
+    assert candidate.final_latex == agents.problem
+    assert agents.calls == ["draft", "compile"]
+
+
+def test_adding_idea_preserves_existing_solution_and_alternates():
+    agents = FakeAgents()
+    saved = agents.problem + "\n\n" + agents.draft_solution + (
+        "\n\n" + r"\begin{alternatesolution}The author's second method.\end{alternatesolution}"
+    )
+    spec = _plan().items[0].model_copy(update={
+        "source_kind": SourceKind.COMPLETION,
+        "parent_spec_id": "original",
+        "parent_problem_latex": agents.problem,
+        "parent_solution_latex": agents.draft_solution,
+        "parent_final_latex": saved,
+        "parent_was_accepted": True,
+    })
+    candidate = AuthoringPipeline(agents=agents).run(spec)
+    assert candidate.status is CandidateStatus.ACCEPTED
+    assert candidate.final_latex.startswith(saved + "\n\n")
+    assert candidate.published_solution_latex == agents.draft_solution
+    assert "Independently" in candidate.independent_solution_latex
+    assert "Independently" not in candidate.final_latex
+    assert candidate.final_latex.count(r"\begin{idea}") == 1
+
+
+def test_completion_reuses_an_existing_required_diagram():
+    agents = FakeAgents()
+    agents.problem += "\n" + r"\begin{tikzpicture}\draw (0,0)--(1,0);\end{tikzpicture}"
+    spec = _plan().items[0].model_copy(update={
+        "source_kind": SourceKind.COMPLETION,
+        "diagram_policy": DiagramPolicy.REQUIRED,
+        "parent_spec_id": "original",
+        "parent_problem_latex": agents.problem,
+        "parent_final_latex": agents.problem,
+    })
+    candidate = AuthoringPipeline(agents=agents).run(spec)
+    assert candidate.status is CandidateStatus.ACCEPTED
+    assert "diagram" not in agents.calls
+    assert candidate.problem_latex == spec.parent_problem_latex
+    assert candidate.final_latex.count(r"\begin{tikzpicture}") == 1
 
 
 def test_invalid_structure_is_rejected_before_expensive_agents():
@@ -160,6 +247,25 @@ def test_invalid_structure_is_rejected_before_expensive_agents():
     assert candidate.status is CandidateStatus.REJECTED
     assert agents.calls == ["draft"]
     assert candidate.gates[-1].gate == "structure"
+
+
+def test_pipeline_trace_tag_identifies_item_and_is_restored(monkeypatch):
+    from vbagent.ui.logging import _get_tagged_name, agent_task_context
+
+    spec = _plan().items[0]
+    agents = FakeAgents()
+    original = agents.generate_draft
+    observed = []
+
+    def capture_tag(spec):
+        observed.append(_get_tagged_name("Draft"))
+        return original(spec)
+
+    monkeypatch.setattr(agents, "generate_draft", capture_tag)
+    with agent_task_context("parent"):
+        AuthoringPipeline(agents=agents).run(spec)
+        assert _get_tagged_name("After") == "parent › After"
+    assert observed == [f"item 001 · {spec.spec_id[:8]} › Draft"]
 
 
 def test_final_problem_is_revalidated_after_independent_solution_assembly():
@@ -281,3 +387,87 @@ def test_human_review_policy_never_auto_accepts_or_updates_novelty():
 
     assert candidate.status is CandidateStatus.NEEDS_REVIEW
     assert len(pipeline.novelty_index) == 0
+
+
+def test_usage_aggregation_preserves_cache_profile_provenance():
+    events = [
+        {
+            "event": "completed",
+            "agent": "Draft",
+            "stage": "draft",
+            "model": "gpt-5.6-sol",
+            "duration": 2.0,
+            "request_duration": 1.8,
+            "queue_duration": 0.2,
+            "key_name": "profile-b",
+            "cache_domain": "org-main:global",
+            "cache_group_id": "draft:s1of4",
+            "response_id": "resp-one",
+            "tokens": {
+                "requests": 1,
+                "input": 1000,
+                "output": 100,
+                "cached": 600,
+                "cache_write": 200,
+                "ordinary_input": 200,
+                "cache_read_requests": 1,
+                "cache_reported_requests": 1,
+                "cache_metrics_reported": True,
+                "effective_input_multiplier": 0.51,
+                "reasoning": 50,
+            },
+        },
+        {
+            "event": "profile_failover",
+            "agent": "Draft",
+            "key_name": "profile-a",
+        },
+    ]
+
+    usage = _aggregate_usage(events)
+
+    assert usage["totals"]["cache_hit_percent"] == 60.0
+    assert usage["totals"]["cache_write_percent"] == 20.0
+    assert usage["totals"]["cache_request_hit_percent"] == 100.0
+    assert usage["totals"]["effective_input_multiplier"] == 0.51
+    assert usage["totals"]["profile_failovers"] == 1
+    assert usage["profiles"] == {"profile-b": 1}
+    assert usage["cache_domains"] == {"org-main:global": 1}
+    assert usage["profile_usage"]["profile-b"]["cache_hit_percent"] == 60.0
+    assert usage["profile_usage"]["profile-a"]["failovers"] == 1
+    assert (
+        usage["cache_domain_usage"]["org-main:global"]["cache_write_percent"]
+        == 20.0
+    )
+    assert usage["agents"][0]["response_id"] == "resp-one"
+
+
+def test_effective_input_multiplier_is_unknown_for_mixed_model_usage():
+    events = [
+        {
+            "event": "completed",
+            "agent": "GPT56",
+            "model": "gpt-5.6-sol",
+            "tokens": {
+                "requests": 1,
+                "input": 100,
+                "ordinary_input": 100,
+                "cache_metrics_reported": True,
+                "effective_input_multiplier": 1.0,
+            },
+        },
+        {
+            "event": "completed",
+            "agent": "Other",
+            "model": "other-model",
+            "tokens": {
+                "requests": 1,
+                "input": 100,
+                "ordinary_input": 100,
+                "cache_metrics_reported": True,
+                "effective_input_multiplier": None,
+            },
+        },
+    ]
+
+    assert _aggregate_usage(events)["totals"]["effective_input_multiplier"] is None

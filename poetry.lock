@@ -1292,6 +1292,21 @@ dev = ["pre-commit", "tox"]
 testing = ["coverage", "pytest", "pytest-benchmark"]
 
 [[package]]
+name = "prompt-toolkit"
+version = "3.0.53"
+description = "Library for building powerful interactive command lines in Python"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "prompt_toolkit-3.0.53-py3-none-any.whl", hash = "sha256:01c0891d7f9237d5e339f7d3e42cdae80b7534abb1c7c0e3352efba6231492f2"},
+    {file = "prompt_toolkit-3.0.53.tar.gz", hash = "sha256:9ec8a0ad96d5c56148b3f914aa79c1564c3fde5d2e6b876e7bc327e353cf8fa6"},
+]
+
+[package.dependencies]
+wcwidth = ">=0.1.4"
+
+[[package]]
 name = "pycparser"
 version = "2.23"
 description = "C parser in Python"
@@ -2151,6 +2166,18 @@ markers = {main = "extra == \"docs\""}
 watchmedo = ["PyYAML (>=3.10)"]
 
 [[package]]
+name = "wcwidth"
+version = "0.8.2"
+description = "Measures the displayed width of unicode strings in a terminal"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "wcwidth-0.8.2-py3-none-any.whl", hash = "sha256:d63947694a0539a1d51e01eda7caf800c291020e6cdd7e28ad7b14dd33ad4f85"},
+    {file = "wcwidth-0.8.2.tar.gz", hash = "sha256:91fbef97204b96a3d4d421609b80340b760cf33e26da123ff243d76b1fda8dda"},
+]
+
+[[package]]
 name = "websockets"
 version = "16.1"
 description = "An implementation of the WebSocket Protocol (RFC 6455 & 7692)"
@@ -2270,11 +2297,11 @@ files = [
 ]
 
 [extras]
-all = ["click", "jsonschema", "mcp", "openai-agents", "pydantic", "pyyaml", "rich"]
+all = ["click", "jsonschema", "mcp", "openai-agents", "prompt-toolkit", "pydantic", "pyyaml", "rich"]
 dev = ["hypothesis", "pytest", "pytest-asyncio"]
 docs = ["mkdocs-material", "mkdocstrings", "pymdown-extensions"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "be5c386ccfd27fdc87558dade6db13e93ae968d6bb566c77e04f42a074da47c8"
+content-hash = "cfb19de7e9cc490e0000638f866f53c4edb22baf0518887521175d56122b7edf"

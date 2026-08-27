@@ -8,13 +8,12 @@ import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 from typing import Any, Callable
 
 from vbagent.authoring.novelty import NoveltyIndex
 from vbagent.authoring.pipeline import AuthoringPipeline
 from vbagent.authoring.results import AuthoredCandidate, CandidateStatus, GateResult
-from vbagent.authoring.store import AuthoringStore, ClaimedItem, RunStatus
+from vbagent.authoring.store import AuthoringStore, ClaimedItem, ItemStatus, RunStatus
 
 
 class RunLeaseError(RuntimeError):
@@ -76,6 +75,7 @@ class AuthoringRunService:
             daemon=True,
         )
         heartbeat.start()
+        self.store.set_run_stage(run_id, owner, "starting_workers")
 
         def worker(worker_number: int) -> None:
             worker_id = f"{owner}:worker-{worker_number}"
@@ -113,6 +113,7 @@ class AuthoringRunService:
                 candidate: AuthoredCandidate | None = None
                 try:
                     try:
+                        self.store.set_item_stage(claimed, "drafting")
                         candidate = pipeline.run(
                             claimed.spec,
                             retry_context=claimed.retry_reason,
@@ -135,16 +136,26 @@ class AuthoringRunService:
                         raise RunLeaseError(
                             f"lost item lease for {claimed.spec.spec_id} attempt {claimed.attempt}"
                         )
+                    self.store.set_item_stage(claimed, "saving_candidate")
                     artifact_dir, artifact_sha256 = self.store.write_candidate_artifacts(
                         claimed,
                         candidate,
                     )
-                    self.store.record_candidate(
+                    item_status = self.store.record_candidate(
                         claimed,
                         candidate,
                         artifact_dir=artifact_dir,
                         artifact_sha256=artifact_sha256,
                         retry_base_seconds=self.retry_base_seconds,
+                    )
+                    self.store.set_run_stage(
+                        run_id,
+                        owner,
+                        (
+                            "waiting_to_retry"
+                            if item_status is ItemStatus.PENDING
+                            else "waiting_for_workers"
+                        ),
                     )
                 except BaseException as exc:
                     if candidate is not None and candidate.status is CandidateStatus.ACCEPTED:
@@ -175,8 +186,34 @@ class AuthoringRunService:
         finally:
             stop.set()
             heartbeat.join(timeout=5)
-            self.store.refresh_run_status(run_id)
-            self.store.release_run_lease(run_id, owner)
+            try:
+                final_status = self.store.refresh_run_status(run_id)
+                if fatal_errors:
+                    self.store.set_run_stage(run_id, owner, "worker_failed")
+                elif final_status is RunStatus.COMPLETED:
+                    from vbagent.authoring.publication import (
+                        assemble_generated_run,
+                        publication_stage,
+                    )
+
+                    publication = assemble_generated_run(
+                        self.store,
+                        run_id,
+                        progress_callback=lambda stage: self.store.set_run_stage(
+                            run_id,
+                            owner,
+                            stage,
+                        ),
+                    )
+                    self.store.set_run_stage(
+                        run_id,
+                        owner,
+                        publication_stage(self.store.stats(run_id), publication),
+                    )
+                elif final_status is RunStatus.CANCELLED:
+                    self.store.set_run_stage(run_id, owner, "cancelled")
+            finally:
+                self.store.release_run_lease(run_id, owner)
             self.store.write_run_manifest(run_id)
 
         if fatal_errors:
@@ -193,6 +230,10 @@ class AuthoringRunService:
         return AuthoringPipeline(
             novelty_index=novelty,
             render_dir=render_dir,
+            progress_callback=lambda stage: self.store.set_item_stage(
+                claimed,
+                stage,
+            ),
         )
 
     def _heartbeat(

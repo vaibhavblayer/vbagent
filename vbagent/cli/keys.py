@@ -111,6 +111,7 @@ def list():
     table = Table(title="API Key Usage", show_lines=True)
     table.add_column("#", style="dim", justify="right", width=3)
     table.add_column("Key", style="cyan", no_wrap=True)
+    table.add_column("Cache domain", style="blue", no_wrap=True)
     table.add_column("Category", style="magenta")
     table.add_column("Used", justify="right")
     table.add_column("Limit", justify="right")
@@ -121,6 +122,9 @@ def list():
     for serial, (key_name, data) in enumerate(summary.items(), 1):
         enabled = data["enabled"]
         status = "[green]OK[/green]" if enabled else "[red]ERROR[/red]"
+        cache_domain = data["cache_domain"]
+        if not data.get("cache_domain_declared"):
+            cache_domain = f"{cache_domain} (isolated)"
 
         for idx, (category, stats) in enumerate(data["categories"].items()):
             used = _format_tokens(stats["used"])
@@ -139,10 +143,11 @@ def list():
 
             serial_display = str(serial) if idx == 0 else ""
             key_display = key_name if idx == 0 else ""
+            domain_display = cache_domain if idx == 0 else ""
             status_display = status if idx == 0 else ""
 
             table.add_row(
-                serial_display, key_display, category,
+                serial_display, key_display, domain_display, category,
                 used, limit, remaining, usage_str, status_display,
             )
 
@@ -165,7 +170,7 @@ def list():
         key_display = "[bold]TOTAL (enabled)[/bold]" if category == "standard" else ""
 
         table.add_row(
-            "", key_display, category,
+            "", key_display, "", category,
             _format_tokens(total_used), _format_tokens(total_limit),
             _format_tokens(total_remaining), usage_str, "",
         )
@@ -180,16 +185,29 @@ def list():
 @keys.command()
 @click.option("--name", required=True, help="Friendly name for the key")
 @click.option("--api-key", required=True, help="OpenAI API key")
+@click.option(
+    "--cache-domain",
+    help=(
+        "Shared organization/processing-region label. Omit to isolate this profile."
+    ),
+)
 @click.option("--standard-limit", type=int, default=1_000_000, help="Daily token limit for standard models")
 @click.option("--mini-limit", type=int, default=2_000_000, help="Daily token limit for mini models")
-def add(name: str, api_key: str, standard_limit: int, mini_limit: int):
+def add(name: str, api_key: str, cache_domain: str | None, standard_limit: int, mini_limit: int):
     """Add a new API key."""
     console = Console()
     manager = KeyManager.get_instance()
 
     try:
-        manager.add_key(name, api_key, standard_limit, mini_limit)
+        manager.add_key(
+            name,
+            api_key,
+            standard_limit,
+            mini_limit,
+            cache_domain,
+        )
         console.print(f"[green]OK[/green] Added key '[cyan]{name}[/cyan]'")
+        console.print(f"  Cache domain: {cache_domain or f'profile:{name} (isolated)'}")
         console.print(f"  Standard limit: {_format_tokens(standard_limit)} tokens/day")
         console.print(f"  Mini limit: {_format_tokens(mini_limit)} tokens/day")
     except ValueError as e:
@@ -201,19 +219,48 @@ def add(name: str, api_key: str, standard_limit: int, mini_limit: int):
 @click.argument("identifier")
 @click.option("--standard-limit", type=int, help="New daily limit for standard models")
 @click.option("--mini-limit", type=int, help="New daily limit for mini models")
-def update(identifier: str, standard_limit: int, mini_limit: int):
-    """Update limits for a key. Use name or serial number."""
+@click.option(
+    "--cache-domain",
+    help="New shared organization/processing-region label.",
+)
+@click.option(
+    "--isolated-cache",
+    is_flag=True,
+    help="Clear the shared domain and isolate cache routing to this profile.",
+)
+def update(
+    identifier: str,
+    standard_limit: int | None,
+    mini_limit: int | None,
+    cache_domain: str | None,
+    isolated_cache: bool,
+):
+    """Update limits or cache domain for a key. Use name or serial number."""
     console = Console()
     manager = KeyManager.get_instance()
 
     try:
+        if cache_domain is not None and isolated_cache:
+            raise click.BadParameter(
+                "Use either --cache-domain or --isolated-cache, not both"
+            )
         name = _resolve_key(manager, identifier)
-        manager.update_limits(name, standard_limit, mini_limit)
-        console.print(f"[green]OK[/green] Updated limits for '[cyan]{name}[/cyan]'")
-        if standard_limit:
+        manager.update_limits(
+            name,
+            standard_limit,
+            mini_limit,
+            None if isolated_cache else cache_domain,
+            update_cache_domain=cache_domain is not None or isolated_cache,
+        )
+        console.print(f"[green]OK[/green] Updated '[cyan]{name}[/cyan]'")
+        if standard_limit is not None:
             console.print(f"  Standard limit: {_format_tokens(standard_limit)} tokens/day")
-        if mini_limit:
+        if mini_limit is not None:
             console.print(f"  Mini limit: {_format_tokens(mini_limit)} tokens/day")
+        if cache_domain is not None:
+            console.print(f"  Cache domain: {cache_domain}")
+        elif isolated_cache:
+            console.print(f"  Cache domain: profile:{name} (isolated)")
     except (ValueError, RuntimeError, click.BadParameter) as e:
         console.print(f"[red]Error:[/red] {e}")
         raise SystemExit(1)
@@ -367,6 +414,7 @@ def init():
             {
                 "name": "key1",
                 "api_key": "sk-YOUR-API-KEY-HERE",
+                "cache_domain": None,
                 "limits": {
                     "standard": {"daily_limit": 1000000, "used_today": 0},
                     "mini": {"daily_limit": 2000000, "used_today": 0},

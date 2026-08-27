@@ -1,0 +1,169 @@
+{
+  "SETS, RELATIONS AND FUNCTIONS": {
+    "topics": [
+      "Sets and their representation",
+      "Union, intersection and complement of sets and their algebraic properties",
+      "Power set",
+      "Relations, types of relations and equivalence relations",
+      "One-one, into and onto functions",
+      "Composition of functions"
+    ],
+    "description": "Sets, relations, mappings and composition of functions"
+  },
+  "COMPLEX NUMBERS AND QUADRATIC EQUATIONS": {
+    "topics": [
+      "Complex numbers as ordered pairs of real numbers and in the form a + ib",
+      "Argand diagram and representation of complex numbers in a plane",
+      "Algebra, modulus and argument of complex numbers",
+      "Quadratic equations in real and complex number systems",
+      "Relations between roots and coefficients and nature of roots",
+      "Formation of quadratic equations from given roots"
+    ],
+    "description": "Complex-number representations and quadratic equations"
+  },
+  "MATRICES AND DETERMINANTS": {
+    "topics": [
+      "Matrices, types of matrices and algebra of matrices",
+      "Determinants of order two and three and their evaluation",
+      "Area of triangles using determinants",
+      "Adjoint and inverse of a square matrix",
+      "Consistency and solution of simultaneous linear equations using matrices"
+    ],
+    "description": "Matrix algebra, determinants and linear systems"
+  },
+  "PERMUTATIONS AND COMBINATIONS": {
+    "topics": [
+      "Fundamental principle of counting",
+      "Permutations and P(n, r)",
+      "Combinations and C(n, r)",
+      "Simple applications of permutations and combinations"
+    ],
+    "description": "Counting, arrangements and selections"
+  },
+  "BINOMIAL THEOREM AND ITS SIMPLE APPLICATIONS": {
+    "topics": [
+      "Binomial theorem for a positive integral index",
+      "General term and middle term in a binomial expansion",
+      "Simple applications of the binomial theorem"
+    ],
+    "description": "Positive-integral binomial expansions and applications"
+  },
+  "SEQUENCE AND SERIES": {
+    "topics": [
+      "Arithmetic progressions",
+      "Geometric progressions",
+      "Insertion of arithmetic and geometric means between two numbers",
+      "Relation between arithmetic mean and geometric mean"
+    ],
+    "description": "Arithmetic and geometric progressions and means"
+  },
+  "LIMIT, CONTINUITY AND DIFFERENTIABILITY": {
+    "topics": [
+      {
+        "title": "Real-valued functions, algebra of functions and graphs of simple functions",
+        "aliases": [
+          "greatest integer function",
+          "floor function",
+          "greatest integer",
+          "GIF",
+          "modulus function",
+          "signum function"
+        ],
+        "description": "Official scope: real-valued functions, their algebra, and graphs of simple functions. Narrow function requests should also be retained as required concepts."
+      },
+      "Polynomial, rational, trigonometric, logarithmic and exponential functions",
+      "Inverse functions",
+      "Limits of functions",
+      "Continuity and differentiability",
+      "Differentiation of sums, differences, products and quotients",
+      "Differentiation of trigonometric and inverse trigonometric functions",
+      "Differentiation of logarithmic, exponential, composite and implicit functions",
+      "Derivatives up to order two",
+      "Rates of change of quantities",
+      "Increasing and decreasing functions",
+      "Maxima and minima of functions of one variable"
+    ],
+    "description": "Functions, limits, derivatives and applications of derivatives"
+  },
+  "INTEGRAL CALCULUS": {
+    "topics": [
+      "Integration as an antiderivative and fundamental algebraic, trigonometric, exponential and logarithmic integrals",
+      "Integration by substitution",
+      "Integration by parts",
+      "Integration by partial fractions",
+      "Integration using trigonometric identities",
+      "Standard rational and radical integrals listed in the official syllabus",
+      "Fundamental theorem of calculus",
+      "Properties and evaluation of definite integrals",
+      "Areas bounded by simple curves in standard forms"
+    ],
+    "description": "Indefinite and definite integration and area applications"
+  },
+  "DIFFERENTIAL EQUATIONS": {
+    "topics": [
+      "Order and degree of ordinary differential equations",
+      "Solution of differential equations by separation of variables",
+      "Homogeneous differential equations",
+      "Linear differential equations of first order"
+    ],
+    "description": "Elementary ordinary differential equations and solution methods"
+  },
+  "COORDINATE GEOMETRY": {
+    "topics": [
+      "Cartesian coordinates, distance formula and section formula in a plane",
+      "Locus and its equation",
+      "Slope, parallel and perpendicular lines and intercepts on coordinate axes",
+      "Forms and intersections of straight lines",
+      "Angles between lines and concurrence of three lines",
+      "Distance of a point from a line",
+      "Centroid, orthocentre and circumcentre of a triangle",
+      "Standard and general equations of a circle",
+      "Circle radius, centre and equation from diameter endpoints",
+      "Intersections of a line and a circle with centre at the origin",
+      "Parabola in standard form",
+      "Ellipse in standard form",
+      "Hyperbola in standard form"
+    ],
+    "description": "Plane coordinates, straight lines, circles and conic sections"
+  },
+  "THREE DIMENSIONAL GEOMETRY": {
+    "topics": [
+      "Coordinates, distance and section formula in three dimensions",
+      "Direction ratios and direction cosines",
+      "Angle between two intersecting lines in space",
+      "Equation of a line in space",
+      "Skew lines and shortest distance between them"
+    ],
+    "description": "Points and lines in three-dimensional space"
+  },
+  "VECTOR ALGEBRA": {
+    "topics": [
+      "Vectors and scalars",
+      "Addition of vectors",
+      "Components of vectors in two and three dimensions",
+      "Scalar product of vectors",
+      "Vector product of vectors"
+    ],
+    "description": "Vector operations and products"
+  },
+  "STATISTICS AND PROBABILITY": {
+    "topics": [
+      "Mean, median and mode of grouped and ungrouped data",
+      "Standard deviation, variance and mean deviation of grouped and ungrouped data",
+      "Probability of an event",
+      "Addition theorem of probability",
+      "Multiplication theorem of probability",
+      "Bayes' theorem",
+      "Probability distribution of a random variable"
+    ],
+    "description": "Descriptive statistics and elementary probability"
+  },
+  "TRIGONOMETRY": {
+    "topics": [
+      "Trigonometric identities",
+      "Trigonometric functions",
+      "Inverse trigonometric functions and their properties"
+    ],
+    "description": "Trigonometric and inverse trigonometric functions"
+  }
+}
