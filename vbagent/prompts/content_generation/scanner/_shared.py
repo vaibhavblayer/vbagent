@@ -4,6 +4,8 @@ Constants that are identical (or near-identical) across all subjects.
 Subject-specific constants live in each subject's common.py.
 """
 
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES
+
 from ..mcq_format import (
     MATCH_OPTION_FORMAT_RULES,
     MATCH_OPTION_FORMAT_RULES_UNMARKED,
@@ -224,12 +226,12 @@ PROBLEM_FORMATTING_RULES = r"""
 - Do NOT include exam metadata (year, paper name, question number).
 - Do NOT include example/exercise numbering prefixes (e.g., `Example 25.4`, `Q.5`).
 - Use `$ ... $` for all inline math.
-- Use `\frac{a}{b}` (not `\tfrac`).
+- Fractions: Use `\dfrac{a}{b}` everywhere, including inline math.
 - Use `\left( ... \right)` for auto-sized delimiters.
 - Use `\vec{a}` for vectors, `\hat{i}` for unit vectors.
 - Use `\,` for thin space before units: `10\,\mathrm{m/s}`.
 - **Fill-in-the-blank answers:** Use `\underline{\hfill}` or `\underline{\hspace{2cm}}` for blank spaces. NEVER use raw underscores `____` (causes rendering errors).
-""" + SUBPART_FORMATTING_RULES
+""" + SUBPART_FORMATTING_RULES + DISPLAY_FRACTION_RULES
 
 # Solution-only formatting rules
 SOLUTION_FORMATTING_RULES = r"""

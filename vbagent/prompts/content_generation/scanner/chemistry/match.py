@@ -1,5 +1,7 @@
 """Match-the-following question scanner prompt."""
 
+from vbagent.prompts.latex_style import solution_style_rules
+
 from .common import DIAGRAM_PLACEHOLDER
 from .._shared import (
     MATCH_OPTION_FORMAT_RULES,
@@ -89,7 +91,7 @@ Subject: Chemistry
 ## Strict LaTeX Rules
 
 * Inline math: always `$...$`.
-* Macros with braces: `\vec{a}`, `\frac{a}{b}`.
+* Macros with braces: `\vec{a}`, `\dfrac{a}{b}`.
 * Use `\left(\cdot\right)` for delimiters.
 * No blank lines inside `align*` environment.
 
@@ -97,6 +99,8 @@ Subject: Chemistry
 
 **Final Check:** Ensure your output is ONLY the LaTeX snippet from `\item` to `\end{solution}` with no extra text or comments.
 """ + MATCH_OPTION_FORMAT_RULES + MCQ_ANSWER_FORMAT_RULES
+
+SYSTEM_PROMPT += solution_style_rules("chemistry")
 
 USER_TEMPLATE = "Extract LaTeX from this chemistry question image."
 

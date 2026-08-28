@@ -1,5 +1,7 @@
 """MCQ single-correct question scanner prompt."""
 
+from vbagent.prompts.latex_style import solution_style_rules
+
 from .common import (
     DIAGRAM_PLACEHOLDER,
     LATEX_FORMATTING_RULES,
@@ -60,6 +62,8 @@ Follow this exact structure for your output:
 
 **Final Check:** Ensure your output is ONLY the LaTeX snippet from `\item` to `\end{solution}` with no extra text or comments.
 """
+
+SYSTEM_PROMPT += solution_style_rules("mathematics")
 
 USER_TEMPLATE = "Extract LaTeX from this mathematics question image."
 

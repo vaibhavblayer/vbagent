@@ -1,5 +1,7 @@
 """Common components for mathematics solution generation prompts."""
 
+from vbagent.prompts.latex_style import solution_style_rules
+
 from ...mcq_format import MCQ_ANSWER_FORMAT_RULES
 
 # LaTeX formatting rules for mathematics solutions
@@ -17,13 +19,11 @@ LATEX_FORMATTING_RULES = """
 
 ### Align Environment Rules (CRITICAL)
 
-**1. One step per line** - don't combine multiple operations
+**1. One step per line** - show one meaningful mathematical step; omit routine intermediate arithmetic
 ```latex
 % GOOD:
 \\begin{align*}
 c &= \\sqrt{a^2 + b^2} \\\\
-  &= \\sqrt{2^2 + 3^2} \\\\
-  &= \\sqrt{4 + 9} \\\\
   &= \\sqrt{13}
 \\end{align*}
 
@@ -42,8 +42,7 @@ c &= \\sqrt{a^2 + b^2} = \\sqrt{2^2 + 3^2} = \\sqrt{13}
 % GOOD:
 \\begin{align*}
 f(x) &= x^2 + 2x + 1 \\\\
-     &= (x + 1)^2 \\\\
-     &= (x + 1)(x + 1)
+     &= (x + 1)^2
 \\end{align*}
 
 % BAD (repetitive):
@@ -62,11 +61,9 @@ f(x) &= (x + 1)(x + 1)
 
 ```latex
 \\begin{align*}
-\\intertext{Given: $a = 2$, $b = 3$. Find $c$ using Pythagorean theorem}
+\\intertext{The triangle is right-angled, so use Pythagoras' theorem with legs $a=2$ and $b=3$.}
 c &= \\sqrt{a^2 + b^2} \\\\
-  &= \\sqrt{2^2 + 3^2} \\\\
   &= \\sqrt{13}
-\\intertext{Therefore, $c = \\sqrt{13} \\approx 3.61$}
 \\end{align*}
 ```
 
@@ -89,7 +86,7 @@ c &= \\sqrt{a^2 + b^2} \\\\
   cannot be positioned reliably in the finished solution.
 
 ### Mathematical Notation
-- Fractions: \\frac{a}{b} - NEVER \\tfrac
+- Fractions: Use `\\dfrac{a}{b}` everywhere, including inline math.
 - Parentheses: \\left( ... \\right), \\left[ ... \\right], \\left| ... \\right|
 - NO \\bigl, \\bigr, \\Bigl, \\Bigr sizing commands
 - Trigonometric functions: \\sin, \\cos, \\tan (with backslash)
@@ -174,13 +171,13 @@ Therefore, the correct option is (b).
 ```
 
 ### Solution Quality
-- Show ALL steps, even "obvious" ones
+- Show every logically necessary step; omit routine algebra and arithmetic
 - Keep solutions CONCISE - key steps only
-- One operation per line
+- One meaningful step per line
 - Explain the reasoning, not just the calculation
 """
 
-LATEX_FORMATTING_RULES += MCQ_ANSWER_FORMAT_RULES
+LATEX_FORMATTING_RULES += MCQ_ANSWER_FORMAT_RULES + solution_style_rules("mathematics")
 
 # Diagram identification guidelines
 DIAGRAM_IDENTIFICATION = """
@@ -215,14 +212,14 @@ SOLUTION_QUALITY = """
 ## Solution Quality Standards
 
 ### Completeness
-- Show ALL steps, even "obvious" ones
+- Show every logically necessary step; omit routine algebra and arithmetic
 - Explain the reasoning, not just the calculation
 - State assumptions explicitly
 - Define notation used
 
 ### Clarity
 - Use \\intertext{} for explanations
-- One operation per line
+- One meaningful step per line
 - Consistent notation throughout
 - Clear logical flow
 

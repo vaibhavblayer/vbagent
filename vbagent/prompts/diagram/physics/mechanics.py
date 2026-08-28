@@ -31,7 +31,7 @@ solution or a free body diagram. Only label what the problem actually gives.
 - Tension labels on strings/ropes: `$T$`, `$T_1$`, `$T_2$` — draw the rope, leave it unlabeled
 - Force arrows or labels: weight `$mg$`, normal `$N$`, friction `$f$`
 - Acceleration/net-force vectors, resolved components (`$mg\sin\theta$`)
-- Energy/work annotations: `$E_i = mgh$`, `$U = \tfrac12 kx^2$`, `$W = Fd\cos\theta$`
+- Energy/work annotations: `$E_i = mgh$`, `$U = \dfrac{1}{2} kx^2$`, `$W = Fd\cos\theta$`
 - Descriptive sentence nodes: "fixed pulley", "string attached to $4\,\mathrm{kg}$",
   "smooth surface", "rough incline" — the diagram shows the scene; the text is in the
   problem statement, do not repeat it as labels.
@@ -447,7 +447,7 @@ You may receive enhanced context from the solution agent with detailed physics i
 \node[block] at (natural) {$m$};
 \node[block, dashed] at (compressed) {$m$};
 \draw[<->, thin] ($(compressed)+(0.5,0)$) -- ++(0.8,0) node[midway, above] {$x$};
-% NOTE: label the given compression $x$ only — omit $U = \tfrac12 kx^2$ (solution).
+% NOTE: label the given compression $x$ only — omit $U = \dfrac{1}{2} kx^2$ (solution).
 ```
 
 ### Work Done by Force

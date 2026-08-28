@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from vbagent.utils.latex import sanitize_latex_blank_lines
+from vbagent.utils.latex import DISPLAY_FRACTION_PREAMBLE, sanitize_latex_blank_lines
 
 
 @dataclass
@@ -42,6 +42,7 @@ PREAMBLE_TEMPLATE = r"""\documentclass[preview, border=2mm]{{standalone}}
 % --- Math ---
 \usepackage{{amsmath, amssymb, amsthm, mathtools}}
 \DeclareMathOperator{{\cosec}}{{cosec}}
+{fraction_style}
 
 % --- TikZ core + libraries ---
 \usepackage{{tikz}}
@@ -154,6 +155,7 @@ def _build_document(latex_snippet: str, subject: str = "physics") -> str:
         )
 
     return PREAMBLE_TEMPLATE.format(
+        fraction_style=DISPLAY_FRACTION_PREAMBLE,
         chemistry_packages=chemistry_packages,
         content=content,
     )

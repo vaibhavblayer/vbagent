@@ -1,5 +1,7 @@
 """Subjective biology question scanner prompt."""
 
+from vbagent.prompts.latex_style import solution_style_rules
+
 from .common import DIAGRAM_PLACEHOLDER, LATEX_FORMATTING_RULES
 from .._shared import SUBPART_FORMATTING_RULES
 
@@ -27,6 +29,8 @@ prefixes, exam metadata, or commentary outside the LaTeX.
 
 """ + LATEX_FORMATTING_RULES + SUBPART_FORMATTING_RULES
 
+
+SYSTEM_PROMPT += solution_style_rules("biology")
 
 USER_TEMPLATE = "Extract LaTeX from this subjective biology question image."
 

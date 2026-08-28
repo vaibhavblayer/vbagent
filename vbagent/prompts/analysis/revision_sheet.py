@@ -1,5 +1,7 @@
 """System prompt for revision sheet agent â€” concise last-minute revision."""
 
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES
+
 
 def get_revision_sheet_prompt() -> str:
     """Get system prompt for revision sheet concept distiller."""
@@ -21,14 +23,14 @@ Each syllabus topic becomes an `\itemize` list. Each `\item` is one core idea â€
 
 \item Work-Energy Theorem
 \begin{align*}
-  W_{\text{net}} &= \Delta K = \tfrac{1}{2}mv_f^2 - \tfrac{1}{2}mv_i^2 \\
+  W_{\text{net}} &= \Delta K = \dfrac{1}{2}mv_f^2 - \dfrac{1}{2}mv_i^2 \\
   \intertext{Variable force:}
   W &= \int_{x_i}^{x_f} F\,dx
 \end{align*}
 
 \item Conservative Force \& Potential Energy
 \begin{align*}
-  F &= -\frac{dU}{dx} \\
+  F &= -\dfrac{dU}{dx} \\
   W_{\text{cons}} &= -\Delta U \\
   \intertext{Mechanical energy conserved when only conservative forces act:}
   K_i + U_i &= K_f + U_f
@@ -37,7 +39,7 @@ Each syllabus topic becomes an `\itemize` list. Each `\item` is one core idea â€
 \item Collisions
 \begin{align*}
   \intertext{Coefficient of restitution:}
-  e &= \frac{v_2' - v_1'}{v_1 - v_2} \\
+  e &= \dfrac{v_2' - v_1'}{v_1 - v_2} \\
   \intertext{Perfectly elastic ($e=1$): both $K$ and $\vec p$ conserved.}
   \intertext{Perfectly inelastic ($e=0$): maximum $K$ loss, bodies stick.}
 \end{align*}
@@ -63,7 +65,7 @@ Each syllabus topic becomes an `\itemize` list. Each `\item` is one core idea â€
 ### Don't stretch trivial steps.
 - If a result is a direct substitution or rearrangement, just state the final form.
 - BAD: writing $v_o = \sqrt{GM/r}$, then $T = 2\pi r/v_o$, then $T = 2\pi\sqrt{r^3/GM}$ â€” that's three lines for one substitution.
-- GOOD: $T^2 = \frac{4\pi^2}{GM}r^3$ (one line, the key result).
+- GOOD: $T^2 = \dfrac{4\pi^2}{GM}r^3$ (one line, the key result).
 
 ### Derived results are fine â€” but only if non-obvious.
 - Stating $v_e = \sqrt{2gR}$ from energy conservation is fine (one line).
@@ -76,7 +78,7 @@ Each syllabus topic becomes an `\itemize` list. Each `\item` is one core idea â€
 
 ## LaTeX Quality
 
-- Use `\vec{}`, `\hat{}`, `\text{}`, `\tfrac{}{}`, `\sqrt{}` properly.
+- Use `\vec{}`, `\hat{}`, `\text{}`, `\dfrac{}{}`, `\sqrt{}` properly.
 - Greek letters: `\theta`, `\omega`, `\alpha`, `\Delta`.
 - Operators: `\sin`, `\cos`, `\ln`, `\lim`.
 - No plain text math â€” everything in proper LaTeX.
@@ -111,4 +113,4 @@ Return topics â†’ core ideas. Each idea has:
 **IMPORTANT**: The `latex` field for each topic should contain the FULL `\begin{itemize}...\end{itemize}` block with ALL ideas for that topic inside it. One itemize block per topic, multiple `\item` entries inside.
 
 Aim for 15â€“30 core ideas total across all topics.
-"""
+""" + DISPLAY_FRACTION_RULES

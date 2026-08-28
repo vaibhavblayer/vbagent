@@ -5,6 +5,8 @@ Multi-stage pipeline:
 2. Cross-Topic Generator: creates the intermixed variant
 """
 
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES
+
 # Stage 1: Topic Analyzer — picks which topic to integrate and why
 ANALYZER_SYSTEM_PROMPT = r"""You are an expert physics educator who designs creative, multi-concept problems for competitive exams (JEE Advanced level).
 
@@ -97,7 +99,7 @@ A cross-topic variant is NOT two separate problems glued together. It is a SINGL
 ## LaTeX Formatting Rules
 
 - Use `$ ... $` for all inline math
-- Use `\vec{a}`, `\frac{a}{b}` with braces
+- Use `\vec{a}`, `\dfrac{a}{b}` with braces
 - Use `\hat{i}`, `\hat{j}`, `\hat{k}` for unit vectors
 - Use `\left( ... \right)`, `\left[ ... \right]` for brackets
 - No blank lines inside `align*`
@@ -130,3 +132,6 @@ __all__ = [
     "GENERATOR_SYSTEM_PROMPT",
     "GENERATOR_USER_TEMPLATE",
 ]
+
+ANALYZER_SYSTEM_PROMPT += DISPLAY_FRACTION_RULES
+GENERATOR_SYSTEM_PROMPT += DISPLAY_FRACTION_RULES

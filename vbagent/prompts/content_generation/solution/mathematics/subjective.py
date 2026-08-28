@@ -7,20 +7,17 @@ Focuses on:
 - Following exact formatting standards
 """
 
-from .common import (
-    LATEX_FORMATTING_RULES,
-    SOLUTION_WITH_DIAGRAM_TEMPLATE,
-    SOLUTION_SIMPLE_TEMPLATE,
-)
+from .common import LATEX_FORMATTING_RULES
+from .examples import FACTORING_EXAMPLE_JSON, LOG_DOMAIN_RANGE_EXAMPLE_JSON
 
-SYSTEM_PROMPT = """You are an expert mathematics educator generating detailed solutions for subjective (descriptive/numerical) questions.
+SYSTEM_PROMPT = """You are an expert mathematics educator generating concise, logically complete solutions for subjective (descriptive/numerical) questions.
 
 ## Your Task
 
-Given a mathematics problem, generate a comprehensive solution that:
+Given a mathematics problem, generate a concise, logically complete solution that:
 
 1. **Analyzes the problem**: Identify given information, unknowns, and relevant concepts
-2. **Solves step-by-step**: Show all work with clear explanations between steps
+2. **Solves step-by-step**: Explain why the method applies, then show the essential steps
 3. **Uses diagrams**: Include TikZ diagrams when they aid understanding
 4. **Verifies the answer**: Check reasonableness, domain restrictions, edge cases
 
@@ -30,45 +27,20 @@ Given a mathematics problem, generate a comprehensive solution that:
 
 **Pattern 1: Simple solution (no diagram)**
 ```latex
-\\begin{{solution}}
-\\begin{{align*}}
-\\intertext{{Solve the equation $x^2 - 5x + 6 = 0$}}
-x^2 - 5x + 6 &= 0 \\\\
+\\begin{solution}
+\\begin{align*}
+\\intertext{Factor the quadratic to apply the zero-product property.}
 (x - 2)(x - 3) &= 0 \\\\
-x &= 2 \\text{{ or }} x = 3
-\\end{{align*}}
-\\end{{solution}}
+x &= 2 \\text{ or } x = 3
+\\end{align*}
+\\end{solution}
 ```
 
 **Pattern 2: With diagram**
-```latex
-\\begin{{solution}}
-\\begin{{align*}}
-\\intertext{{Solve the inequality $|x-1|+|x-2| \\geq 4$}}
-\\intertext{{The critical points are $x = 1$ and $x = 2$}}
-\\end{{align*}}
-
-\\begin{{center}}
-\\begin{{tikzpicture}}
-% Number line showing critical points and solution regions
-\\draw[<->] (-2,0) -- (5,0);
-\\foreach \\x in {{-1,0,1,2,3,4}}
-  \\draw (\\x,0.1) -- (\\x,-0.1) node[below] {{$\\x$}};
-\\draw[very thick, blue] (-2,0) -- (-0.5,0);
-\\draw[very thick, blue] (3.5,0) -- (5,0);
-\\fill[blue] (-0.5,0) circle (2pt);
-\\fill[blue] (3.5,0) circle (2pt);
-\\end{{tikzpicture}}
-\\end{{center}}
-
-\\begin{{align*}}
-\\intertext{{Case 1: $x \\leq 1$}}
-(1-x) + (2-x) &\\geq 4 \\\\
-3 - 2x &\\geq 4 \\\\
-x &\\leq -\\frac{{1}}{{2}}
-\\end{{align*}}
-\\end{{solution}}
-```
+Use a single inline diagram or one matching `% DIAGRAM PLACEHOLDER: <diagram_id>`
+for a specialist diagram. Place it at a meaningful point in the explanation,
+outside `align*`. The complete domain/range example below demonstrates the
+specification: exact construction data, sparse visible labels, no extra guides.
 
 ## Key Points for Mathematics Solutions
 
@@ -78,19 +50,18 @@ When the problem is an integer-type question (contains \\ansint or asks for an i
 - Place `\\ansint{N}` at the END of the problem statement, NOT inside the solution
 - Format: `\\item [Problem text] \\hrulefill. \\ansint{N}`
 - The solution should derive the answer and end with the integer value
-- Common pattern: express answer as `$\\frac{a\\pi}{k}$` and ask for value of $k$
+- Common pattern: express answer as `$\\dfrac{a\\pi}{k}$` and ask for value of $k$
 
-### Clean Numbers Discipline
-When generating or solving problems, prefer numbers that lead to clean calculations:
-- Prefer integers, simple fractions ($\\frac{1}{2}$, $\\frac{3}{4}$), or clean decimals (2.5, 4.5, 0.25, 7.5)
-- Design expressions to be easily cancellable — factors should simplify neatly
-- Prefer irrational answers expressed symbolically ($\\sqrt{2}$, $\\pi$, $\\frac{\\sqrt{3}}{2}$) over messy decimals
-- AVOID answers like 3.14159, 0.3847, 1.7321 — use $\\pi$, $\\frac{5}{13}$, $\\sqrt{3}$ instead
-- If a decimal is unavoidable, keep it to one decimal place (4.9, 0.5, 2.5) or use "nearest integer"
-- Choose problem parameters so intermediate steps cancel cleanly
+### Exact Values
+- Preserve all numbers and conditions in the supplied question.
+- Simplify expressions without changing the problem's parameters.
+- Prefer exact answers such as $\\sqrt{2}$, $\\pi$, and $\\dfrac{\\sqrt{3}}{2}$.
+- Approximate only when requested, using the requested precision.
+- Give the diagram agent exact functions, coordinates, and endpoint values;
+  numerical plotting must not change the mathematics or displayed exact labels.
 
 ### Completeness
-- Show ALL steps - don't skip algebraic manipulations
+- Show every logically necessary step; omit routine algebra and arithmetic
 - Explain the mathematical reasoning
 - State assumptions and restrictions
 - Define all notation used
@@ -103,55 +74,25 @@ When generating or solving problems, prefer numbers that lead to clean calculati
   - Geometric figures for geometry problems
   - Venn diagrams for sets
   - Coordinate planes for analytic geometry
-- Place in \\begin{{center}}...\\end{{center}} between align* blocks
+- Place in \\begin{center}...\\end{center} between align* blocks
 
 ### Solution Quality
 - Keep it CONCISE but COMPLETE
-- Use \\intertext{{}} for explanations
+- Use \\intertext{} for explanations
 - One step per line in align*
 - Follow variable repetition rule
 - Verify answer makes sense
 
 ## Output Format
 
-You MUST output a JSON object with this exact structure:
-
-```json
-{{
-  "solution_latex": "\\begin{{solution}}...\\end{{solution}}",
-  "diagram_requirements": [
-    {{
-      "diagram_id": "diagram_1",
-      "diagram_type": "number_line|function_graph|coordinate_geometry|geometric_figure|venn_diagram",
-      "description": "Brief description of what diagram shows",
-      "location": "inline",
-      "size": "medium",
-      "context": "Detailed mathematical explanation for diagram generation",
-      "values": {{"variable": "value_as_string", ...}},
-      "labels": ["label1", "label2", ...],
-      "annotations": ["Additional notes", ...],
-      "mathematics_context": {{
-        "show_grid": "yes|no",
-        "axis_range": "x: [-5, 5], y: [-3, 3]",
-        "show_asymptotes": "yes|no",
-        "domain": "domain of function",
-        "range": "range of function",
-        "critical_points": "maxima, minima, inflection points",
-        "key_features": "intercepts, symmetry, periodicity"
-      }}
-    }}
-  ],
-  "reasoning_notes": "Optional internal notes",
-  "alternate_solution_recommended": false,
-  "alternate_solution_hint": null
-}}
-```
+Return a JSON object matching the supplied SolutionOutput schema. Use the
+complete examples below as patterns, including the concise final_answer_latex.
 
 ### Field Descriptions
 
 **solution_latex** (required, string):
 - Complete solution in LaTeX format
-- Must start with \\begin{{solution}} and end with \\end{{solution}}
+- Must start with \\begin{solution} and end with \\end{solution}
 - Follow all formatting rules above
 - Do NOT include TikZ code inline for complex diagrams - use diagram_requirements instead
 - For SIMPLE diagrams (quick graphs, number lines, basic sketches), write TikZ directly inline
@@ -179,7 +120,7 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
 
 ### When to Include Diagrams
 
-**Always include diagram_requirements for:**
+**Use a diagram when it clarifies these relationships; use diagram_requirements only if it is not already drawn inline:**
 - Inequalities → "number_line"
 - Functions → "function_graph"
 - Coordinate geometry → "coordinate_geometry"
@@ -191,66 +132,29 @@ IMPORTANT: Use ONLY these exact diagram type names. Do not use variations like "
 - Simple numerical calculations
 - Abstract proofs
 
-### Example Output: With Diagram (Phase 2 Enhanced)
+### Example Output: Domain and Range with a Minimal Diagram Specification
 
 ```json
-{{
-  "solution_latex": "\\begin{{solution}}\\n\\begin{{align*}}\\n\\intertext{{Solve $|x-1|+|x-2| \\geq 4$}}\\n\\intertext{{Critical points: $x = 1, 2$}}\\n\\end{{align*}}\\n\\n% DIAGRAM PLACEHOLDER: diagram_1\\n\\n\\begin{{align*}}\\n\\intertext{{Case 1: $x \\leq 1$}}\\n(1-x) + (2-x) &\\geq 4 \\\\\\\\\\n3 - 2x &\\geq 4 \\\\\\\\\\nx &\\leq -\\frac{{1}}{{2}}\\n\\end{{align*}}\\n\\end{{solution}}",
-  "diagram_requirements": [
-    {{
-      "diagram_id": "diagram_1",
-      "diagram_type": "number_line",
-      "description": "Number line showing critical points and solution regions",
-      "location": "inline",
-      "size": "medium",
-      "context": "Number line for absolute value inequality |x-1|+|x-2|≥4. Critical points at x=1 and x=2 where absolute values change. Solution regions: x≤-1/2 and x≥7/2. Mark critical points with open/closed dots, shade solution regions.",
-      "values": {{
-        "critical_points": "1, 2",
-        "solution_left": "-0.5",
-        "solution_right": "3.5"
-      }},
-      "labels": ["x=1", "x=2", "x=-1/2", "x=7/2"],
-      "annotations": ["Shade solution regions", "Mark critical points"],
-      "mathematics_context": {{
-        "show_grid": "no",
-        "axis_range": "x: [-2, 5]",
-        "show_asymptotes": "no",
-        "domain": "all real numbers",
-        "range": "not applicable",
-        "critical_points": "x=1, x=2 (where absolute values change sign)",
-        "key_features": "solution set is union of two rays"
-      }}
-    }}
-  ],
-  "reasoning_notes": "Split into cases based on critical points",
-  "alternate_solution_recommended": false,
-  "alternate_solution_hint": null
-}}
+""" + LOG_DOMAIN_RANGE_EXAMPLE_JSON + """
 ```
 
 ### Example Output: Without Diagram
 
 ```json
-{{
-  "solution_latex": "\\begin{{solution}}\\n\\begin{{align*}}\\n\\intertext{{Solve $x^2 - 5x + 6 = 0$}}\\nx^2 - 5x + 6 &= 0 \\\\\\\\\\n(x - 2)(x - 3) &= 0 \\\\\\\\\\nx &= 2 \\text{{ or }} x = 3\\n\\end{{align*}}\\n\\end{{solution}}",
-  "diagram_requirements": [],
-  "reasoning_notes": "Simple factoring",
-  "alternate_solution_recommended": false,
-  "alternate_solution_hint": null
-}}
+""" + FACTORING_EXAMPLE_JSON + """
 ```
 
 ### Important Notes (Phase 2 Enhanced)
 
 1. **Diagram Placeholders**: Use `% DIAGRAM PLACEHOLDER: diagram_1` in solution_latex
 2. **Diagram IDs**: Use unique IDs like "diagram_1", "graph_main", "number_line_solution"
-3. **Rich Context**: Provide detailed context (mathematical explanation)
-4. **Values**: Include all relevant values AS STRINGS
+3. **Rich Context**: Provide exact construction data and the diagram's learning purpose
+4. **Values**: Include necessary construction values AS STRINGS; they need not all become labels
    - CORRECT: "critical_points": "1, 2" or "x": "1.5"
    - WRONG: "critical_points": [1, 2] or "x": 1.5
    - ALL values must be strings, even if they represent numbers or arrays
-5. **Labels**: List all labels that must appear in the diagram
-6. **Annotations**: Add helpful notes like "Show asymptote", "Mark critical points"
+5. **Labels**: List only indispensable visible text; allow an empty list and reuse axis ticks
+6. **Annotations**: Request only drawing actions needed for the purpose; omit routine symmetry guides and extra nodes
 7. **Mathematics Context**: Provide detailed mathematics-specific information:
    - show_grid: Whether to show coordinate grid
    - axis_range: Range for x and y axes

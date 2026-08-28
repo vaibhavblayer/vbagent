@@ -125,7 +125,7 @@ mhchem is the standard LaTeX package for typesetting chemical formulas and equat
 
 **Acid Dissociation:**
 ```latex
-\ce{HA <=> H+ + A-} \quad K_a = \frac{[\ce{H+}][\ce{A-}]}{[\ce{HA}]}
+\ce{HA <=> H+ + A-} \quad K_a = \dfrac{[\ce{H+}][\ce{A-}]}{[\ce{HA}]}
 ```
 
 ## Kinetics

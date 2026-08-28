@@ -22,11 +22,11 @@ TOPIC_CONCEPTS = """
 - Total heat for multiple phases: sum heat for each stage
 
 ### Thermal Conduction
-- Fourier's law: $\\frac{dQ}{dt} = -kA\\frac{dT}{dx}$
-- Steady state: $H = \\frac{kA\\Delta T}{L}$ where $H = dQ/dt$
-- Thermal resistance: $R = \\frac{L}{kA}$
+- Fourier's law: $\\dfrac{dQ}{dt} = -kA\\dfrac{dT}{dx}$
+- Steady state: $H = \\dfrac{kA\\Delta T}{L}$ where $H = dQ/dt$
+- Thermal resistance: $R = \\dfrac{L}{kA}$
 - Series: $R_{total} = R_1 + R_2 + ...$
-- Parallel: $\\frac{1}{R_{total}} = \\frac{1}{R_1} + \\frac{1}{R_2} + ...$
+- Parallel: $\\dfrac{1}{R_{total}} = \\dfrac{1}{R_1} + \\dfrac{1}{R_2} + ...$
 
 ### Thermal Radiation
 - Stefan-Boltzmann law: $P = \\sigma A e T^4$
@@ -41,7 +41,7 @@ TOPIC_CONCEPTS = """
 - For liquids: $\\gamma$ is coefficient of volume expansion
 
 ### Newton's Law of Cooling
-- Rate of cooling: $\\frac{dT}{dt} = -k(T - T_0)$
+- Rate of cooling: $\\dfrac{dT}{dt} = -k(T - T_0)$
 - Solution: $T(t) = T_0 + (T_i - T_0)e^{-kt}$
 - Valid for small temperature differences
 
@@ -75,7 +75,7 @@ COMMON_PATTERNS = """
 ### Pattern 3: Thermal conduction
 1. Identify layers and their thermal conductivities
 2. In steady state: heat current same through all layers
-3. For series: $H = \\frac{\\Delta T_{total}}{R_{total}}$
+3. For series: $H = \\dfrac{\\Delta T_{total}}{R_{total}}$
 4. Calculate temperature at interfaces if needed
 
 ### Pattern 4: Radiation problems

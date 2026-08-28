@@ -8,6 +8,7 @@ biology uses \\includegraphics for PNG diagrams.
 
 from ..content_generation.mcq_format import MCQ_ANSWER_FORMAT_RULES
 from ..content_generation.table_format import TABLE_FORMAT_RULES
+from ..latex_style import solution_style_rules
 
 # Subject-specific addendum injected into the system prompt
 _BIOLOGY_ADDENDUM = r"""
@@ -97,9 +98,9 @@ SYSTEM_PROMPT_BASE = r"""You are an expert LaTeX formatter for educational conte
 - Example: `The velocity is $v = 10 \ \mathrm{m/s}$`
 
 **Macros:**
-- Always use braces: `\vec{a}`, `\frac{a}{b}`, `\sqrt{x}`
+- Always use braces: `\vec{a}`, `\dfrac{a}{b}`, `\sqrt{x}`
 - Vectors: `\vec{a}` for generic, `\hat{i}`, `\hat{j}`, `\hat{k}` for unit vectors
-- Fractions: Use `\frac{a}{b}` - NEVER `\tfrac`
+- Fractions: Use `\dfrac{a}{b}` everywhere, including inline math.
 - Parentheses: Use `\left( ... \right)`, `\left[ ... \right]`, `\left| ... \right|`
 - NO `\bigl`, `\bigr`, `\Bigl`, `\Bigr` sizing commands
 
@@ -232,8 +233,8 @@ Codes
 \begin{align*}
 \intertext{Brief reasoning about the setup}
 F &= ma \\
-a &= \frac{F}{m} \\
-  &= \frac{10}{2} \\
+a &= \dfrac{F}{m} \\
+  &= \dfrac{10}{2} \\
   &= 5 \ \mathrm{m/s^2}
 \end{align*}
 \end{solution}
@@ -256,7 +257,7 @@ T - mg &= ma
 
 \begin{align*}
 \intertext{Continue from diagram}
-a &= \frac{T - mg}{m} \\
+a &= \dfrac{T - mg}{m} \\
   &= 5 \ \mathrm{m/s^2}
 \end{align*}
 \end{solution}
@@ -267,8 +268,8 @@ a &= \frac{T - mg}{m} \\
 \begin{solution}
 \begin{align*}
 \intertext{Brief analysis of the problem}
-E &= \frac{kQ}{r^2} \\
-  &= \frac{9 \times 10^9 \times 2 \times 10^{-6}}{(0.1)^2} \\
+E &= \dfrac{kQ}{r^2} \\
+  &= \dfrac{9 \times 10^9 \times 2 \times 10^{-6}}{(0.1)^2} \\
   &= 1.8 \times 10^6 \ \mathrm{N/C}
 \end{align*}
 
@@ -289,21 +290,21 @@ v   &= 10 \ \mathrm{m/s}
 
 \begin{align*}
 \intertext{Now apply conservation of energy for the circular motion}
-\frac{1}{2}mv^2 &= mgh + \frac{1}{2}mv_{\text{top}}^2 \\
-\frac{1}{2}(100) &= (10)(2R) + \frac{1}{2}v_{\text{top}}^2 \\
-50 &= 20R + \frac{1}{2}v_{\text{top}}^2
+\dfrac{1}{2}mv^2 &= mgh + \dfrac{1}{2}mv_{\text{top}}^2 \\
+\dfrac{1}{2}(100) &= (10)(2R) + \dfrac{1}{2}v_{\text{top}}^2 \\
+50 &= 20R + \dfrac{1}{2}v_{\text{top}}^2
 \end{align*}
 
 \begin{align*}
 \intertext{At the top, for minimum speed}
-\frac{mv_{\text{top}}^2}{R} &= mg \\
+\dfrac{mv_{\text{top}}^2}{R} &= mg \\
 v_{\text{top}}^2 &= gR \\
                  &= 10R
 \end{align*}
 
 \begin{align*}
 \intertext{Substituting back}
-50 &= 20R + \frac{1}{2}(10R) \\
+50 &= 20R + \dfrac{1}{2}(10R) \\
 50 &= 25R \\
 R  &= 2 \ \mathrm{m}
 \end{align*}
@@ -321,8 +322,8 @@ F &= ma
 \end{align*}
 
 \begin{align*}
-a &= \frac{F}{m} \\
-  &= \frac{10}{2} \\
+a &= \dfrac{F}{m} \\
+  &= \dfrac{10}{2} \\
   &= 5 \ \mathrm{m/s^2}
 \end{align*}
 \end{solution}
@@ -334,8 +335,8 @@ a &= \frac{F}{m} \\
 \begin{align*}
 \intertext{Apply Newton's second law}
 F &= ma \\
-a &= \frac{F}{m} \\
-  &= \frac{10}{2} \\
+a &= \dfrac{F}{m} \\
+  &= \dfrac{10}{2} \\
   &= 5 \ \mathrm{m/s^2}
 \end{align*}
 \end{solution}
@@ -380,19 +381,19 @@ When same variable appears on LHS in consecutive lines, avoid repetition:
 
 **BAD (repetitive):**
 ```latex
-t &= \frac{1}{\sqrt{g}} \int_{0}^{l} x^{-1/2} \, dx \\
-t &= \frac{1}{\sqrt{g}} \left[ 2\sqrt{x} \right]_{0}^{l} \\
-t &= 2\sqrt{\frac{l}{g}} \\
-t &= 2\sqrt{\frac{2.45}{9.8}} \\
+t &= \dfrac{1}{\sqrt{g}} \int_{0}^{l} x^{-1/2} \, dx \\
+t &= \dfrac{1}{\sqrt{g}} \left[ 2\sqrt{x} \right]_{0}^{l} \\
+t &= 2\sqrt{\dfrac{l}{g}} \\
+t &= 2\sqrt{\dfrac{2.45}{9.8}} \\
 t &= 1.0 \ \mathrm{s}
 ```
 
 **GOOD (clean):**
 ```latex
-t &= \frac{1}{\sqrt{g}} \int_{0}^{l} x^{-1/2} \, dx \\
-  &= \frac{1}{\sqrt{g}} \left[ 2\sqrt{x} \right]_{0}^{l} \\
-  &= 2\sqrt{\frac{l}{g}} \\
-  &= 2\sqrt{\frac{2.45}{9.8}} \\
+t &= \dfrac{1}{\sqrt{g}} \int_{0}^{l} x^{-1/2} \, dx \\
+  &= \dfrac{1}{\sqrt{g}} \left[ 2\sqrt{x} \right]_{0}^{l} \\
+  &= 2\sqrt{\dfrac{l}{g}} \\
+  &= 2\sqrt{\dfrac{2.45}{9.8}} \\
   &= 1.0 \ \mathrm{s}
 ```
 
@@ -554,7 +555,7 @@ t &= \frac{1}{\sqrt{g}} \int_{0}^{l} x^{-1/2} \, dx \\
 ### 7. Common OCR Fixes
 
 - Truncated words: `resistan` → `resistance`
-- Missing backslashes: `frac{a}{b}` → `\frac{a}{b}`
+- Missing backslashes: `frac{a}{b}` → `\dfrac{a}{b}`
 - Broken units: `\mathrm{N/+` → `\mathrm{N/C}`
 - Incorrect spacing: `$x=5$` → `$x = 5$` (spaces around =)
 - Bare underscores: `_` → `\_` (must escape underscores outside math mode)
@@ -641,7 +642,10 @@ def get_system_prompt(subject: str = "physics") -> str:
         base_prompt = SYSTEM_PROMPT_BASE + _CHEMISTRY_ADDENDUM
     else:
         base_prompt = SYSTEM_PROMPT_BASE
-    return base_prompt + "\n\n" + MCQ_ANSWER_FORMAT_RULES + TABLE_FORMAT_RULES
+    return (
+        base_prompt + "\n\n" + MCQ_ANSWER_FORMAT_RULES + TABLE_FORMAT_RULES
+        + solution_style_rules(subject)
+    )
 
 
 # Default (physics) for backward compatibility

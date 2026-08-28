@@ -1,6 +1,7 @@
 """Regression tests for conditional alternate-solution generation."""
 
 from vbagent.pipeline.runner import _should_generate_alternate
+from vbagent.prompts.latex_style import LATEX_STYLE_CONTRACT_VERSION
 
 
 def test_alternate_gate_requires_explicit_request():
@@ -56,6 +57,7 @@ def test_cached_solution_restores_subjective_final_answer(tmp_path):
         "solution",
         cached_latex,
         stage_data={
+            "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
             "answer_type": "subjective",
             "answer_value": None,
             "final_answer_latex": final_answer,
@@ -99,6 +101,7 @@ def test_solution_cache_reuses_matching_classification_fingerprint(
         "solution",
         cached_latex,
         stage_data={
+            "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
             "answer_type": "mcq",
             "answer_value": "a",
             "classification_fingerprint": "same-classification",
@@ -147,6 +150,7 @@ def test_solution_cache_refreshes_for_changed_classification(
         "solution",
         r"\item Old.\begin{solution}Old.\end{solution}",
         stage_data={
+            "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
             "answer_type": "mcq",
             "answer_value": "a",
             "classification_fingerprint": "old-classification",
@@ -275,6 +279,7 @@ def test_multipart_subjective_v2_cache_is_regenerated(
             + r"\end{enumerate}\end{solution}"
         ),
         stage_data={
+            "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
             "answer_type": "subjective",
             "final_answer_latex": (
                 r"\begin{enumerate}\item Cached first.\item Cached second."
@@ -365,6 +370,7 @@ def test_compliant_multipart_subjective_solution_is_reused_from_cache(
         "solution",
         cached_latex,
         stage_data={
+            "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
             "answer_type": "subjective",
             "final_answer_latex": cached_answer,
             "subjective_multipart_solution_contract_version": 3,
@@ -416,6 +422,7 @@ def test_malformed_v3_multipart_final_answer_cache_is_regenerated(
         "solution",
         problem + r"\begin{solution}Cached.\end{solution}",
         stage_data={
+            "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
             "answer_type": "subjective",
             "final_answer_latex": "1. First; 2. Second.",
             "subjective_multipart_solution_contract_version": 3,
@@ -473,7 +480,10 @@ def test_stale_match_solution_cache_is_regenerated_for_option_repair(
         "problem_1",
         "solution",
         r"\item Old match.\begin{solution}Old solution.\end{solution}",
-        stage_data={"answer_type": "mcq", "answer_value": "a"},
+        stage_data={
+            "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
+            "answer_type": "mcq", "answer_value": "a",
+        },
     )
     new_latex = r"\item Repaired match.\begin{solution}New solution.\end{solution}"
     fake_orchestrator = SimpleNamespace(

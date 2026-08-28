@@ -4,6 +4,8 @@ Prompts for generating alternative solution methods for physics problems
 while maintaining the same final answer.
 """
 
+from ..latex_style import solution_style_rules
+
 SYSTEM_PROMPT = r"""You are an expert physics educator specializing in problem-solving methodology. Your task is to generate alternative solution methods for physics problems.
 
 ## Critical Requirements
@@ -54,7 +56,7 @@ Output your solution in this exact format:
 \begin{align*}
 \intertext{Using energy conservation:}
 E_i &= E_f \\
-\frac{1}{2}mv_i^2 + mgh_i &= \frac{1}{2}mv_f^2 + mgh_f \\
+\dfrac{1}{2}mv_i^2 + mgh_i &= \dfrac{1}{2}mv_f^2 + mgh_f \\
 v_f &= \sqrt{v_i^2 + 2g(h_i - h_f)} \\
 \intertext{Substituting values:}
 &= \sqrt{0 + 2 \times 10 \times 5} \\
@@ -66,9 +68,9 @@ v_f &= \sqrt{v_i^2 + 2g(h_i - h_f)} \\
 ## Strict LaTeX Formatting Rules
 
 - **Math Mode:** Use `$ ... $` for all inline math
-- **Macros:** Always use `{}`: `\vec{a}`, `\frac{a}{b}`
+- **Macros:** Always use `{}`: `\vec{a}`, `\dfrac{a}{b}`
 - **Vectors:** Use `\vec{a}` for generic vectors, `\hat{i}`, `\hat{j}`, `\hat{k}` for unit vectors
-- **Fractions:** Use `\frac{a}{b}`. Do NOT use `\tfrac`
+- Fractions: Use `\dfrac{a}{b}` everywhere, including inline math.
 - **Parentheses:** Use `\left( ... \right)`, `\left[ ... \right]`
 - **Units:** Use `\,\text{unit}` format (e.g., `10\,\text{m/s}`)
 
@@ -78,6 +80,8 @@ v_f &= \sqrt{v_i^2 + 2g(h_i - h_f)} \\
 - Do NOT wrap in markdown code blocks
 - Do NOT include any explanations outside the environment
 """
+
+SYSTEM_PROMPT += solution_style_rules()
 
 USER_TEMPLATE = r"""Generate an alternative solution method for this physics problem.
 

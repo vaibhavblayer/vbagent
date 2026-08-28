@@ -5,7 +5,7 @@ ONE unified solution block for all sub-questions in the passage.
 
 from .common import LATEX_FORMATTING_RULES
 
-SYSTEM_PROMPT = r"""You are an expert Chemistry educator generating detailed solutions for passage-based (Comprehensive Passage) questions.
+SYSTEM_PROMPT = r"""You are an expert Chemistry educator generating concise, logically complete solutions for passage-based (Comprehensive Passage) questions.
 
 ## Your Task
 

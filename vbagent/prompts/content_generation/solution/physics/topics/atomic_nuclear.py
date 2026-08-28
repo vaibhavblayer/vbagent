@@ -10,11 +10,11 @@ TOPIC_CONCEPTS = """
 ## Key Concepts for Atomic and Nuclear Physics
 
 ### Bohr Model
-- Energy levels: $E_n = -\\frac{13.6}{n^2}$ eV (hydrogen)
+- Energy levels: $E_n = -\\dfrac{13.6}{n^2}$ eV (hydrogen)
 - Radius: $r_n = n^2 a_0$ where $a_0 = 0.529$ Å (Bohr radius)
 - Angular momentum: $L = n\\hbar$ where $\\hbar = h/(2\\pi)$
-- Frequency: $f = \\frac{E_i - E_f}{h}$
-- Rydberg formula: $\\frac{1}{\\lambda} = R\\left(\\frac{1}{n_f^2} - \\frac{1}{n_i^2}\\right)$ where $R = 1.097 \\times 10^7$ m⁻¹
+- Frequency: $f = \\dfrac{E_i - E_f}{h}$
+- Rydberg formula: $\\dfrac{1}{\\lambda} = R\\left(\\dfrac{1}{n_f^2} - \\dfrac{1}{n_i^2}\\right)$ where $R = 1.097 \\times 10^7$ m⁻¹
 
 ### Spectral Series
 - Lyman series: $n_f = 1$ (UV)
@@ -23,7 +23,7 @@ TOPIC_CONCEPTS = """
 - Brackett series: $n_f = 4$ (IR)
 
 ### X-rays
-- Minimum wavelength: $\\lambda_{min} = \\frac{hc}{eV}$ where $V$ is accelerating voltage
+- Minimum wavelength: $\\lambda_{min} = \\dfrac{hc}{eV}$ where $V$ is accelerating voltage
 - Moseley's law: $f = a(Z - b)$ where $Z$ is atomic number
 - Characteristic X-rays: from electron transitions
 
@@ -41,8 +41,8 @@ TOPIC_CONCEPTS = """
 ### Radioactive Decay
 - Decay law: $N(t) = N_0 e^{-\\lambda t}$
 - Activity: $A(t) = \\lambda N(t) = A_0 e^{-\\lambda t}$
-- Half-life: $t_{1/2} = \\frac{\\ln 2}{\\lambda} = \\frac{0.693}{\\lambda}$
-- Mean life: $\\tau = \\frac{1}{\\lambda}$
+- Half-life: $t_{1/2} = \\dfrac{\\ln 2}{\\lambda} = \\dfrac{0.693}{\\lambda}$
+- Mean life: $\\tau = \\dfrac{1}{\\lambda}$
 
 ### Decay Types
 - Alpha decay: $^A_Z X \\to ^{A-4}_{Z-2}Y + ^4_2He$
@@ -112,8 +112,8 @@ DIAGRAM_GUIDANCE = """
 \\begin{solution}
 \\begin{align*}
 \\intertext{For the transition from $n = 3$ to $n = 2$ in hydrogen:}
-E_3 &= -\\frac{13.6}{3^2} = -1.51 \\ \\mathrm{eV} \\\\
-E_2 &= -\\frac{13.6}{2^2} = -3.40 \\ \\mathrm{eV}
+E_3 &= -\\dfrac{13.6}{3^2} = -1.51 \\ \\mathrm{eV} \\\\
+E_2 &= -\\dfrac{13.6}{2^2} = -3.40 \\ \\mathrm{eV}
 \\end{align*}
 
 \\begin{align*}
@@ -125,8 +125,8 @@ E_{photon} &= E_3 - E_2 \\\\
 
 \\begin{align*}
 \\intertext{The wavelength is:}
-\\lambda &= \\frac{hc}{E} \\\\
-         &= \\frac{1240 \\ \\mathrm{eV \\cdot nm}}{1.89 \\ \\mathrm{eV}} \\\\
+\\lambda &= \\dfrac{hc}{E} \\\\
+         &= \\dfrac{1240 \\ \\mathrm{eV \\cdot nm}}{1.89 \\ \\mathrm{eV}} \\\\
          &= 656 \\ \\mathrm{nm}
 \\end{align*}
 

@@ -1,5 +1,7 @@
 """Passage/Comprehension question scanner prompt."""
 
+from vbagent.prompts.latex_style import solution_style_rules
+
 from .common import PASSAGE_DIAGRAM_INLINE
 from .._shared import MCQ_ANSWER_FORMAT_RULES, PASSAGE_OPTION_DIAGRAMS
 
@@ -86,8 +88,8 @@ Subject: Chemistry
 ## Strict Formatting Rules
 
 * **Inline math:** Always wrap inline maths in `$ … $`.
-* **Macros:** Use curly braces – e.g. `\vec{a}`, `\frac{a}{b}`.
-* **Fractions:** Use `\frac{…}{…}` (never `\tfrac`).
+* **Macros:** Use curly braces – e.g. `\vec{a}`, `\dfrac{a}{b}`.
+- Fractions: Use `\dfrac{a}{b}` everywhere, including inline math.
 * **Delimiters:** Use `\left( … \right)` etc.; avoid size macros like `\bigl`.
 * **No blank lines** inside any `align*` environment.
 * **Solution conclusion:** Each solution ends with "Therefore, the correct option is (x)." - NOT combined statements like "in (Q1) is (a), in (Q2) is (b)".
@@ -96,6 +98,8 @@ Subject: Chemistry
 
 **Final Check:** Return only the LaTeX snippet from the first line shown above through the last `\end{solution}` with nothing extra.
 """ + PASSAGE_OPTION_DIAGRAMS + MCQ_ANSWER_FORMAT_RULES
+
+SYSTEM_PROMPT += solution_style_rules("chemistry")
 
 USER_TEMPLATE = "Extract LaTeX from this chemistry question image."
 

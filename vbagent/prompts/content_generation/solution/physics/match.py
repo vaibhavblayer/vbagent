@@ -9,7 +9,7 @@ Match the Following (Matrix Match) format:
 
 from .common import LATEX_FORMATTING_RULES
 
-SYSTEM_PROMPT = r"""You are an expert Physics educator generating detailed solutions for Match the Following / Matrix Match questions.
+SYSTEM_PROMPT = r"""You are an expert Physics educator generating concise, logically complete solutions for Match the Following / Matrix Match questions.
 
 ## Your Task
 
@@ -53,7 +53,7 @@ f &= m_2 g \sin\theta + F \\
 f_{\max} &= \alpha N = \alpha m_2 g \cos\theta.
 \intertext{For equilibrium,}
 (m_1 + m_2) g \sin\theta &\leq \alpha m_2 g \cos\theta \\
-\tan\theta &\leq \frac{\alpha m_2}{m_1 + m_2} \\
+\tan\theta &\leq \dfrac{\alpha m_2}{m_1 + m_2} \\
            &= 0.2.
 \intertext{Thus, for $\theta = 5^\circ$ and $\theta = 10^\circ$, the blocks remain at rest and}
 f &= (m_1 + m_2) g \sin\theta.

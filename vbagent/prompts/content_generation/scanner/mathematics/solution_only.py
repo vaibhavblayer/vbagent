@@ -4,6 +4,8 @@ Extracts solution only - assumes problem statement already exists.
 Outputs \\begin{solution}...\\end{solution} block.
 """
 
+from vbagent.prompts.latex_style import solution_style_rules
+
 from .formatting_rules import (
     LATEX_FORMATTING_RULES,
     SOLUTION_FORMATTING_RULES,
@@ -29,6 +31,7 @@ def get_solution_prompt(question_type: str) -> str:
 
 """
     
+    base_prompt += solution_style_rules("mathematics")
     if question_type in ["mcq_sc", "mcq_mc"]:
         return base_prompt + r"""
 ## MCQ Solution Extraction

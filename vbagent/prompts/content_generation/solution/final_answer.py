@@ -27,7 +27,7 @@ the JSON object.
 
 Examples:
 - `"Stable: $C$; unstable: $A$ and $E$."`
-- `"$x_{\mathrm{eq}}=\frac{b}{2a}$, stable."`
+- `"$x_{\mathrm{eq}}=\dfrac{b}{2a}$, stable."`
 - `"\\begin{enumerate}\\item Unstable along
   the $x$-axis.\\item Stable along the $y$-axis.\\end{enumerate}"`
 

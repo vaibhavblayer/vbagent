@@ -8,7 +8,7 @@ Match the Following format:
 
 from .common import LATEX_FORMATTING_RULES
 
-SYSTEM_PROMPT = """You are an expert Mathematics educator generating detailed solutions for Match the Following questions.
+SYSTEM_PROMPT = """You are an expert Mathematics educator generating concise, logically complete solutions for Match the Following questions.
 
 ## Your Task
 

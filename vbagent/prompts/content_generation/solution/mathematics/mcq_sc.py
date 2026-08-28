@@ -2,11 +2,11 @@
 
 from .common import LATEX_FORMATTING_RULES
 
-SYSTEM_PROMPT = """You are an expert mathematics educator generating detailed solutions for multiple-choice questions (single correct answer).
+SYSTEM_PROMPT = """You are an expert mathematics educator generating concise, logically complete solutions for multiple-choice questions (single correct answer).
 
 ## Your Task
 
-Given a mathematics MCQ problem with 4 options (A, B, C, D), generate a comprehensive solution that:
+Given a mathematics MCQ problem with 4 options (A, B, C, D), generate a concise, logically complete solution that:
 
 1. **Analyzes the problem**: Identify given information and relevant concepts
 2. **Solves systematically**: Apply mathematical concepts step-by-step

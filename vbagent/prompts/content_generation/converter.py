@@ -15,6 +15,7 @@ from .mcq_format import (
 )
 from .table_format import TABLE_FORMAT_RULES
 from .scanner._shared import SUBPART_FORMATTING_RULES
+from ..latex_style import solution_style_rules
 
 SYSTEM_PROMPT = r"""You are an expert physics educator specializing in question format conversion. Your task is to convert physics questions between different assessment formats while preserving the core physics content and difficulty level.
 
@@ -85,19 +86,19 @@ Example: `...the current will be \hrulefill A. \ansint{3}`
 
 **Format B - Answer expressed in terms of a variable (common pattern):**
 ```latex
-\item [Question text]. The answer is $\frac{2\pi}{\beta}$ volt. The value of $\beta$ is \hrulefill. \ansint{5}
+\item [Question text]. The answer is $\dfrac{2\pi}{\beta}$ volt. The value of $\beta$ is \hrulefill. \ansint{5}
 \begin{solution}
 \begin{align*}
 [Derive the expression]
-&= \frac{2\pi}{5}\,\mathrm{V}
-\intertext{Comparing with $\frac{2\pi}{\beta}$:}
+&= \dfrac{2\pi}{5}\,\mathrm{V}
+\intertext{Comparing with $\dfrac{2\pi}{\beta}$:}
 \beta &= 5
 \end{align*}
 \end{solution}
 ```
 - This format expresses the final answer as an expression involving a variable ($k$, $\alpha$, $\beta$, $n$, etc.)
 - The question asks to find the VALUE of that variable
-- Common patterns: `$\frac{a\pi}{k}$`, `$\alpha \times 10^n$`, `$\frac{n}{m}$`
+- Common patterns: `$\dfrac{a\pi}{k}$`, `$\alpha \times 10^n$`, `$\dfrac{n}{m}$`
 
 - NO tasks environment for integer type
 - `\ansint{N}` contains the integer value of the variable
@@ -215,11 +216,11 @@ Use `align*` environment with `\intertext{}` for explanations:
 ```latex
 \begin{solution}
 \begin{align*}
-V &= iR + L\frac{di}{dt} \\
-i &= \frac{V - L\frac{di}{dt}}{R} \\
-\intertext{At the instant considered, the rheostat resistance is $12\,\Omega$, the inductance is $3\,\mathrm{H}$, and $\frac{di}{dt}=-8\,\mathrm{A/s}$.}
-i &= \frac{12 - 3(-8)}{12} \\
-&= \frac{36}{12} \\
+V &= iR + L\dfrac{di}{dt} \\
+i &= \dfrac{V - L\dfrac{di}{dt}}{R} \\
+\intertext{At the instant considered, the rheostat resistance is $12\,\Omega$, the inductance is $3\,\mathrm{H}$, and $\dfrac{di}{dt}=-8\,\mathrm{A/s}$.}
+i &= \dfrac{12 - 3(-8)}{12} \\
+&= \dfrac{36}{12} \\
 &= 3\,\mathrm{A}
 \end{align*}
 Therefore, the correct option is (a).
@@ -240,11 +241,11 @@ Therefore, the correct option is (a).
 ## LATEX FORMATTING RULES:
 
 - **Math Mode:** Use `$...$` for ALL inline math
-- **Fractions:** Use `\frac{a}{b}` or `\dfrac{a}{b}` (display style in tasks)
+- **Fractions:** Use `\dfrac{a}{b}` or `\dfrac{a}{b}` (display style in tasks)
 - **Units:** Use `\,\mathrm{unit}` format (e.g., `3\,\mathrm{A}`, `12\,\Omega`)
 - **Vectors:** Use `\vec{a}` for vectors, `\hat{i}`, `\hat{j}`, `\hat{k}` for unit vectors
 - **Parentheses:** Use `\left( ... \right)` for auto-sizing
-- **DO NOT** use `\tfrac`, `\bigl`, `\bigr`
+- **DO NOT** use `\bigl`, `\bigr`
 
 ---
 
@@ -259,15 +260,15 @@ Therefore, the correct option is (a).
 
 ## CLEAN NUMBERS DISCIPLINE:
 - Choose parameters so intermediate steps cancel cleanly
-- Prefer integers, simple fractions ($\frac{1}{2}$, $\frac{3}{4}$), or clean decimals (2.5, 4.5, 0.25, 7.5)
-- Prefer irrational answers expressed symbolically ($\sqrt{2}$, $\pi$, $\frac{\sqrt{3}}{2}$) over messy decimals
-- AVOID answers like 3.14159, 0.3847, 1.7321 — use $\pi$, $\frac{5}{13}$, $\sqrt{3}$ instead
+- Prefer integers, simple fractions ($\dfrac{1}{2}$, $\dfrac{3}{4}$), or clean decimals (2.5, 4.5, 0.25, 7.5)
+- Prefer irrational answers expressed symbolically ($\sqrt{2}$, $\pi$, $\dfrac{\sqrt{3}}{2}$) over messy decimals
+- AVOID answers like 3.14159, 0.3847, 1.7321 — use $\pi$, $\dfrac{5}{13}$, $\sqrt{3}$ instead
 - For integer type: the final answer MUST be a clean integer; work backwards from the answer to choose parameters
 - For MCQ: all four options should be clean expressions, not messy decimals"""
 
 SYSTEM_PROMPT += (
     "\n\n" + MCQ_ANSWER_FORMAT_RULES + TABLE_FORMAT_RULES
-    + SUBPART_FORMATTING_RULES
+    + SUBPART_FORMATTING_RULES + solution_style_rules()
 )
 
 USER_TEMPLATE = r"""Convert this physics question from {source_format} to {target_format}.
@@ -321,8 +322,8 @@ FORMAT A - Direct numerical answer:
 FORMAT B - Answer in terms of a variable (COMMON):
 - Express the answer as an expression with a variable ($k$, $\alpha$, $\beta$, $n$, etc.)
 - Ask to find the VALUE of that variable
-- Example: "The maximum voltage is $\frac{2\pi}{\beta}$ volt. The value of $\beta$ is \hrulefill. \ansint{5}"
-- Common patterns: $\frac{a\pi}{k}$, $\alpha \times 10^n$, $\frac{n}{m}$
+- Example: "The maximum voltage is $\dfrac{2\pi}{\beta}$ volt. The value of $\beta$ is \hrulefill. \ansint{5}"
+- Common patterns: $\dfrac{a\pi}{k}$, $\alpha \times 10^n$, $\dfrac{n}{m}$
 
 - The integer answer goes inside \ansint{}
 - Solution should derive the expression and identify the variable's value

@@ -9,6 +9,7 @@ import pytest
 from rich.console import Console
 
 from vbagent.agents.orchestration.problem_orchestrator import ProblemOrchestrator
+from vbagent.prompts.latex_style import LATEX_STYLE_CONTRACT_VERSION
 from vbagent.agents.classification.question_classifier import (
     QuestionClassification,
     classification_fingerprint,
@@ -24,6 +25,7 @@ class _Cache:
             for stage in values:
                 self.stage_data[stage] = {
                     "classification_fingerprint": fingerprint,
+                    "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
                 }
 
     def has(self, problem_id, stage):
@@ -297,6 +299,7 @@ def test_stage_contract_metadata_includes_classification_fingerprint():
     ) == {
         "subjective_structure_contract_version": 2,
         "classification_fingerprint": fingerprint,
+        "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
     }
     assert ProblemOrchestrator._tikz_stage_data(
         "subjective",
@@ -304,6 +307,7 @@ def test_stage_contract_metadata_includes_classification_fingerprint():
     ) == {
         "subjective_panel_layout_contract_version": 1,
         "classification_fingerprint": fingerprint,
+        "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
     }
     assert ProblemOrchestrator._tikz_stage_data(
         "match",
@@ -311,6 +315,7 @@ def test_stage_contract_metadata_includes_classification_fingerprint():
     ) == {
         "match_table_contract_version": 1,
         "classification_fingerprint": fingerprint,
+        "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
     }
     assert ProblemOrchestrator._option_stage_data(
         "passage",
@@ -318,6 +323,7 @@ def test_stage_contract_metadata_includes_classification_fingerprint():
     ) == {
         "passage_option_contract_version": 1,
         "classification_fingerprint": fingerprint,
+        "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
     }
 
 
@@ -376,7 +382,8 @@ def test_subjective_main_diagram_uses_plain_enumerate_before_cache(monkeypatch):
     assert "[label=" not in code
     assert "[label=" not in cache.values["tikz"]
     assert cache.stage_data["tikz"] == {
-        "subjective_panel_layout_contract_version": 1
+        "subjective_panel_layout_contract_version": 1,
+        "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
     }
 
 

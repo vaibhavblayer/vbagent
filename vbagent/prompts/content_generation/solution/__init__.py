@@ -100,7 +100,7 @@ def get_user_template(subject: str) -> str:
         User message template
     """
     # Common template for all subjects
-    return """Generate a detailed solution for the following problem:
+    return """Generate a concise, logically complete solution for the following problem:
 
 {problem}
 

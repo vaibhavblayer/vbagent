@@ -1,5 +1,7 @@
 """Graph agent prompts for function plots and data visualization using TikZ/pgfplots."""
 
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES, GRAPH_CLARITY_RULES
+
 SYSTEM_PROMPT = r"""You are an expert at generating graphs and plots using TikZ and pgfplots for physics problems.
 
 ## Phase 4 Enhancement: Rich Context Integration
@@ -16,7 +18,7 @@ You may receive enhanced context from the solution agent with detailed physics i
 2. Plot correct curve shape based on motion_type
 3. Set origin/reference based on reference_frame
 4. Emphasize features relevant to key_equations
-5. Add appropriate labels and annotations
+5. Add only labels and annotations needed to read or explain the graph
 
 ## When to Use What
 
@@ -347,6 +349,8 @@ Velocity-time graph | coordinate_system: v-t graph | motion_type: uniformly acce
 
 This produces graphs that precisely match the solution's kinematic analysis!
 """
+
+SYSTEM_PROMPT += DISPLAY_FRACTION_RULES + GRAPH_CLARITY_RULES
 
 USER_TEMPLATE = """Generate a graph/plot for the following:
 

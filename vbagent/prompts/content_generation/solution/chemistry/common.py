@@ -1,5 +1,7 @@
 """Common components for chemistry solution generation prompts."""
 
+from vbagent.prompts.latex_style import solution_style_rules
+
 from ...mcq_format import MCQ_ANSWER_FORMAT_RULES
 
 # LaTeX formatting rules for chemistry solutions
@@ -14,18 +16,17 @@ LATEX_FORMATTING_RULES = """
 
 ### Align Environment Rules (CRITICAL)
 
-**1. One step per line** - don't combine multiple operations
+**1. One step per line** - show one meaningful mathematical step; omit routine intermediate arithmetic
 ```latex
 % GOOD:
 \\begin{align*}
-n &= \\frac{m}{M} \\\\
-  &= \\frac{5.85}{58.5} \\\\
+n &= \\dfrac{m}{M} \\\\
   &= 0.1 \\ \\text{mol}
 \\end{align*}
 
 % BAD:
 \\begin{align*}
-n &= \\frac{m}{M} = \\frac{5.85}{58.5} = 0.1 \\ \\text{mol}
+n &= \\dfrac{m}{M} = \\dfrac{5.85}{58.5} = 0.1 \\ \\text{mol}
 \\end{align*}
 ```
 
@@ -37,15 +38,14 @@ n &= \\frac{m}{M} = \\frac{5.85}{58.5} = 0.1 \\ \\text{mol}
 ```latex
 % GOOD:
 \\begin{align*}
-K_{\\text{eq}} &= \\frac{[\\ce{C}][\\ce{D}]}{[\\ce{A}][\\ce{B}]} \\\\
-              &= \\frac{(0.5)(0.5)}{(0.2)(0.3)} \\\\
+K_{\\text{eq}} &= \\dfrac{[\\ce{C}][\\ce{D}]}{[\\ce{A}][\\ce{B}]} \\\\
               &= 4.17
 \\end{align*}
 
 % BAD (repetitive):
 \\begin{align*}
-K_{\\text{eq}} &= \\frac{[\\ce{C}][\\ce{D}]}{[\\ce{A}][\\ce{B}]} \\\\
-K_{\\text{eq}} &= \\frac{(0.5)(0.5)}{(0.2)(0.3)} \\\\
+K_{\\text{eq}} &= \\dfrac{[\\ce{C}][\\ce{D}]}{[\\ce{A}][\\ce{B}]} \\\\
+K_{\\text{eq}} &= \\dfrac{(0.5)(0.5)}{(0.2)(0.3)} \\\\
 K_{\\text{eq}} &= 4.17
 \\end{align*}
 ```
@@ -173,13 +173,11 @@ Therefore, the correct option is (b).
 ```latex
 \\begin{solution}
 \\begin{align*}
-\\intertext{Calculate moles of \\ce{NaCl}}
-n &= \\frac{m}{M} \\\\
-  &= \\frac{5.85}{58.5} \\\\
+\\intertext{Convert the given mass to moles, then divide by the solution volume in litres to find molarity.}
+n &= \\dfrac{m}{M} \\\\
   &= 0.1 \\ \\text{mol}
-\\intertext{Now find concentration using $V = 100$ mL = $0.1$ L}
-C &= \\frac{n}{V} \\\\
-  &= \\frac{0.1}{0.1} \\\\
+\\intertext{The volume is $100\\,\\mathrm{mL}=0.1\\,\\mathrm{L}$.}
+C &= \\dfrac{n}{V} \\\\
   &= 1.0 \\ \\text{M}
 \\end{align*}
 
@@ -188,14 +186,14 @@ Therefore, the correct option is (c).
 ```
 
 ### Solution Quality
-- Show ALL steps, even "obvious" ones
+- Show every logically necessary step; omit routine algebra and arithmetic
 - Keep solutions CONCISE - key steps only
-- One operation per line
+- One meaningful step per line
 - NO \\boxed{} for final answers
 - Explain the chemistry, not just the math
 """
 
-LATEX_FORMATTING_RULES += MCQ_ANSWER_FORMAT_RULES
+LATEX_FORMATTING_RULES += MCQ_ANSWER_FORMAT_RULES + solution_style_rules("chemistry")
 
 # Diagram identification guidelines
 DIAGRAM_IDENTIFICATION = """
@@ -228,14 +226,14 @@ SOLUTION_QUALITY = """
 ## Solution Quality Standards
 
 ### Completeness
-- Show ALL steps, even "obvious" ones
+- Show every logically necessary step; omit routine algebra and arithmetic
 - Explain the chemistry, not just the math
 - State assumptions explicitly
 - Define notation used
 
 ### Clarity
 - Use \\intertext{} for explanations
-- One operation per line
+- One meaningful step per line
 - Consistent notation throughout
 - Clear logical flow
 

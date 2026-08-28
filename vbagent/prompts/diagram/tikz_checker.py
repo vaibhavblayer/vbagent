@@ -8,6 +8,8 @@ Includes both legacy prompts (full content output) and patch prompts
 """
 
 # Shared review checklist used by both legacy and patch modes
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES, GRAPH_CLARITY_RULES
+
 _REVIEW_CHECKLIST = r"""## Review Checklist
 
 **1. Syntax Errors**
@@ -269,6 +271,9 @@ _MATHEMATICS_CHECKLIST = r"""
 - Label all sets clearly
 - Include cardinality counts in regions when relevant
 """
+
+
+_REVIEW_CHECKLIST += DISPLAY_FRACTION_RULES + GRAPH_CLARITY_RULES
 
 
 def get_review_checklist(subject: str | None = None) -> str:

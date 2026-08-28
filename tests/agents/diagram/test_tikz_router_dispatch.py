@@ -3,6 +3,8 @@
 from types import SimpleNamespace
 from typing import get_args
 
+import pytest
+
 from vbagent.agents.diagram import tikz_router
 
 
@@ -147,3 +149,41 @@ def test_chemistry_context_is_parsed_once():
         "mechanism_step": "proton transfer",
         "reaction_conditions": "heat",
     }
+
+
+def test_chemistry_context_preserves_explicit_no_and_colons_in_setting_values():
+    context = tikz_router._parse_chemistry_context(
+        "Construction context (not visible prose):\nUse the given data.\n\n"
+        "Chemistry settings and construction data:\n"
+        "show_lone_pairs: no\nshow_charges: yes\n"
+        "mechanism_step: Step 1: proton transfer\n\n"
+        "Required drawing actions (follow the requested representation):\n- Mark atoms."
+    )
+
+    assert context == {
+        "show_lone_pairs": "no", "show_charges": "yes",
+        "mechanism_step": "Step 1: proton transfer",
+    }
+
+
+@pytest.mark.parametrize("agent_type", ["generic", "energy_diagram", "chemical_equation"])
+def test_generators_without_context_arguments_still_receive_the_drawing_spec(monkeypatch, agent_type):
+    received = {}
+
+    def generate(**kwargs):
+        received.update(kwargs)
+        return "DIAGRAM"
+
+    function = tikz_router._GENERATOR_REGISTRY[agent_type].function
+    monkeypatch.setattr(tikz_router, "import_module", lambda _: SimpleNamespace(**{function: generate}))
+    tikz_router._invoke_registered_generator(
+        agent_type, image_path=None, description="Purpose", use_context=False,
+        show_spinner=False, problem_text="PROBLEM", solution_context="DRAWING ACTIONS",
+        values={"exact_value": "11/3"}, labels=[], mcq_options=False,
+    )
+
+    assert "Purpose" in received["description"]
+    assert "PROBLEM" in received["description"]
+    assert "DRAWING ACTIONS" in received["description"]
+    assert "exact_value: 11/3" in received["description"]
+    assert "No additional text labels requested" in received["description"]

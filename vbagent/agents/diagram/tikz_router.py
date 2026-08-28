@@ -4,12 +4,12 @@ Routes TikZ generation to specialized agents based on diagram analysis.
 Uses structured diagram-classification output for intelligent routing.
 """
 
+import re
 from dataclasses import dataclass
 from importlib import import_module
 from typing import Literal, Optional
 
 from vbagent.models.classification import DiagramAnalysis, PrimaryClassification
-
 
 # All agent types
 AgentType = Literal["fbd", "setup", "circuit", "gates", "graph", "optics", "mechanics", "wave", "organic_structure", "reaction_mechanism", "orbital", "lewis_structure", "chemical_equation", "energy_diagram", "function_graph", "coordinate_geometry", "geometric_figure", "number_line", "venn_diagram", "generic", "biology_image"]
@@ -325,22 +325,40 @@ def _parse_chemistry_context(solution_context: str | None) -> dict | None:
         return None
 
     context = {}
-    for flag in ("show_lone_pairs", "show_charges"):
-        if flag in solution_context:
-            context[flag] = "yes"
-
+    flags = {"show_lone_pairs", "show_charges"}
     valued_fields = {
         "mechanism_step",
         "stereochemistry",
         "reaction_conditions",
         "key_functional_groups",
     }
-    for part in solution_context.split("|"):
-        for field in valued_fields:
-            if field in part:
-                context[field] = part.split(":")[-1].strip()
+    for part in re.split(r"[|\n]", solution_context):
+        key, separator, value = part.strip().partition(":")
+        if key in flags:
+            context[key] = value.strip() if separator else "yes"
+        elif key in valued_fields and separator:
+            context[key] = value.strip()
 
     return context
+
+
+def _description_with_context(description: str | None, fields: dict) -> str | None:
+    """Preserve spec fields for generators without dedicated context arguments."""
+    sections = [description] if description else []
+    for name, value in fields.items():
+        if value is None:
+            continue
+        if name == "labels" and not value:
+            text = "No additional text labels requested; retain necessary axes/ticks and drawing actions."
+        elif isinstance(value, dict):
+            text = "\n".join(f"{key}: {item}" for key, item in value.items())
+        elif isinstance(value, list):
+            text = "\n".join(f"- {item}" for item in value)
+        else:
+            text = str(value)
+        if text:
+            sections.append(f"{name}:\n{text}")
+    return "\n\n".join(sections) if sections else description
 
 
 def _invoke_registered_generator(
@@ -368,6 +386,13 @@ def _invoke_registered_generator(
     }
     effective_description = (
         description or "Diagram" if agent_type == "generic" else description
+    )
+    effective_description = _description_with_context(
+        effective_description,
+        {
+            name: value for name, value in optional_values.items()
+            if name in _RICH_CONTEXT_FORWARDS and name not in spec.forwards
+        },
     )
     kwargs = {
         "image_path": image_path,
@@ -437,8 +462,9 @@ def generate_tikz_with_routing(
     
     # Biology: use gpt-image-2 instead of TikZ
     if agent_type == "biology_image":
-        from vbagent.agents.diagram.biology import generate_biology_diagram
         from pathlib import Path
+
+        from vbagent.agents.diagram.biology import generate_biology_diagram
 
         # Derive output path from source image path (same stem, diagrams/ dir)
         if image_path:
@@ -477,7 +503,10 @@ def generate_tikz_with_routing(
 
         tikz_code = generate_organic_orchestrated(
             image_path=image_path,
-            description=description,
+            description=_description_with_context(
+                description,
+                {"solution_context": solution_context, "values": values, "labels": labels},
+            ),
             chemistry_context=_parse_chemistry_context(solution_context),
             problem_text=problem_text,
             use_context=use_context,

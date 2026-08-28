@@ -8,7 +8,7 @@ Passage-based (Comprehensive Passage) format:
 
 from .common import LATEX_FORMATTING_RULES
 
-SYSTEM_PROMPT = r"""You are an expert Physics educator generating detailed solutions for passage-based (Comprehensive Passage) questions.
+SYSTEM_PROMPT = r"""You are an expert Physics educator generating concise, logically complete solutions for passage-based (Comprehensive Passage) questions.
 
 ## Your Task
 
@@ -69,17 +69,17 @@ F - f_t &= m_2 A \\
 \intertext{For translation of the cylinder,}
 f_t + f_g &= m_1 a
 \intertext{For rotation of the solid cylinder,}
-f_t - f_g &= \frac{1}{2} m_1 a
+f_t - f_g &= \dfrac{1}{2} m_1 a
 \intertext{Solving,}
-f_t &= \frac{3}{4} m_1 a
+f_t &= \dfrac{3}{4} m_1 a
 \intertext{Substituting in the plank equation,}
-a &= \frac{4F}{3m_1 + 8m_2}
+a &= \dfrac{4F}{3m_1 + 8m_2}
 \end{align*}
 Therefore, the correct option is (a).
 
 \begin{align*}
 A &= 2a \\
-  &= \frac{8F}{3m_1 + 8m_2}
+  &= \dfrac{8F}{3m_1 + 8m_2}
 \end{align*}
 Therefore, the correct option is (b).
 \end{solution}

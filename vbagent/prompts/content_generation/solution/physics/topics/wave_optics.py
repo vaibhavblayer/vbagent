@@ -10,17 +10,17 @@ TOPIC_CONCEPTS = """
 ## Key Concepts for Wave Optics
 
 ### Young's Double Slit Experiment (YDSE)
-- Path difference: $\\Delta x = d\\sin\\theta \\approx \\frac{dy}{D}$ (for small $\\theta$)
+- Path difference: $\\Delta x = d\\sin\\theta \\approx \\dfrac{dy}{D}$ (for small $\\theta$)
 - Constructive interference (bright fringe): $\\Delta x = n\\lambda$ where $n = 0, \\pm 1, \\pm 2, ...$
-- Destructive interference (dark fringe): $\\Delta x = (n + \\frac{1}{2})\\lambda$
-- Fringe width: $\\beta = \\frac{\\lambda D}{d}$
-- Position of $n$-th bright fringe: $y_n = \\frac{n\\lambda D}{d}$
-- Intensity: $I = I_0\\cos^2\\left(\\frac{\\pi d\\sin\\theta}{\\lambda}\\right) = 4I_0\\cos^2\\left(\\frac{\\phi}{2}\\right)$
+- Destructive interference (dark fringe): $\\Delta x = (n + \\dfrac{1}{2})\\lambda$
+- Fringe width: $\\beta = \\dfrac{\\lambda D}{d}$
+- Position of $n$-th bright fringe: $y_n = \\dfrac{n\\lambda D}{d}$
+- Intensity: $I = I_0\\cos^2\\left(\\dfrac{\\pi d\\sin\\theta}{\\lambda}\\right) = 4I_0\\cos^2\\left(\\dfrac{\\phi}{2}\\right)$
 
 ### Thin Film Interference
 - Path difference in film: $\\Delta x = 2\\mu t\\cos r$
 - Phase change of $\\pi$ on reflection from denser medium
-- Constructive (with phase change): $2\\mu t\\cos r = (n + \\frac{1}{2})\\lambda$
+- Constructive (with phase change): $2\\mu t\\cos r = (n + \\dfrac{1}{2})\\lambda$
 - Destructive (with phase change): $2\\mu t\\cos r = n\\lambda$
 - For normal incidence: $\\cos r = 1$
 
@@ -28,22 +28,22 @@ TOPIC_CONCEPTS = """
 - First minimum: $a\\sin\\theta = \\lambda$ where $a$ is slit width
 - $n$-th minimum: $a\\sin\\theta = n\\lambda$ ($n = \\pm 1, \\pm 2, ...$)
 - Central maximum width: $2\\lambda D/a$
-- Intensity: $I = I_0\\left(\\frac{\\sin\\alpha}{\\alpha}\\right)^2$ where $\\alpha = \\frac{\\pi a\\sin\\theta}{\\lambda}$
+- Intensity: $I = I_0\\left(\\dfrac{\\sin\\alpha}{\\alpha}\\right)^2$ where $\\alpha = \\dfrac{\\pi a\\sin\\theta}{\\lambda}$
 
 ### Diffraction Grating
 - Grating equation: $d\\sin\\theta = n\\lambda$ ($n = 0, 1, 2, ...$)
-- Maximum order: $n_{max} = \\frac{d}{\\lambda}$
-- Resolving power: $R = \\frac{\\lambda}{\\Delta\\lambda} = nN$ where $N$ is number of lines
+- Maximum order: $n_{max} = \\dfrac{d}{\\lambda}$
+- Resolving power: $R = \\dfrac{\\lambda}{\\Delta\\lambda} = nN$ where $N$ is number of lines
 
 ### Polarization
 - Malus's law: $I = I_0\\cos^2\\theta$
-- Brewster's angle: $\\tan\\theta_B = \\frac{n_2}{n_1}$
+- Brewster's angle: $\\tan\\theta_B = \\dfrac{n_2}{n_1}$
 - At Brewster's angle: reflected ray is completely polarized
 
 ### Resolving Power
 - Rayleigh criterion: two sources just resolved when central maximum of one coincides with first minimum of other
-- Telescope: $R = \\frac{D}{1.22\\lambda}$ where $D$ is aperture diameter
-- Microscope: $R = \\frac{2\\mu\\sin\\theta}{1.22\\lambda}$
+- Telescope: $R = \\dfrac{D}{1.22\\lambda}$ where $D$ is aperture diameter
+- Microscope: $R = \\dfrac{2\\mu\\sin\\theta}{1.22\\lambda}$
 
 ### Problem-Solving Strategy
 1. Identify type of interference/diffraction
@@ -60,7 +60,7 @@ COMMON_PATTERNS = """
 1. Identify given: $d$ (slit separation), $D$ (screen distance), $\\lambda$ (wavelength)
 2. Calculate fringe width: $\\beta = \\lambda D/d$
 3. Position of $n$-th bright fringe: $y_n = n\\beta$
-4. For dark fringe: $y_n = (n + \\frac{1}{2})\\beta$
+4. For dark fringe: $y_n = (n + \\dfrac{1}{2})\\beta$
 
 ### Pattern 2: Thin film interference
 1. Identify film thickness $t$ and refractive index $\\mu$
@@ -103,8 +103,8 @@ DIAGRAM_GUIDANCE = """
 \\begin{solution}
 \\begin{align*}
 \\intertext{For YDSE, the fringe width is:}
-\\beta &= \\frac{\\lambda D}{d} \\\\
-      &= \\frac{600 \\times 10^{-9} \\times 1.0}{0.001} \\\\
+\\beta &= \\dfrac{\\lambda D}{d} \\\\
+      &= \\dfrac{600 \\times 10^{-9} \\times 1.0}{0.001} \\\\
       &= 6.0 \\times 10^{-4} \\ \\mathrm{m} \\\\
       &= 0.6 \\ \\mathrm{mm}
 \\end{align*}
@@ -125,11 +125,11 @@ TYPICAL_MISTAKES = """
 1. **Phase change confusion**
    - Phase change of $\\pi$ occurs on reflection from denser medium
    - This shifts interference conditions
-   - Constructive becomes $(n + \\frac{1}{2})\\lambda$, destructive becomes $n\\lambda$
+   - Constructive becomes $(n + \\dfrac{1}{2})\\lambda$, destructive becomes $n\\lambda$
 
 2. **Path difference vs phase difference**
    - Path difference: $\\Delta x$ (in meters)
-   - Phase difference: $\\phi = \\frac{2\\pi}{\\lambda}\\Delta x$ (in radians)
+   - Phase difference: $\\phi = \\dfrac{2\\pi}{\\lambda}\\Delta x$ (in radians)
    - Don't confuse the two
 
 3. **YDSE vs single slit**

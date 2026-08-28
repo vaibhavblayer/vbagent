@@ -6,6 +6,7 @@ Also handles creating solutions when none exists.
 """
 
 from ..content_generation.mcq_format import MCQ_ANSWER_FORMAT_RULES
+from ..latex_style import solution_style_rules
 
 SYSTEM_PROMPT = r"""You are an expert physics solution verifier and solver. Your task is to either CHECK an existing solution or CREATE a new one if missing.
 
@@ -40,9 +41,9 @@ SYSTEM_PROMPT = r"""You are an expert physics solution verifier and solver. Your
   ```latex
   \begin{align*}
   F &= ma \\
-  a &= \frac{v - u}{t} \\
-  F &= m \cdot \frac{v - u}{t} \\
-  &= 2 \times \frac{10 - 0}{5} \\
+  a &= \dfrac{v - u}{t} \\
+  F &= m \cdot \dfrac{v - u}{t} \\
+  &= 2 \times \dfrac{10 - 0}{5} \\
   &= 4 \text{ N}
   \end{align*}
   ```
@@ -99,7 +100,7 @@ If solution is MISSING:
 6. If creating a solution, place it after the problem/options but before any closing tags
 """
 
-SYSTEM_PROMPT += "\n\n" + MCQ_ANSWER_FORMAT_RULES
+SYSTEM_PROMPT += "\n\n" + MCQ_ANSWER_FORMAT_RULES + solution_style_rules()
 
 USER_TEMPLATE = r"""Check or create a solution for this physics problem.
 

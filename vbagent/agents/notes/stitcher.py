@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from vbagent.agents.notes.models import DocumentPlan, SectionContent
+from vbagent.utils.latex import DISPLAY_FRACTION_PREAMBLE
 
 
 # The preamble template — stable, not LLM-generated
@@ -15,6 +16,7 @@ PREAMBLE_TEMPLATE = r"""\documentclass[11pt,a4paper]{{article}}
 \usepackage[T1]{{fontenc}}
 \usepackage{{amsmath,amssymb}}
 \DeclareMathOperator{{\cosec}}{{cosec}}
+{fraction_style}
 \usepackage[margin=1in]{{geometry}}
 \usepackage{{tikz}}
 \usepackage{{pgfplots}}
@@ -78,6 +80,7 @@ def stitch_notes(
 
     # Build preamble
     preamble = PREAMBLE_TEMPLATE.format(
+        fraction_style=DISPLAY_FRACTION_PREAMBLE,
         title=_escape_latex(plan.title),
         subtitle=_escape_latex(plan.subtitle),
         author=_escape_latex(plan.author),

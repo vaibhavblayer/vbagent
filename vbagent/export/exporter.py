@@ -12,6 +12,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 import shutil
+from vbagent.utils.latex import DISPLAY_FRACTION_PREAMBLE
 
 
 class ExportMode(Enum):
@@ -68,6 +69,7 @@ class Exporter:
 \usepackage{{amsmath}}
 \usepackage{{amssymb}}
 \DeclareMathOperator{{\cosec}}{{cosec}}
+{fraction_style}
 \usepackage{{graphicx}}
 \usepackage{{tikz}}
 \usepackage{{tasks}}
@@ -288,6 +290,7 @@ class Exporter:
             main_tex_content = template.format(title=title, content=content)
         else:
             main_tex_content = self.DEFAULT_TEMPLATE.format(
+                fraction_style=DISPLAY_FRACTION_PREAMBLE,
                 title=title,
                 content=content
             )

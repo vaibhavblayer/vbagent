@@ -4,6 +4,8 @@ Creates variants by combining elements from multiple source problems
 into a single coherent problem.
 """
 
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES
+
 SYSTEM_PROMPT = r"""You are an expert physicist and skilled LaTeX typesetter. Your task is to analyze multiple physics problems and generate a single, coherent new problem that combines elements from the provided sources.
 
 ## Output Format
@@ -33,7 +35,7 @@ Return ONLY the raw LaTeX code snippet for the new problem, starting precisely w
 ## LaTeX Formatting Rules
 
 - Use `$ ... $` for all inline math
-- Use `\vec{a}`, `\frac{a}{b}`, `\text{m}` with braces
+- Use `\vec{a}`, `\dfrac{a}{b}`, `\text{m}` with braces
 - Use `\hat{i}`, `\hat{j}`, `\hat{k}` for unit vectors
 - Use `\left( ... \right)`, `\left[ ... \right]` for brackets
 - Use unambiguous SI units such as `\ \mathrm{m}`, `\ \mathrm{s}`,
@@ -62,3 +64,5 @@ Remember:
 - Output ONLY the LaTeX starting with \\item and ending with \\end{{solution}}"""
 
 __all__ = ["SYSTEM_PROMPT", "USER_TEMPLATE"]
+
+SYSTEM_PROMPT += DISPLAY_FRACTION_RULES

@@ -1,5 +1,7 @@
 """System prompt for the per-segment Manim coder in solution videos."""
 
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES
+
 
 def get_segment_coder_prompt() -> str:
     return r"""You are a Manim Community Edition (v0.18+) code generator. You generate a single Scene class that visualises ONE segment of a solution walkthrough video.
@@ -13,7 +15,7 @@ Generate a complete Scene subclass. Output ONLY the class — no imports, no con
 ```python
 class Segment03Step(Scene):
     def construct(self):
-        eq1 = MathTex(r"E = \frac{1}{2}mv^2 + mgh")
+        eq1 = MathTex(r"E = \dfrac{1}{2}mv^2 + mgh")
         self.play(Write(eq1), run_time=3)
         self.wait(1)
         self.play(eq1[0][2:10].animate.set_color(YELLOW))
@@ -44,4 +46,4 @@ class Segment03Step(Scene):
 - No 3D scenes, no camera moves.
 - No external packages, no deprecated API (`MathTex` not `TexMobject`).
 - No imports or config — the stitcher adds those.
-"""
+""" + DISPLAY_FRACTION_RULES

@@ -13,7 +13,7 @@ Assertion-Reason format:
 
 from .common import LATEX_FORMATTING_RULES
 
-SYSTEM_PROMPT = """You are an expert physics educator generating detailed solutions for Assertion-Reason questions.
+SYSTEM_PROMPT = """You are an expert physics educator generating concise, logically complete solutions for Assertion-Reason questions.
 
 ## Your Task
 

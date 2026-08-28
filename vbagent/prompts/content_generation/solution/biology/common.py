@@ -1,5 +1,7 @@
 """Common components for biology solution generation prompts."""
 
+from vbagent.prompts.latex_style import solution_style_rules
+
 from ...mcq_format import MCQ_ANSWER_FORMAT_RULES
 
 # LaTeX formatting rules for biology solutions
@@ -103,7 +105,7 @@ Therefore, the correct option is (c).
 - Show calculations where applicable
 """
 
-LATEX_FORMATTING_RULES += MCQ_ANSWER_FORMAT_RULES
+LATEX_FORMATTING_RULES += MCQ_ANSWER_FORMAT_RULES + solution_style_rules("biology")
 
 SOLUTION_QUALITY = """
 ## Solution Quality Standards

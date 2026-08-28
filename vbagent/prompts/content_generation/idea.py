@@ -4,6 +4,8 @@ Subject-aware prompts for extracting concepts, formulas, and problem-solving
 techniques from problems and their solutions.
 """
 
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES
+
 from vbagent.prompts.subjects import get_subject_config, SUBJECTS
 
 
@@ -110,12 +112,12 @@ W_{\text{gravity}} &= -(U_f - U_i) \\
 
 def get_system_prompt_json(subject: str = "physics") -> str:
     """Get subject-aware JSON system prompt."""
-    return _build_system_prompt_json(subject)
+    return _build_system_prompt_json(subject) + DISPLAY_FRACTION_RULES
 
 
 def get_system_prompt_latex(subject: str = "physics") -> str:
     """Get subject-aware LaTeX system prompt."""
-    return _build_system_prompt_latex(subject)
+    return _build_system_prompt_latex(subject) + DISPLAY_FRACTION_RULES
 
 
 USER_TEMPLATE_JSON = """Analyze this problem and solution to extract the core ideas.
@@ -142,7 +144,7 @@ Requirements:
 7. NO numerical values — SYMBOLIC ONLY"""
 
 # Backward compatibility
-SYSTEM_PROMPT_JSON = _build_system_prompt_json("physics")
-SYSTEM_PROMPT = _build_system_prompt_latex("physics")
+SYSTEM_PROMPT_JSON = get_system_prompt_json("physics")
+SYSTEM_PROMPT = get_system_prompt_latex("physics")
 SYSTEM_PROMPT_LEGACY = SYSTEM_PROMPT_JSON
 USER_TEMPLATE_LEGACY = USER_TEMPLATE_JSON

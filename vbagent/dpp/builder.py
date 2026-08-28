@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Optional
 
 from vbagent.metadata.store import MetadataStore, QuestionMetadata
+from vbagent.utils.latex import DISPLAY_FRACTION_PREAMBLE
 
 
 class SelectionStrategy(ABC):
@@ -463,6 +464,7 @@ class DPPBuilder:
             r"% Packages",
             r"\usepackage{amsmath, amssymb, amsthm, mathtools}",
             r"\DeclareMathOperator{\cosec}{cosec}",
+            DISPLAY_FRACTION_PREAMBLE,
             r"\usepackage{tikz}",
             r"\usepackage{pgfplots}",
             r"\usepackage[american]{circuitikz}",

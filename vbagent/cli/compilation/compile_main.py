@@ -11,6 +11,8 @@ from typing import List, Optional
 
 import click
 
+from vbagent.utils.latex import DISPLAY_FRACTION_PREAMBLE
+
 from ..common import _get_console
 
 _MISSING_DIAGRAM_PREFIX = "VBAGENT MISSING DIAGRAM: "
@@ -89,13 +91,22 @@ def _missing_diagram_names(content: str) -> list[str]:
     return re.findall(pattern, content)
 
 
-def generate_preamble(subject: str = "physics", title: str = "Problems", include_all: bool = False) -> str:
+def generate_preamble(
+    subject: str = "physics",
+    title: str = "Problems",
+    include_all: bool = False,
+    *,
+    include_solution: bool = True,
+    include_alternate_solution: bool = True,
+) -> str:
     """Generate LaTeX preamble based on subject.
     
     Args:
         subject: Subject (physics, chemistry, mathematics)
         title: Document title
         include_all: Include packages for all subjects (for mixed content)
+        include_solution: Show solution environments (default True)
+        include_alternate_solution: Show alternatesolution environments (default True)
         
     Returns:
         LaTeX preamble string
@@ -175,6 +186,15 @@ def generate_preamble(subject: str = "physics", title: str = "Problems", include
     thick,
     every node/.append style={font=\small},
 }"""
+    for environment, visible in (
+        ("solution", include_solution),
+        ("alternatesolution", include_alternate_solution),
+    ):
+        if not visible:
+            custom_commands = custom_commands.replace(
+                rf"% \excludecomment{{{environment}}}",
+                rf"\excludecomment{{{environment}}}",
+            )
     
     # Combine
     preamble = base_packages
@@ -183,6 +203,7 @@ def generate_preamble(subject: str = "physics", title: str = "Problems", include
     else:
         preamble += subject_packages.get(subject, "")
     preamble += custom_commands
+    preamble += "\n" + DISPLAY_FRACTION_PREAMBLE
     preamble += f"\n\\title{{\\textsc{{{title}}}}}"
     
     return preamble
@@ -197,6 +218,9 @@ def generate_main_tex(
     problem_list: Optional[List[str]] = None,
     use_foreach: bool = True,
     include_all_packages: bool = False,
+    *,
+    include_solution: bool = True,
+    include_alternate_solution: bool = True,
 ) -> str:
     """Generate main.tex file.
     
@@ -208,6 +232,9 @@ def generate_main_tex(
         problem_range: Optional (start, end) range for problems
         problem_list: Optional explicit list of problem numbers/identifiers
         use_foreach: Use \\foreach loop (True) or explicit \\input statements (False)
+        include_all_packages: Include packages for every supported subject
+        include_solution: Show solution environments (default True)
+        include_alternate_solution: Show alternatesolution environments (default True)
         
     Returns:
         Generated LaTeX content
@@ -249,7 +276,11 @@ def generate_main_tex(
         problems = all_problems
     
     # Generate preamble
-    preamble = generate_preamble(subject, title, include_all_packages)
+    preamble = generate_preamble(
+        subject, title, include_all_packages,
+        include_solution=include_solution,
+        include_alternate_solution=include_alternate_solution,
+    )
     
     # Assemble placeholders against sibling tikz/{problem}.tex artifacts.
     # If at least one scan needs assembly, materialize compile-ready copies so
@@ -376,6 +407,18 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     help="Include packages for all subjects (physics, chemistry, mathematics)"
 )
 @click.option(
+    "--solution/--no-solution", "include_solution",
+    default=True,
+    show_default=True,
+    help="Show or hide solution environments in the generated document."
+)
+@click.option(
+    "--alternatesolution/--no-alternatesolution", "include_alternate_solution",
+    default=True,
+    show_default=True,
+    help="Show or hide alternate solutions independently of ordinary solutions."
+)
+@click.option(
     "--foreach/--explicit",
     default=True,
     help="Use \\\\foreach loop (default) or explicit \\\\input statements"
@@ -394,6 +437,8 @@ def compile(
     to_index: Optional[int],
     problem_list: Optional[str],
     all_packages: bool,
+    include_solution: bool,
+    include_alternate_solution: bool,
     foreach: bool,
     verbose: bool,
 ):
@@ -409,6 +454,7 @@ def compile(
         - Range selection or explicit problem list
         - \\\\foreach loop or explicit \\\\input statements
         - Customizable title and output path
+        - Independent solution and alternate-solution visibility (both shown by default)
     
     \b
     Examples:
@@ -432,6 +478,12 @@ def compile(
         
         # Include all packages (for mixed physics/chemistry/math problems)
         vbagent compile --all-packages
+
+        # Explicitly show both solution sections
+        vbagent compile --solution --alternatesolution
+
+        # Hide both solution sections
+        vbagent compile --no-solution --no-alternatesolution
         
         # Custom scans directory
         vbagent compile -d output/scans -o output/main.tex
@@ -479,6 +531,8 @@ def compile(
             problem_list=problems,
             use_foreach=foreach,
             include_all_packages=all_packages,
+            include_solution=include_solution,
+            include_alternate_solution=include_alternate_solution,
         )
 
         missing_diagrams = _missing_diagram_names(content)

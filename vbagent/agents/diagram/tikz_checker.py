@@ -23,6 +23,7 @@ from vbagent.prompts.diagram.tikz_checker import (
     PATCH_USER_TEMPLATE,
 )
 from vbagent.utils.latex import clean_latex_output
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES, GRAPH_CLARITY_RULES
 
 
 @dataclass
@@ -530,7 +531,7 @@ Validation process:
 4. Provide suggestions for manual fixes
 5. Estimate compilation success
 
-Respond with ONLY the JSON object."""
+Respond with ONLY the JSON object.""" + DISPLAY_FRACTION_RULES + GRAPH_CLARITY_RULES
 
 
 def create_structured_tikz_checker_agent():

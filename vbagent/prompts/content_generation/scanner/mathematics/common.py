@@ -75,7 +75,7 @@ LATEX_FORMATTING_RULES = r"""
 
 **Mathematical Notation:**
 *   Use `$ ... $` for inline math
-*   Use `\frac{a}{b}` for fractions
+*   Use `\dfrac{a}{b}` for fractions
 *   Use `\left( ... \right)` for parentheses
 *   Use `\left[ ... \right]` for brackets
 *   Use `\left| ... \right|` for absolute value
@@ -95,7 +95,7 @@ LATEX_FORMATTING_RULES = r"""
 
 **Calculus:**
 *   $\lim_{x \to a} f(x)$ for limits
-*   $\frac{d}{dx}$ or $f'(x)$ for derivatives
+*   $\dfrac{d}{dx}$ or $f'(x)$ for derivatives
 *   $\int f(x) \, dx$ for integrals
 *   $\sum_{i=1}^{n}$ for summation
 *   $\prod_{i=1}^{n}$ for product
@@ -140,14 +140,14 @@ SOLUTION_STRUCTURE = r"""
 \begin{solution}
 \textbf{Given:} $a > 0$ and $b > 0$
 
-\textbf{To Prove:} $\frac{a+b}{2} \geq \sqrt{ab}$
+\textbf{To Prove:} $\dfrac{a+b}{2} \geq \sqrt{ab}$
 
 \textbf{Proof:}
 \begin{align*}
     (\sqrt{a} - \sqrt{b})^2 &\geq 0 \\
     a - 2\sqrt{ab} + b &\geq 0 \\
     a + b &\geq 2\sqrt{ab} \\
-    \frac{a+b}{2} &\geq \sqrt{ab}
+    \dfrac{a+b}{2} &\geq \sqrt{ab}
 \end{align*}
 Hence proved. $\blacksquare$
 \end{solution}
@@ -161,7 +161,7 @@ Hence proved. $\blacksquare$
     f'(x) &= 2x + 3 \\
     \intertext{Setting $f'(x) = 0$:}
     2x + 3 &= 0 \\
-    x &= -\frac{3}{2}
+    x &= -\dfrac{3}{2}
 \end{align*}
 \end{solution}
 ```

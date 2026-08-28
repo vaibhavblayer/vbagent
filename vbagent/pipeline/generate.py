@@ -16,6 +16,7 @@ from typing import Any
 
 from vbagent.cli.common import _get_console, format_latex
 from vbagent.config import get_config
+from vbagent.prompts.latex_style import LATEX_STYLE_CONTRACT_VERSION
 
 
 # ---------------------------------------------------------------------------
@@ -125,7 +126,7 @@ def _sanitize_input_for_save(input_data: list) -> list:
 # ---------------------------------------------------------------------------
 # Generation cache — hash-based dedup so re-runs skip the LLM
 # ---------------------------------------------------------------------------
-_GENERATION_CACHE_SCHEMA = 2
+_GENERATION_CACHE_SCHEMA = 3
 
 
 def _idea_hash(ideas: list[str], concepts: list[str], topic: str,
@@ -134,6 +135,7 @@ def _idea_hash(ideas: list[str], concepts: list[str], topic: str,
     """Return a deterministic fingerprint for generated output semantics."""
     blob = json.dumps({
         "schema": _GENERATION_CACHE_SCHEMA,
+        "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
         "ideas": sorted(ideas),
         "concepts": sorted(concepts),
         "topic": topic,

@@ -239,7 +239,7 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 % Intensity pattern
 \draw[thick] plot[domain=0:5.5, samples=100]
     (\x, {2*cos(3*\x r)^2});
-\node at (3,-0.5) {$I = 4I_0 \cos^2\left(\frac{\pi d y}{\lambda D}\right)$};
+\node at (3,-0.5) {$I = 4I_0 \cos^2\left(\dfrac{\pi d y}{\lambda D}\right)$};
 \end{tikzpicture}
 ```
 

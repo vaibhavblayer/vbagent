@@ -12,7 +12,6 @@ from vbagent.agents.diagram.mathematics.function_graph import (
 from vbagent.prompts.diagram._style_discipline import STYLE_DISCIPLINE
 from vbagent.prompts.diagram.tikz_checker import get_review_checklist
 
-
 PHYSICS_PROMPT_MODULES = [
     "circuit",
     "fbd",
@@ -106,6 +105,34 @@ def test_mathematics_style_agent_receives_forwarded_solution_context(monkeypatch
     assert "x_intercept=-1" in instructions
     assert r"$f(x)=x+1$" in instructions
     assert r"$(-1,0)$" in instructions
+
+
+@pytest.mark.parametrize("labels", [[], None])
+def test_empty_labels_are_an_explicit_preference_not_missing_context(monkeypatch, labels):
+    monkeypatch.setattr(diagram_base, "create_agent", lambda **kwargs: kwargs)
+    agent = DiagramAgent(DiagramAgentConfig(
+        name="LabelProbe", agent_type="tikz", system_prompt="MATH PROMPT",
+        user_template="Draw.", user_template_from_problem="{problem}",
+    ))
+
+    output = agent.create_agent(use_context=False, values={"minimum": "(0,1)"}, labels=labels)
+
+    assert "not requests to label every value" in output["instructions"]
+    assert ("## Visible Labels" in output["instructions"]) == (labels is not None)
+
+
+def test_image_input_does_not_drop_the_solution_diagram_description():
+    agent = DiagramAgent(DiagramAgentConfig(
+        name="ImageProbe", agent_type="tikz", system_prompt="MATH PROMPT",
+        user_template="Draw using the image.", user_template_from_problem="{problem}",
+    ))
+
+    message = agent._build_user_message(
+        image_path="source.png", description="Mark the minimum using exact axis ticks."
+    )
+
+    assert "Draw using the image." in message
+    assert "Mark the minimum using exact axis ticks." in message
 
 
 def test_tikz_checker_enforces_same_coordinate_discipline():

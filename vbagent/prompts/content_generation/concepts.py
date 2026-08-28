@@ -4,6 +4,7 @@ Prompts for aggregating ideas from multiple problems into a
 deduplicated, organized concept sheet with mindmap.
 """
 
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES
 
 SYSTEM_PROMPT_JSON = r"""You are an expert educator creating a concept revision sheet from exam problems.
 
@@ -57,7 +58,7 @@ Guidelines:
 - Merge near-duplicates aggressively (same underlying idea = one entry)
 - Order groups by logical flow (fundamentals first, advanced later)
 - Order entries within groups by frequency (most common first)
-- Formulas in LaTeX: "$F = ma$", "$E = \frac{1}{2}mv^2$"
+- Formulas in LaTeX: "$F = ma$", "$E = \dfrac{1}{2}mv^2$"
 - Keep descriptions concise — one line max
 - Every concept must have at least one formula if applicable
 - NO problem_refs field — do not reference problem numbers
@@ -85,7 +86,7 @@ Use this exact structure:
     \textit{Relates net work done to change in kinetic energy.}
     \begin{align*}
     W_{\text{net}} &= \Delta K \\
-    &= \frac{1}{2}mv_f^2 - \frac{1}{2}mv_i^2
+    &= \dfrac{1}{2}mv_f^2 - \dfrac{1}{2}mv_i^2
     \end{align*}
 
     \item Conservation of Momentum \hfill [3]\\
@@ -211,3 +212,6 @@ These are \begin{{idea}} environments extracted from processed problems.
 Analyze them, deduplicate, and organize into a concept revision sheet.
 Group by theme (5–7 groups). Use itemize + align* formatting. Include a TikZ mindmap at the end.
 Do NOT reference problem numbers."""
+
+SYSTEM_PROMPT_JSON += DISPLAY_FRACTION_RULES
+SYSTEM_PROMPT_LATEX += DISPLAY_FRACTION_RULES

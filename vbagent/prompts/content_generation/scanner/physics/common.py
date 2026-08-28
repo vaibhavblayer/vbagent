@@ -147,9 +147,9 @@ LATEX_FORMATTING_RULES = r"""
 Adhere to these rules meticulously:
 
 *   **Math Mode:** Use `$ ... $` for *all* inline math.
-*   **Macros:** Always use `{}`: `\vec{a}`, `\frac{a}{b}`.
+*   **Macros:** Always use `{}`: `\vec{a}`, `\dfrac{a}{b}`.
 *   **Vectors:** Use `\vec{a}` for generic vectors and `\hat{i}`, `\hat{j}`, `\hat{k}` for unit vectors.
-*   **Fractions:** Use `\frac{a}{b}`. **Do not use** `\tfrac`.
+- Fractions: Use `\dfrac{a}{b}` everywhere, including inline math.
 *   **Parentheses/Brackets:** Use `\left( ... \right)`, `\left[ ... \right]`, `\left| ... \right|`. **Do not use** `\bigl`, `\bigr`, `\Bigl`, `\Bigr`, etc.
 *   **Intertext rule:** Inside `\intertext{...}`, do not use `\text{...}`. Use plain text and wrap math with `$...$`.
 """
@@ -202,7 +202,7 @@ SOLUTION_STRUCTURE = r"""
 \begin{solution}
 \begin{align*}
     \intertext{By conservation of energy:}
-    \frac{1}{2}mv^2 &= mgh \\
+    \dfrac{1}{2}mv^2 &= mgh \\
     v &= \sqrt{2gh} \\
       &= \sqrt{2 \times 9.8 \times 5} \\
       &= 9.9 \ \mathrm{m/s}
@@ -216,8 +216,8 @@ SOLUTION_STRUCTURE = r"""
 \begin{align*}
     \intertext{Using Kirchhoff's voltage law:}
     \mathcal{E} - IR_1 - IR_2 &= 0 \\
-    I &= \frac{\mathcal{E}}{R_1 + R_2} \\
-      &= \frac{12}{4 + 6} \\
+    I &= \dfrac{\mathcal{E}}{R_1 + R_2} \\
+      &= \dfrac{12}{4 + 6} \\
       &= 1.2 \ \mathrm{A}
 \end{align*}
 \end{solution}

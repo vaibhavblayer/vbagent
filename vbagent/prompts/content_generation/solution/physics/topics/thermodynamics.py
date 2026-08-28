@@ -16,7 +16,7 @@ TOPIC_CONCEPTS = """
 - Third law: Entropy approaches zero as $T \\to 0$ K
 
 ### Thermodynamic Processes
-- Isothermal: $\\Delta T = 0$, $\\Delta U = 0$, $Q = W = nRT\\ln\\frac{V_f}{V_i}$
+- Isothermal: $\\Delta T = 0$, $\\Delta U = 0$, $Q = W = nRT\\ln\\dfrac{V_f}{V_i}$
 - Adiabatic: $Q = 0$, $\\Delta U = -W$, $TV^{\\gamma-1} = const$, $PV^\\gamma = const$
 - Isochoric: $\\Delta V = 0$, $W = 0$, $Q = \\Delta U = nC_V\\Delta T$
 - Isobaric: $\\Delta P = 0$, $W = P\\Delta V$, $Q = nC_P\\Delta T$
@@ -26,24 +26,24 @@ TOPIC_CONCEPTS = """
 - Equation of state: $PV = nRT$
 - Internal energy: $U = nC_VT$ (ideal gas)
 - Molar heat capacities: $C_P - C_V = R$
-- Ratio: $\\gamma = \\frac{C_P}{C_V}$ (monoatomic: 5/3, diatomic: 7/5)
+- Ratio: $\\gamma = \\dfrac{C_P}{C_V}$ (monoatomic: 5/3, diatomic: 7/5)
 
 ### Work and Heat
 - Work done by gas: $W = \\int P \\, dV$
 - For constant pressure: $W = P\\Delta V$
-- For isothermal: $W = nRT\\ln\\frac{V_f}{V_i}$
-- For adiabatic: $W = \\frac{nR(T_i - T_f)}{\\gamma - 1}$
+- For isothermal: $W = nRT\\ln\\dfrac{V_f}{V_i}$
+- For adiabatic: $W = \\dfrac{nR(T_i - T_f)}{\\gamma - 1}$
 
 ### Heat Engines and Cycles
-- Efficiency: $\\eta = \\frac{W_{net}}{Q_H} = 1 - \\frac{Q_C}{Q_H}$
-- Carnot efficiency: $\\eta_C = 1 - \\frac{T_C}{T_H}$ (maximum possible)
-- Coefficient of performance (refrigerator): $K = \\frac{Q_C}{W}$
-- Coefficient of performance (heat pump): $K = \\frac{Q_H}{W}$
+- Efficiency: $\\eta = \\dfrac{W_{net}}{Q_H} = 1 - \\dfrac{Q_C}{Q_H}$
+- Carnot efficiency: $\\eta_C = 1 - \\dfrac{T_C}{T_H}$ (maximum possible)
+- Coefficient of performance (refrigerator): $K = \\dfrac{Q_C}{W}$
+- Coefficient of performance (heat pump): $K = \\dfrac{Q_H}{W}$
 
 ### Entropy
-- Change in entropy: $\\Delta S = \\int \\frac{dQ}{T}$
-- For reversible process: $\\Delta S = \\frac{Q}{T}$
-- For isothermal: $\\Delta S = nR\\ln\\frac{V_f}{V_i}$
+- Change in entropy: $\\Delta S = \\int \\dfrac{dQ}{T}$
+- For reversible process: $\\Delta S = \\dfrac{Q}{T}$
+- For isothermal: $\\Delta S = nR\\ln\\dfrac{V_f}{V_i}$
 - Second law: $\\Delta S_{universe} \\geq 0$
 
 ### Problem-Solving Strategy
@@ -59,7 +59,7 @@ COMMON_PATTERNS = """
 
 ### Pattern 1: Single process calculation
 1. Identify process type
-2. Use ideal gas law to relate states: $\\frac{P_1V_1}{T_1} = \\frac{P_2V_2}{T_2}$
+2. Use ideal gas law to relate states: $\\dfrac{P_1V_1}{T_1} = \\dfrac{P_2V_2}{T_2}$
 3. Apply process-specific relation (e.g., $PV^\\gamma = const$ for adiabatic)
 4. Calculate $W$, $Q$, $\\Delta U$ using first law
 
@@ -79,7 +79,7 @@ COMMON_PATTERNS = """
 ### Pattern 4: Adiabatic process
 1. Use $PV^\\gamma = const$ or $TV^{\\gamma-1} = const$
 2. Find final state from initial state
-3. Calculate work: $W = \\frac{nR(T_i - T_f)}{\\gamma - 1}$
+3. Calculate work: $W = \\dfrac{nR(T_i - T_f)}{\\gamma - 1}$
 4. $Q = 0$, $\\Delta U = -W$
 """
 
@@ -97,8 +97,8 @@ DIAGRAM_GUIDANCE = """
 \\begin{solution}
 \\begin{align*}
 \\intertext{For an isothermal expansion, the work done is:}
-W &= nRT\\ln\\frac{V_f}{V_i} \\\\
-  &= 2 \\times 8.314 \\times 300 \\times \\ln\\frac{2V_i}{V_i} \\\\
+W &= nRT\\ln\\dfrac{V_f}{V_i} \\\\
+  &= 2 \\times 8.314 \\times 300 \\times \\ln\\dfrac{2V_i}{V_i} \\\\
   &= 2 \\times 8.314 \\times 300 \\times \\ln 2 \\\\
   &= 3458 \\ \\mathrm{J}
 \\end{align*}

@@ -1,5 +1,7 @@
 """Generate LaTeX document from analysis data."""
 
+from vbagent.utils.latex import DISPLAY_FRACTION_PREAMBLE
+
 
 def generate_analysis_latex(
     matched_data: dict,
@@ -99,7 +101,7 @@ def _generate_preamble() -> str:
   before upper=\itshape
 }
 
-"""
+""" + DISPLAY_FRACTION_PREAMBLE
 
 
 def _generate_title(exam: str, year: str | int | None, subject: str) -> str:

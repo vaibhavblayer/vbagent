@@ -85,7 +85,7 @@ PHYSICS_CONFIG = SubjectConfig(
     v^2 &= v_0^2 - 2gh \\
     \intertext{At maximum height, $v = 0$:}
     0 &= (20)^2 - 2(10)h \\
-    h &= \frac{400}{20} = 20 \ \mathrm{m}
+    h &= \dfrac{400}{20} = 20 \ \mathrm{m}
 \end{align*}
 \end{solution}""",
     formatting_rules=r"""
@@ -93,7 +93,7 @@ PHYSICS_CONFIG = SubjectConfig(
 - Use `\vec{a}` for vectors, `\hat{i}`, `\hat{j}`, `\hat{k}` for unit vectors
 - Use `\mathrm{...}` for units: `20 \ \mathrm{m/s}`, `5 \ \mathrm{kg}`, `10 \ \mathrm{N}`
 - Use `^\circ` for degrees: `30^\circ`, `\theta = 45^\circ`
-- Use `\frac{a}{b}` for fractions (not `\tfrac`)
+- Fractions: Use `\dfrac{a}{b}` everywhere, including inline math.
 - Do NOT use `\SI{}{}` or siunitx package - use `\mathrm{}` instead
 """
 )
@@ -205,15 +205,15 @@ MATHEMATICS_CONFIG = SubjectConfig(
 - Venn diagrams: Use TikZ with circles and labels
 - Use `tzplot` for quick plots: `\tzaxes(-1,-1)(5,5)` `\tzfn{sin(\x)}[0:2*pi]`
 """,
-    example_problem=r"""\item Evaluate: $\displaystyle\int_0^{\pi/2} \frac{\sin x}{\sin x + \cos x} \, dx$""",
+    example_problem=r"""\item Evaluate: $\displaystyle\int_0^{\pi/2} \dfrac{\sin x}{\sin x + \cos x} \, dx$""",
     example_solution=r"""\begin{solution}
 \begin{align*}
-    I &= \int_0^{\pi/2} \frac{\sin x}{\sin x + \cos x} \, dx \\
+    I &= \int_0^{\pi/2} \dfrac{\sin x}{\sin x + \cos x} \, dx \\
     \intertext{Using property: $\int_0^a f(x)\,dx = \int_0^a f(a-x)\,dx$}
-    I &= \int_0^{\pi/2} \frac{\cos x}{\cos x + \sin x} \, dx \\
+    I &= \int_0^{\pi/2} \dfrac{\cos x}{\cos x + \sin x} \, dx \\
     \intertext{Adding both:}
-    2I &= \int_0^{\pi/2} \frac{\sin x + \cos x}{\sin x + \cos x} \, dx = \int_0^{\pi/2} 1 \, dx = \frac{\pi}{2} \\
-    I &= \frac{\pi}{4}
+    2I &= \int_0^{\pi/2} \dfrac{\sin x + \cos x}{\sin x + \cos x} \, dx = \int_0^{\pi/2} 1 \, dx = \dfrac{\pi}{2} \\
+    I &= \dfrac{\pi}{4}
 \end{align*}
 \end{solution}""",
     formatting_rules=r"""

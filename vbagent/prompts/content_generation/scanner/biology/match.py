@@ -1,5 +1,7 @@
 """Match-the-following question scanner prompt for biology."""
 
+from vbagent.prompts.latex_style import solution_style_rules
+
 from .common import DIAGRAM_PLACEHOLDER
 from .._shared import (
     MATCH_OPTION_FORMAT_RULES,
@@ -98,6 +100,8 @@ SYSTEM_PROMPT = r"""
 
 **Final Check:** Ensure your output is ONLY the LaTeX snippet from `\item` to `\end{solution}` with no extra text or comments.
 """ + MATCH_OPTION_FORMAT_RULES + MCQ_ANSWER_FORMAT_RULES
+
+SYSTEM_PROMPT += solution_style_rules("biology")
 
 USER_TEMPLATE = "Extract LaTeX from this biology match-the-following question image."
 

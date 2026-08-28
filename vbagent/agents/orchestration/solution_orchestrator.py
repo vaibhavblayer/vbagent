@@ -56,7 +56,10 @@ class SolutionOrchestrator:
     def __init__(self, console=None):
         from vbagent.cli.common import _get_console
         self.console = console or _get_console()
-        from vbagent.ui.logging import AgentLoggingContext, capture_agent_logging_context
+        from vbagent.ui.logging import (
+            AgentLoggingContext,
+            capture_agent_logging_context,
+        )
         captured = capture_agent_logging_context()
         self._logging_context = AgentLoggingContext(
             console=self.console,
@@ -245,9 +248,8 @@ class SolutionOrchestrator:
     def _dispatch_diagrams(self, diagram_reqs, image_path, subject, problem_latex):
         """Dispatch diagram agents in parallel for each requirement.
 
-        Passes diagram_type and rich context (values, labels, solution_context)
-        from each DiagramRequirement to the TikZ router for better agent
-        selection and generation quality.
+        Passes exact construction data, drawing actions, and subject-specific
+        rendering settings from each DiagramRequirement to the TikZ router.
         """
         from vbagent.agents.diagram.tikz_router import generate_tikz_with_routing
         from vbagent.models.classification import PrimaryClassification
@@ -272,7 +274,7 @@ class SolutionOrchestrator:
             try:
                 # Extract rich context from the requirement
                 diagram_type = getattr(req, "diagram_type", None)
-                context = getattr(req, "context", "") or ""
+                context = self._diagram_generation_context(req)
                 values = getattr(req, "values", None)
                 labels = getattr(req, "labels", None)
 
@@ -288,7 +290,7 @@ class SolutionOrchestrator:
                     problem_text=problem_latex,
                     solution_context=context,
                     values=values if values else None,
-                    labels=labels if labels else None,
+                    labels=labels,
                 )
                 holders[key] = {"code": code, "agent": agent_name, "error": None}
             except Exception as e:
@@ -311,6 +313,37 @@ class SolutionOrchestrator:
                 self.console.print(f"[yellow]  WARN {key} failed: {h['error']}[/yellow]")
 
         return results
+
+    @staticmethod
+    def _diagram_generation_context(req) -> str:
+        """Keep the solver's drawing instructions intact across the handoff.
+
+        The router already accepts a text context, so no output-schema or
+        specialist-agent signature change is needed to preserve these fields.
+        """
+        sections = []
+        context = getattr(req, "context", "") or ""
+        if context:
+            sections.append("Construction context (not visible prose):\n" + context)
+
+        size = getattr(req, "size", None)
+        if size:
+            sections.append(f"Requested diagram size: {size}")
+
+        for subject in ("physics", "chemistry", "mathematics"):
+            settings = getattr(req, f"{subject}_context", None)
+            if settings:
+                entries = "\n".join(f"{key}: {value}" for key, value in settings.items())
+                sections.append(f"{subject.capitalize()} settings and construction data:\n{entries}")
+
+        annotations = getattr(req, "annotations", None)
+        if annotations:
+            sections.append(
+                "Required drawing actions (follow the requested representation):\n"
+                + "\n".join(f"- {annotation}" for annotation in annotations)
+            )
+
+        return "\n\n".join(sections)
 
     def _stitch_diagrams(
         self,
@@ -340,33 +373,31 @@ class SolutionOrchestrator:
             if not tikz_code or tikz_code.strip() in solution_latex:
                 continue
 
-            wrapped = (
-                "\\begin{center}\n"
-                + tikz_code.strip()
-                + "\n\\end{center}"
+            code = tikz_code.strip()
+            wrapped = code if (
+                code.startswith(r"\begin{center}") and code.endswith(r"\end{center}")
+            ) else "\\begin{center}\n" + code + "\n\\end{center}"
+
+            marker = (
+                r"% (?:DIAGRAM PLACEHOLDER|PLACEHOLDER): "
+                + re.escape(diagram_id) + r"(?=\s|$)"
             )
-
-            # Format 1: % DIAGRAM PLACEHOLDER: <id>
-            placeholder1 = f"% DIAGRAM PLACEHOLDER: {diagram_id}"
-            if placeholder1 in solution_latex:
-                solution_latex = solution_latex.replace(placeholder1, wrapped)
-                continue
-
-            # Format 2: % PLACEHOLDER: <id> (possibly inside a tikzpicture wrapper)
-            placeholder2 = f"% PLACEHOLDER: {diagram_id}"
-            if placeholder2 in solution_latex:
-                # Remove surrounding empty tikzpicture + center if present
-                pattern = (
-                    r"\\begin\{center\}\s*"
-                    r"\\begin\{tikzpicture\}\s*"
-                    + re.escape(placeholder2)
-                    + r"\s*\\end\{tikzpicture\}\s*"
-                    r"\\end\{center\}"
+            empty_picture = (
+                r"\\begin\{tikzpicture\}\s*" + marker
+                + r"\s*\\end\{tikzpicture\}"
+            )
+            centered = (
+                r"\\begin\{center\}\s*(?:" + empty_picture + "|" + marker
+                + r")\s*\\end\{center\}"
+            )
+            # Replace the largest empty wrapper first, so either producer can
+            # supply centering without nested centers/pictures. A callable
+            # replacement preserves TeX backslashes literally.
+            pattern = centered + "|" + empty_picture + "|" + marker
+            if re.search(pattern, solution_latex):
+                solution_latex = re.sub(
+                    pattern, lambda _, replacement=wrapped: replacement, solution_latex
                 )
-                if re.search(pattern, solution_latex):
-                    solution_latex = re.sub(pattern, wrapped, solution_latex)
-                else:
-                    solution_latex = solution_latex.replace(placeholder2, wrapped)
                 continue
 
             # The model requested a diagram but omitted its marker.  The

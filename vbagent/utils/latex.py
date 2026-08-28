@@ -7,6 +7,14 @@ Extracted from duplicate implementations across the codebase.
 import re
 
 
+DISPLAY_FRACTION_PREAMBLE = r"""% Uniform fractions, including legacy snippets.
+\AtBeginDocument{%
+  \renewcommand{\frac}[2]{\dfrac{#1}{#2}}%
+  \renewcommand{\tfrac}[2]{\dfrac{#1}{#2}}%
+}
+"""
+
+
 _NO_PARAGRAPH_ENVIRONMENTS = frozenset({
     "align",
     "align*",

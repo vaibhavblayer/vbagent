@@ -128,8 +128,8 @@ Use line styles to distinguish different energy pathways and annotations:
 \begin{tikzpicture}[scale=0.8]
 \draw[->] (0,0) -- (0,8) node[above] {Energy / kJ mol$^{-1}$};
 
-\draw[thick] (1,0) -- (4,0) node[right] {Na(s) + $\frac{1}{2}$Cl$_2$(g)};
-\draw[thick] (1,1.5) -- (4,1.5) node[right] {Na(g) + $\frac{1}{2}$Cl$_2$(g)};
+\draw[thick] (1,0) -- (4,0) node[right] {Na(s) + $\dfrac{1}{2}$Cl$_2$(g)};
+\draw[thick] (1,1.5) -- (4,1.5) node[right] {Na(g) + $\dfrac{1}{2}$Cl$_2$(g)};
 \draw[thick] (1,2.7) -- (4,2.7) node[right] {Na(g) + Cl(g)};
 \draw[thick] (1,7.5) -- (4,7.5) node[right] {Na$^+$(g) + Cl(g)};
 \draw[thick] (1,4) -- (4,4) node[right] {Na$^+$(g) + Cl$^-$(g)};
@@ -137,7 +137,7 @@ Use line styles to distinguish different energy pathways and annotations:
 
 % Arrows with labels — no colors, use positioning
 \draw[->] (2.5,0) -- (2.5,1.5) node[midway,left] {$\Delta H_{\text{sub}}$};
-\draw[->] (2.5,1.5) -- (2.5,2.7) node[midway,left] {$\frac{1}{2}\Delta H_{\text{diss}}$};
+\draw[->] (2.5,1.5) -- (2.5,2.7) node[midway,left] {$\dfrac{1}{2}\Delta H_{\text{diss}}$};
 \draw[->] (2.5,2.7) -- (2.5,7.5) node[midway,left] {IE};
 \draw[->] (2.5,7.5) -- (2.5,4) node[midway,right] {EA};
 \draw[->] (7.5,4) -- (7.5,0) node[midway,right] {$\Delta H_{\text{lattice}}$};

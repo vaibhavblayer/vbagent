@@ -225,10 +225,22 @@ class DiagramAgent:
         if values:
             values_str = ", ".join(f"{k}={v}" for k, v in values.items())
             prompt += f"\n\n## Values to Use\n\n{values_str}\n"
+            prompt += "\nThese are exact construction data, not requests to label every value.\n"
         if labels:
             labels_str = ", ".join(labels)
             prompt += f"\n\n## Labels Required\n\n{labels_str}\n"
-            prompt += "\nEnsure all these labels appear in the diagram.\n"
+            prompt += (
+                "\nEnsure this information appears once in the diagram. Labels may "
+                "be axis ticks or existing annotations; do not create an extra node "
+                "when the same value is already clearly identified. Choose anchors "
+                "and offsets that avoid crowding, preserving exact values.\n"
+            )
+        elif labels is not None:
+            prompt += (
+                "\n\n## Visible Labels\n\nNo additional text labels were requested. "
+                "Use necessary axis names/ticks and any explicitly requested "
+                "drawing actions; do not invent prose or coordinate nodes.\n"
+            )
 
         tools = []
         ref_tool = self._get_reference_tool()
@@ -325,7 +337,10 @@ class DiagramAgent:
         else:
             # Simple pattern: image → USER_TEMPLATE, text → USER_TEMPLATE_FROM_PROBLEM
             if image_path:
-                return self.config.user_template
+                msg = self.config.user_template
+                if description:
+                    msg += f"\n\nDiagram specification:\n{description}"
+                return msg
             key = self.config.problem_template_key
             return self.config.user_template_from_problem.format(
                 **{key: description}

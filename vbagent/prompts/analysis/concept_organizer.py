@@ -1,5 +1,7 @@
 """System prompt for concept organization agent."""
 
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES
+
 
 def get_concept_organizer_prompt() -> str:
     """Get system prompt for concept organizer agent."""
@@ -19,7 +21,7 @@ Your task is to analyze exam problems (with full question and solution text) alo
 Common symbols to use LaTeX for:
 - Greek letters: $\\theta$, $\\phi$, $\\omega$, $\\alpha$, $\\Delta$, $\\Sigma$
 - Math operators: $\\ge$, $\\le$, $\\ne$, $\\approx$, $\\propto$
-- Functions: $\\sin$, $\\cos$, $\\sqrt{}$, $\\frac{}{}$
+- Functions: $\\sin$, $\\cos$, $\\sqrt{}$, $\\dfrac{}{}$
 - Subscripts/superscripts: $v_0$, $x^2$, $F_{\\text{net}}$
 
 ### 2. Hierarchical Structure
@@ -164,4 +166,4 @@ You MUST include `5` in the problem_numbers list for concepts found in that prob
 **Every item MUST have a problem_numbers field (can be empty list []).**
 **Use LaTeX for ALL mathematical notation.**
 **Use hierarchical structure to reduce repetition.**
-"""
+""" + DISPLAY_FRACTION_RULES

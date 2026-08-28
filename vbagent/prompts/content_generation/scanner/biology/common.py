@@ -81,7 +81,7 @@ LATEX_FORMATTING_RULES = r"""
 
 **General Math:**
 *   Use $...$ for inline math
-*   Use \frac{a}{b} for fractions
+*   Use \dfrac{a}{b} for fractions
 *   Use \times for multiplication
 """
 

@@ -8,15 +8,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
+from vbagent.prompts.latex_style import LATEX_STYLE_CONTRACT_VERSION
+
 if TYPE_CHECKING:
+    from vbagent.cache import PipelineCache
     from vbagent.models.classification import (
-        PrimaryClassification,
+        ClassificationResult,
         DiagramAnalysis,
         DifficultyAssessment,
-        ClassificationResult,
+        PrimaryClassification,
     )
     from vbagent.models.content import IdeaResult
-    from vbagent.cache import PipelineCache
 
 
 _QUESTION_ROUTING_CONTRACT_VERSION = 1
@@ -62,13 +64,13 @@ def generate_solution_orchestrated(
     Returns:
         Combined problem + solution LaTeX with answer marking.
     """
-    from vbagent.agents.orchestration.solution_orchestrator import (
-        SolutionResult,
-        create_solution_orchestrator,
-    )
     from vbagent.agents.content_generation.solution.structure import (
         has_matching_multipart_structure,
         has_multipart_subjective_problem,
+    )
+    from vbagent.agents.orchestration.solution_orchestrator import (
+        SolutionResult,
+        create_solution_orchestrator,
     )
 
     multipart_subjective = (
@@ -97,6 +99,10 @@ def generate_solution_orchestrated(
             console.print("[dim]Loading cached solution...[/dim]")
         cached_latex = cache.get(problem_id, "solution")
         cached_data = cache.get_stage_data(problem_id, "solution")
+        stale_style_cache = (
+            cached_data.get("latex_style_contract_version")
+            != LATEX_STYLE_CONTRACT_VERSION
+        )
         cached_recommended = bool(
             cached_data.get("alternate_solution_recommended", False)
         )
@@ -133,7 +139,13 @@ def generate_solution_orchestrated(
                 )
             )
         )
-        if stale_subjective_cache:
+        if stale_style_cache:
+            if console:
+                console.print(
+                    "[dim yellow]Cached solution predates the current explanation, "
+                    "fraction, and graph style; regenerating...[/dim yellow]"
+                )
+        elif stale_subjective_cache:
             if console:
                 console.print(
                     "[dim yellow]Cached solution has no subjective final "
@@ -198,6 +210,7 @@ def generate_solution_orchestrated(
             "solution",
             result.latex,
             stage_data={
+                "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
                 "answer_type": result.answer_type,
                 "answer_value": result.answer_value,
                 "match_solution_repair_contract_version": (
@@ -236,7 +249,9 @@ def assess_difficulty_stage(
     console=None,
 ) -> "DifficultyAssessment":
     """Stage 3b: Assess difficulty."""
-    from vbagent.agents.classification import assess_difficulty as assess_difficulty_agent
+    from vbagent.agents.classification import (
+        assess_difficulty as assess_difficulty_agent,
+    )
 
     if console:
         with console.status("[bold green]Assessing difficulty..."):
@@ -337,7 +352,11 @@ def generate_alternate_stage(
     from vbagent.agents.content_generation.alternate import generate_alternate
     from vbagent.cli.common import _get_panel
 
-    if cache and problem_id and cache.has(problem_id, "alternate"):
+    if (
+        cache and problem_id and cache.has(problem_id, "alternate")
+        and cache.get_stage_data(problem_id, "alternate").get("latex_style_contract_version")
+        == LATEX_STYLE_CONTRACT_VERSION
+    ):
         if console:
             console.print("[dim]Loading cached alternate...[/dim]")
         return [cache.get(problem_id, "alternate")]
@@ -349,7 +368,10 @@ def generate_alternate_stage(
         alt = generate_alternate(problem, solution, ideas, hint=alternate_hint)
 
     if cache and problem_id:
-        cache.set(problem_id, "alternate", alt)
+        cache.set(
+            problem_id, "alternate", alt,
+            stage_data={"latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION},
+        )
 
     if console:
         console.print(_get_panel(alt, title="Alternate Solution", border_style="magenta"))
@@ -417,8 +439,8 @@ def classify_question(
     from vbagent.agents.classification.question_classifier import (
         QuestionClassification,
         QuestionRoutingClassification,
-        classify_question_route,
         classify_question_image,
+        classify_question_route,
     )
 
     if cache and problem_id and cache.has(problem_id, "classification"):

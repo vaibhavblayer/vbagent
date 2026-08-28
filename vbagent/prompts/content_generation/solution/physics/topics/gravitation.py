@@ -10,33 +10,33 @@ TOPIC_CONCEPTS = """
 ## Key Concepts for Gravitation
 
 ### Newton's Law of Gravitation
-- Force: $F = G\\frac{m_1 m_2}{r^2}$ where $G = 6.67 \\times 10^{-11}$ N·m²/kg²
-- Gravitational field: $g = \\frac{F}{m} = G\\frac{M}{r^2}$
-- At Earth's surface: $g = G\\frac{M_E}{R_E^2} \\approx 9.8$ m/s²
-- Variation with height: $g_h = g\\left(\\frac{R_E}{R_E + h}\\right)^2$
-- Variation with depth: $g_d = g\\left(1 - \\frac{d}{R_E}\\right)$
+- Force: $F = G\\dfrac{m_1 m_2}{r^2}$ where $G = 6.67 \\times 10^{-11}$ N·m²/kg²
+- Gravitational field: $g = \\dfrac{F}{m} = G\\dfrac{M}{r^2}$
+- At Earth's surface: $g = G\\dfrac{M_E}{R_E^2} \\approx 9.8$ m/s²
+- Variation with height: $g_h = g\\left(\\dfrac{R_E}{R_E + h}\\right)^2$
+- Variation with depth: $g_d = g\\left(1 - \\dfrac{d}{R_E}\\right)$
 
 ### Gravitational Potential Energy
-- General: $U = -G\\frac{Mm}{r}$ (taking $U = 0$ at $r = \\infty$)
+- General: $U = -G\\dfrac{Mm}{r}$ (taking $U = 0$ at $r = \\infty$)
 - Near surface: $U = mgh$ (approximation for small $h$)
-- Potential: $V = -G\\frac{M}{r}$
+- Potential: $V = -G\\dfrac{M}{r}$
 - Relation: $U = mV$
 
 ### Orbital Motion
-- Orbital speed: $v = \\sqrt{\\frac{GM}{r}}$
-- Period: $T = 2\\pi\\sqrt{\\frac{r^3}{GM}}$
-- Centripetal force = Gravitational force: $\\frac{mv^2}{r} = G\\frac{Mm}{r^2}$
-- Total energy: $E = -\\frac{GMm}{2r}$ (negative for bound orbit)
-- Kinetic energy: $KE = \\frac{GMm}{2r}$
-- Potential energy: $PE = -\\frac{GMm}{r}$
+- Orbital speed: $v = \\sqrt{\\dfrac{GM}{r}}$
+- Period: $T = 2\\pi\\sqrt{\\dfrac{r^3}{GM}}$
+- Centripetal force = Gravitational force: $\\dfrac{mv^2}{r} = G\\dfrac{Mm}{r^2}$
+- Total energy: $E = -\\dfrac{GMm}{2r}$ (negative for bound orbit)
+- Kinetic energy: $KE = \\dfrac{GMm}{2r}$
+- Potential energy: $PE = -\\dfrac{GMm}{r}$
 
 ### Kepler's Laws
 - First law: Planets move in elliptical orbits with Sun at one focus
 - Second law: Equal areas in equal times (angular momentum conserved)
-- Third law: $T^2 \\propto r^3$ or $\\frac{T^2}{r^3} = \\frac{4\\pi^2}{GM}$
+- Third law: $T^2 \\propto r^3$ or $\\dfrac{T^2}{r^3} = \\dfrac{4\\pi^2}{GM}$
 
 ### Escape Velocity
-- Minimum speed to escape: $v_e = \\sqrt{\\frac{2GM}{R}}$
+- Minimum speed to escape: $v_e = \\sqrt{\\dfrac{2GM}{R}}$
 - At Earth's surface: $v_e = \\sqrt{2gR_E} \\approx 11.2$ km/s
 - Independent of mass of escaping object
 - Relation to orbital speed: $v_e = \\sqrt{2} v_{orbital}$
@@ -44,7 +44,7 @@ TOPIC_CONCEPTS = """
 ### Satellites
 - Geostationary orbit: $T = 24$ hours, $r \\approx 42,000$ km from center
 - Low Earth orbit: $h \\approx 200-2000$ km
-- Energy to launch: $E = \\frac{GMm}{2r} - \\left(-\\frac{GMm}{R_E}\\right)$
+- Energy to launch: $E = \\dfrac{GMm}{2r} - \\left(-\\dfrac{GMm}{R_E}\\right)$
 
 ### Problem-Solving Strategy
 1. Identify masses and distances
@@ -58,26 +58,26 @@ COMMON_PATTERNS = """
 ## Common Solution Patterns
 
 ### Pattern 1: Orbital speed and period
-1. Equate forces: $\\frac{mv^2}{r} = G\\frac{Mm}{r^2}$
+1. Equate forces: $\\dfrac{mv^2}{r} = G\\dfrac{Mm}{r^2}$
 2. Solve for speed: $v = \\sqrt{GM/r}$
 3. Period: $T = 2\\pi r/v = 2\\pi\\sqrt{r^3/(GM)}$
 4. Or use Kepler's third law directly
 
 ### Pattern 2: Escape velocity
-1. Set total energy to zero: $\\frac{1}{2}mv_e^2 - \\frac{GMm}{R} = 0$
+1. Set total energy to zero: $\\dfrac{1}{2}mv_e^2 - \\dfrac{GMm}{R} = 0$
 2. Solve: $v_e = \\sqrt{2GM/R}$
 3. Or use $v_e = \\sqrt{2gR}$ if $g$ is known
 
 ### Pattern 3: Energy in orbit
-1. Calculate KE: $KE = \\frac{1}{2}mv^2 = \\frac{GMm}{2r}$
-2. Calculate PE: $PE = -\\frac{GMm}{r}$
-3. Total: $E = KE + PE = -\\frac{GMm}{2r}$
+1. Calculate KE: $KE = \\dfrac{1}{2}mv^2 = \\dfrac{GMm}{2r}$
+2. Calculate PE: $PE = -\\dfrac{GMm}{r}$
+3. Total: $E = KE + PE = -\\dfrac{GMm}{2r}$
 4. Note: $E$ is negative (bound orbit)
 
 ### Pattern 4: Kepler's third law application
-1. For two orbits: $\\frac{T_1^2}{r_1^3} = \\frac{T_2^2}{r_2^3}$
+1. For two orbits: $\\dfrac{T_1^2}{r_1^3} = \\dfrac{T_2^2}{r_2^3}$
 2. Solve for unknown period or radius
-3. Or use $T^2 = \\frac{4\\pi^2}{GM}r^3$
+3. Or use $T^2 = \\dfrac{4\\pi^2}{GM}r^3$
 """
 
 DIAGRAM_GUIDANCE = """
@@ -101,14 +101,14 @@ DIAGRAM_GUIDANCE = """
 \\begin{solution}
 \\begin{align*}
 \\intertext{For a satellite in circular orbit, equating gravitational and centripetal forces:}
-\\frac{mv^2}{r} &= G\\frac{Mm}{r^2} \\\\
-v^2 &= \\frac{GM}{r}
+\\dfrac{mv^2}{r} &= G\\dfrac{Mm}{r^2} \\\\
+v^2 &= \\dfrac{GM}{r}
 \\end{align*}
 
 \\begin{align*}
 \\intertext{The orbital speed is:}
-v &= \\sqrt{\\frac{GM}{r}} \\\\
-  &= \\sqrt{\\frac{6.67 \\times 10^{-11} \\times 6 \\times 10^{24}}{6.4 \\times 10^6 + 2 \\times 10^5}} \\\\
+v &= \\sqrt{\\dfrac{GM}{r}} \\\\
+  &= \\sqrt{\\dfrac{6.67 \\times 10^{-11} \\times 6 \\times 10^{24}}{6.4 \\times 10^6 + 2 \\times 10^5}} \\\\
   &= 7.8 \\times 10^3 \\ \\mathrm{m/s} \\\\
   &= 7.8 \\ \\mathrm{km/s}
 \\end{align*}

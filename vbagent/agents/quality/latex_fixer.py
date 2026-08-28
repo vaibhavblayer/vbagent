@@ -4,6 +4,7 @@ Takes a LaTeX snippet and pdflatex error output, returns corrected LaTeX.
 """
 
 from vbagent.agents.base import create_agent, run_agent_sync
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES
 
 
 SYSTEM_PROMPT = r"""You are a LaTeX error fixer. You receive LaTeX code that failed to compile and the pdflatex error output.
@@ -14,7 +15,7 @@ Your job:
 3. Common fixes: missing braces, undefined commands, wrong environment names, missing $ delimiters
 4. Output ONLY the corrected LaTeX code — no explanations, no markdown, no code blocks
 
-CRITICAL: Output the EXACT same content with ONLY the compilation errors fixed. Do not add \documentclass, preamble, or any wrapping."""
+CRITICAL: Output the EXACT same content with ONLY the compilation errors fixed. Do not add \documentclass, preamble, or any wrapping.""" + DISPLAY_FRACTION_RULES
 
 USER_TEMPLATE = """Fix the compilation errors in this LaTeX code.
 

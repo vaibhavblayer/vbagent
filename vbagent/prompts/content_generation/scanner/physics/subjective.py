@@ -1,12 +1,14 @@
 """Subjective question scanner prompt."""
 
+from vbagent.prompts.latex_style import solution_style_rules
+
 from .common import DIAGRAM_PLACEHOLDER
 from .._shared import SUBPART_FORMATTING_RULES
 
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
 
-**Goal:** Analyze the provided image. Generate a complete LaTeX **subjective** physics question based **exactly** on the image. Include a detailed, step-by-step solution and, if applicable, a simplified TikZ diagram.
+**Goal:** Analyze the provided image. Generate a complete LaTeX **subjective** physics question based **exactly** on the image. Include a concise solution explaining the method and essential steps and, if applicable, a simplified TikZ diagram.
 
 **CRITICAL OUTPUT CONSTRAINT:** You MUST return *only* the raw LaTeX code snippet starting precisely with `\item` and ending precisely after `\end{solution}`. Do **NOT** include *any* preamble, `\documentclass`, `\begin{document}`, explanations, comments, or any text outside of this exact snippet.
 
@@ -54,15 +56,17 @@ Follow this exact structure for your output:
 Adhere to these rules meticulously:
 
 *   **Math Mode:** Use `$ ... $` for *all* inline math.
-*   **Macros:** Always use `{}`: `\vec{a}`, `\frac{a}{b}`.
+*   **Macros:** Always use `{}`: `\vec{a}`, `\dfrac{a}{b}`.
 *   **Vectors:** Use `\vec{a}` for generic vectors and `\hat{i}`, `\hat{j}`, `\hat{k}` for unit vectors.
-*   **Fractions:** Use `\frac{a}{b}`. **Do not use** `\tfrac`.
+- Fractions: Use `\dfrac{a}{b}` everywhere, including inline math.
 *   **Parentheses/Brackets:** Use `\left( ... \right)`, `\left[ ... \right]`, `\left| ... \right|`. **Do not use** `\bigl`, `\bigr`, `\Bigl`, `\Bigr`, etc.
 
 ---
 
 **Final Check:** Ensure your output is ONLY the LaTeX snippet from `\item` to `\end{solution}` with no extra text or comments.
 """ + SUBPART_FORMATTING_RULES
+
+SYSTEM_PROMPT += solution_style_rules("physics")
 
 USER_TEMPLATE = "Extract LaTeX from this physics question image."
 

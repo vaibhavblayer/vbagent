@@ -13,38 +13,38 @@ TOPIC_CONCEPTS = """
 - Einstein's equation: $E_{photon} = hf = \\phi + KE_{max}$
 - Work function: $\\phi = hf_0$ where $f_0$ is threshold frequency
 - Stopping potential: $eV_0 = KE_{max}$
-- Photon energy: $E = hf = \\frac{hc}{\\lambda}$
+- Photon energy: $E = hf = \\dfrac{hc}{\\lambda}$
 - Planck's constant: $h = 6.63 \\times 10^{-34}$ J·s
 
 ### Compton Scattering
-- Wavelength shift: $\\Delta\\lambda = \\lambda' - \\lambda = \\frac{h}{m_e c}(1 - \\cos\\theta)$
-- Compton wavelength: $\\lambda_C = \\frac{h}{m_e c} = 2.43 \\times 10^{-12}$ m
+- Wavelength shift: $\\Delta\\lambda = \\lambda' - \\lambda = \\dfrac{h}{m_e c}(1 - \\cos\\theta)$
+- Compton wavelength: $\\lambda_C = \\dfrac{h}{m_e c} = 2.43 \\times 10^{-12}$ m
 - Energy conservation: $E_{photon,i} = E_{photon,f} + KE_{electron}$
 - Momentum conservation: $\\vec{p}_{photon,i} = \\vec{p}_{photon,f} + \\vec{p}_{electron}$
 
 ### de Broglie Waves
-- de Broglie wavelength: $\\lambda = \\frac{h}{p} = \\frac{h}{mv}$
-- For photon: $\\lambda = \\frac{c}{f}$
+- de Broglie wavelength: $\\lambda = \\dfrac{h}{p} = \\dfrac{h}{mv}$
+- For photon: $\\lambda = \\dfrac{c}{f}$
 - Wave-particle duality: all matter has wave properties
 - Electron diffraction confirms wave nature
 
 ### Heisenberg Uncertainty Principle
-- Position-momentum: $\\Delta x \\Delta p \\geq \\frac{h}{4\\pi} = \\frac{\\hbar}{2}$
-- Energy-time: $\\Delta E \\Delta t \\geq \\frac{h}{4\\pi} = \\frac{\\hbar}{2}$
+- Position-momentum: $\\Delta x \\Delta p \\geq \\dfrac{h}{4\\pi} = \\dfrac{\\hbar}{2}$
+- Energy-time: $\\Delta E \\Delta t \\geq \\dfrac{h}{4\\pi} = \\dfrac{\\hbar}{2}$
 - Fundamental limit on measurement precision
 
 ### Special Relativity
-- Time dilation: $\\Delta t = \\frac{\\Delta t_0}{\\sqrt{1 - v^2/c^2}} = \\gamma \\Delta t_0$
-- Length contraction: $L = L_0\\sqrt{1 - v^2/c^2} = \\frac{L_0}{\\gamma}$
-- Lorentz factor: $\\gamma = \\frac{1}{\\sqrt{1 - v^2/c^2}}$
+- Time dilation: $\\Delta t = \\dfrac{\\Delta t_0}{\\sqrt{1 - v^2/c^2}} = \\gamma \\Delta t_0$
+- Length contraction: $L = L_0\\sqrt{1 - v^2/c^2} = \\dfrac{L_0}{\\gamma}$
+- Lorentz factor: $\\gamma = \\dfrac{1}{\\sqrt{1 - v^2/c^2}}$
 - Relativistic momentum: $p = \\gamma mv$
 - Relativistic energy: $E = \\gamma mc^2$
 - Rest energy: $E_0 = mc^2$
 - Energy-momentum relation: $E^2 = (pc)^2 + (mc^2)^2$
 
 ### Photon Properties
-- Energy: $E = hf = \\frac{hc}{\\lambda}$
-- Momentum: $p = \\frac{E}{c} = \\frac{h}{\\lambda}$
+- Energy: $E = hf = \\dfrac{hc}{\\lambda}$
+- Momentum: $p = \\dfrac{E}{c} = \\dfrac{h}{\\lambda}$
 - Rest mass: zero
 - Speed: $c$ in vacuum
 
@@ -105,8 +105,8 @@ DIAGRAM_GUIDANCE = """
 \\begin{solution}
 \\begin{align*}
 \\intertext{The energy of the incident photon is:}
-E &= \\frac{hc}{\\lambda} \\\\
-  &= \\frac{6.63 \\times 10^{-34} \\times 3 \\times 10^8}{400 \\times 10^{-9}} \\\\
+E &= \\dfrac{hc}{\\lambda} \\\\
+  &= \\dfrac{6.63 \\times 10^{-34} \\times 3 \\times 10^8}{400 \\times 10^{-9}} \\\\
   &= 4.97 \\times 10^{-19} \\ \\mathrm{J} \\\\
   &= 3.1 \\ \\mathrm{eV}
 \\end{align*}

@@ -12,29 +12,29 @@ TOPIC_CONCEPTS = """
 ### Reflection
 - Law of reflection: $\\theta_i = \\theta_r$
 - Plane mirror: virtual, upright, same size image
-- Spherical mirrors: $\\frac{1}{f} = \\frac{1}{v} + \\frac{1}{u}$ (mirror equation)
-- Magnification: $m = -\\frac{v}{u} = \\frac{h_i}{h_o}$
-- Focal length: $f = \\frac{R}{2}$ where $R$ is radius of curvature
+- Spherical mirrors: $\\dfrac{1}{f} = \\dfrac{1}{v} + \\dfrac{1}{u}$ (mirror equation)
+- Magnification: $m = -\\dfrac{v}{u} = \\dfrac{h_i}{h_o}$
+- Focal length: $f = \\dfrac{R}{2}$ where $R$ is radius of curvature
 - Sign convention: object distance $u$ negative, real image $v$ positive
 
 ### Refraction
 - Snell's law: $n_1\\sin\\theta_1 = n_2\\sin\\theta_2$
-- Refractive index: $n = \\frac{c}{v}$
-- Apparent depth: $d_{app} = \\frac{d_{real}}{n}$
-- Critical angle: $\\sin\\theta_c = \\frac{n_2}{n_1}$ (for $n_1 > n_2$)
+- Refractive index: $n = \\dfrac{c}{v}$
+- Apparent depth: $d_{app} = \\dfrac{d_{real}}{n}$
+- Critical angle: $\\sin\\theta_c = \\dfrac{n_2}{n_1}$ (for $n_1 > n_2$)
 - Total internal reflection: occurs when $\\theta > \\theta_c$
 
 ### Lenses
-- Lens equation: $\\frac{1}{f} = \\frac{1}{v} - \\frac{1}{u}$
-- Lens maker's formula: $\\frac{1}{f} = (n-1)\\left(\\frac{1}{R_1} - \\frac{1}{R_2}\\right)$
-- Power: $P = \\frac{1}{f}$ (in diopters when $f$ in meters)
-- Magnification: $m = \\frac{v}{u} = \\frac{h_i}{h_o}$
+- Lens equation: $\\dfrac{1}{f} = \\dfrac{1}{v} - \\dfrac{1}{u}$
+- Lens maker's formula: $\\dfrac{1}{f} = (n-1)\\left(\\dfrac{1}{R_1} - \\dfrac{1}{R_2}\\right)$
+- Power: $P = \\dfrac{1}{f}$ (in diopters when $f$ in meters)
+- Magnification: $m = \\dfrac{v}{u} = \\dfrac{h_i}{h_o}$
 - Combination: $P_{total} = P_1 + P_2$ (thin lenses in contact)
 
 ### Prism
 - Deviation: $\\delta = (\\mu - 1)A$ (small angle)
-- Minimum deviation: $\\mu = \\frac{\\sin\\frac{A+\\delta_m}{2}}{\\sin\\frac{A}{2}}$
-- At minimum deviation: $r_1 = r_2 = \\frac{A}{2}$, $i_1 = i_2$
+- Minimum deviation: $\\mu = \\dfrac{\\sin\\dfrac{A+\\delta_m}{2}}{\\sin\\dfrac{A}{2}}$
+- At minimum deviation: $r_1 = r_2 = \\dfrac{A}{2}$, $i_1 = i_2$
 
 ### Sign Convention (New Cartesian)
 - Distances measured from pole/optical center
@@ -56,7 +56,7 @@ COMMON_PATTERNS = """
 ### Pattern 1: Mirror/lens image formation
 1. Draw ray diagram (use optics diagram agent)
 2. Apply sign convention to given quantities
-3. Use $\\frac{1}{f} = \\frac{1}{v} + \\frac{1}{u}$ (mirror) or $\\frac{1}{f} = \\frac{1}{v} - \\frac{1}{u}$ (lens)
+3. Use $\\dfrac{1}{f} = \\dfrac{1}{v} + \\dfrac{1}{u}$ (mirror) or $\\dfrac{1}{f} = \\dfrac{1}{v} - \\dfrac{1}{u}$ (lens)
 4. Calculate magnification: $m = -v/u$ (mirror) or $m = v/u$ (lens)
 5. Interpret results
 
@@ -76,7 +76,7 @@ COMMON_PATTERNS = """
 ### Pattern 4: Prism deviation
 1. Apply Snell's law at both surfaces
 2. Use geometry: $A = r_1 + r_2$, $\\delta = i_1 + i_2 - A$
-3. For minimum deviation: use $\\mu = \\frac{\\sin\\frac{A+\\delta_m}{2}}{\\sin\\frac{A}{2}}$
+3. For minimum deviation: use $\\mu = \\dfrac{\\sin\\dfrac{A+\\delta_m}{2}}{\\sin\\dfrac{A}{2}}$
 """
 
 DIAGRAM_GUIDANCE = """
@@ -100,15 +100,15 @@ DIAGRAM_GUIDANCE = """
 \\begin{solution}
 \\begin{align*}
 \\intertext{Using the mirror equation with sign convention ($u = -30$ cm, $f = -15$ cm):}
-\\frac{1}{f} &= \\frac{1}{v} + \\frac{1}{u} \\\\
-\\frac{1}{-15} &= \\frac{1}{v} + \\frac{1}{-30} \\\\
-\\frac{1}{v} &= -\\frac{1}{15} + \\frac{1}{30} \\\\
+\\dfrac{1}{f} &= \\dfrac{1}{v} + \\dfrac{1}{u} \\\\
+\\dfrac{1}{-15} &= \\dfrac{1}{v} + \\dfrac{1}{-30} \\\\
+\\dfrac{1}{v} &= -\\dfrac{1}{15} + \\dfrac{1}{30} \\\\
 v &= -30 \\ \\mathrm{cm}
 \\end{align*}
 
 \\begin{align*}
 \\intertext{The magnification is:}
-m &= -\\frac{v}{u} = -\\frac{-30}{-30} = -1
+m &= -\\dfrac{v}{u} = -\\dfrac{-30}{-30} = -1
 \\end{align*}
 
 \\intertext{The image is real, inverted, and same size as object.}
@@ -126,8 +126,8 @@ TYPICAL_MISTAKES = """
    - Convex mirror/concave lens: $f$ negative
 
 2. **Confusing mirror and lens equations**
-   - Mirror: $\\frac{1}{f} = \\frac{1}{v} + \\frac{1}{u}$
-   - Lens: $\\frac{1}{f} = \\frac{1}{v} - \\frac{1}{u}$
+   - Mirror: $\\dfrac{1}{f} = \\dfrac{1}{v} + \\dfrac{1}{u}$
+   - Lens: $\\dfrac{1}{f} = \\dfrac{1}{v} - \\dfrac{1}{u}$
    - Note the sign difference!
 
 3. **Magnification sign**

@@ -10,11 +10,11 @@ TOPIC_CONCEPTS = """
 ## Key Concepts for Current Electricity
 
 ### Basic Concepts
-- Current: $I = \\frac{dQ}{dt}$ (rate of charge flow)
+- Current: $I = \\dfrac{dQ}{dt}$ (rate of charge flow)
 - Ohm's law: $V = IR$
-- Resistance: $R = \\rho\\frac{L}{A}$ where $\\rho$ is resistivity
-- Conductance: $G = \\frac{1}{R}$
-- Current density: $\\vec{J} = \\frac{I}{A} = \\sigma\\vec{E}$
+- Resistance: $R = \\rho\\dfrac{L}{A}$ where $\\rho$ is resistivity
+- Conductance: $G = \\dfrac{1}{R}$
+- Current density: $\\vec{J} = \\dfrac{I}{A} = \\sigma\\vec{E}$
 
 ### Kirchhoff's Laws
 - Current law (KCL): $\\sum I_{in} = \\sum I_{out}$ at any junction
@@ -23,12 +23,12 @@ TOPIC_CONCEPTS = """
 
 ### Resistor Combinations
 - Series: $R_{eq} = R_1 + R_2 + ...$
-- Parallel: $\\frac{1}{R_{eq}} = \\frac{1}{R_1} + \\frac{1}{R_2} + ...$
+- Parallel: $\\dfrac{1}{R_{eq}} = \\dfrac{1}{R_1} + \\dfrac{1}{R_2} + ...$
 - In series: same current, voltages add
 - In parallel: same voltage, currents add
 
 ### Power and Energy
-- Power dissipated: $P = VI = I^2R = \\frac{V^2}{R}$
+- Power dissipated: $P = VI = I^2R = \\dfrac{V^2}{R}$
 - Energy: $E = Pt = VIt$
 - Maximum power transfer: when load resistance equals source resistance
 
@@ -44,7 +44,7 @@ TOPIC_CONCEPTS = """
 - After time $\\tau$: charge reaches $63\\%$ of final value (charging)
 
 ### Wheatstone Bridge
-- Balanced condition: $\\frac{R_1}{R_2} = \\frac{R_3}{R_4}$
+- Balanced condition: $\\dfrac{R_1}{R_2} = \\dfrac{R_3}{R_4}$
 - No current through galvanometer when balanced
 
 ### Problem-Solving Strategy
@@ -75,7 +75,7 @@ COMMON_PATTERNS = """
 1. Identify $R$, $C$, and $\\mathcal{E}$
 2. Time constant: $\\tau = RC$
 3. Charge: $Q(t) = C\\mathcal{E}(1 - e^{-t/\\tau})$
-4. Current: $I(t) = \\frac{\\mathcal{E}}{R}e^{-t/\\tau}$
+4. Current: $I(t) = \\dfrac{\\mathcal{E}}{R}e^{-t/\\tau}$
 5. Voltage across capacitor: $V_C(t) = \\mathcal{E}(1 - e^{-t/\\tau})$
 
 ### Pattern 4: Power calculations
@@ -113,8 +113,8 @@ R_{eq} &= R_1 + R_2 + R_3 \\\\
 
 \\begin{align*}
 \\intertext{The current through the circuit is:}
-I &= \\frac{V}{R_{eq}} \\\\
-  &= \\frac{12}{60} \\\\
+I &= \\dfrac{V}{R_{eq}} \\\\
+  &= \\dfrac{12}{60} \\\\
   &= 0.2 \\ \\mathrm{A}
 \\end{align*}
 
@@ -133,7 +133,7 @@ TYPICAL_MISTAKES = """
 
 1. **Series vs parallel confusion**
    - Series: same current, $R_{eq} = \\sum R_i$
-   - Parallel: same voltage, $\\frac{1}{R_{eq}} = \\sum \\frac{1}{R_i}$
+   - Parallel: same voltage, $\\dfrac{1}{R_{eq}} = \\sum \\dfrac{1}{R_i}$
    - Opposite of capacitor rules!
 
 2. **Kirchhoff's law sign errors**

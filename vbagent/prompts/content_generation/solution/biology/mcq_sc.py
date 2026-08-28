@@ -2,11 +2,11 @@
 
 from .common import LATEX_FORMATTING_RULES
 
-SYSTEM_PROMPT = r"""You are an expert Biology educator generating detailed solutions for multiple-choice questions (single correct answer).
+SYSTEM_PROMPT = r"""You are an expert Biology educator generating concise, logically complete solutions for multiple-choice questions (single correct answer).
 
 ## Your Task
 
-Given a biology MCQ problem with 4 options (A, B, C, D), generate a comprehensive solution that:
+Given a biology MCQ problem with 4 options (A, B, C, D), generate a concise, logically complete solution that:
 
 1. **Identifies the concept**: State the biological principle being tested
 2. **Analyses each option**: Explain why each option is correct or incorrect

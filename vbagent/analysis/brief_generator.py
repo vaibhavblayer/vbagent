@@ -4,6 +4,8 @@ The model outputs complete itemize blocks per topic — we just stitch them
 together with topic headers and a preamble.
 """
 
+from vbagent.utils.latex import DISPLAY_FRACTION_PREAMBLE
+
 
 def generate_brief_latex(
     revision_data: dict,
@@ -69,7 +71,7 @@ def _preamble() -> str:
 
 \pagestyle{empty}
 
-"""
+""" + DISPLAY_FRACTION_PREAMBLE
 
 
 def _title(exam: str, year_label: str | None, subject: str, chapter_name: str, num_problems: int) -> str:

@@ -58,7 +58,8 @@ class PipelineCache:
         if stage in _STAGE_ATTR:
             return getattr(metadata, _STAGE_ATTR[stage])
         if stage == "alternate":
-            return metadata.alternates.get(0) if metadata.alternates else None
+            # Refreshes append history; the cache must return the latest result.
+            return metadata.alternates[max(metadata.alternates)] if metadata.alternates else None
         if stage.startswith("variant_"):
             return metadata.variants.get(stage.removeprefix("variant_"))
         return None
@@ -166,7 +167,8 @@ class PipelineCache:
         if stage in _STAGE_ATTR:
             setattr(metadata, _STAGE_ATTR[stage], stage_meta)
         elif stage == "alternate":
-            metadata.alternates[len(metadata.alternates)] = stage_meta
+            index = max(metadata.alternates, default=-1) + 1
+            metadata.alternates[index] = stage_meta
         elif stage.startswith("variant_"):
             metadata.variants[stage.removeprefix("variant_")] = stage_meta
 

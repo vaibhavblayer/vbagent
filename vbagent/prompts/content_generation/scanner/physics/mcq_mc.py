@@ -1,5 +1,7 @@
 """MCQ multi-correct question scanner prompt."""
 
+from vbagent.prompts.latex_style import solution_style_rules
+
 from .common import (
     DIAGRAM_PLACEHOLDER,
     OPTIONS_WITH_DIAGRAMS,
@@ -56,15 +58,17 @@ Follow this exact structure for your output:
 Adhere to these rules meticulously:
 
 *   **Math Mode:** Use `$ ... $` for *all* inline math.
-*   **Macros:** Always use `{}`: `\vec{a}`, `\frac{a}{b}`.
+*   **Macros:** Always use `{}`: `\vec{a}`, `\dfrac{a}{b}`.
 *   **Vectors:** Use `\vec{a}` for generic vectors and `\hat{i}`, `\hat{j}`, `\hat{k}` for unit vectors.
-*   **Fractions:** Use `\frac{a}{b}`. **Do not use** `\tfrac`.
+- Fractions: Use `\dfrac{a}{b}` everywhere, including inline math.
 *   **Parentheses/Brackets:** Use `\left( ... \right)`, `\left[ ... \right]`, `\left| ... \right|`. **Do not use** `\bigl`, `\bigr`, `\Bigl`, `\Bigr`, etc.
 
 ---
 
 **Final Check:** Ensure your output is ONLY the LaTeX snippet from `\item` to `\end{solution}` with no extra text or comments.
 """
+
+SYSTEM_PROMPT += solution_style_rules("physics")
 
 USER_TEMPLATE = "Extract LaTeX from this physics question image."
 

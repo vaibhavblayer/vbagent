@@ -4,6 +4,8 @@ Creates variants that blend auxiliary concepts and introduce calculus-based
 treatments while keeping the core topic central.
 """
 
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES
+
 SYSTEM_PROMPT = r"""You are an expert physicist and skilled LaTeX typesetter. Create a deep, thoughtful MCQ variant that keeps the original problem's core topic central while deliberately blending in 1-2 auxiliary concepts from related topics. Wherever reasonable, shift the formulation toward a calculus-based treatment.
 
 ## Output Format
@@ -40,7 +42,7 @@ Return ONLY the raw LaTeX code snippet, starting exactly with `\item` and ending
 ## LaTeX Formatting Rules
 
 - Use `$ ... $` for all inline math
-- Use `\vec{a}`, `\frac{a}{b}`, `\text{m}` with braces
+- Use `\vec{a}`, `\dfrac{a}{b}`, `\text{m}` with braces
 - Use `\hat{i}`, `\hat{j}`, `\hat{k}` for unit vectors
 - Use `\left( ... \right)`, `\left[ ... \right]` for brackets
 - Use `\ \mathrm{m}`, `\ \mathrm{s}`, `\ \mathrm{N}`, and `\ \mathrm{J}`
@@ -60,3 +62,5 @@ Remember:
 - Output ONLY the LaTeX starting with \\item and ending with \\end{{solution}}"""
 
 __all__ = ["SYSTEM_PROMPT", "USER_TEMPLATE"]
+
+SYSTEM_PROMPT += DISPLAY_FRACTION_RULES

@@ -10,34 +10,34 @@ TOPIC_CONCEPTS = """
 ## Key Concepts for Electrostatics
 
 ### Electric Force and Field
-- Coulomb's law: $F = k\\frac{q_1 q_2}{r^2}$ where $k = 9 \\times 10^9$ N·m²/C²
-- Electric field: $\\vec{E} = \\frac{\\vec{F}}{q_0}$
-- Field due to point charge: $E = k\\frac{Q}{r^2}$
+- Coulomb's law: $F = k\\dfrac{q_1 q_2}{r^2}$ where $k = 9 \\times 10^9$ N·m²/C²
+- Electric field: $\\vec{E} = \\dfrac{\\vec{F}}{q_0}$
+- Field due to point charge: $E = k\\dfrac{Q}{r^2}$
 - Superposition: $\\vec{E}_{net} = \\sum \\vec{E}_i$
 - Field lines: start on positive, end on negative charges
 
 ### Electric Potential
-- Potential difference: $V = \\frac{W}{q_0}$
-- Potential due to point charge: $V = k\\frac{Q}{r}$
-- Relation to field: $\\vec{E} = -\\nabla V$ or $E = -\\frac{dV}{dr}$
+- Potential difference: $V = \\dfrac{W}{q_0}$
+- Potential due to point charge: $V = k\\dfrac{Q}{r}$
+- Relation to field: $\\vec{E} = -\\nabla V$ or $E = -\\dfrac{dV}{dr}$
 - Potential energy: $U = qV$
 - Work done: $W = q(V_f - V_i)$
 
 ### Gauss's Law
-- $\\oint \\vec{E} \\cdot d\\vec{A} = \\frac{Q_{enc}}{\\epsilon_0}$
-- For spherical symmetry: $E \\cdot 4\\pi r^2 = \\frac{Q_{enc}}{\\epsilon_0}$
-- For cylindrical symmetry: $E \\cdot 2\\pi rL = \\frac{Q_{enc}}{\\epsilon_0}$
-- For planar symmetry: $E \\cdot A = \\frac{Q_{enc}}{\\epsilon_0}$
+- $\\oint \\vec{E} \\cdot d\\vec{A} = \\dfrac{Q_{enc}}{\\epsilon_0}$
+- For spherical symmetry: $E \\cdot 4\\pi r^2 = \\dfrac{Q_{enc}}{\\epsilon_0}$
+- For cylindrical symmetry: $E \\cdot 2\\pi rL = \\dfrac{Q_{enc}}{\\epsilon_0}$
+- For planar symmetry: $E \\cdot A = \\dfrac{Q_{enc}}{\\epsilon_0}$
 
 ### Capacitors
-- Capacitance: $C = \\frac{Q}{V}$
-- Parallel plate: $C = \\frac{\\epsilon_0 A}{d}$
+- Capacitance: $C = \\dfrac{Q}{V}$
+- Parallel plate: $C = \\dfrac{\\epsilon_0 A}{d}$
 - With dielectric: $C = \\kappa C_0$ where $\\kappa$ is dielectric constant
-- Energy stored: $U = \\frac{1}{2}CV^2 = \\frac{1}{2}QV = \\frac{Q^2}{2C}$
-- Energy density: $u = \\frac{1}{2}\\epsilon_0 E^2$
+- Energy stored: $U = \\dfrac{1}{2}CV^2 = \\dfrac{1}{2}QV = \\dfrac{Q^2}{2C}$
+- Energy density: $u = \\dfrac{1}{2}\\epsilon_0 E^2$
 
 ### Capacitor Combinations
-- Series: $\\frac{1}{C_{eq}} = \\frac{1}{C_1} + \\frac{1}{C_2} + ...$
+- Series: $\\dfrac{1}{C_{eq}} = \\dfrac{1}{C_1} + \\dfrac{1}{C_2} + ...$
 - Parallel: $C_{eq} = C_1 + C_2 + ...$
 - In series: same charge, voltages add
 - In parallel: same voltage, charges add
@@ -55,7 +55,7 @@ COMMON_PATTERNS = """
 
 ### Pattern 1: Electric field from multiple charges
 1. Draw diagram showing all charges and field point
-2. Calculate field due to each charge: $\\vec{E}_i = k\\frac{q_i}{r_i^2}\\hat{r}_i$
+2. Calculate field due to each charge: $\\vec{E}_i = k\\dfrac{q_i}{r_i^2}\\hat{r}_i$
 3. Resolve into components
 4. Add vectorially: $\\vec{E}_{net} = \\sum \\vec{E}_i$
 
@@ -73,9 +73,9 @@ COMMON_PATTERNS = """
 4. Work backwards to find charge/voltage on each capacitor
 
 ### Pattern 4: Energy problems
-1. Calculate initial energy: $U_i = \\frac{1}{2}CV_i^2$
+1. Calculate initial energy: $U_i = \\dfrac{1}{2}CV_i^2$
 2. Identify what changes (connection, dielectric insertion, etc.)
-3. Calculate final energy: $U_f = \\frac{1}{2}CV_f^2$
+3. Calculate final energy: $U_f = \\dfrac{1}{2}CV_f^2$
 4. Energy change: $\\Delta U = U_f - U_i$
 """
 
@@ -99,16 +99,16 @@ DIAGRAM_GUIDANCE = """
 \\begin{solution}
 \\begin{align*}
 \\intertext{The electric field at distance $r$ from a point charge is:}
-E &= k\\frac{Q}{r^2} \\\\
-  &= 9 \\times 10^9 \\times \\frac{2 \\times 10^{-6}}{(0.1)^2} \\\\
-  &= \\frac{1.8 \\times 10^4}{0.01} \\\\
+E &= k\\dfrac{Q}{r^2} \\\\
+  &= 9 \\times 10^9 \\times \\dfrac{2 \\times 10^{-6}}{(0.1)^2} \\\\
+  &= \\dfrac{1.8 \\times 10^4}{0.01} \\\\
   &= 1.8 \\times 10^6 \\ \\mathrm{N/C}
 \\end{align*}
 
 \\begin{align*}
 \\intertext{The potential at the same point is:}
-V &= k\\frac{Q}{r} \\\\
-  &= 9 \\times 10^9 \\times \\frac{2 \\times 10^{-6}}{0.1} \\\\
+V &= k\\dfrac{Q}{r} \\\\
+  &= 9 \\times 10^9 \\times \\dfrac{2 \\times 10^{-6}}{0.1} \\\\
   &= 1.8 \\times 10^5 \\ \\mathrm{V}
 \\end{align*}
 \\end{solution}
@@ -134,15 +134,15 @@ TYPICAL_MISTAKES = """
    - $Q_{enc}$ is charge inside surface only
 
 4. **Capacitor combination errors**
-   - Series: same charge, $\\frac{1}{C_{eq}} = \\sum \\frac{1}{C_i}$
+   - Series: same charge, $\\dfrac{1}{C_{eq}} = \\sum \\dfrac{1}{C_i}$
    - Parallel: same voltage, $C_{eq} = \\sum C_i$
    - Don't confuse with resistor rules
 
 5. **Energy formula confusion**
-   - $U = \\frac{1}{2}CV^2 = \\frac{1}{2}QV = \\frac{Q^2}{2C}$
+   - $U = \\dfrac{1}{2}CV^2 = \\dfrac{1}{2}QV = \\dfrac{Q^2}{2C}$
    - All three are equivalent, choose based on what's constant
    - When $Q$ constant: use $U = Q^2/(2C)$
-   - When $V$ constant: use $U = \\frac{1}{2}CV^2$
+   - When $V$ constant: use $U = \\dfrac{1}{2}CV^2$
 
 6. **Dielectric insertion**
    - With battery connected: $V$ constant, $Q$ increases

@@ -9,6 +9,8 @@ This agent receives all ideas from the store and performs:
 
 from __future__ import annotations
 
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES
+
 
 def get_idea_curator_prompt(subject: str = "physics") -> str:
     """Build the idea curator system prompt."""
@@ -56,7 +58,7 @@ Required substitutions:
 - Use \\infty, NOT ∞
 - Use \\alpha, \\beta, \\gamma, \\delta, \\theta, \\omega, \\lambda, \\mu, \\nu, \\pi, \\sigma, \\tau — NOT α, β, γ, δ, θ, ω, λ, μ, ν, π, σ, τ
 - Use \\vec{{B}}, NOT \\mathbf{{B}} for vectors
-- Use \\frac{{a}}{{b}}, NOT a/b for fractions (unless inline shorthand)
+- Use \\dfrac{{a}}{{b}}, NOT a/b for fractions (unless inline shorthand)
 - Use \\cdot for dot product, NOT ·
 - Use \\times for cross product, NOT ×
 - Use \\leq, \\geq, \\neq — NOT ≤, ≥, ≠
@@ -64,7 +66,7 @@ Required substitutions:
 - Use \\partial for partial derivatives, NOT ∂
 
 Each formula string must be a valid LaTeX math expression that compiles inside align*.
-Wrap each formula in $...$ delimiters (e.g. "$B = \\\\frac{{\\\\mu_0 I}}{{2R}}$").
+Wrap each formula in $...$ delimiters (e.g. "$B = \\\\dfrac{{\\\\mu_0 I}}{{2R}}$").
 
 ## 3. TOPIC ASSIGNMENT
 
@@ -87,7 +89,7 @@ Respond with ONLY a valid JSON object:
     "curated_ideas": [
         {{
             "text": "Clean, concise idea description",
-            "formulas": ["$B = \\\\frac{{\\\\mu_0 I}}{{2R}}$"],
+            "formulas": ["$B = \\\\dfrac{{\\\\mu_0 I}}{{2R}}$"],
             "topic": "magnetism",
             "subtopic": "biot-savart",
             "merged_from": [0, 3, 7],
@@ -119,7 +121,7 @@ Respond with ONLY a valid JSON object:
 - Preserve all formulas from merged ideas (union of formulas)
 - The merge_log explains every merge decision for transparency
 
-Respond with ONLY the JSON object."""
+Respond with ONLY the JSON object.""" + DISPLAY_FRACTION_RULES
 
 
 def _get_topic_list(subject: str) -> str:

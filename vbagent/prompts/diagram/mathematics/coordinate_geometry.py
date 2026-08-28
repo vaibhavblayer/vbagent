@@ -80,7 +80,7 @@ Your task is to generate TikZ code for coordinate geometry diagrams including li
 \draw[thick] (A) -- (B);
 % Midpoint — let TikZ derive the geometry
 \fill (M) circle (2pt) node[above left] {$M$};
-\node[below, font=\footnotesize] at (M) {$\left(\frac{6}{2},\frac{5}{2}\right)$};
+\node[below, font=\footnotesize] at (M) {$\left(\dfrac{6}{2},\dfrac{5}{2}\right)$};
 ```
 
 ### Angle Bisectors
@@ -334,7 +334,7 @@ Your task is to generate TikZ code for coordinate geometry diagrams including li
 % Asymptotes
 \def\xmax{4.5}
 \draw[dashed, thin] (-\xmax,{-0.75*\xmax}) -- (\xmax,{0.75*\xmax})
-    node[above, font=\footnotesize] {$y=\frac{b}{a}x$};
+    node[above, font=\footnotesize] {$y=\dfrac{b}{a}x$};
 \draw[dashed, thin] (-\xmax,{0.75*\xmax}) -- (\xmax,{-0.75*\xmax});
 % Foci c = √(a²+b²) = √6.25 = 2.5
 \fill (-2.5,0) circle (2pt) node[below, font=\footnotesize] {$F_1$};

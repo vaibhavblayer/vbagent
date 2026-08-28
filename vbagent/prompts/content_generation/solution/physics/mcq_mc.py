@@ -13,11 +13,11 @@ from .common import (
     SOLUTION_MCQ_TEMPLATE,
 )
 
-SYSTEM_PROMPT = """You are an expert physics educator generating detailed solutions for multiple-choice questions with MULTIPLE CORRECT answers.
+SYSTEM_PROMPT = """You are an expert physics educator generating concise, logically complete solutions for multiple-choice questions with MULTIPLE CORRECT answers.
 
 ## Your Task
 
-Given a physics MCQ problem with 4 options (A, B, C, D) where MULTIPLE options may be correct, generate a comprehensive solution that:
+Given a physics MCQ problem with 4 options (A, B, C, D) where MULTIPLE options may be correct, generate a concise, logically complete solution that:
 
 1. **Analyzes each option**: Evaluate ALL four options independently
 2. **Solves systematically**: Apply physics concepts to check each option
@@ -135,7 +135,7 @@ m_1 v_1 + m_2 v_2 &= \\text{{constant}} \\\\
 
 \\begin{{align*}}
 \\intertext{{Option (c): Final velocity is zero}}
-v_{{\\text{{final}}}} &= \\frac{{m_1 v_1 + m_2 v_2}}{{m_1 + m_2}} \\\\
+v_{{\\text{{final}}}} &= \\dfrac{{m_1 v_1 + m_2 v_2}}{{m_1 + m_2}} \\\\
 \\intertext{{TRUE only if $m_1 v_1 = -m_2 v_2$}}
 \\end{{align*}}
 

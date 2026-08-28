@@ -30,6 +30,7 @@ from vbagent.pipeline.io import (
 from vbagent.cli.common import format_latex, _get_console
 from vbagent.references.samples import get_sample
 from vbagent.utils.latex import use_plain_enumerates
+from vbagent.prompts.latex_style import LATEX_STYLE_CONTRACT_VERSION
 
 
 _MATCH_SCAN_CONTRACT_VERSION = 2
@@ -122,7 +123,7 @@ class ProblemOrchestrator:
             )
             if not scan_cached:
                 self.console.print(
-                    "[dim]Ignoring cached scan: classification dependency "
+                    "[dim]Ignoring cached scan: classification or LaTeX style dependency "
                     "changed or is missing.[/dim]"
                 )
         if scan_cached and primary.question_type == "match":
@@ -161,7 +162,7 @@ class ProblemOrchestrator:
             )
             if not tikz_cached:
                 self.console.print(
-                    "[dim]Ignoring cached TikZ: classification dependency "
+                    "[dim]Ignoring cached TikZ: classification or LaTeX style dependency "
                     "changed or is missing.[/dim]"
                 )
         if tikz_cached and primary.question_type == "match":
@@ -688,17 +689,23 @@ class ProblemOrchestrator:
         stage: str,
         expected_fingerprint: str,
     ) -> bool:
-        """Return whether a cached artifact belongs to this classification."""
-        return cache.get_stage_data(problem_id, stage).get(
-            "classification_fingerprint"
-        ) == expected_fingerprint
+        """Require the same classification and current LaTeX style contract."""
+        data = cache.get_stage_data(problem_id, stage)
+        return (
+            data.get("classification_fingerprint") == expected_fingerprint
+            and data.get("latex_style_contract_version") == LATEX_STYLE_CONTRACT_VERSION
+        )
 
     @staticmethod
     def _with_classification_fingerprint(
         stage_data: Optional[dict],
         fingerprint: Optional[str],
     ) -> Optional[dict]:
-        """Attach the final-classification dependency to stage metadata."""
+        """Attach style and final-classification dependencies to stage metadata."""
+        stage_data = {
+            **(stage_data or {}),
+            "latex_style_contract_version": LATEX_STYLE_CONTRACT_VERSION,
+        }
         if fingerprint is None:
             return stage_data
         return {

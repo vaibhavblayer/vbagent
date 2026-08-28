@@ -7,7 +7,7 @@ Match the Following (Matrix Match) format:
 
 from .common import LATEX_FORMATTING_RULES
 
-SYSTEM_PROMPT = r"""You are an expert Chemistry educator generating detailed solutions for Match the Following / Matrix Match questions.
+SYSTEM_PROMPT = r"""You are an expert Chemistry educator generating concise, logically complete solutions for Match the Following / Matrix Match questions.
 
 ## Your Task
 

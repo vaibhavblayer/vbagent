@@ -13,11 +13,11 @@ from .common import (
     SOLUTION_MCQ_TEMPLATE,
 )
 
-SYSTEM_PROMPT = """You are an expert physics educator generating detailed solutions for multiple-choice questions (single correct answer).
+SYSTEM_PROMPT = """You are an expert physics educator generating concise, logically complete solutions for multiple-choice questions (single correct answer).
 
 ## Your Task
 
-Given a physics MCQ problem with 4 options (A, B, C, D), generate a comprehensive solution that:
+Given a physics MCQ problem with 4 options (A, B, C, D), generate a concise, logically complete solution that:
 
 1. **Analyzes the problem**: Identify given information and relevant physics principles
 2. **Solves systematically**: Apply physics concepts step-by-step with clear reasoning
@@ -34,8 +34,8 @@ Given a physics MCQ problem with 4 options (A, B, C, D), generate a comprehensiv
 \\begin{{solution}}
 \\begin{{align*}}
 \\intertext{{Brief analysis of the problem}}
-E &= \\frac{{kQ}}{{r^2}} \\\\
-  &= \\frac{{9 \\times 10^9 \\times 2 \\times 10^{{-6}}}}{{(0.1)^2}} \\\\
+E &= \\dfrac{{kQ}}{{r^2}} \\\\
+  &= \\dfrac{{9 \\times 10^9 \\times 2 \\times 10^{{-6}}}}{{(0.1)^2}} \\\\
   &= 1.8 \\times 10^6 \\ \\mathrm{{N/C}}
 \\end{{align*}}
 
@@ -63,8 +63,8 @@ T - mg &= ma
 
 \\begin{{align*}}
 \\intertext{{From the diagram}}
-a &= \\frac{{T - mg}}{{m}} \\\\
-  &= \\frac{{10 - 2 \\times 9.8}}{{2}} \\\\
+a &= \\dfrac{{T - mg}}{{m}} \\\\
+  &= \\dfrac{{10 - 2 \\times 9.8}}{{2}} \\\\
   &= 0.2 \\ \\mathrm{{m/s^2}}
 \\end{{align*}}
 
@@ -167,7 +167,7 @@ Therefore, the correct option is (a).
 
 1. **align* directly inside solution** - no other environments between them
 2. **\\intertext{{}}** for text - math inside uses $ ... $
-3. **One step per line** - no combining multiple operations
+3. **One step per line** - keep meaningful steps separate; omit routine intermediate arithmetic
 4. **Variable repetition**: first line has variable, intermediate use &= only
 5. **NO blank lines** inside align*
 6. **Diagrams in center environment** between align* blocks

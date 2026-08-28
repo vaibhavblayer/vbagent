@@ -10,10 +10,10 @@ TOPIC_CONCEPTS = """
 ## Key Concepts for Mechanics
 
 ### Kinematics
-- Equations of motion: $v = u + at$, $s = ut + \\frac{1}{2}at^2$, $v^2 = u^2 + 2as$
+- Equations of motion: $v = u + at$, $s = ut + \\dfrac{1}{2}at^2$, $v^2 = u^2 + 2as$
 - Relative motion: $\\vec{v}_{AB} = \\vec{v}_A - \\vec{v}_B$
 - Projectile motion: horizontal and vertical components independent
-- Circular motion: $a_c = \\frac{v^2}{r} = \\omega^2 r$
+- Circular motion: $a_c = \\dfrac{v^2}{r} = \\omega^2 r$
 
 ### Dynamics
 - Newton's laws: $\\sum \\vec{F} = m\\vec{a}$
@@ -54,7 +54,7 @@ COMMON_PATTERNS = """
 ### Pattern 4: Circular motion
 1. Draw mechanics diagram showing circular path
 2. Identify center-seeking force (tension, normal, friction, or combination)
-3. Apply $\\sum F_c = \\frac{mv^2}{r}$ toward center
+3. Apply $\\sum F_c = \\dfrac{mv^2}{r}$ toward center
 4. Apply $\\sum F_{\\perp} = 0$ perpendicular to motion
 """
 
@@ -125,8 +125,8 @@ TYPICAL_MISTAKES = """
 
 6. **Circular motion errors**
    - Centripetal force is NET inward force, not a separate force
-   - At top of circle: $T + mg = \\frac{mv^2}{r}$
-   - At bottom: $T - mg = \\frac{mv^2}{r}$
+   - At top of circle: $T + mg = \\dfrac{mv^2}{r}$
+   - At bottom: $T - mg = \\dfrac{mv^2}{r}$
 """
 
 # Build system prompts for different question types

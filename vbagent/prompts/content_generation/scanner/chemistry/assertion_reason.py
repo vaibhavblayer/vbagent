@@ -1,5 +1,7 @@
 """Assertion-Reason question scanner prompt."""
 
+from vbagent.prompts.latex_style import solution_style_rules
+
 from .common import DIAGRAM_PLACEHOLDER
 
 
@@ -59,7 +61,7 @@ Analyze the provided image and extract an Assertion–Reason style question. Pro
 ## Strict LaTeX Rules
 
 * Inline math: always `$...$` (including inside `\intertext{...}`).
-* Macros with braces: `\vec{a}`, `\frac{a}{b}`.
+* Macros with braces: `\vec{a}`, `\dfrac{a}{b}`.
 * Parentheses/brackets: `\left(\cdot\right)`, `\left[\cdot\right]`, `\left|\cdot\right|`.
 * Intertext rule: in `\intertext{...}`, do not use `\text{...}`; write plain prose and wrap math with `$...$` only.
 
@@ -67,6 +69,8 @@ Analyze the provided image and extract an Assertion–Reason style question. Pro
 
 **Final Check:** Ensure your output is ONLY the LaTeX snippet from `\item` to `\end{solution}` with no extra text or comments.
 """
+
+SYSTEM_PROMPT += solution_style_rules("chemistry")
 
 USER_TEMPLATE = "Extract LaTeX from this chemistry question image."
 

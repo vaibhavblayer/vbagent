@@ -10,16 +10,16 @@ TOPIC_CONCEPTS = """
 ## Key Concepts for Electromagnetism
 
 ### Electromagnetic Induction
-- Faraday's law: $\\mathcal{E} = -\\frac{d\\Phi_B}{dt}$ where $\\Phi_B = \\int \\vec{B} \\cdot d\\vec{A}$
-- For $N$ turns: $\\mathcal{E} = -N\\frac{d\\Phi_B}{dt}$
+- Faraday's law: $\\mathcal{E} = -\\dfrac{d\\Phi_B}{dt}$ where $\\Phi_B = \\int \\vec{B} \\cdot d\\vec{A}$
+- For $N$ turns: $\\mathcal{E} = -N\\dfrac{d\\Phi_B}{dt}$
 - Lenz's law: induced current opposes change in flux
 - Motional EMF: $\\mathcal{E} = Blv$ (rod moving in field)
 
 ### Inductance
-- Self-inductance: $\\mathcal{E} = -L\\frac{dI}{dt}$
+- Self-inductance: $\\mathcal{E} = -L\\dfrac{dI}{dt}$
 - Solenoid: $L = \\mu_0 n^2 Al$ where $A$ is area, $l$ is length
-- Energy stored: $U = \\frac{1}{2}LI^2$
-- Energy density: $u = \\frac{B^2}{2\\mu_0}$
+- Energy stored: $U = \\dfrac{1}{2}LI^2$
+- Energy density: $u = \\dfrac{B^2}{2\\mu_0}$
 
 ### LR Circuits
 - Growth of current: $I(t) = I_0(1 - e^{-t/\\tau})$ where $\\tau = L/R$
@@ -34,18 +34,18 @@ TOPIC_CONCEPTS = """
 
 ### Reactance and Impedance
 - Inductive reactance: $X_L = \\omega L$
-- Capacitive reactance: $X_C = \\frac{1}{\\omega C}$
+- Capacitive reactance: $X_C = \\dfrac{1}{\\omega C}$
 - Impedance: $Z = \\sqrt{R^2 + (X_L - X_C)^2}$
-- Phase angle: $\\tan\\phi = \\frac{X_L - X_C}{R}$
+- Phase angle: $\\tan\\phi = \\dfrac{X_L - X_C}{R}$
 
 ### Resonance
-- Resonant frequency: $\\omega_0 = \\frac{1}{\\sqrt{LC}}$
+- Resonant frequency: $\\omega_0 = \\dfrac{1}{\\sqrt{LC}}$
 - At resonance: $X_L = X_C$, $Z = R$ (minimum), current maximum
-- Quality factor: $Q = \\frac{\\omega_0 L}{R}$
+- Quality factor: $Q = \\dfrac{\\omega_0 L}{R}$
 
 ### Transformers
-- Voltage ratio: $\\frac{V_s}{V_p} = \\frac{N_s}{N_p}$
-- Current ratio: $\\frac{I_s}{I_p} = \\frac{N_p}{N_s}$
+- Voltage ratio: $\\dfrac{V_s}{V_p} = \\dfrac{N_s}{N_p}$
+- Current ratio: $\\dfrac{I_s}{I_p} = \\dfrac{N_p}{N_s}$
 - Power: $P_p = P_s$ (ideal transformer)
 - Step-up: $N_s > N_p$, step-down: $N_s < N_p$
 
@@ -62,8 +62,8 @@ COMMON_PATTERNS = """
 
 ### Pattern 1: Induced EMF from changing flux
 1. Calculate initial and final flux: $\\Phi_B = BA\\cos\\theta$
-2. Find rate of change: $\\frac{d\\Phi_B}{dt}$
-3. Apply Faraday's law: $\\mathcal{E} = -N\\frac{d\\Phi_B}{dt}$
+2. Find rate of change: $\\dfrac{d\\Phi_B}{dt}$
+3. Apply Faraday's law: $\\mathcal{E} = -N\\dfrac{d\\Phi_B}{dt}$
 4. Use Lenz's law for current direction
 
 ### Pattern 2: Motional EMF
@@ -112,15 +112,15 @@ DIAGRAM_GUIDANCE = """
 \\begin{solution}
 \\begin{align*}
 \\intertext{The rate of change of magnetic flux is:}
-\\frac{d\\Phi_B}{dt} &= \\frac{\\Delta(BA)}{\\Delta t} \\\\
-                     &= A\\frac{\\Delta B}{\\Delta t} \\\\
-                     &= \\pi(0.1)^2 \\times \\frac{0.5 - 0}{0.1} \\\\
+\\dfrac{d\\Phi_B}{dt} &= \\dfrac{\\Delta(BA)}{\\Delta t} \\\\
+                     &= A\\dfrac{\\Delta B}{\\Delta t} \\\\
+                     &= \\pi(0.1)^2 \\times \\dfrac{0.5 - 0}{0.1} \\\\
                      &= 0.157 \\ \\mathrm{Wb/s}
 \\end{align*}
 
 \\begin{align*}
 \\intertext{The induced EMF is:}
-\\mathcal{E} &= -N\\frac{d\\Phi_B}{dt} \\\\
+\\mathcal{E} &= -N\\dfrac{d\\Phi_B}{dt} \\\\
              &= -100 \\times 0.157 \\\\
              &= -15.7 \\ \\mathrm{V}
 \\end{align*}

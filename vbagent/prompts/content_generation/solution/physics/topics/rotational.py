@@ -11,9 +11,9 @@ TOPIC_CONCEPTS = """
 
 ### Rotational Kinematics
 - Angular displacement: $\\theta$ (radians)
-- Angular velocity: $\\omega = \\frac{d\\theta}{dt}$
-- Angular acceleration: $\\alpha = \\frac{d\\omega}{dt}$
-- Equations: $\\omega = \\omega_0 + \\alpha t$, $\\theta = \\omega_0 t + \\frac{1}{2}\\alpha t^2$, $\\omega^2 = \\omega_0^2 + 2\\alpha\\theta$
+- Angular velocity: $\\omega = \\dfrac{d\\theta}{dt}$
+- Angular acceleration: $\\alpha = \\dfrac{d\\omega}{dt}$
+- Equations: $\\omega = \\omega_0 + \\alpha t$, $\\theta = \\omega_0 t + \\dfrac{1}{2}\\alpha t^2$, $\\omega^2 = \\omega_0^2 + 2\\alpha\\theta$
 - Relation to linear: $v = r\\omega$, $a_t = r\\alpha$, $a_c = r\\omega^2$
 
 ### Rotational Dynamics
@@ -25,23 +25,23 @@ TOPIC_CONCEPTS = """
 
 ### Common Moments of Inertia
 - Point mass: $I = mr^2$
-- Rod (center): $I = \\frac{1}{12}ML^2$
-- Rod (end): $I = \\frac{1}{3}ML^2$
-- Disk (center): $I = \\frac{1}{2}MR^2$
-- Sphere (center): $I = \\frac{2}{5}MR^2$
+- Rod (center): $I = \\dfrac{1}{12}ML^2$
+- Rod (end): $I = \\dfrac{1}{3}ML^2$
+- Disk (center): $I = \\dfrac{1}{2}MR^2$
+- Sphere (center): $I = \\dfrac{2}{5}MR^2$
 - Hoop (center): $I = MR^2$
 
 ### Angular Momentum and Energy
 - Angular momentum: $\\vec{L} = I\\vec{\\omega}$ or $\\vec{L} = \\vec{r} \\times \\vec{p}$
 - Conservation: $\\sum \\tau_{ext} = 0 \\Rightarrow L = constant$
-- Rotational KE: $KE_{rot} = \\frac{1}{2}I\\omega^2$
-- Total KE (rolling): $KE = \\frac{1}{2}mv^2 + \\frac{1}{2}I\\omega^2$
+- Rotational KE: $KE_{rot} = \\dfrac{1}{2}I\\omega^2$
+- Total KE (rolling): $KE = \\dfrac{1}{2}mv^2 + \\dfrac{1}{2}I\\omega^2$
 
 ### Rolling Motion
 - Pure rolling: $v_{cm} = R\\omega$ (no slipping)
 - Acceleration: $a_{cm} = R\\alpha$
 - Friction provides torque for rolling
-- Rolling down incline: $a = \\frac{g\\sin\\theta}{1 + I/(MR^2)}$
+- Rolling down incline: $a = \\dfrac{g\\sin\\theta}{1 + I/(MR^2)}$
 
 ### Problem-Solving Strategy
 1. Draw mechanics diagram showing rotation axis and forces
@@ -76,7 +76,7 @@ COMMON_PATTERNS = """
 ### Pattern 4: Energy method for rolling
 1. Use conservation of energy
 2. Include both translational and rotational KE
-3. $mgh = \\frac{1}{2}mv^2 + \\frac{1}{2}I\\omega^2$
+3. $mgh = \\dfrac{1}{2}mv^2 + \\dfrac{1}{2}I\\omega^2$
 4. Use $v = R\\omega$ and solve
 """
 
@@ -108,15 +108,15 @@ mg\\sin\\theta - f &= ma
 \\begin{align*}
 \\intertext{For rotational motion about the center:}
 \\sum \\tau &= I\\alpha \\\\
-fR &= \\frac{1}{2}MR^2 \\cdot \\frac{a}{R} \\\\
-f &= \\frac{1}{2}Ma
+fR &= \\dfrac{1}{2}MR^2 \\cdot \\dfrac{a}{R} \\\\
+f &= \\dfrac{1}{2}Ma
 \\end{align*}
 
 \\begin{align*}
 \\intertext{Substituting back:}
-mg\\sin\\theta - \\frac{1}{2}Ma &= Ma \\\\
-a &= \\frac{2g\\sin\\theta}{3} \\\\
-  &= \\frac{2 \\times 9.8 \\times \\sin 30^\\circ}{3} \\\\
+mg\\sin\\theta - \\dfrac{1}{2}Ma &= Ma \\\\
+a &= \\dfrac{2g\\sin\\theta}{3} \\\\
+  &= \\dfrac{2 \\times 9.8 \\times \\sin 30^\\circ}{3} \\\\
   &= 3.3 \\ \\mathrm{m/s^2}
 \\end{align*}
 \\end{solution}
@@ -148,7 +148,7 @@ TYPICAL_MISTAKES = """
 
 5. **Energy errors for rolling**
    - Total KE = translational + rotational
-   - Don't forget $\\frac{1}{2}I\\omega^2$ term
+   - Don't forget $\\dfrac{1}{2}I\\omega^2$ term
    - Use $v = R\\omega$ to eliminate one variable
 
 6. **Angular momentum direction**

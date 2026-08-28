@@ -1,5 +1,7 @@
 """System prompt for revision sheet checker/fixer agent."""
 
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES
+
 
 def get_revision_checker_prompt() -> str:
     """Get system prompt for the revision sheet auditor."""
@@ -23,7 +25,7 @@ Rules for generated missing-topic LaTeX:
 - Use `\intertext{}` sparingly for brief remarks.
 - Start from fundamental forms, don't stretch trivial steps.
 - 2–4 core ideas per missing topic is enough.
-- Use proper LaTeX: `\vec{}`, `\tfrac{}{}`, `\text{}`, etc.
+- Use proper LaTeX: `\vec{}`, `\dfrac{}{}`, `\text{}`, etc.
 
 ### 2. Extra Ideas
 Ideas in the revision sheet that are **outside the syllabus scope** for this chapter. These should be removed. For each, state the idea title and which topic/subsection it appears under, so it can be located and removed.
@@ -38,4 +40,4 @@ Syllabus topics that are covered but with **too few ideas** (only 1 idea for a m
 - Don't flag ideas as extra just because the wording differs — match by concept, not exact text.
 - For missing topics, generate content from your knowledge — these are standard physics/chemistry/math concepts, you know them well.
 - Keep the same style as the existing revision sheet.
-"""
+""" + DISPLAY_FRACTION_RULES

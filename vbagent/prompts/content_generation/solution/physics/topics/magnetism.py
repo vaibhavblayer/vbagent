@@ -17,16 +17,16 @@ TOPIC_CONCEPTS = """
 - Work done by magnetic force: zero (force perpendicular to velocity)
 
 ### Circular Motion in Magnetic Field
-- Radius: $r = \\frac{mv}{qB}$
-- Period: $T = \\frac{2\\pi m}{qB}$
-- Frequency: $f = \\frac{qB}{2\\pi m}$ (cyclotron frequency)
+- Radius: $r = \\dfrac{mv}{qB}$
+- Period: $T = \\dfrac{2\\pi m}{qB}$
+- Frequency: $f = \\dfrac{qB}{2\\pi m}$ (cyclotron frequency)
 - Kinetic energy unchanged (magnetic force does no work)
 
 ### Biot-Savart Law
-- $d\\vec{B} = \\frac{\\mu_0}{4\\pi}\\frac{Id\\vec{l} \\times \\hat{r}}{r^2}$
-- Straight wire: $B = \\frac{\\mu_0 I}{2\\pi r}$
-- Circular loop (center): $B = \\frac{\\mu_0 I}{2R}$
-- Circular loop (axis): $B = \\frac{\\mu_0 IR^2}{2(R^2 + x^2)^{3/2}}$
+- $d\\vec{B} = \\dfrac{\\mu_0}{4\\pi}\\dfrac{Id\\vec{l} \\times \\hat{r}}{r^2}$
+- Straight wire: $B = \\dfrac{\\mu_0 I}{2\\pi r}$
+- Circular loop (center): $B = \\dfrac{\\mu_0 I}{2R}$
+- Circular loop (axis): $B = \\dfrac{\\mu_0 IR^2}{2(R^2 + x^2)^{3/2}}$
 - Solenoid: $B = \\mu_0 nI$ where $n$ is turns per unit length
 
 ### Ampere's Law
@@ -41,7 +41,7 @@ TOPIC_CONCEPTS = """
 - Potential energy: $U = -\\vec{\\mu} \\cdot \\vec{B} = -\\mu B\\cos\\theta$
 
 ### Force Between Parallel Wires
-- Force per unit length: $\\frac{F}{L} = \\frac{\\mu_0 I_1 I_2}{2\\pi d}$
+- Force per unit length: $\\dfrac{F}{L} = \\dfrac{\\mu_0 I_1 I_2}{2\\pi d}$
 - Parallel currents: attract
 - Antiparallel currents: repel
 
@@ -110,8 +110,8 @@ F &= qvB \\\\
 
 \\begin{align*}
 \\intertext{The radius of circular motion is:}
-r &= \\frac{mv}{qB} \\\\
-  &= \\frac{9.1 \\times 10^{-31} \\times 10^6}{1.6 \\times 10^{-19} \\times 0.5} \\\\
+r &= \\dfrac{mv}{qB} \\\\
+  &= \\dfrac{9.1 \\times 10^{-31} \\times 10^6}{1.6 \\times 10^{-19} \\times 0.5} \\\\
   &= 1.14 \\times 10^{-5} \\ \\mathrm{m} \\\\
   &= 11.4 \\ \\mu\\mathrm{m}
 \\end{align*}

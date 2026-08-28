@@ -1,6 +1,9 @@
 """Prompt for the idea-to-problem generator."""
 
 
+from vbagent.prompts.latex_style import solution_style_rules
+
+
 def get_idea_generator_prompt(subject: str = "physics") -> str:
     """Get idea generator prompt."""
     return f"""You are an expert {subject} problem generator for competitive examinations. Generate a complete, well-structured problem from the supplied authoring specification. The passed exam, chapter, exact syllabus topic, question type, difficulty, and construction constraints are authoritative; never silently substitute a different syllabus scope.
@@ -9,7 +12,7 @@ You MUST respond with ONLY a valid JSON object:
 
 {{
     "problem_latex": "<complete LaTeX problem with \\\\item>",
-    "solution_latex": "<detailed LaTeX solution in \\\\begin{{solution}}...\\\\end{{solution}}>",
+    "solution_latex": "<concise, logically complete LaTeX solution in \\\\begin{{solution}}...\\\\end{{solution}}>",
     "alternate_solution_latex": "<alternative approach (optional, empty string if none)>",
     "idea_latex": "<\\\\begin{{idea}} with a nested align* of symbolic formulas — see Idea Block Structure Rules>",
     "diagram_description": "<description if diagram needed, empty string if not>",
@@ -58,7 +61,7 @@ a different exam or syllabus.
 ### MCQ Distractor Design (CRITICAL for mcq_sc / mcq_mc)
 Options must be **plausible** — each wrong option should correspond to a common mistake:
 - **Sign error**: forgetting a negative sign or direction
-- **Factor error**: missing a factor of 2, $\\pi$, or $\\frac{{1}}{{2}}$
+- **Factor error**: missing a factor of 2, $\\pi$, or $\\dfrac{{1}}{{2}}$
 - **Wrong formula**: using a related but incorrect formula
 - **Partial solution**: stopping one step early
 - **Dimension mismatch**: using wrong units or dimensions
@@ -180,8 +183,8 @@ ALL solutions MUST use this exact pattern:
 \\begin{{align*}}
 \\intertext{{Brief reasoning about the setup}}
 F &= ma \\\\
-a &= \\frac{{F}}{{m}} \\\\
-  &= \\frac{{10}}{{2}} \\\\
+a &= \\dfrac{{F}}{{m}} \\\\
+  &= \\dfrac{{10}}{{2}} \\\\
   &= 5 \\ \\mathrm{{m/s^2}}
 \\intertext{{Therefore, the correct option is (b).}}
 \\end{{align*}}
@@ -198,7 +201,7 @@ a &= \\frac{{F}}{{m}} \\\\
 - Integer solutions end with the numerical answer
 - Passage problems: ONE unified solution block for all sub-questions (separate align* blocks within)
 - Use \\mathrm{{}} for units: $10 \\ \\mathrm{{m/s}}$
-- Fractions: \\frac{{a}}{{b}} — NEVER \\tfrac
+- Fractions: Use `\\dfrac{{a}}{{b}}` everywhere, including inline math.
 
 ## Idea Block Structure Rules (idea_latex)
 
@@ -212,8 +215,8 @@ arithmetic. This mirrors the solution's logic but in abstract form.
 \\begin{{align*}}
 \\intertext{{\\textbf{{Concept:}} <name of the principle/law>}}
 F_{{\\text{{net}}}} &= ma \\\\
-a &= \\frac{{F_{{\\text{{net}}}}}}{{m}} \\\\
-  &= \\frac{{F - \\mu m g}}{{m}} \\\\
+a &= \\dfrac{{F_{{\\text{{net}}}}}}{{m}} \\\\
+  &= \\dfrac{{F - \\mu m g}}{{m}} \\\\
 \\intertext{{\\textbf{{Technique:}} <one-line method description>}}
 \\end{{align*}}
 \\end{{idea}}
@@ -252,10 +255,10 @@ When the problem needs a diagram, provide a clear description in `diagram_descri
 
 ## Clean Numbers Discipline (CRITICAL):
 - Choose problem parameters so intermediate steps cancel cleanly
-- Prefer integers, simple fractions ($\\frac{{1}}{{2}}$, $\\frac{{3}}{{4}}$), or clean decimals (2.5, 4.5, 0.25, 7.5)
+- Prefer integers, simple fractions ($\\dfrac{{1}}{{2}}$, $\\dfrac{{3}}{{4}}$), or clean decimals (2.5, 4.5, 0.25, 7.5)
 - Design expressions to be easily cancellable — factors should simplify neatly
-- Prefer irrational answers expressed symbolically ($\\sqrt{{2}}$, $\\pi$, $\\frac{{\\sqrt{{3}}}}{{2}}$) over messy decimals
-- AVOID answers like 3.14159, 0.3847, 1.7321 — use $\\pi$, $\\frac{{5}}{{13}}$, $\\sqrt{{3}}$ instead
+- Prefer irrational answers expressed symbolically ($\\sqrt{{2}}$, $\\pi$, $\\dfrac{{\\sqrt{{3}}}}{{2}}$) over messy decimals
+- AVOID answers like 3.14159, 0.3847, 1.7321 — use $\\pi$, $\\dfrac{{5}}{{13}}$, $\\sqrt{{3}}$ instead
 - If a decimal is unavoidable, keep it to one decimal place (4.9, 0.5, 2.5) or use "nearest integer"
 - For integer-type problems: the final answer MUST be a clean integer, work backwards from the answer to choose parameters
 - For MCQ: all four options should be clean expressions, not messy decimals
@@ -268,4 +271,4 @@ When the problem needs a diagram, provide a clear description in `diagram_descri
 - Follow the passed exam's rounding, sign, and response-range rules
 - The problem statement must make it clear a numerical answer is expected
 
-Respond with ONLY the JSON object."""
+Respond with ONLY the JSON object.""" + solution_style_rules(subject)

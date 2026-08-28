@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES
+
 
 def _load_references() -> str:
     """Load video solution reference samples if available."""
@@ -76,7 +78,7 @@ self.wait(1)
 ```python
 # Show equation, then transform it
 step1 = MathTex(r"F = ma")
-step2 = MathTex(r"a = \frac{F}{m}")
+step2 = MathTex(r"a = \dfrac{F}{m}")
 self.play(Write(step1))
 self.wait(1)
 self.play(TransformMatchingTex(step1, step2))
@@ -200,4 +202,4 @@ config.pixel_height = 1920
 - No title cards with channel names.
 - No MCQ option displays.
 - Don't cram too much on screen at once.
-""" + refs
+""" + refs + DISPLAY_FRACTION_RULES

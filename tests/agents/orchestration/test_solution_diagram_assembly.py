@@ -3,7 +3,10 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+import pytest
+
 from vbagent.agents.orchestration.solution_orchestrator import SolutionOrchestrator
+from vbagent.models.solution import DiagramRequirement
 
 
 def _orchestrator():
@@ -27,6 +30,84 @@ def test_stitch_diagrams_replaces_matching_placeholder():
 
     assert "% DIAGRAM PLACEHOLDER: fbd_1" not in assembled
     assert r"\draw (0,0) -- (1,1);" in assembled
+
+
+@pytest.mark.parametrize("marker_type", ["DIAGRAM PLACEHOLDER", "PLACEHOLDER"])
+@pytest.mark.parametrize("wrapper", ["", "center", "tikzpicture", "both"])
+@pytest.mark.parametrize("centered_code", [False, True])
+def test_stitch_diagrams_centers_once_and_preserves_tex(marker_type, wrapper, centered_code):
+    marker = f"\n% {marker_type}: graph_1\n"
+    if wrapper in ("tikzpicture", "both"):
+        marker = r"\begin{tikzpicture}" + marker + r"\end{tikzpicture}"
+    if wrapper in ("center", "both"):
+        marker = r"\begin{center}" + marker + r"\end{center}"
+    code = r"\begin{tikzpicture}\node {$\dfrac{1}{2}$};\end{tikzpicture}"
+    if centered_code:
+        code = r"\begin{center}" + code + r"\end{center}"
+
+    assembled = _orchestrator()._stitch_diagrams(
+        r"\begin{solution}" + marker + r"\end{solution}", {"graph_1": code}
+    )
+
+    assert "PLACEHOLDER" not in assembled
+    assert assembled.count(r"\begin{center}") == 1
+    assert assembled.count(r"\end{center}") == 1
+    assert assembled.count(r"\begin{tikzpicture}") == 1
+    assert r"\node {$\dfrac{1}{2}$};" in assembled
+
+
+def test_stitch_diagrams_does_not_replace_a_longer_diagram_id():
+    solution = (
+        "\\begin{solution}\n% DIAGRAM PLACEHOLDER: graph_10\n"
+        "% DIAGRAM PLACEHOLDER: graph_1\n\\end{solution}"
+    )
+    assembled = _orchestrator()._stitch_diagrams(solution, {"graph_1": "GRAPH ONE"})
+
+    assert "% DIAGRAM PLACEHOLDER: graph_10" in assembled
+    assert assembled.count("GRAPH ONE") == 1
+
+
+@pytest.mark.parametrize("subject", ["mathematics", "physics", "chemistry"])
+def test_dispatch_preserves_drawing_actions_subject_settings_and_empty_labels(monkeypatch, subject):
+    from vbagent.agents.diagram import tikz_router
+
+    received = {}
+
+    def generate(**kwargs):
+        received.update(kwargs)
+        return "DIAGRAM CODE", "function_graph"
+
+    monkeypatch.setattr(tikz_router, "generate_tikz_with_routing", generate)
+    req = DiagramRequirement(
+        diagram_id="graph_1",
+        diagram_type="function_graph",
+        description="Show the attained minimum.",
+        context="Exact function and domain.",
+        values={"minimum": "(2/3, ln(11/3))"},
+        labels=[],
+        annotations=["Use exact axis ticks, not a coordinate node."],
+        **{f"{subject}_context": {"show_grid": "no", "axis_range": "x: [-2, 10/3], y: [0, 4]"}},
+    )
+
+    result = SolutionOrchestrator(console=MagicMock())._dispatch_diagrams(
+        [req], None, subject, "PROBLEM"
+    )
+
+    assert result == {"graph_1": "DIAGRAM CODE"}
+    assert received["description"] == req.description
+    assert received["problem_text"] == "PROBLEM"
+    assert received["values"] == req.values
+    assert received["labels"] == []
+    context = received["solution_context"]
+    assert req.context in context
+    assert req.annotations[0] in context
+    assert "show_grid: no" in context
+    assert "axis_range: x: [-2, 10/3], y: [0, 4]" in context
+    assert "Requested diagram size: medium" in context
+
+
+def test_diagram_context_handles_legacy_requirements_without_optional_fields():
+    assert SolutionOrchestrator._diagram_generation_context(SimpleNamespace()) == ""
 
 
 def test_stitch_diagrams_falls_back_when_placeholder_is_missing():

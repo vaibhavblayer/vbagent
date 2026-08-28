@@ -6,6 +6,8 @@ all physics question types for solution generation.
 
 from dataclasses import dataclass
 
+from vbagent.prompts.latex_style import solution_style_rules
+
 from ...mcq_format import MCQ_ANSWER_FORMAT_RULES
 
 
@@ -49,19 +51,17 @@ LATEX_FORMATTING_RULES = r"""
   
 **BAD (repetitive variable on LHS):**
 ```latex
-t &= \frac{1}{\sqrt{g}} \int_{0}^{l} x^{-1/2} \, dx \\
-t &= \frac{1}{\sqrt{g}} \left[ 2\sqrt{x} \right]_{0}^{l} \\
-t &= 2\sqrt{\frac{l}{g}} \\
-t &= 2\sqrt{\frac{2.45}{9.8}} \\
+t &= \dfrac{1}{\sqrt{g}} \int_{0}^{l} x^{-1/2} \, dx \\
+t &= \dfrac{1}{\sqrt{g}} \left[ 2\sqrt{x} \right]_{0}^{l} \\
+t &= 2\sqrt{\dfrac{l}{g}} \\
+t &= 2\sqrt{\dfrac{2.45}{9.8}} \\
 t &= 1.0 \ \mathrm{s}
 ```
 
 **GOOD (clean, no repetition):**
 ```latex
-t &= \frac{1}{\sqrt{g}} \int_{0}^{l} x^{-1/2} \, dx \\
-  &= \frac{1}{\sqrt{g}} \left[ 2\sqrt{x} \right]_{0}^{l} \\
-  &= 2\sqrt{\frac{l}{g}} \\
-  &= 2\sqrt{\frac{2.45}{9.8}} \\
+t &= \dfrac{1}{\sqrt{g}} \int_{0}^{l} x^{-1/2} \, dx \\
+  &= 2\sqrt{\dfrac{l}{g}} \\
   &= 1.0 \ \mathrm{s}
 ```
 
@@ -85,7 +85,7 @@ F &= ma \\
 
 ### Physics Notation
 - Vectors: \vec{v}, unit vectors: \hat{i}, \hat{j}, \hat{k}
-- Fractions: \frac{a}{b} - NEVER \tfrac
+- Fractions: Use `\dfrac{a}{b}` everywhere, including inline math.
 - Parentheses: \left( ... \right), \left[ ... \right], \left| ... \right|
 - NO \bigl, \bigr, \Bigl, \Bigr sizing commands
 - Units: \mathrm{} for units: 10 \ \mathrm{m/s}, 5 \ \mathrm{kg}
@@ -175,7 +175,7 @@ the diagram is tailored exactly to the solution context.
 - Wrap in `\begin{center}...\end{center}`
 """
 
-LATEX_FORMATTING_RULES += MCQ_ANSWER_FORMAT_RULES
+LATEX_FORMATTING_RULES += MCQ_ANSWER_FORMAT_RULES + solution_style_rules("physics")
 
 # Solution quality guidelines
 SOLUTION_QUALITY = """
@@ -184,7 +184,7 @@ SOLUTION_QUALITY = """
 ### Clarity
 - Start with given information
 - State assumptions clearly
-- Explain each step before showing calculation
+- Explain why the method applies; add text only for a new idea or a necessary transition
 - Connect steps logically
 
 ### Rigor
@@ -328,8 +328,8 @@ T - mg &= ma
 
 \begin{align*}
 \intertext{Continue from diagram}
-a &= \frac{T - mg}{m} \\
-  &= \frac{10 - 2 \times 9.8}{2} \\
+a &= \dfrac{T - mg}{m} \\
+  &= \dfrac{20 - 2 \times 9.8}{2} \\
   &= 0.2 \ \mathrm{m/s^2}
 \end{align*}
 \end{solution}
@@ -339,11 +339,9 @@ a &= \frac{T - mg}{m} \\
 SOLUTION_SIMPLE_TEMPLATE = r"""
 \begin{solution}
 \begin{align*}
-\intertext{Brief reasoning about the setup}
+\intertext{Use Newton's second law for a mass of $2\,\mathrm{kg}$ with acceleration $5\,\mathrm{m/s^2}$.}
 F &= ma \\
-  &= 2 \times 5 \\
   &= 10 \ \mathrm{N}
-\intertext{Therefore, the force is $F = 10$ N}
 \end{align*}
 \end{solution}
 """
@@ -353,9 +351,8 @@ SOLUTION_MCQ_TEMPLATE = r"""
 \begin{solution}
 \begin{align*}
 \intertext{Brief analysis of the problem}
-E &= \frac{kQ}{r^2} \\
-  &= \frac{9 \times 10^9 \times 2 \times 10^{-6}}{(0.1)^2} \\
-  &= \frac{1.8 \times 10^4}{0.01} \\
+E &= \dfrac{kQ}{r^2} \\
+  &= \dfrac{9 \times 10^9 \times 2 \times 10^{-6}}{(0.1)^2} \\
   &= 1.8 \times 10^6 \ \mathrm{N/C}
 \end{align*}
 

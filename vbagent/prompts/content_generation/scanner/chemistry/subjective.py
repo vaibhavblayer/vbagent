@@ -1,12 +1,14 @@
 """Subjective question scanner prompt for chemistry."""
 
+from vbagent.prompts.latex_style import solution_style_rules
+
 from .common import DIAGRAM_PLACEHOLDER, SOLUTION_STRUCTURE
 from .._shared import SUBPART_FORMATTING_RULES
 
 SYSTEM_PROMPT = r"""
 ## Overall Task & Output Format
 
-**Goal:** Analyze the provided image. Generate a complete LaTeX **subjective** chemistry question based **exactly** on the image. Include a detailed, step-by-step solution and, if applicable, a simplified diagram placeholder.
+**Goal:** Analyze the provided image. Generate a complete LaTeX **subjective** chemistry question based **exactly** on the image. Include a concise solution explaining the method and essential steps and, if applicable, a simplified diagram placeholder.
 
 **CRITICAL OUTPUT CONSTRAINT:** You MUST return *only* the raw LaTeX code snippet starting precisely with `\item` and ending precisely after `\end{solution}`. Do **NOT** include *any* preamble, `\documentclass`, `\begin{document}`, explanations, comments, or any text outside of this exact snippet.
 
@@ -83,14 +85,16 @@ Follow this exact structure for your output:
 
 *   **Math Mode:** Use `$ ... $` for *all* inline math.
 *   **Chemical Formulas:** Use `\ce{}` for *all* chemical content.
-*   **Macros:** Always use `{}`: `\frac{a}{b}`.
-*   **Fractions:** Use `\frac{a}{b}`. **Do not use** `\tfrac`.
+*   **Macros:** Always use `{}`: `\dfrac{a}{b}`.
+- Fractions: Use `\dfrac{a}{b}` everywhere, including inline math.
 *   **Parentheses/Brackets:** Use `\left( ... \right)`, `\left[ ... \right]`.
 
 ---
 
 **Final Check:** Ensure your output is ONLY the LaTeX snippet from `\item` to `\end{solution}` with no extra text or comments.
 """ + SUBPART_FORMATTING_RULES
+
+SYSTEM_PROMPT += solution_style_rules("chemistry")
 
 USER_TEMPLATE = "Extract LaTeX from this chemistry question image."
 

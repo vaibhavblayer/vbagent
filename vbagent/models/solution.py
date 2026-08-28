@@ -22,7 +22,7 @@ class DiagramRequirement(BaseModel):
         description="Type of diagram: fbd, circuit, graph, optics, organic_structure, function_graph, etc."
     )
     description: str = Field(
-        description="Detailed description of what the diagram should show"
+        description="The diagram's learning purpose and essential visible features, not the entire solution"
     )
     
     # Placement and sizing
@@ -38,19 +38,19 @@ class DiagramRequirement(BaseModel):
     # Rich context for generation
     context: str = Field(
         default="",
-        description="Detailed explanation for diagram generation (physics/chemistry/math context)"
+        description="Exact mathematical/scientific context needed to draw correctly; construction data need not become visible text"
     )
     values: Dict[str, str] = Field(
         default_factory=dict,
-        description="Key-value pairs of variables and their values to show in diagram (e.g., {'mass': '2kg', 'angle': '30°'})"
+        description="Exact construction data as strings (functions, domains, coordinates, endpoint inclusion, quantities); not a request to label every value"
     )
     labels: List[str] = Field(
         default_factory=list,
-        description="List of labels that must appear in the diagram (e.g., ['A', 'B', 'mg', 'N', 'T'])"
+        description="Minimal indispensable visible labels, e.g. ['A', 'B', 'mg']; may be empty. Do not duplicate axis ticks or request a separate node for each supplied value"
     )
     annotations: List[str] = Field(
         default_factory=list,
-        description="Additional annotations or notes to add (e.g., ['Show direction of motion', 'Highlight equilibrium'])"
+        description="Only essential drawing actions, e.g. marking the attained minimum or shading a requested region; no repeated formulas, solution prose, or decorative guides"
     )
     
     # Step-by-step support

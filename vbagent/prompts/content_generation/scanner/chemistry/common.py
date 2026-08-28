@@ -99,7 +99,7 @@ LATEX_FORMATTING_RULES = r"""
 
 **General Math:**
 *   Use `$ ... $` for inline math
-*   Use `\frac{a}{b}` for fractions
+*   Use `\dfrac{a}{b}` for fractions
 *   Use `\left( ... \right)` for parentheses
 """
 
@@ -125,9 +125,9 @@ SOLUTION_STRUCTURE = r"""
 ```latex
 \begin{solution}
 \begin{align*}
-    K_{\text{eq}} &= \frac{[\ce{C}][\ce{D}]}{[\ce{A}][\ce{B}]} \\
+    K_{\text{eq}} &= \dfrac{[\ce{C}][\ce{D}]}{[\ce{A}][\ce{B}]} \\
     \intertext{At equilibrium:}
-    K_{\text{eq}} &= \frac{(0.5)(0.5)}{(0.2)(0.3)} = 4.17
+    K_{\text{eq}} &= \dfrac{(0.5)(0.5)}{(0.2)(0.3)} = 4.17
 \end{align*}
 \end{solution}
 ```

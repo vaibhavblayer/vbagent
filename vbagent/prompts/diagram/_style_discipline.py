@@ -5,6 +5,8 @@ Injected automatically by DiagramAgent.create_agent() into every
 diagram agent's system prompt.
 """
 
+from vbagent.prompts.latex_style import DISPLAY_FRACTION_RULES, GRAPH_CLARITY_RULES
+
 STYLE_DISCIPLINE = r"""
 ## Style Discipline (MANDATORY — applies to ALL diagrams)
 
@@ -75,8 +77,9 @@ parameterized structures (3+ uses of the same dimension).
 ### 4. Prefer Simple TikZ Over pgfplots
 For schematic graphs (v-t, x-t, phase diagrams, qualitative curves), use plain
 TikZ `\draw` with `plot[domain=..., samples=...]`. Reserve `\begin{axis}` from
-pgfplots ONLY for data-heavy plots that need grid, precise tick marks, or
-multiple datasets with legends.
+pgfplots for plots that need precise coordinates, domain/range endpoints,
+discontinuous branches, or multiple functions. Using pgfplots does not require
+adding a grid, legend, or extra annotation nodes.
 
 **Simple v-t graph — use TikZ:**
 ```latex
@@ -281,4 +284,4 @@ When asked for diagrams embedded in a match-the-column table, create one
 self-contained `\def\MatchX{...}` per diagram-bearing row. Never combine the
 rows into one large TikZ picture, never include the row label inside the
 diagram, and never use `\OptionX` for table cells.
-"""
+""" + DISPLAY_FRACTION_RULES + GRAPH_CLARITY_RULES

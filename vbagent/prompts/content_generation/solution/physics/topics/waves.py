@@ -12,37 +12,37 @@ TOPIC_CONCEPTS = """
 ### Wave Basics
 - Wave equation: $y(x,t) = A\\sin(kx - \\omega t + \\phi)$ or $y(x,t) = A\\cos(kx - \\omega t + \\phi)$
 - Amplitude: $A$ (maximum displacement)
-- Wave number: $k = \\frac{2\\pi}{\\lambda}$
+- Wave number: $k = \\dfrac{2\\pi}{\\lambda}$
 - Angular frequency: $\\omega = 2\\pi f$
-- Wave speed: $v = f\\lambda = \\frac{\\omega}{k}$
+- Wave speed: $v = f\\lambda = \\dfrac{\\omega}{k}$
 - Phase: $\\phi_0 = kx - \\omega t + \\phi$
 
 ### Wave Properties
 - Wavelength: $\\lambda$ (distance between consecutive crests)
 - Frequency: $f$ (oscillations per second)
-- Period: $T = \\frac{1}{f}$
-- Speed on string: $v = \\sqrt{\\frac{T}{\\mu}}$ where $T$ is tension, $\\mu$ is linear mass density
-- Speed of sound: $v = \\sqrt{\\frac{\\gamma RT}{M}}$ or $v \\approx 343$ m/s in air at 20°C
+- Period: $T = \\dfrac{1}{f}$
+- Speed on string: $v = \\sqrt{\\dfrac{T}{\\mu}}$ where $T$ is tension, $\\mu$ is linear mass density
+- Speed of sound: $v = \\sqrt{\\dfrac{\\gamma RT}{M}}$ or $v \\approx 343$ m/s in air at 20°C
 
 ### Superposition and Interference
 - Principle of superposition: $y_{total} = y_1 + y_2 + ...$
 - Constructive interference: waves in phase, amplitude adds
 - Destructive interference: waves out of phase, amplitude cancels
 - Path difference for constructive: $\\Delta x = n\\lambda$ ($n = 0, 1, 2, ...$)
-- Path difference for destructive: $\\Delta x = (n + \\frac{1}{2})\\lambda$
+- Path difference for destructive: $\\Delta x = (n + \\dfrac{1}{2})\\lambda$
 
 ### Standing Waves
 - Standing wave: $y(x,t) = 2A\\sin(kx)\\cos(\\omega t)$
-- Nodes: points of zero amplitude, $x = n\\frac{\\lambda}{2}$
-- Antinodes: points of maximum amplitude, $x = (n + \\frac{1}{2})\\frac{\\lambda}{2}$
-- String fixed at both ends: $\\lambda_n = \\frac{2L}{n}$, $f_n = n\\frac{v}{2L}$ ($n = 1, 2, 3, ...$)
+- Nodes: points of zero amplitude, $x = n\\dfrac{\\lambda}{2}$
+- Antinodes: points of maximum amplitude, $x = (n + \\dfrac{1}{2})\\dfrac{\\lambda}{2}$
+- String fixed at both ends: $\\lambda_n = \\dfrac{2L}{n}$, $f_n = n\\dfrac{v}{2L}$ ($n = 1, 2, 3, ...$)
 - Pipe open at both ends: same as string
-- Pipe closed at one end: $\\lambda_n = \\frac{4L}{n}$, $f_n = n\\frac{v}{4L}$ ($n = 1, 3, 5, ...$)
+- Pipe closed at one end: $\\lambda_n = \\dfrac{4L}{n}$, $f_n = n\\dfrac{v}{4L}$ ($n = 1, 3, 5, ...$)
 
 ### Doppler Effect
-- Source moving: $f' = f\\frac{v}{v \\mp v_s}$ (− approaching, + receding)
-- Observer moving: $f' = f\\frac{v \\pm v_o}{v}$ (+ approaching, − receding)
-- Both moving: $f' = f\\frac{v \\pm v_o}{v \\mp v_s}$
+- Source moving: $f' = f\\dfrac{v}{v \\mp v_s}$ (− approaching, + receding)
+- Observer moving: $f' = f\\dfrac{v \\pm v_o}{v}$ (+ approaching, − receding)
+- Both moving: $f' = f\\dfrac{v \\pm v_o}{v \\mp v_s}$
 
 ### Problem-Solving Strategy
 1. Identify wave parameters: $A$, $\\lambda$, $f$, $v$
@@ -63,20 +63,20 @@ COMMON_PATTERNS = """
 
 ### Pattern 2: Interference problems
 1. Find path difference: $\\Delta x = |x_1 - x_2|$
-2. Express in terms of wavelength: $\\Delta x = n\\lambda$ or $(n + \\frac{1}{2})\\lambda$
+2. Express in terms of wavelength: $\\Delta x = n\\lambda$ or $(n + \\dfrac{1}{2})\\lambda$
 3. Determine constructive or destructive interference
 4. Calculate resultant amplitude
 
 ### Pattern 3: Standing waves on string
 1. Identify boundary conditions (fixed/free ends)
-2. Use $\\lambda_n = \\frac{2L}{n}$ for both ends fixed
-3. Calculate frequency: $f_n = n\\frac{v}{2L}$ where $v = \\sqrt{T/\\mu}$
+2. Use $\\lambda_n = \\dfrac{2L}{n}$ for both ends fixed
+3. Calculate frequency: $f_n = n\\dfrac{v}{2L}$ where $v = \\sqrt{T/\\mu}$
 4. Fundamental: $n = 1$, harmonics: $n = 2, 3, 4, ...$
 
 ### Pattern 4: Doppler effect
 1. Identify source and observer velocities
 2. Determine directions (toward or away)
-3. Apply $f' = f\\frac{v \\pm v_o}{v \\mp v_s}$ with correct signs
+3. Apply $f' = f\\dfrac{v \\pm v_o}{v \\mp v_s}$ with correct signs
 4. Calculate frequency shift
 """
 
@@ -101,7 +101,7 @@ DIAGRAM_GUIDANCE = """
 \\begin{solution}
 \\begin{align*}
 \\intertext{For a wave traveling in the +x direction with given parameters:}
-k &= \\frac{2\\pi}{\\lambda} = \\frac{2\\pi}{0.5} = 4\\pi \\ \\mathrm{rad/m} \\\\
+k &= \\dfrac{2\\pi}{\\lambda} = \\dfrac{2\\pi}{0.5} = 4\\pi \\ \\mathrm{rad/m} \\\\
 \\omega &= 2\\pi f = 2\\pi \\times 10 = 20\\pi \\ \\mathrm{rad/s}
 \\end{align*}
 
@@ -140,7 +140,7 @@ TYPICAL_MISTAKES = """
 
 5. **Interference path difference**
    - Constructive: $\\Delta x = n\\lambda$ (integer multiples)
-   - Destructive: $\\Delta x = (n + \\frac{1}{2})\\lambda$ (half-integer multiples)
+   - Destructive: $\\Delta x = (n + \\dfrac{1}{2})\\lambda$ (half-integer multiples)
    - Don't confuse the conditions
 
 6. **Wave speed on string**

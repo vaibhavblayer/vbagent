@@ -21,6 +21,7 @@ from typing import Optional
 import click
 
 from vbagent.cli.common import _get_console
+from vbagent.utils.latex import DISPLAY_FRACTION_PREAMBLE
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
@@ -649,8 +650,7 @@ def _generate_thumbnail(tikz_dir: Path, output_png: Path, preamble: str, console
 \DeclareMathOperator{\cosec}{cosec}
 \usetikzlibrary{arrows.meta, patterns, calc, decorations.markings}
 \pgfplotsset{compat=1.18}
-\begin{document}
-""" + tikz_code + "\n\\end{document}\n"
+""" + DISPLAY_FRACTION_PREAMBLE + "\\begin{document}\n" + tikz_code + "\n\\end{document}\n"
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp = Path(tmpdir)
