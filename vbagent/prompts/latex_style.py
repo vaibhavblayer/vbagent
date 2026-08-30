@@ -4,7 +4,7 @@ Keep generation, inline/specialist diagrams, and repair prompts in agreement.
 The version also invalidates cached content made before this contract.
 """
 
-LATEX_STYLE_CONTRACT_VERSION = 1
+LATEX_STYLE_CONTRACT_VERSION = 2
 
 DISPLAY_FRACTION_RULES = r"""
 ## Display Fractions (MANDATORY)

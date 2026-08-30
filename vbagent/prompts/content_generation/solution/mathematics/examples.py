@@ -59,7 +59,7 @@ x &\in \{2,3\}.
         "diagram_requirements": [],
         "answer_type": "subjective",
         "answer_value": None,
-        "final_answer_latex": r"$x\in\{2,3\}$.",
+        "final_answer_latex": r"$x\in\{2,3\}$",
         "alternate_solution_recommended": False,
         "alternate_solution_hint": None,
     },

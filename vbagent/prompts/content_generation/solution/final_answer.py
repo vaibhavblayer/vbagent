@@ -10,7 +10,15 @@ the JSON object.
   directly after `\item`.
 - Use valid inline LaTeX for variables, formulas, units, and scientific
   notation.
-- For a single-part problem, return one concise answer as plain LaTeX.
+- For a direct single-value question, return only the requested value (and
+  units when needed), such as `$2\pi$`, `$\left[1,\infty\right)$`, or
+  `$5\,\mathrm{m\,s^{-1}}$`. Do not restate the question with prose such as
+  `The fundamental period is ...`, `The range is ...`, or `The answer is ...`.
+  Do not add a full stop when the field contains only displayed inline math.
+- Include a short identifier such as `$x=2$` only when the bare value would be
+  ambiguous. When one question requests several named quantities, label each
+  result concisely so the answer mapping remains clear.
+- For any other single-part problem, return one concise answer as plain LaTeX.
 - For a multipart problem whose question parts use `enumerate`, this field MUST
   be a complete matching `enumerate` block with exactly one concise `\item` per
   answer, in the same order. Always use plain `\begin{enumerate}` with no
@@ -26,6 +34,8 @@ the JSON object.
   and `answer_value` as `null`.
 
 Examples:
+- `"$2\pi$"`
+- `"$\left[1,\infty\right)$"`
 - `"Stable: $C$; unstable: $A$ and $E$."`
 - `"$x_{\mathrm{eq}}=\dfrac{b}{2a}$, stable."`
 - `"\\begin{enumerate}\\item Unstable along
