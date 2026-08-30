@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from pathlib import Path
 from typing import Iterable
 
 import click
 
-from vbagent.cli.common import _get_console, configure_cli_verbosity
+from vbagent.cli.common import (
+    _get_console,
+    configure_cli_verbosity,
+    find_image_for_problem,
+)
+from vbagent.cli.item_selection import item_selection_options, resolve_item_range
 from vbagent.tex import extract_items
 
 
@@ -17,6 +23,7 @@ QUESTION_TYPES = [
     "mcq_sc",
     "mcq_mc",
     "subjective",
+    "integer",
     "assertion_reason",
     "passage",
     "match",
@@ -37,6 +44,56 @@ def _natural_tex_file_sort_key(path: Path) -> tuple[tuple[int, object], ...]:
 def sort_tex_files(files: Iterable[Path]) -> list[Path]:
     """Return TeX files in human/numeric filename order."""
     return sorted(files, key=_natural_tex_file_sort_key)
+
+
+def _folder_units(files: list[Path]) -> list[tuple[int, Path]]:
+    """Use trailing problem IDs when every folder file has a unique one."""
+    numbered: list[tuple[int, Path]] = []
+    for path in files:
+        match = re.search(r"(\d+)(?!.*\d)", path.stem)
+        if not match:
+            return list(enumerate(files, 1))
+        numbered.append((int(match.group(1)), path))
+    if len({number for number, _ in numbered}) != len(numbered):
+        return list(enumerate(files, 1))
+    return numbered
+
+
+def _select_folder_units(
+    units: list[tuple[int, Path]],
+    from_index: int | None,
+    to_index: int | None,
+    excluded: set[int],
+) -> list[int]:
+    """Select folder files by their problem-number suffix."""
+    start = 1 if from_index is None else from_index
+    end = max((number for number, _ in units), default=0) if to_index is None else to_index
+    return [
+        number
+        for number, _ in units
+        if start <= number <= end and number not in excluded
+    ]
+
+
+def _load_classification_metadata(source_path: Path) -> dict:
+    """Load the organized classification sidecar for a scanned problem."""
+    candidates = [
+        source_path.parent.parent / "classifications" / f"{source_path.stem}.json",
+        source_path.parent / "classifications" / f"{source_path.stem}.json",
+        Path(".vbagent") / "metadata" / f"{source_path.stem}.json",
+    ]
+    for candidate in candidates:
+        if not candidate.exists():
+            continue
+        try:
+            metadata = json.loads(candidate.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        nested = metadata.get("classification")
+        if isinstance(nested, dict):
+            return {**metadata, **nested}
+        return metadata
+    return {}
 
 
 def parse_excluded_indices(values: Iterable[str]) -> set[int]:
@@ -181,9 +238,13 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     "-t",
     "--tex",
     "input_path",
-    required=True,
+    required=False,
+    default=None,
     type=click.Path(exists=True, file_okay=True, dir_okay=True, path_type=Path),
-    help="Scanned TeX project, or folder containing one problem per .tex file",
+    help=(
+        "Scanned TeX project, or folder containing one problem per .tex file "
+        "(default: agentic/scans, updated in place)"
+    ),
 )
 @click.option(
     "-o",
@@ -202,9 +263,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 )
 @click.option("--chapter", default=None, help="Optional chapter for solution prompt routing")
 @click.option("--topic", default=None, help="Optional topic for solution prompt routing")
-@click.option("--from", "from_index", type=int, default=None, help="Start item (1-based, inclusive)")
-@click.option("--to", "to_index", type=int, default=None, help="End item (1-based, inclusive)")
-@click.option("--item", type=int, default=None, help="Single item (shorthand for --from N --to N)")
+@item_selection_options
 @click.option(
     "--exclude",
     multiple=True,
@@ -226,7 +285,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     help="Show agent telemetry [default: verbose]",
 )
 def solve(
-    input_path: Path,
+    input_path: Path | None,
     output: Path | None,
     subject: str | None,
     question_type: str | None,
@@ -241,13 +300,41 @@ def solve(
     no_cache: bool,
     verbose: bool,
 ) -> None:
-    """Generate solutions for selected items or files in an existing TeX project."""
+    """Generate solutions for selected items or files in an existing TeX project.
+
+    With no --tex, reads agentic/scans and writes successful solutions back to
+    those files. Organized classification sidecars supply subject, type,
+    chapter, topic, and diagram routing unless explicitly overridden.
+
+    \b
+    Examples:
+        vbagent solve --from 1 --to 5
+        vbagent solve --item 7 --no-cache
+        vbagent solve -t scanned.tex -o solved.tex
+        vbagent solve -t custom-scans/ --in-place --from 1 --to 5
+    """
     del verbose  # The callback configures shared logging; no local use needed.
 
-    if item is not None and (from_index is not None or to_index is not None):
-        raise click.UsageError("Use --item or --from/--to, not both")
-    if item is not None:
-        from_index = to_index = item
+    console = _get_console()
+    if input_path is None:
+        input_path = Path("agentic/scans")
+        if not input_path.exists():
+            raise click.ClickException(
+                "Default scan directory agentic/scans does not exist; "
+                "run 'vbagent scan' first or pass --tex"
+            )
+        if output is None:
+            in_place = True
+        mode = (
+            "solutions written in place"
+            if in_place
+            else f"solutions written to {output}"
+        )
+        console.print(f"[dim]Using default stage workspace: agentic/scans ({mode})[/dim]")
+
+    item_range = resolve_item_range(from_index, to_index, item)
+    if item_range is not None:
+        from_index, to_index = item_range
     if in_place and output:
         raise click.UsageError("Use --in-place or --output, not both")
 
@@ -257,7 +344,7 @@ def solve(
         source_files = sort_tex_files(input_path.glob("*.tex"))
         if not source_files:
             raise click.ClickException(f"No .tex files found in {input_path}")
-        units = [(index, source_file) for index, source_file in enumerate(source_files, 1)]
+        units = _folder_units(source_files)
         unit_contents = {
             index: source_file.read_text(encoding="utf-8")
             for index, source_file in units
@@ -279,7 +366,11 @@ def solve(
         }
         output_dir = None
 
-    candidates = select_item_indices(len(units), from_index, to_index, excluded)
+    candidates = (
+        _select_folder_units(units, from_index, to_index, excluded)
+        if input_path.is_dir()
+        else select_item_indices(len(units), from_index, to_index, excluded)
+    )
     existing_solution_indices = {
         index for index, item_content in unit_contents.items()
         if has_solution_environment(item_content)
@@ -294,14 +385,14 @@ def solve(
     configured = get_config()
     project_metadata = content if not input_path.is_dir() else ""
 
-    console = _get_console()
     cache = None
     if not no_cache:
         from vbagent.cache import PipelineCache
         cache = PipelineCache()
 
     failures: list[tuple[int, str]] = []
-    excluded_count = len(set(range(1, len(units) + 1)) & excluded)
+    available_numbers = {number for number, _ in units}
+    excluded_count = len(available_numbers & excluded)
     console.print(
         f"[cyan]Candidates {len(candidates)}/{len(units)} "
         f"{'file(s)' if input_path.is_dir() else 'item(s)'}; "
@@ -311,16 +402,19 @@ def solve(
     )
 
     def generate_for(source_path: Path, item_number: int, item_content: str):
+        classification_metadata = _load_classification_metadata(source_path)
         resolved_subject = (
             subject
             or _metadata_value(item_content, "subject")
             or _metadata_value(project_metadata, "subject")
+            or classification_metadata.get("subject")
             or configured.subject
         )
         resolved_type = (
             question_type
             or _metadata_value(item_content, "type")
             or _metadata_value(project_metadata, "type")
+            or classification_metadata.get("question_type")
             or "subjective"
         )
         if resolved_subject not in SUBJECTS:
@@ -332,14 +426,19 @@ def solve(
         primary = PrimaryClassification(
             subject=resolved_subject,
             question_type=resolved_type,
-            has_diagram=False,
+            has_diagram=bool(classification_metadata.get("has_diagram", False)),
             confidence=1.0,
             classified_from="latex",
-            chapter=chapter,
-            topic=topic,
+            chapter=chapter or classification_metadata.get("chapter"),
+            topic=topic or classification_metadata.get("topic"),
+        )
+        source_image = (
+            find_image_for_problem(source_path)
+            if source_path.parent.name == "scans"
+            else None
         )
         return generate_solution_orchestrated(
-            image_path=str(input_path),
+            image_path=str(source_image.resolve() if source_image else input_path),
             primary=primary,
             problem_latex=item_content,
             cache=cache,
@@ -355,14 +454,16 @@ def solve(
     if input_path.is_dir():
         import shutil
 
+        source_by_number = dict(units)
+
         if not in_place:
             output_dir.mkdir(parents=True, exist_ok=True)
             for _, source_file in units:
                 shutil.copy2(source_file, output_dir / source_file.name)
 
         for file_number in selected:
-            source_file = units[file_number - 1][1]
-            console.print(f"\n[bold]File {file_number}/{len(units)}: {source_file.name}[/bold]")
+            source_file = source_by_number[file_number]
+            console.print(f"\n[bold]Problem {file_number}: {source_file.name}[/bold]")
             try:
                 result = generate_for(
                     source_file,

@@ -63,8 +63,10 @@ for sharding, failover, and cache metric semantics.
 
 ```bash
 vbagent init                              # Initialize workspace config
-vbagent scan -i question.png -o out.tex   # Extract LaTeX
+vbagent scan -i question.png              # Save problem-only LaTeX under agentic/
+vbagent scan -i problem_1.png --from 1 --to 12  # Same default workspace
 vbagent classify -i question.png          # Classify question type
+vbagent classify -i problem_1.png --item 5 # Classify one numbered image
 vbagent tikz -i diagram.png -o diag.tex   # Generate TikZ
 vbagent run -i question.png               # Full pipeline
 vbagent run -i problem_1.png --from 1 --to 50 --parallel 3  # Image batch
@@ -74,12 +76,34 @@ vbagent solve -t scanned-problems/ -o solved-problems/ --no-diagram
 vbagent solve -t scanned-problems/ --in-place --no-diagram --from 1 --to 5 --exclude 4,3
 ```
 
+When a crop contains only a bare expression and the missing task is known from
+the exercise heading, use the same workspace one stage at a time:
+
+```bash
+vbagent scan -i images/problem_1.png --from 1 --to 5
+vbagent check edit --from 1 --to 5 \
+  --instruction 'Prefix each item with "Find the period of the function"'
+vbagent solve --from 1 --to 5
+vbagent compile --all-packages --from 1 --to 5
+```
+
+`scan` writes `agentic/scans/problem_N.tex` and matching classification
+sidecars. `check edit` uses that directory by default, displays each diff for
+approval, and protects existing mathematics. `solve` also uses that workspace
+by default, recovers subject and type from the sidecars, and writes solutions
+back into the selected scan files. `run` remains the one-command form.
+
+Commands that select numbered problems share one 1-based, inclusive contract:
+use `--from N --to M` for a range or `--item N` for exactly one item. Do not
+combine `--item` with `--from` or `--to`. A numbered input such as
+`problem_1.png` supplies the filename pattern for image ranges.
+
 ### Commands
 
 | Section | Command | Description |
 |---------|---------|-------------|
 | Core | `run` | Full pipeline: classify → scan → tikz → solve |
-| Core | `scan` | Extract LaTeX from question image |
+| Core | `scan` | Extract problem-only LaTeX into the shared workspace |
 | Core | `solve` | Generate solutions from an existing TeX project |
 | Core | `classify` | Classify question type |
 | Core | `batch` | Batch process multiple images with resume |

@@ -21,6 +21,7 @@ from typing import Optional
 import click
 
 from vbagent.cli.common import _get_console
+from vbagent.cli.item_selection import item_selection_options, resolve_item_range
 from vbagent.utils.latex import DISPLAY_FRACTION_PREAMBLE
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
@@ -484,9 +485,9 @@ def _build_pyq_metadata(
 @click.option("--zip/--no-zip", "make_zip", default=False)
 @click.option("--save-sources/--no-save-sources", default=True, help="Save LaTeX source files in src/ for debugging")
 @click.option("--bbox", type=click.Choice(["min", "papersize"]), default="min", help="SVG bounding box: 'min' (tight crop) or 'papersize' (full page)")
-@click.option("--from", "from_num", type=int, default=None)
-@click.option("--to", "to_num", type=int, default=None)
-def pyq(scans_dir, output, subject, exam, year, chapter, difficulty, images_dir, make_zip, save_sources, bbox, from_num, to_num):
+@item_selection_options
+def pyq(scans_dir, output, subject, exam, year, chapter, difficulty, images_dir,
+        make_zip, save_sources, bbox, from_index, to_index, item):
     """Export scans as PYQ bulk upload ZIP.
 
     \b
@@ -502,12 +503,15 @@ def pyq(scans_dir, output, subject, exam, year, chapter, difficulty, images_dir,
     Examples:
         vbagent archive pyq --exam neet --year 2024 --chapter "atoms and nuclei"
         vbagent archive pyq --from 1 --to 30
+        vbagent archive pyq --item 5
         vbagent archive pyq --images-dir images/   # auto-detect exam/year from images
     """
     console = _get_console()
     scans_path = Path(scans_dir)
     output_path = Path(output)
-    tex_files = _discover_tex_files(scans_path, from_num, to_num)
+    item_range = resolve_item_range(from_index, to_index, item)
+    start, end = item_range or (None, None)
+    tex_files = _discover_tex_files(scans_path, start, end)
     if not tex_files:
         console.print(f"[red]No .tex files in {scans_dir}[/red]")
         return
@@ -769,10 +773,9 @@ def zip_archive(archive_dir, output):
 @click.option("--description-file", type=click.Path(exists=True), help="Custom description.md")
 @click.option("--thumbnail", type=click.Path(exists=True), help="Custom thumbnail.png")
 @click.option("--zip/--no-zip", "make_zip", default=True)
-@click.option("--from", "from_num", type=int, default=None)
-@click.option("--to", "to_num", type=int, default=None)
+@item_selection_options
 def product(scans_dir, output, title, subject, exam, chapter, price_standard, price_premium,
-            description_file, thumbnail, make_zip, from_num, to_num):
+            description_file, thumbnail, make_zip, from_index, to_index, item):
     """Export scans as product upload ZIP.
 
     \b
@@ -781,13 +784,16 @@ def product(scans_dir, output, title, subject, exam, chapter, price_standard, pr
     \b
     Examples:
         vbagent archive product --title "Kinematics — 50" --price-standard 299 --price-premium 499
+        vbagent archive product --item 5 --title "Kinematics" --price-standard 299 --price-premium 499
         vbagent archive product -t "EMI Problems" -c "electromagnetic induction" -c "ac circuits" \\
             --price-standard 199 --price-premium 399
     """
     console = _get_console()
     scans_path = Path(scans_dir)
     output_path = Path(output)
-    tex_files = _discover_tex_files(scans_path, from_num, to_num)
+    item_range = resolve_item_range(from_index, to_index, item)
+    start, end = item_range or (None, None)
+    tex_files = _discover_tex_files(scans_path, start, end)
     if not tex_files:
         console.print(f"[red]No .tex files in {scans_dir}[/red]")
         return

@@ -11,6 +11,7 @@ import click
 
 # Import CATEGORIES at module level since it's used in decorators
 # This is a simple list constant, not a heavy import
+from vbagent.cli.item_selection import item_selection_options, resolve_item_range
 from vbagent.references.context import CATEGORIES, ContextStore
 
 from ..common import _get_console, _get_panel, _get_table
@@ -322,19 +323,16 @@ def tikz_group():
 
 @tikz_group.command(name="import")
 @click.argument("path", type=click.Path(exists=True))
-@click.option("--from", "from_index", type=int, default=None,
-              help="Start index (1-based, inclusive)")
-@click.option("--to", "to_index", type=int, default=None,
-              help="End index (1-based, inclusive)")
-@click.option("--item", type=int, default=None,
-              help="Import single item (shorthand for --from N --to N)")
-@click.option("-r", "--range", "item_range", nargs=2, type=int, default=None,
+@item_selection_options
+@click.option("-r", "--range", "legacy_range", nargs=2, type=int, default=None,
               help="[DEPRECATED] Use --from and --to instead. Range of problems to import (1-based inclusive)")
 @click.option("-t", "--tikz-dir", type=click.Path(exists=True),
               help="Directory containing separate TikZ files")
 @click.option("-c", "--class-dir", type=click.Path(exists=True),
               help="Directory containing classification JSON files")
-def tikz_import(path: str, from_index: Optional[int], to_index: Optional[int], item: Optional[int], item_range: tuple, tikz_dir: str, class_dir: str):
+def tikz_import(path: str, from_index: Optional[int], to_index: Optional[int],
+                item: Optional[int], legacy_range: tuple | None,
+                tikz_dir: str, class_dir: str):
     """Import TikZ references from processed problems.
     
     Extracts TikZ code and loads classification metadata automatically.
@@ -366,18 +364,15 @@ def tikz_import(path: str, from_index: Optional[int], to_index: Optional[int], i
     if '--range' in sys.argv or '-r' in sys.argv:
         console.print("[yellow]Note:[/yellow] --range is deprecated, use --from and --to", style="dim")
     
-    # Handle backward compatibility for range
-    if item_range:
+    # Handle backward compatibility for range.
+    if legacy_range:
+        if item is not None or from_index is not None or to_index is not None:
+            raise click.UsageError("Use --range or --item/--from/--to, not both")
+        from_index, to_index = legacy_range
+
+    item_range = resolve_item_range(from_index, to_index, item)
+    if item_range is not None:
         from_index, to_index = item_range
-    
-    # Handle --item shorthand
-    if item:
-        from_index = to_index = item
-    
-    # Validate range
-    if from_index and to_index and from_index > to_index:
-        console.print("[red]Error:[/red] --from must be <= --to")
-        raise SystemExit(1)
     
     store = TikZReferenceStore.get_instance()
     path_obj = Path(path)

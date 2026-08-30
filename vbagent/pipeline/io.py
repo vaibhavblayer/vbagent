@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from vbagent.cli.common import format_latex, extract_problem_solution
+from vbagent.cli.item_selection import OPEN_ENDED_ITEM
 from vbagent.tex import extract_items
 
 
@@ -496,6 +497,23 @@ def generate_image_paths_from_range(
     num_width = len(num_str)
 
     start, end = item_range
+    if end == OPEN_ENDED_ITEM:
+        numbered_stem = re.compile(rf"^{re.escape(prefix + separator)}(\d+)$")
+        numbered_paths: list[tuple[int, str, Path]] = []
+        for candidate in parent.iterdir():
+            if candidate.suffix != suffix:
+                continue
+            candidate_match = numbered_stem.fullmatch(candidate.stem)
+            if candidate_match:
+                candidate_number = candidate_match.group(1)
+                number = int(candidate_number)
+                if (
+                    number >= start
+                    and candidate_number == str(number).zfill(num_width)
+                ):
+                    numbered_paths.append((number, candidate.name.casefold(), candidate))
+        return [str(candidate) for _, _, candidate in sorted(numbered_paths)]
+
     paths = []
     for i in range(start, end + 1):
         new_num = str(i).zfill(num_width)

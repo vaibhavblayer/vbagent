@@ -136,7 +136,7 @@ AGENT_GROUPS: dict[str, list[str]] = {
     ],
     "Quality": [
         "reviewer", "solution_checker", "grammar_checker",
-        "clarity_checker", "latex_fixer", "format_checker",
+        "clarity_checker", "instruction_editor", "latex_fixer", "format_checker",
     ],
     "Animation": [
         "animation_assessor", "animation_coder",
@@ -194,6 +194,7 @@ MODEL_GROUPS: dict[str, dict[str, str]] = {
         "solution_checker": "gpt-5.6-luna",
         "grammar_checker": "gpt-5.6-luna",
         "clarity_checker": "gpt-5.6-luna",
+        "instruction_editor": "gpt-5.6-luna",
         "latex_fixer": "gpt-5.6-luna",
         "format_checker": "gpt-5.6-luna",
         "animation_assessor": "gpt-5.6-luna",
@@ -607,7 +608,8 @@ class VBAgentConfig:
 
         # Quality agents: default reasoning
         for name in ["reviewer", "solution_checker", "grammar_checker",
-                     "clarity_checker", "latex_fixer", "format_checker"]:
+                     "clarity_checker", "instruction_editor", "latex_fixer",
+                     "format_checker"]:
             if name not in self.agents:
                 self.agents[name] = AgentModelConfig(
                     model=light,

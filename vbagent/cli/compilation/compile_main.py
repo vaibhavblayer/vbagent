@@ -11,6 +11,7 @@ from typing import List, Optional
 
 import click
 
+from vbagent.cli.item_selection import item_selection_options, resolve_item_range
 from vbagent.utils.latex import DISPLAY_FRACTION_PREAMBLE
 
 from ..common import _get_console
@@ -383,18 +384,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     default="physics",
     help="Subject for appropriate packages (default: physics)"
 )
-@click.option(
-    "--from", "from_index",
-    type=int,
-    default=None,
-    help="Start index (1-based, inclusive)"
-)
-@click.option(
-    "--to", "to_index",
-    type=int,
-    default=None,
-    help="End index (1-based, inclusive)"
-)
+@item_selection_options
 @click.option(
     "--problems", "problem_list",
     type=str,
@@ -435,6 +425,7 @@ def compile(
     subject: str,
     from_index: Optional[int],
     to_index: Optional[int],
+    item: Optional[int],
     problem_list: Optional[str],
     all_packages: bool,
     include_solution: bool,
@@ -463,6 +454,9 @@ def compile(
         
         # Generate for specific range
         vbagent compile --from 1 --to 13
+
+        # Generate for one item
+        vbagent compile --item 5
         
         # Generate for specific problems
         vbagent compile --problems "1,3,5,7,9,11,13,16,19,22,25"
@@ -500,6 +494,11 @@ def compile(
         vbagent batch --help      # For batch processing
     """
     console = _get_console()
+    problem_range = resolve_item_range(from_index, to_index, item)
+    if problem_list and problem_range is not None:
+        raise click.UsageError(
+            "Use --problems or --item/--from/--to, not both"
+        )
     
     try:
         # Parse problem list if provided
@@ -509,12 +508,9 @@ def compile(
             if verbose:
                 console.print(f"[dim]Using explicit problem list: {problems}[/dim]")
         
-        # Determine range
-        problem_range = None
-        if from_index or to_index:
-            start = from_index or 1
-            end = to_index or 999
-            problem_range = (start, end)
+        # Report the normalized range when requested.
+        if problem_range is not None:
+            start, end = problem_range
             if verbose:
                 console.print(f"[dim]Using range: {start} to {end}[/dim]")
         

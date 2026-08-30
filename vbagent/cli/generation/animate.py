@@ -7,6 +7,8 @@ from pathlib import Path
 import click
 from rich.console import Console
 
+from vbagent.cli.item_selection import item_selection_options, resolve_item_range
+
 
 # Dimension presets: name -> (width, height)
 DIMENSION_PRESETS = {
@@ -27,10 +29,7 @@ DIMENSION_PRESETS = {
               help="Free-form animation description (skips assessor)")
 @click.option("-o", "--output", "output_path", type=click.Path(),
               default=None, help="Output .py file (default: agentic/animations/...)")
-@click.option("--from", "from_index", type=int, default=None,
-              help="Start index for batch (1-based)")
-@click.option("--to", "to_index", type=int, default=None,
-              help="End index for batch (1-based, inclusive)")
+@item_selection_options
 @click.option("--explain", is_flag=True,
               help="Multi-scene explainer mode (planner → per-scene coder → stitch)")
 @click.option("--render", is_flag=True, help="Render the animation with manim after generation")
@@ -48,6 +47,7 @@ def animate(
     output_path: str | None,
     from_index: int | None,
     to_index: int | None,
+    item: int | None,
     explain: bool,
     render: bool,
     quality: str,
@@ -68,6 +68,7 @@ def animate(
     \b
     Examples:
         vbagent animate -i images/problem_5.png
+        vbagent animate -i images/problem_1.png --item 5
         vbagent animate -i images/problem_1.png --from 1 --to 5
         vbagent animate -p "Show sin(x) transforming to |sin(x)| then sin(|x|)"
         vbagent animate -p "Explain polarisation of light" --explain --render
@@ -76,6 +77,10 @@ def animate(
         vbagent animate -i images/problem_1.png --from 1 --to 10 --render --fps 30
     """
     console = Console()
+
+    item_range = resolve_item_range(from_index, to_index, item)
+    if item_range is not None and not input_path:
+        raise click.UsageError("--item/--from/--to require --input")
 
     if not input_path and not free_prompt:
         console.print("[red]Error:[/red] Provide -i (input file) or -p (prompt) or both.")
@@ -115,7 +120,7 @@ def animate(
                 )
             elif input_path:
                 # Problem mode — with optional prompt override
-                inputs = _resolve_inputs(input_path, from_index, to_index)
+                inputs = _resolve_inputs(input_path, item_range)
 
                 for idx, inp in enumerate(inputs):
                     if len(inputs) > 1:
@@ -303,40 +308,26 @@ def _process_free_prompt(
         )
 
 
-def _resolve_inputs(input_path: str, from_index: int | None, to_index: int | None) -> list[Path]:
+def _resolve_inputs(
+    input_path: str,
+    item_range: tuple[int, int] | None,
+) -> list[Path]:
     """Resolve input path + range into a list of file paths."""
-    import re
-
     path = Path(input_path)
 
-    if from_index is None and to_index is None:
+    if item_range is None:
         return [path]
 
-    match = re.search(r'(\d+)', path.stem)
-    if not match:
-        raise click.BadParameter(
-            f"Cannot derive batch pattern from '{path.name}'. "
-            f"File name must contain a number (e.g. problem_1.png)."
-        )
+    from vbagent.pipeline.io import generate_image_paths_from_range
 
-    prefix = path.stem[:match.start()]
-    suffix_part = path.stem[match.end():]
-    ext = path.suffix
-    parent = path.parent
-
-    start = from_index or 1
-    end = to_index or start
-
-    paths = []
-    for n in range(start, end + 1):
-        candidate = parent / f"{prefix}{n}{suffix_part}{ext}"
-        if candidate.exists():
-            paths.append(candidate)
-
+    paths = [
+        Path(candidate)
+        for candidate in generate_image_paths_from_range(input_path, item_range)
+    ]
     if not paths:
+        start, end = item_range
         raise FileNotFoundError(
-            f"No files found for range {start}–{end} with pattern "
-            f"{parent}/{prefix}N{suffix_part}{ext}"
+            f"No files found for range {start}–{end} from {path}"
         )
 
     return paths

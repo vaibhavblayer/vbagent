@@ -24,16 +24,28 @@ vbagent classify -i question.png --json
 ```
 
 ### scan
-Extract LaTeX from question image.
+Extract problem-only LaTeX from question images. This command classifies the
+question, reconstructs any diagram, and never runs solution generation.
 
 ```bash
 vbagent scan -i question.png
 vbagent scan -i question.png -o output.tex
-vbagent scan -i question.png --type mcq_sc
+vbagent scan -i problem_1.png --from 1 --to 12
+vbagent scan -i problem_1.png --from 1 --to 12 -o custom-scans/
+vbagent scan -i problem_1.png --item 5 -o problem_5.tex
+vbagent scan -i question.png --type mcq_sc --subject physics
 vbagent scan -i question.png -c                    # Compile to validate
-vbagent scan -i question.png --assess-difficulty   # Use Agent 3
-vbagent scan -i question.png --analyze-diagram     # Use Agent 2
 ```
+
+Without `--output`, scans are written to `agentic/scans/problem_N.tex`, with
+matching routing metadata under `agentic/classifications/`. This is the same
+organized workspace used by `run`. An explicit one-item range such as
+`--from 1 --to 1` still treats `--output` as a directory; `--item 1` may use a
+single `.tex` output path.
+
+Use `vbagent run` when a generated solution, difficulty assessment, ideas,
+alternates, or variants are required. `vbagent run --no-solve` uses the same
+problem stage without solution generation.
 
 ### tikz
 Generate TikZ diagrams.
@@ -67,6 +79,7 @@ Generate solutions from an already-scanned TeX project without running the
 scanner or classifier.
 
 ```bash
+vbagent solve --from 1 --to 5           # Default agentic/scans, in place
 vbagent solve -t scanned.tex --subject physics --type mcq_sc -o solved.tex
 vbagent solve -t scanned.tex --from 1 --to 50 --exclude 5,7,8
 vbagent solve -t biology.tex --subject biology --type mcq_sc --no-diagram
@@ -75,11 +88,18 @@ vbagent solve -t scanned-problems/ -o solved-problems/ --from 1 --to 50 --exclud
 vbagent solve -t scanned-problems/ --in-place --no-diagram --from 1 --to 5 --exclude 4,3
 ```
 
+When `--tex` is omitted, `solve` reads `agentic/scans` and updates the selected
+files in place, matching the final scan files produced by `run`. It loads each
+file's organized classification sidecar and corresponding source image, so a
+mathematics scan does not need a repeated `--subject mathematics` override.
+
 `--exclude` is repeatable and uses 1-based item numbers. The output preserves
 items outside the selected range and excluded items. `--no-diagram` skips
 solution diagram agents; inline LaTeX emitted directly by the solution agent
-is preserved. With folder input, each top-level `.tex` file is treated as one
-problem and copied to the output directory; selected files are replaced with
+is preserved. With folder input, trailing filename IDs such as `problem_5.tex`
+define `--item 5` and range selection when all filenames have unique numeric
+suffixes. Each top-level `.tex` file is treated as one problem and copied to
+the output directory; selected files are replaced with
 their solved versions. `--in-place` instead updates selected input files
 directly and cannot be combined with `--output`. Files/items that already
 contain a complete `solution` environment are skipped automatically.
@@ -216,6 +236,8 @@ vbagent check recheck 1 2 3
 vbagent check solution
 vbagent check grammar
 vbagent check clarity
+vbagent check edit --from 1 --to 5 \
+  --instruction 'Prefix each item with "Find the period of the function"'
 vbagent check alternate
 vbagent check idea
 vbagent check tikz
@@ -225,6 +247,14 @@ vbagent check history -p 42
 vbagent check apply <version_id>
 vbagent check stats --days 7
 ```
+
+`check edit` is for known contextual repairs to scanned TeX. It never guesses
+whether a bare expression asks for a period, range, domain, or another task;
+state that instruction once and select the affected files with `--item`,
+`--from/--to`, `--problem-id`, or `--all`. Existing math regions are hidden
+from the editor and restored byte for byte by default. Proposed diffs require
+approval; add `--yes` for an intentional batch apply. Use
+`--allow-math-changes` only when the instruction itself must edit mathematics.
 
 ## Natural-language MCP interface
 
@@ -512,8 +542,8 @@ vbagent batch continue
 
 ### Quality Pipeline
 ```bash
-# Scan with validation
-vbagent scan -i question.png -c --assess-difficulty
+# Full pipeline with validation and difficulty assessment
+vbagent run -i question.png -c --assess-difficulty
 
 # Generate accepted-parent variants (compilation is mandatory)
 vbagent variant --parent-spec-id SPEC_ID --type numerical --count 3 \

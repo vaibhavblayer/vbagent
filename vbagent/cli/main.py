@@ -187,7 +187,7 @@ def main():
     \b
     Quick Start:
         vbagent run -i question.png          # Full pipeline
-        vbagent scan -i question.png         # Extract LaTeX only
+        vbagent scan -i question.png         # Extract problem-only LaTeX
         vbagent classify -i question.png     # Classify only
         vbagent batch init -i ./images       # Batch processing
     """

@@ -16,6 +16,7 @@ from pathlib import Path
 import click
 
 from vbagent.cli.common import _get_console
+from vbagent.cli.item_selection import item_selection_options, resolve_item_range
 
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
@@ -24,12 +25,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("-i", "--input", "image_path", type=click.Path(), default=None,
               help="Sketch/scribble image path (supports --from/--to for ranges)")
-@click.option("--from", "from_index", type=int, default=None,
-              help="Start index for range (1-based)")
-@click.option("--to", "to_index", type=int, default=None,
-              help="End index for range (1-based)")
-@click.option("--item", type=int, default=None,
-              help="Single item (shorthand for --from N --to N)")
+@item_selection_options
 @click.option("--from-ideas", "ideas_dir", type=click.Path(exists=True), default=None,
               help="Directory with ideas/*.json files")
 @click.option("--from-scans", "scans_dir", type=click.Path(exists=True), default=None,
@@ -115,6 +111,8 @@ def generate(
         vbagent generate --topic "SHM" --exam jee_main --subject physics --chapter oscillations --idea "spring-mass on incline" -c 3
         vbagent generate --from-scans agentic/scans/ --no-cache
     """
+    item_range = resolve_item_range(from_index, to_index, item)
+
     # Topic authoring has one authoritative path.  Sketch and extracted-idea
     # modes remain ingestion workflows because they start from source media,
     # not an exam syllabus specification.
@@ -167,18 +165,6 @@ def generate(
 
     console = _get_console()
     output_base = Path(output)
-
-    # Handle --item shorthand
-    if item:
-        from_index = to_index = item
-    if from_index and to_index and from_index > to_index:
-        console.print("[red]Error:[/red] --from must be <= --to")
-        raise SystemExit(1)
-
-
-    item_range = None
-    if from_index or to_index:
-        item_range = (from_index or 1, to_index or 999999)
 
     # Validate: at least one input mode
     if not image_path and not ideas_dir and not scans_dir and not topic:

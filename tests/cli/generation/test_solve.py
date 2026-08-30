@@ -1,10 +1,13 @@
 """Tests for solution-only generation from scanned TeX projects."""
 
+import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from click.testing import CliRunner
 
 from vbagent.cli.generation.solve import (
+    _folder_units,
     _item_spans,
     _resolve_folder_output_path,
     has_solution_environment,
@@ -38,6 +41,15 @@ def test_folder_files_are_sorted_by_numeric_problem_id(tmp_path):
         "Problem_13.tex",
     ]
 
+
+def test_folder_units_use_problem_number_suffixes(tmp_path):
+    files = [
+        tmp_path / "problem_1.tex",
+        tmp_path / "problem_5.tex",
+        tmp_path / "problem_10.tex",
+    ]
+
+    assert [number for number, _ in _folder_units(files)] == [1, 5, 10]
 
 def test_existing_solution_environment_is_detected():
     assert has_solution_environment(
@@ -79,3 +91,64 @@ def test_solve_help_exposes_project_controls():
     assert "--exclude" in result.output
     assert "--no-diagram" in result.output
     assert "--in-place" in result.output
+    assert "agentic/scans" in result.output
+    assert "integer" in result.output
+
+
+def test_solve_default_workspace_uses_sidecar_and_updates_selected_problem(
+    monkeypatch,
+    tmp_path,
+):
+    scans = tmp_path / "agentic" / "scans"
+    classifications = tmp_path / "agentic" / "classifications"
+    images = tmp_path / "images"
+    scans.mkdir(parents=True)
+    classifications.mkdir(parents=True)
+    images.mkdir()
+    (scans / "problem_1.tex").write_text(r"\item Leave unchanged.")
+    (scans / "problem_5.tex").write_text(r"\item Find the period of $f(x)$.")
+    (images / "problem_5.png").touch()
+    (classifications / "problem_5.json").write_text(
+        json.dumps(
+            {
+                "subject": "mathematics",
+                "question_type": "subjective",
+                "has_diagram": False,
+                "chapter": "Trigonometry",
+                "topic": "Periodic functions",
+            }
+        )
+    )
+    calls = []
+
+    def fake_generate_solution(**kwargs):
+        calls.append(kwargs)
+        return SimpleNamespace(
+            latex=(
+                kwargs["problem_latex"]
+                + r"\begin{solution}Period work.\end{solution}"
+            )
+        )
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        "vbagent.config.get_config",
+        lambda: SimpleNamespace(subject="physics"),
+    )
+    monkeypatch.setattr(
+        "vbagent.pipeline.stages.generate_solution_orchestrated",
+        fake_generate_solution,
+    )
+
+    result = CliRunner().invoke(
+        solve,
+        ["--item", "5", "--no-cache", "--quiet"],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert (scans / "problem_1.tex").read_text() == r"\item Leave unchanged."
+    assert r"\begin{solution}" in (scans / "problem_5.tex").read_text()
+    assert len(calls) == 1
+    assert calls[0]["primary"].subject == "mathematics"
+    assert calls[0]["primary"].chapter == "Trigonometry"
+    assert calls[0]["image_path"] == str(images / "problem_5.png")

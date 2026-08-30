@@ -6,6 +6,7 @@ questions with AI-powered quality review and diff-based suggestions.
 
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 import signal
@@ -34,6 +35,7 @@ from vbagent.cli.common import (
     _get_syntax,
     _get_prompt,
 )
+from vbagent.cli.item_selection import item_selection_options, resolve_item_range
 from vbagent.cli.quality.session_actions import prompt_checker_action
 from vbagent.cli.quality.tikz_support import _generate_tikz_for_placeholder
 from vbagent.cli.quality.checker_session import (
@@ -60,6 +62,16 @@ open_suggested_in_editor = open_content_in_editor
 def _canonical_output_dir(output_dir: str) -> str:
     """Return a stable path key for newly initialized check sessions."""
     return str(Path(output_dir).resolve())
+
+
+def _instruction_edit_progress_key(
+    instruction: str,
+    allow_math_changes: bool,
+) -> str:
+    """Return a stable resume key for one explicit edit operation."""
+    payload = f"{instruction.strip()}\0allow_math_changes={allow_math_changes}"
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+    return f"edit:{digest}"
 
 
 def _resolve_tracked_output_dir(store, requested: str | None) -> str:
@@ -521,6 +533,7 @@ def check():
         solution  - Check solution correctness
         grammar   - Check grammar and spelling
         clarity   - Check clarity and conciseness
+        edit      - Apply an explicit instruction to selected scanned TeX
         format    - Check formatting and structure
         tikz      - Check/generate TikZ diagrams
         apply     - Apply a stored suggestion
@@ -539,6 +552,7 @@ def check():
         vbagent check solution -d ./src_tex/
         vbagent check grammar -d ./src_tex/
         vbagent check clarity -d ./src_tex/
+        vbagent check edit -d ./scans --from 1 --to 5 --instruction "Add the question instruction"
         vbagent check tikz -d ./scans/           # Check/generate TikZ
         vbagent check tikz --patch --ref-type circuit
     """
@@ -1070,26 +1084,9 @@ def stats(days: Optional[int]):
     default="agentic",
     help="Output directory to check (default: agentic)"
 )
+@item_selection_options
 @click.option(
-    "--from", "from_index",
-    type=int,
-    default=None,
-    help="Start index (1-based, inclusive)"
-)
-@click.option(
-    "--to", "to_index",
-    type=int,
-    default=None,
-    help="End index (1-based, inclusive)"
-)
-@click.option(
-    "--item",
-    type=int,
-    default=None,
-    help="Initialize single item (shorthand for --from N --to N)"
-)
-@click.option(
-    "-r", "--range", "item_range",
+    "-r", "--range", "legacy_range",
     nargs=2,
     type=int,
     default=None,
@@ -1100,7 +1097,9 @@ def stats(days: Optional[int]):
     is_flag=True,
     help="Reset existing entries to pending status"
 )
-def init_check(output_dir: str, from_index: Optional[int], to_index: Optional[int], item: Optional[int], item_range: Optional[tuple[int, int]], reset: bool):
+def init_check(output_dir: str, from_index: Optional[int], to_index: Optional[int],
+               item: Optional[int], legacy_range: Optional[tuple[int, int]],
+               reset: bool):
     """Initialize problem check tracking.
     
     Discovers all problems in the output directory and adds them
@@ -1126,18 +1125,15 @@ def init_check(output_dir: str, from_index: Optional[int], to_index: Optional[in
     if '--range' in sys.argv or '-r' in sys.argv:
         console.print("[yellow]Note:[/yellow] --range is deprecated, use --from and --to", style="dim")
     
-    # Handle backward compatibility for range
-    if item_range:
+    # Handle backward compatibility for range.
+    if legacy_range:
+        if item is not None or from_index is not None or to_index is not None:
+            raise click.UsageError("Use --range or --item/--from/--to, not both")
+        from_index, to_index = legacy_range
+
+    item_range = resolve_item_range(from_index, to_index, item)
+    if item_range is not None:
         from_index, to_index = item_range
-    
-    # Handle --item shorthand
-    if item:
-        from_index = to_index = item
-    
-    # Validate range
-    if from_index and to_index and from_index > to_index:
-        console.print("[red]Error:[/red] --from must be <= --to")
-        raise SystemExit(1)
     
     # Reuse an equivalent legacy path key when present (for example,
     # ``agentic/scans/``), otherwise persist a canonical absolute path.
@@ -2576,6 +2572,108 @@ def check_clarity_cmd(
         reset=reset,
         extra_prompt=prompt,
         auto_approve=auto_approve,
+    )
+
+
+@check.command(name="edit")
+@click.option(
+    "-d", "--dir",
+    "output_dir",
+    type=click.Path(exists=True),
+    default="agentic/scans",
+    help="Directory containing scanned .tex files (default: agentic/scans)",
+)
+@item_selection_options
+@click.option(
+    "-p", "--problem-id",
+    type=str,
+    default=None,
+    help="Edit one file by problem ID (for non-numbered names)",
+)
+@click.option(
+    "--instruction", "--prompt", "instruction",
+    type=str,
+    required=True,
+    help="Explicit edit to apply to every selected file",
+)
+@click.option(
+    "--all", "all_items",
+    is_flag=True,
+    help="Select every scanned TeX file",
+)
+@click.option(
+    "--allow-math-changes",
+    is_flag=True,
+    help="Allow the agent to edit mathematical expressions",
+)
+@click.option(
+    "-y", "--yes", "auto_approve",
+    is_flag=True,
+    help="Apply every proposed edit without prompting",
+)
+def check_edit_cmd(
+    output_dir: str,
+    from_index: Optional[int],
+    to_index: Optional[int],
+    item: Optional[int],
+    problem_id: Optional[str],
+    instruction: str,
+    all_items: bool,
+    allow_math_changes: bool,
+    auto_approve: bool,
+):
+    """Apply one explicit editing instruction to selected scanned TeX files.
+
+    Mathematical expressions are protected by default. Proposed changes are
+    shown for approval unless --yes is supplied. The editor never infers the
+    academic task: state it once with --instruction and apply it to a range.
+
+    \b
+    Examples:
+        vbagent check edit --from 1 --to 5 \\
+          --instruction 'Prefix each item with "Find the period of the function"'
+        vbagent check edit --item 7 \\
+          --instruction 'Replace "Calculate" with "Find"' --yes
+        vbagent check edit --all \\
+          --instruction 'Make every question statement concise'
+    """
+    has_numeric_selection = any(
+        value is not None for value in (from_index, to_index, item)
+    )
+    if problem_id and has_numeric_selection:
+        raise click.UsageError(
+            "Use --problem-id or --item/--from/--to, not both"
+        )
+    if all_items and (problem_id or has_numeric_selection):
+        raise click.UsageError(
+            "Use --all or a specific problem/range selection, not both"
+        )
+    if not all_items and not problem_id and not has_numeric_selection:
+        raise click.UsageError(
+            "Select files with --item, --from/--to, --problem-id, or --all"
+        )
+
+    item_range = resolve_item_range(from_index, to_index, item)
+    _run_checker_session(
+        output_dir=output_dir,
+        count=None,
+        problem_id=problem_id,
+        checker_name="edit",
+        check_func_module="vbagent.agents.quality.instruction_editor",
+        check_func_name="edit_with_instruction",
+        require_solution=False,
+        reset=False,
+        extra_prompt=instruction,
+        auto_approve=auto_approve,
+        item_range=item_range,
+        check_kwargs={"allow_math_changes": allow_math_changes},
+        progress_key=_instruction_edit_progress_key(
+            instruction,
+            allow_math_changes,
+        ),
+        # Explicit edits are actions, not timeless checks. Re-run them after a
+        # file changes and let the editor return PASSED when already applied.
+        skip_checked=False,
     )
 
 

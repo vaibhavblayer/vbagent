@@ -4,6 +4,7 @@
 - Solution Checker: Validate solutions
 - Grammar Checker: Check grammar and language
 - Clarity Checker: Check problem clarity
+- Instruction Editor: Apply explicit edits to scanned LaTeX
 - Format Checker: Check formatting
 - LaTeX Fixer: Fix LaTeX compilation issues
 """
@@ -13,6 +14,7 @@ from .reviewer import review_problem_sync
 from .solution_checker import check_solution, has_solution_passed
 from .grammar_checker import check_grammar, has_grammar_passed
 from .clarity_checker import check_clarity, has_clarity_passed
+from .instruction_editor import edit_with_instruction
 from .format_checker import check_format, has_format_passed
 from .latex_fixer import fix_latex
 
@@ -39,6 +41,8 @@ __all__ = [
     "check_clarity",
     "parse_clarity_check",
     "has_clarity_passed",
+    # Instruction Editor
+    "edit_with_instruction",
     # Format Checker
     "check_format",
     "has_format_passed",

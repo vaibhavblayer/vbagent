@@ -35,6 +35,7 @@ from vbagent.cli.common import (
     _get_console,
     configure_cli_verbosity,
 )
+from vbagent.cli.item_selection import item_selection_options, resolve_item_range
 from vbagent.tex import parse_tex_file
 
 
@@ -217,9 +218,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("-i", "--input", "input_path", type=click.Path(exists=True), help="Input file path (image or tex file)")
-@click.option("--from", "from_index", type=int, default=None, help="Start index (1-based, inclusive)")
-@click.option("--to", "to_index", type=int, default=None, help="End index (1-based, inclusive)")
-@click.option("--item", type=int, default=None, help="Process single item (shorthand for --from N --to N)")
+@item_selection_options
 @click.option("--variants", "variant_types_str", type=str, default=None, help="Variant types (comma-separated: numerical,context,conceptual,calculus,cross_topic)")
 @click.option(
     "--alternate/--no-alternate",
@@ -311,16 +310,7 @@ def run(
 
     console = _get_console()
 
-    # Handle --item shorthand
-    if item:
-        from_index = to_index = item
-    if from_index and to_index and from_index > to_index:
-        console.print("[red]Error:[/red] --from must be <= --to")
-        raise SystemExit(1)
-
-    item_range = None
-    if from_index or to_index:
-        item_range = (from_index or 1, to_index or 999999)
+    item_range = resolve_item_range(from_index, to_index, item)
 
     # Determine input type
     image = None

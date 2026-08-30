@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import signal
 import sys
 from pathlib import Path
@@ -60,9 +61,26 @@ def _detect_subject_for_file(tex_file: Path) -> str:
     return "physics"
 
 
+def _filter_tex_files_by_item_range(
+    tex_files: list[Path],
+    item_range: tuple[int, int] | None,
+) -> list[Path]:
+    """Select files by the last numeric component of their stem."""
+    if item_range is None:
+        return tex_files
+
+    start, end = item_range
+    selected: list[Path] = []
+    for tex_file in tex_files:
+        match = re.search(r"(\d+)(?!.*\d)", tex_file.stem)
+        if match and start <= int(match.group(1)) <= end:
+            selected.append(tex_file)
+    return selected
+
+
 def run_checker_session(
     output_dir: str,
-    count: int,
+    count: int | None,
     problem_id: Optional[str],
     checker_name: str,
     check_func_module: str,
@@ -73,6 +91,10 @@ def run_checker_session(
     images_dir: Optional[str] = None,
     extra_prompt: Optional[str] = None,
     auto_approve: bool = False,
+    item_range: tuple[int, int] | None = None,
+    check_kwargs: Optional[dict] = None,
+    progress_key: str | None = None,
+    skip_checked: bool = True,
 ) -> None:
     """Run an interactive checker session with approval workflow.
 
@@ -92,6 +114,10 @@ def run_checker_session(
         images_dir: Optional directory containing images for problems
         extra_prompt: Optional additional instructions for the checker
         auto_approve: Whether to auto-approve all suggestions without prompting
+        item_range: Optional inclusive numeric file range
+        check_kwargs: Additional keyword arguments for the check function
+        progress_key: Optional durable key distinct from the displayed checker name
+        skip_checked: Reuse durable completion state when true
     """
     import importlib
     from vbagent.models.version_store import VersionStore, SuggestionStatus
@@ -123,6 +149,18 @@ def run_checker_session(
             console.print(f"[red]Error:[/red] No files found matching '{problem_id}'")
             raise SystemExit(1)
 
+    tex_files = _filter_tex_files_by_item_range(tex_files, item_range)
+    if item_range is not None:
+        start, end = item_range
+        end_label = "end" if end == sys.maxsize else str(end)
+        console.print(
+            f"[cyan]Filtering to items {start}-{end_label}: "
+            f"{len(tex_files)} file(s)[/cyan]"
+        )
+        if not tex_files:
+            console.print("[red]Error:[/red] No files found in the selected range")
+            raise SystemExit(1)
+
     # Filter for TikZ files if required
     if require_tikz and has_tikz_environment:
         tikz_files = []
@@ -138,20 +176,25 @@ def run_checker_session(
     # Initialize version store for tracking
     store = VersionStore(base_dir=".")
     output_dir_normalized = str(output_path.resolve())
+    tracking_name = progress_key or checker_name
 
     # Reset progress if requested
     if reset:
-        reset_count = store.reset_checker_progress(checker_name, output_dir_normalized)
+        reset_count = store.reset_checker_progress(tracking_name, output_dir_normalized)
         if reset_count > 0:
             console.print(f"[yellow]Reset progress for {reset_count} file(s)[/yellow]")
 
     # Filter out already-checked files
-    checked_files = store.get_checked_files(checker_name, output_dir_normalized)
+    checked_files = (
+        store.get_checked_files(tracking_name, output_dir_normalized)
+        if skip_checked
+        else set()
+    )
     unchecked_files = [f for f in tex_files if str(f.resolve()) not in checked_files]
 
-    if not unchecked_files:
+    if skip_checked and not unchecked_files:
         console.print(f"[green]OK All {len(tex_files)} file(s) have already been checked for {checker_name} issues[/green]")
-        stats = store.get_checker_stats(checker_name, output_dir_normalized)
+        stats = store.get_checker_stats(tracking_name, output_dir_normalized)
         console.print(f"[dim]Total: {stats['total']}, Passed: {stats['passed']}, Had issues: {stats['failed']}[/dim]")
         console.print("[dim]Use --reset to re-check files[/dim]")
         store.close()
@@ -160,7 +203,7 @@ def run_checker_session(
     if len(checked_files) > 0:
         console.print(f"[dim]Skipping {len(checked_files)} already-checked file(s)[/dim]")
 
-    to_process = unchecked_files[:count]
+    to_process = unchecked_files if count is None else unchecked_files[:count]
     console.print(f"[cyan]Checking {len(to_process)} file(s) for {checker_name} issues[/cyan]")
     session_id = store.create_session()
 
@@ -169,6 +212,7 @@ def run_checker_session(
         "solution": IssueType.PHYSICS_ERROR,
         "grammar": IssueType.GRAMMAR,
         "clarity": IssueType.CLARITY,
+        "edit": IssueType.CLARITY,
         "tikz": IssueType.FORMATTING,
     }
     issue_type = issue_type_map.get(checker_name, IssueType.OTHER)
@@ -280,7 +324,7 @@ def run_checker_session(
                             continue
                         elif action == "reject":
                             store.save_suggestion(suggestion, problem_name, SuggestionStatus.REJECTED, session_id)
-                            store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=False)
+                            store.mark_file_checked(str(tex_file.resolve()), tracking_name, output_dir_normalized, passed=False)
                             console.print("[yellow]Suggestion stored for later[/yellow]")
                             stats["rejected"] += 1
                             continue
@@ -297,7 +341,7 @@ def run_checker_session(
                             tex_file.write_text(final_content)
                             console.print(f"[green]OK TikZ generated and applied to {rel_path}[/green]")
                             store.save_suggestion(suggestion, problem_name, SuggestionStatus.APPROVED, session_id)
-                            store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=False)
+                            store.mark_file_checked(str(tex_file.resolve()), tracking_name, output_dir_normalized, passed=False)
                             stats["approved"] += 1
                         except (IOError, OSError) as e:
                             console.print(f"[red]ERROR Failed to write: {e}[/red]")
@@ -328,15 +372,18 @@ def run_checker_session(
                     console.print("[dim]No TikZ content found, skipping[/dim]")
                     stats["skipped"] += 1
                     # Mark as checked/passed since there's nothing to check
-                    store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=True)
+                    store.mark_file_checked(str(tex_file.resolve()), tracking_name, output_dir_normalized, passed=True)
                     continue
 
             # Prepare content with extra prompt if provided
             check_content = content
             if extra_prompt:
                 console.print(f"[dim]Extra instructions: {extra_prompt}[/dim]")
-                # Prepend extra instructions as a comment for the checker
-                check_content = f"% ADDITIONAL INSTRUCTIONS: {extra_prompt}\n\n{content}"
+                if checker_name != "edit":
+                    # Legacy checkers receive extra instructions as context.
+                    check_content = (
+                        f"% ADDITIONAL INSTRUCTIONS: {extra_prompt}\n\n{content}"
+                    )
 
             try:
                 console.print(f"[dim]Checking {checker_name}... (Ctrl+C to quit)[/dim]")
@@ -349,6 +396,12 @@ def run_checker_session(
                     if subject and subject != "physics":
                         console.print(f"[dim]Subject: {subject}[/dim]")
                     passed, summary, corrected_content = check_func(check_content, subject=subject)
+                elif checker_name == "edit":
+                    passed, summary, corrected_content = check_func(
+                        content,
+                        instruction=extra_prompt or "",
+                        **(check_kwargs or {}),
+                    )
                 else:
                     passed, summary, corrected_content = check_func(check_content)
                 stats["processed"] += 1
@@ -365,11 +418,15 @@ def run_checker_session(
                 console.print(f"[green]OK {summary}[/green]")
                 stats["passed"] += 1
                 # Mark file as checked (passed)
-                store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=True)
+                store.mark_file_checked(str(tex_file.resolve()), tracking_name, output_dir_normalized, passed=True)
                 continue
 
             # Clean up extra prompt from corrected content if it was added
-            if extra_prompt and corrected_content.startswith("% ADDITIONAL INSTRUCTIONS:"):
+            if (
+                checker_name != "edit"
+                and extra_prompt
+                and corrected_content.startswith("% ADDITIONAL INSTRUCTIONS:")
+            ):
                 # Remove the extra instructions line
                 lines = corrected_content.split('\n')
                 # Skip the instruction line and any following blank lines
@@ -437,7 +494,7 @@ def run_checker_session(
                     SuggestionStatus.REJECTED, session_id
                 )
                 # Mark file as checked (had issues, rejected)
-                store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=False)
+                store.mark_file_checked(str(tex_file.resolve()), tracking_name, output_dir_normalized, passed=False)
                 console.print("[yellow]Suggestion stored for later[/yellow]")
                 stats["rejected"] += 1
                 continue
@@ -466,7 +523,7 @@ def run_checker_session(
                     SuggestionStatus.APPROVED, session_id
                 )
                 # Mark file as checked (had issues, approved fix)
-                store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=False)
+                store.mark_file_checked(str(tex_file.resolve()), tracking_name, output_dir_normalized, passed=False)
                 stats["approved"] += 1
             except (IOError, OSError) as e:
                 console.print(f"[red]ERROR Failed to write: {e}[/red]")
@@ -476,7 +533,7 @@ def run_checker_session(
                     SuggestionStatus.REJECTED, session_id
                 )
                 # Mark file as checked (had issues, failed to apply)
-                store.mark_file_checked(str(tex_file.resolve()), checker_name, output_dir_normalized, passed=False)
+                store.mark_file_checked(str(tex_file.resolve()), tracking_name, output_dir_normalized, passed=False)
                 stats["rejected"] += 1
 
         # Update session with final stats
