@@ -104,6 +104,33 @@ their solved versions. `--in-place` instead updates selected input files
 directly and cannot be combined with `--output`. Files/items that already
 contain a complete `solution` environment are skipped automatically.
 
+### regenerate
+
+Regenerate only selected diagrams in an existing scan project. The scanned
+problem text, options, solution prose, and final answer remain unchanged.
+
+```bash
+# Uses agentic/scans in the current directory
+vbagent regenerate --problem-diagram --item 2
+vbagent regenerate --solution-diagram --from 1 --to 3
+vbagent regenerate --both-diagrams --from 1 --to 3 --exclude 2 -c
+
+# A project folder, scans folder, or individual scan file also works
+vbagent regenerate /path/to/project --problem-diagram --from 1 --to 3
+vbagent regenerate agentic/scans/problem_2.tex --solution-diagram
+
+# Give the diagram agent a focused visual instruction
+vbagent regenerate --problem-diagram --item 2 \
+  --prompt "Keep every given dimension and remove unnecessary labels"
+```
+
+`--problem-diagram` replaces only standalone diagrams before the `solution`
+environment. `--solution-diagram` replaces only diagrams inside the existing
+solution, and `--both-diagrams` runs both scopes independently. Option and
+matching-statement diagram macros are preserved. Use `-c` to compile each
+candidate before it is saved; a failed candidate leaves that source file
+unchanged.
+
 ## Syllabus authoring
 
 ### author
@@ -388,6 +415,10 @@ vbagent extans
 vbagent extans path/to/main.tex
 vbagent extans -f problems.tex
 
+# Or extract directly from every top-level .tex file in a problem folder
+vbagent extans agentic/scans
+vbagent extans -d agentic/scans
+
 # Output formats
 vbagent extans --format json -o answers.json
 vbagent extans --format yaml -o answers.yaml
@@ -408,6 +439,9 @@ whether to insert the following immediately after the final `enumerate` block:
 
 The `--add` option performs this insertion directly and is idempotent. When no
 output is specified, `--add` writes `answer_key.tex` beside the main file.
+Directory mode reads files in natural filename order, so `problem_2.tex` comes
+before `problem_10.tex`. Because it has no main document to modify, directory
+mode supports ordinary output options but not `--add`.
 
 ### export
 Export LaTeX in different formats.

@@ -28,74 +28,41 @@ TIKZ_GUIDELINES = r"""
         \pgfmathsetmacro{\containerHeight}{2.6}
         \pgfmathsetmacro{\waterLevel}{1.6}
         ```
-    *   Define reusable styles with `\tikzset`.
-    
+    *   Define reusable styles with `\tikzset` only for custom objects. Preserve
+        tikzphysics v1.2 public mechanics styles, path connections, and semantic anchors.
+
     **Use Calc-Based Relative Positioning (CRITICAL - PREFERRED):**
     *   Use `$(node.anchor)+(x,y)$` to chain nodes from each other:
         ```latex
-        \tikzset{
-            pulley/.style={draw, thick, circle, minimum size=1cm, fill=white},
-            block/.style={draw, thick, fill=white, minimum width=1.2cm, minimum height=0.8cm}
-        }
-        % BEST - use calc library: $(node.anchor)+(x,y)$
-        \pic[rotate=180] (ceiling) at (0,0) {frame=2cm};
-        \node[pulley] (pulley) at ($(ceiling-center)+(0,-1)$) {};
-        \node[block] (block_right) at ($(pulley.east)+(0,-2)$) {$m_1$};
-        \node[block] (block_left) at ($(pulley.west)+(0,-2.5)$) {$m_2$};
-        
-        % Also OK - use below of=, xshift, yshift:
-        \node[block] (box1) [below of=pulley1, yshift=-1.5cm] {$m_1$};
-        
-        % BAD - calculating absolute coordinates:
-        \pgfmathsetmacro{\boxOneX}{0}
-        \pgfmathsetmacro{\boxOneY}{-2.5}
-        \node[block] (box1) at (\boxOneX, \boxOneY) {$m$};
+        \node[physicsceiling, minimum width=3cm] (C) at (0,0) {};
+        \draw (C.surface) -- ++(0,-0.5) coordinate (mount);
+        \node[physicspulley] (P) at (mount) {};
+        \node[physicsblock] (R) at ($(P.east)+(0,-2)$) {$m_1$};
+        \node[physicsblock] (L) at ($(P.west)+(0,-2.5)$) {$m_2$};
+        \draw[rope] (L.north) to[over pulley=P] (R.north);
         ```
-    
-    **Use node[midway] for Labels on Lines/Springs (CRITICAL):**
+    *   Do not approximate the string with lines meeting pulley compass anchors.
+
+    **Use Semantic Anchors for Labels and Connections:**
         ```latex
-        % GOOD - use node[midway] for labels:
-        \draw[spring] (ceiling-center) -- (pulley1.north) node[midway, right=2mm] {$k$};
-        \draw[thick] (pulley1.south) -- (box1.north) node[midway, right] {$T$};
+        \draw[physicsspring] (wall) -- node[midway, above=3pt] {$k$} (mass.west);
         \draw[dashed] (A) -- (B) node[midway, above] {$d$};
-        
-        % BAD - calculating label positions separately:
-        \pgfmathsetmacro{\labelX}{...}
-        \pgfmathsetmacro{\labelY}{...}
-        \node at (\labelX, \labelY) {$k$};
         ```
-    
-    **Springs/Coils - use EXACT decoration settings (CRITICAL):**
-        ```latex
-        % ALWAYS define spring style with these EXACT settings:
-        \tikzset{
-            spring/.style={thick, decorate, decoration={
-                coil,
-                amplitude=4pt,
-                segment length=4.5pt,
-                pre length=5pt,
-                post length=5pt
-            }}
-        }
-        % Usage - ALWAYS use node[midway] for labels:
-        \draw[spring] (0,0) -- (0,-2) node[midway, right=5pt] {$k$};
-        ```
-    *   BAD: manual bezier curves for springs
-    *   BAD: different amplitude/segment values
-    *   BAD: calculating label position separately
-    *   GOOD: use the exact spring/.style with node[midway] for labels
-    
+    *   Springs are path decorations in v1.2: use `\draw[physicsspring] (A) -- (B);`
+        with `node[midway]` for labels. Do not treat a spring as a node or use
+        the removed `start`, `end`, or `coil-*` anchors.
+
     **Repeated Structures - Use Scope with Shift:**
     *   For similar structures side-by-side (e.g., two containers), use `\begin{scope}[xshift=...]` instead of duplicating code:
         ```latex
         \pgfmathsetmacro{\scopeShift}{\containerWidth + 1.5}
         \begin{scope}[xshift=0cm]
             \draw (0,0) rectangle (\containerWidth, \containerHeight);
-            \node[block] (blockA) at (...) {};
+            \node[physicsblock] (blockA) at (...) {};
         \end{scope}
         \begin{scope}[xshift=\scopeShift cm]  % Same code, just shifted!
             \draw (0,0) rectangle (\containerWidth, \containerHeight);
-            \node[block] (blockB) at (...) {};
+            \node[physicsblock] (blockB) at (...) {};
         \end{scope}
         ```
     *   BAD: Duplicating code with `(5.2+\blockX, \blockY)` everywhere
@@ -111,18 +78,18 @@ TIKZ_GUIDELINES = r"""
     *   Use `plot[domain=a:b, samples=N]` - NOT `plot[smooth, tension=...]`
     *   Keep axes `thin`, data curves `thick`
     
-    **KinemaTikZ Package (for mechanical diagrams):**
-    *   Use `kinematikz` for frames, supports, pivots in mechanics diagrams
-    *   IMPORTANT: Anchors use HYPHEN `-` not DOT `.`
+    **tikzphysics v1.2 (for mechanical diagrams):**
+    *   Use collision-safe shapes such as `physicsblock`, `physicsspring`,
+        `physicspulley`, `physicsground`, `physicswedge`, `physicsramp`, and
+        `physicscurvedramp`.
+    *   Use semantic anchors for contact geometry and
+        `\draw[rope] (start) to[over pulley=pulley] (end)` for exact tangent strings.
+    *   Do not recreate these objects with local `\tikzset` styles or approximate
+        pulley ropes. Use `kinematikz` only for a pivot or specialized support glyph.
         ```latex
-        % Frame types
-        \pic (support) at (0,0) {frame=2.5cm};
-        \pic (base) at (0,0) {frame pivot flat=2cm};
-        \pic[rotate=180] (ceiling) at (0,\topY) {frame=2.6cm};
-        
-        % Access anchors with hyphen:
-        \draw (support-center) -- (mass.north);  % support is \pic, mass is \node
-        % Available: -left, -right, -center, -north, -south, -in, -out
+        \node[physicsground, minimum width=5cm] (G) at (0,0) {};
+        \node[physicsblock, anchor=south] (B) at (G.top-40) {$m$};
+        \node[physicspulley] (P) at ($(G.top-right)+(0.5,0.2)$) {};
         ```
 """
 
@@ -130,14 +97,17 @@ TIKZ_GUIDELINES = r"""
 TIKZ_GUIDELINES_SHORT = r"""
     **TikZ Variable Guidelines (CRITICAL):**
     *   Use `\pgfmathsetmacro` for base dimensions with camelCase names.
-    *   Define reusable styles with `\tikzset` (e.g., `block/.style`, `pulley/.style`).
+    *   Use tikzphysics v1.2 shapes (`physicsblock`, `physicspulley`,
+        `physicsground`, `physicswedge`, and ramps) for mechanics objects.
     *   **Calc-based positioning (PREFERRED):** Use `$(node.anchor)+(x,y)$` to chain nodes.
     *   **Also OK:** Use `[below of=node, xshift=..., yshift=...]` for relative positioning.
     *   **Labels on lines/springs:** Use `node[midway, right]` - NOT separate position calculations.
-    *   **Springs/Coils:** Use `spring/.style` with EXACT settings: `amplitude=4pt, segment length=4.5pt, pre length=5pt, post length=5pt`.
+    *   **Springs/Coils:** Use `\draw[physicsspring] (A) -- (B);` with
+        `node[midway]` labels. The spring is a path decoration, not a node.
     *   **Repeated Structures:** Use `\begin{scope}[xshift=...]` instead of duplicating code.
     *   **Simple plots:** Use `\draw plot[domain=0:2, samples=50] (\x, {sin(\x r)});` - thin axes, thick curves.
-    *   **KinemaTikZ:** Use `\pic (name) {frame=2cm};` - anchors use hyphen: `name-center`, `name-left`.
+    *   **KinemaTikZ:** Reserve it for pivots and specialized support glyphs not
+        supplied by tikzphysics.
 """
 
 # LaTeX formatting rules - shared across all scanner prompts

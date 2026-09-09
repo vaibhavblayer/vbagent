@@ -130,6 +130,7 @@ def generate_preamble(
     subject_packages = {
         "physics": r"""
 \usepackage{tzplot, pgfplots, kinematikz}
+\usepackage{tikzphysics}
 \usepgfplotslibrary{groupplots}
 \usepackage{circuitikz}
 \ctikzset{resistors/scale=0.75,capacitors/scale=0.75,inductors/scale=0.75}""",
@@ -152,6 +153,7 @@ def generate_preamble(
     # All packages (for mixed content)
     all_packages = r"""
 \usepackage{tzplot, pgfplots, kinematikz}
+\usepackage{tikzphysics}
 \usepackage{circuitikz}
 \ctikzset{resistors/scale=0.75,capacitors/scale=0.75,inductors/scale=0.75}
 \usepackage{chemfig}
@@ -484,7 +486,7 @@ def compile(
     
     \b
     Subject-Specific Packages:
-        Physics:      circuitikz, kinematikz, tzplot, pgfplots
+        Physics:      tikzphysics, circuitikz, kinematikz, tzplot, pgfplots
         Chemistry:    chemfig, mhchem, pgfplots
         Mathematics:  pgfplots, tkz-euclide, venndiagram
     

@@ -18,8 +18,9 @@ def _validate_mechanics(tikz_code: str) -> bool:
     # Check for mechanical system indicators
     mechanics_indicators = [
         "pulley", "spring", "block", "mass",
-        "incline", "frame", "pivot", "rope",
-        "string", "tension", "kinematikz",
+        "incline", "ramp", "wedge", "pivot", "rope",
+        "string", "tension", "kinematikz", "tikzphysics",
+        "physicsblock", "physicsspring", "physicspulley",
         "coil", "rotate", "angle"
     ]
     has_mechanics = any(indicator in code_lower for indicator in mechanics_indicators)
@@ -37,9 +38,10 @@ _agent = DiagramAgent(DiagramAgentConfig(
     diagram_type_filter="mechanics",
     reference_tool_name="search_mechanics_reference",
     reference_tool_docstring=(
-        "Search mechanics reference files for pulley, spring, and mechanical system examples.\n\n"
-        "Use this to find relevant patterns for pulleys, springs, inclined planes,\n"
-        "rotational systems, or diagram styles from the configured reference files."
+        "Search mechanics reference files for pulley, spring, ramp, and mechanical "
+        "system examples.\n\nUse this to find relevant tikzphysics v1.2 patterns "
+        "for blocks, spring paths, native rope connections, contact surfaces, ramps, "
+        "particles, supports, or rotational systems from the configured reference files."
     ),
     reference_no_results_msg="No relevant mechanics references found. Using default mechanical system conventions.",
     solution_context_hint="This explains the mechanical system configuration, forces, motion, and constraints.",

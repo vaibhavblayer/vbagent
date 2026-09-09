@@ -41,7 +41,7 @@ Submodule access:
 
 from typing import TYPE_CHECKING
 
-__version__ = "0.3.13"
+__version__ = "0.3.14"
 
 # Lazy imports for library consumers
 if TYPE_CHECKING:

@@ -3,7 +3,7 @@
 Scanner prompts for physics questions with physics-specific:
 - Solution structure (align*, intertext)
 - Notation (vectors, units, SI)
-- Packages (TikZ, circuitikz, kinematikz, pgfplots)
+- Packages (TikZ, tikzphysics, circuitikz, kinematikz, pgfplots)
 - Diagram types (FBD, circuits, ray diagrams, graphs)
 """
 

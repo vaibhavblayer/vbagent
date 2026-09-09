@@ -186,8 +186,8 @@ def set_agent(agent_type: str, model: str, reasoning: str, max_tokens: int, work
     \b
     Examples:
         vbagent config set default -m gpt-5.6-luna             Global default
-        vbagent config set classifier -m gpt-5.6-luna -r low   Classification
-        vbagent config set scanner -m gpt-5.6-luna -r medium   Extraction
+        vbagent config set classifier -m gpt-5.6-luna -r medium Classification
+        vbagent config set scanner -m gpt-5.6-terra -r medium   Extraction
         vbagent config set tikz -m gpt-5.6-sol -r high         Diagram
         vbagent config set circuit -m gpt-5.6-sol -r high      Diagram (specialist)
         vbagent config set idea -m gpt-5.6-terra -r high       Generation
@@ -195,7 +195,7 @@ def set_agent(agent_type: str, model: str, reasoning: str, max_tokens: int, work
         vbagent config set solution -m gpt-5.6-sol -r high     Generation
         vbagent config set variant -m gpt-5.6-terra -r high    Generation
         vbagent config set format_checker -m gpt-5.6-luna      Quality
-        vbagent config set scanner -m gpt-5.6-luna -w          Save to workspace
+        vbagent config set scanner -m gpt-5.6-terra -w          Save to workspace
     """
     from vbagent.cli.interfaces.ui import print_status
     from vbagent.config import AgentModelConfig
@@ -421,11 +421,11 @@ def set_model(model: str, workspace: bool):
     """Set a single model for ALL agents, or revert to auto (two-tier).
 
     In single-model mode every agent uses the same model while
-    per-category reasoning effort tiers are preserved (low for
-    classifiers, medium for scanner, high for diagrams/solutions).
+    per-category reasoning effort tiers are preserved (medium for
+    classifiers and scanner, high for diagrams/solutions).
 
-    Use 'auto' to clear single-model mode and revert to the normal
-    two-tier split (mini for classification/QA, full for generation).
+    Use 'auto' to clear single-model mode and revert to the configured
+    per-category defaults (Luna for classification, Terra for scanning).
 
     \b
     Examples:

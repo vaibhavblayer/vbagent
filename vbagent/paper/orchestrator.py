@@ -639,7 +639,9 @@ Be precise and specific. The subtopic should be narrower than the topic "{topic}
 
         # Log package decisions
         subject_pkg_map = {
-            "physics": ["circuitikz", "kinematikz", "tzplot", "pgfplots"],
+            "physics": [
+                "tikzphysics", "circuitikz", "kinematikz", "tzplot", "pgfplots"
+            ],
             "chemistry": ["chemfig", "mhchem", "chemmacros", "pgfplots"],
             "mathematics": ["pgfplots", "tkz-euclide", "venndiagram"],
         }

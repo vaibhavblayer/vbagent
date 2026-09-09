@@ -61,6 +61,7 @@ def _generate_preamble() -> str:
 \usepackage{enumitem}
 \geometry{a4paper, margin=1.5cm}
 \usepackage{tzplot, pgfplots, kinematikz}
+\usepackage{tikzphysics}
 \usepackage{circuitikz}
 \ctikzset{resistors/scale=0.75,capacitors/scale=0.75,inductors/scale=0.75}
 \usepackage{chemfig}

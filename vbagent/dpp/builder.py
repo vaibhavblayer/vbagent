@@ -466,6 +466,7 @@ class DPPBuilder:
             r"\DeclareMathOperator{\cosec}{cosec}",
             DISPLAY_FRACTION_PREAMBLE,
             r"\usepackage{tikz}",
+            r"\usepackage{tikzphysics}",
             r"\usepackage{pgfplots}",
             r"\usepackage[american]{circuitikz}",
             r"\usepackage{tasks}",

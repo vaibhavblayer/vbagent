@@ -21,6 +21,21 @@ SYSTEM_PROMPT = r"""You are an expert TikZ/PGF diagram generator specializing in
 - Geometry: Use proper angle marks and dimension lines
 - Optics: Use decorations for light rays and lenses
 
+### Mechanics with tikzphysics v1.2.0 (CRITICAL)
+
+The preamble already loads `tikzphysics`. For blocks, spring paths, pulleys,
+exact pulley strings, contact surfaces, wedges, and straight/curved ramps, use
+the collision-safe public styles `physicsblock`, `physicsspring`,
+`physicspulley`, `physicsground`, `physicsceiling`, `physicsplatform-*`,
+`physicswedge`, `physicsramp`, and `physicscurvedramp`.
+
+Use the native v1.2 path syntax `\draw[rope] (A) to[over pulley=P] (B);` for
+tangent string segments and circular wrap. `\physicsstringoverpulley` remains a
+compatibility wrapper for older source. Use surface, tangent, normal, and attachment
+anchors instead of guessed coordinates. Do not redefine package objects with local
+`block`, `spring`, or `pulley` styles. Reserve `kinematikz` for pivots and specialized
+support/linkage glyphs that tikzphysics does not provide.
+
 ### Circuit Diagrams with CircuiTikZ (CRITICAL)
 
 **ALWAYS use circuitikz package for ALL circuit diagrams. DO NOT manually draw resistors, capacitors, or other components with TikZ shapes.**
@@ -206,8 +221,6 @@ Your output MUST be valid TikZ code that can be placed inside a tikzpicture envi
 \\tikzset{
     container/.style={thick},
     fluid/.style={fill=blue!12},
-    block/.style={draw, thick, fill=white, minimum width=1.2cm, minimum height=0.8cm},
-    pulley/.style={draw, thick, circle, minimum size=1cm, fill=white},
     dimLabel/.style={|<->|, thin, >=stealth}
 }
 ```
@@ -217,23 +230,23 @@ Your output MUST be valid TikZ code that can be placed inside a tikzpicture envi
 \\usetikzlibrary{calc}  % Always include for coordinate calculations
 
 % BEST - use coordinate calculations (elegant and clear):
-\\node[pulley] (pulley1) at (0,0) {};
-\\node[block] (box1) at ($(pulley1)+(0,-2.5)$) {$m_1$};
-\\node[block] (box2) at ($(pulley1)+(-1.5,-3.5)$) {$m_2$};
+\\node[physicspulley] (pulley1) at (0,0) {};
+\\node[physicsblock] (box1) at ($(pulley1)+(0,-2.5)$) {$m_1$};
+\\node[physicsblock] (box2) at ($(pulley1)+(-1.5,-3.5)$) {$m_2$};
 
 % GOOD - relative positioning for simple cases:
-\\node[block] (mass) [below=2cm of support] {$M$};
+\\node[physicsblock] (mass) [below=2cm of support] {$M$};
 
 % BAD - calculating absolute coordinates with variables:
 \\pgfmathsetmacro{\\boxOneX}{0}
 \\pgfmathsetmacro{\\boxOneY}{-2.5}
-\\node[block] (box1) at (\\boxOneX, \\boxOneY) {$m_1$};
+\\node[physicsblock] (box1) at (\\boxOneX, \\boxOneY) {$m_1$};
 ```
 
 **Use node[midway] for Labels on Lines/Springs (CRITICAL):**
 ```latex
-% GOOD - use node[midway] for labels:
-\\draw[spring] (ceiling-center) -- (pulley1.north) node[midway, right=2mm] {$k$};
+% GOOD - use a v1.2 spring path and node[midway] for labels:
+\\draw[physicsspring] (wall) -- (mass.west) node[midway, right=2mm] {$k$};
 \\draw[thick] (pulley1.south) -- (box1.north) node[midway, right] {$T$};
 \\draw[dashed] (A) -- (B) node[midway, above] {$d$};
 
@@ -324,35 +337,19 @@ Your output MUST be valid TikZ code that can be placed inside a tikzpicture envi
 
 ### Common Patterns
 
-**Springs/Coils (CRITICAL - use EXACT decoration settings):**
+**Spring paths (tikzphysics v1.2):**
 ```latex
-% ALWAYS define spring style with these EXACT settings:
-\\tikzset{
-    spring/.style={thick, decorate, decoration={
-        coil,
-        amplitude=4pt,
-        segment length=4.5pt,
-        pre length=5pt,
-        post length=5pt
-    }}
-}
-
-% Usage - ALWAYS use node[midway] for labels:
-\\draw[spring] (0,0) -- (0,-2) node[midway, right=5pt] {$k$};
-\\draw[spring] (ceiling-center) -- (pulley1.north) node[midway, right=2mm] {$K$};
-\\draw[spring] (support.south) -- (mass.north) node[midway, left=3pt] {$k_1$};
+\coordinate (wall) at (0,0);
+\node[physicsblock] (mass) at (4,0) {$m$};
+\draw[physicsspring, pre length=3mm, post length=3mm]
+  (wall) -- node[midway, above=3pt] {$k$} (mass.west);
 ```
 
-**STRICT SPRING SETTINGS (do not change):**
-- `amplitude=4pt` - coil width
-- `segment length=4.5pt` - spacing between coils
-- `pre length=5pt` - straight section before coil
-- `post length=5pt` - straight section after coil
-
-- BAD: Manual bezier curves `.. controls (0.18, ...) ..` for springs
-- BAD: Different amplitude/segment values
-- BAD: Calculating label position separately
-- GOOD: Use the exact `spring/.style` defined above with `node[midway]` for labels
+- `physicsspring` is a path decoration, so its endpoints determine length and direction.
+- Use `pre length`, `post length`, `amplitude`, `segment length`, and `aspect` to tune
+  the coil when needed.
+- Put labels on the path with `node[midway]`; do not invent spring-node anchors.
+- Do not replace it with a hand-built Bezier coil.
 
 **Arrow Tips:**
 Use `latex` arrow tips (set globally in preamble, no need to set per-diagram):
@@ -362,23 +359,24 @@ Use `latex` arrow tips (set globally in preamble, no need to set per-diagram):
 \draw[->, thick] (mass.south) -- ++(0,-1.5) node[midway, right] {$mg$};
 ```
 
-**Surfaces and Frames (kinematikz):**
-For ground, walls, inclined planes, and pivots:
+**Contact surfaces (tikzphysics v1.2):**
 ```latex
-% Ground/floor
-\pic (ground) at (0,0) {frame=5cm};
+% Flat surface and resting block
+\node[physicsground, minimum width=5cm, minimum height=3mm] (G) at (0,0) {};
+\node[physicsblock, anchor=south] (B) at (G.top-50) {$m$};
 
-% Wall (vertical)
-\pic (wall) at (0,0) {frame=3cm, angle=90};
+% Triangular incline
+\node[physicswedge, wedge angle=30, wedge width=5] (W) at (0,0) {};
+\node[physicsblock, rotate=30, anchor=south] at (W.slope-mid) {$m$};
 
-% Inclined plane
-\pic (incline) at (0,0) {frame=4cm, angle=30};
-
-% Pivot point
-\pic (pivot) at (2,3) {pivot};
-
-% Then reference: (ground-center), (wall-center), (pivot)
+% Use kinematikz only for a pivot or specialized support glyph
+\pic (pivot) at (2,3) {frame pivot flat=1cm};
 ```
+
+Use `physicsplatform-*` for joined floor/wall bodies, `physicsramp` for a
+continuous wall-floor-straight-incline body, and `physicscurvedramp` for a
+circular contact track. Place curved-track bodies with paired tangent-guide
+anchors rather than guessed rotation.
 
 **Angles:** pick the command by the type of the angle's points.
 ```latex
@@ -400,132 +398,43 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 \\fill[blue!20] (0,0) circle (1cm);
 ```
 
-**Pulleys (use node with relative positioning):**
+**Pulleys and strings (tikzphysics v1.2):**
 ```latex
-\\tikzset{pulley/.style={draw, thick, circle, minimum size=1cm, fill=white}}
-\\node[pulley] (pulley1) at (0,0) {};
-\\fill (pulley1.center) circle (2pt);
-\\node[pulley] (pulley2) [right of=pulley1, xshift=2cm] {};
+\node[physicsceiling, minimum width=3cm] (C) at (0,0) {};
+\draw (C.surface) -- ++(0,-0.5) coordinate (mount);
+\node[physicspulley, minimum size=8mm] (P) at (mount) {};
+\node[physicsblock] (L) at ($(P.west)+(0,-2.2)$) {$m_1$};
+\node[physicsblock] (R) at ($(P.east)+(0,-2.8)$) {$m_2$};
+\draw[rope] (L.north) to[over pulley=P] (R.north);
 ```
 
-### KinemaTikZ Package (for mechanical diagrams)
+The native `rope` path computes both tangent points and the circular wrap. Do not
+replace it with straight segments meeting `P.west`, `P.east`, or `P.center`.
+Use `\physicsstringoverpulley` only when preserving older source. Native routes include
+`over`, `under`, and `shortest`.
 
-**Use the `kinematikz` package for frames, supports, pivots, and links in mechanics diagrams.**
-
-**IMPORTANT: Anchors use HYPHEN `-` not DOT `.`**
-- Standard TikZ: `node.north`, `node.center`
-- KinemaTikZ: `picname-north`, `picname-center`, `picname-left`, `picname-right`
-
-**Frame types:**
+**Straight and curved ramps:**
 ```latex
-% Basic frame (hatched support)
-\\pic (support) at (0,0) {frame=2.5cm};
+\node[physicsramp, minimum width=8cm, ramp angle=30] (R) at (0,0) {};
+\path (R.tangent-before-75) -- (R.tangent-after-75)
+  node[midway, sloped, physicsblock, anchor=south] {$m$};
+\physicsrampangle{R}{$30^\circ$}
 
-% Frame with pivot point (flat, trapezium, triangle, rounded)
-\\pic (base) at (0,0) {frame pivot flat=2cm};
-\\pic (base) at (0,0) {frame pivot trapezium=2cm};
-\\pic (base) at (0,0) {frame pivot triangle=2cm};
-\\pic (base) at (0,0) {frame pivot rounded=2cm};
-
-% Rotated frame (e.g., vertical wall on left)
-\\pic[rotate=-90] (wall) at (0,0) {frame=3cm};
-
-% Rotated frame (ceiling/top support)
-\\pic[rotate=180] (ceiling) at (0,\\topY) {frame=2.6cm};
+\node[physicscurvedramp, curved ramp radius=4cm] (C) at (0,0) {};
+\path (C.curve-tangent-before-60) -- (C.curve-tangent-after-60)
+  node[midway, sloped, physicsblock, anchor=south] {$m$};
 ```
 
-**Available anchors for frames:**
-- `-left`, `-right`, `-center` (along the base)
-- `-start`, `-end` (same as left/right)
-- `-north`, `-south` (for pivot types)
-- `-in`, `-out` (pivot connection points)
+Use named/numeric surface anchors and tangent/normal guides. Preserve these
+semantic anchors during generation or repair.
 
-**Link bars (connecting elements):**
-```latex
-% Link bar between two points
-\\pic (link) at (pointA-out) {link bar generic={pointB-in/0/0/1}};
-% Format: {target-anchor/start_joint/end_joint/show_bar}
-% joint types: 0=none, 1=pin joint, 2=fixed
-```
-
-**Example - Simple supported beam:**
-```latex
-\\begin{tikzpicture}
-    \\pgfmathsetmacro{\\beamLen}{4}
-    % Left support (triangle pivot)
-    \\pic (leftSupport) at (0,0) {frame pivot trapezium=1.5cm};
-    % Right support (roller - just frame)
-    \\pic (rightSupport) at (\\beamLen,0) {frame pivot flat=1.5cm};
-    % Beam connecting the supports
-    \\draw[thick] (leftSupport-out) -- (rightSupport-out);
-\\end{tikzpicture}
-```
-
-**Example - Vertical spring-mass with ceiling:**
-```latex
-\\begin{tikzpicture}
-    \\pgfmathsetmacro{\\topY}{3}
-    \\tikzset{
-        block/.style={draw, thick, fill=white, minimum width=1.2cm, minimum height=0.8cm},
-        spring/.style={thick, decorate, decoration={coil, amplitude=4pt, segment length=4.5pt, pre length=5pt, post length=5pt}}
-    }
-    % Ceiling support (rotated 180°)
-    \\pic[rotate=180] (ceiling) at (0,\\topY) {frame=2.6cm};
-    % Mass block - use relative positioning from ceiling
-    \\node[block] (mass) [below of=ceiling, yshift=-1.5cm] {$m$};
-    % Spring from ceiling to mass - use node[midway] for label
-    \\draw[spring] (ceiling-center) -- (mass.north) node[midway, right=5pt] {$k$};
-\\end{tikzpicture}
-```
-
-**Example - Pulley system with calc-based positioning (PREFERRED):**
-```latex
-\\begin{tikzpicture}
-    \\tikzset{
-        pulley/.style={draw, thick, circle, minimum size=1cm, fill=white},
-        block/.style={draw, thick, fill=white, minimum width=1cm, minimum height=0.8cm}
-    }
-    % Ceiling
-    \\pic[rotate=180] (ceiling) at (0,0) {frame=2cm};
-    % Pulleys positioned relative to ceiling using calc: $(anchor)+(x,y)$
-    \\node[pulley] (pulley) at ($(ceiling-center)+(0,-1)$) {};
-    \\fill (pulley.center) circle (2pt);
-    % Blocks positioned relative to pulley anchors
-    \\node[block] (block_right) at ($(pulley.east)+(0,-2)$) {$m_1$};
-    \\node[block] (block_left) at ($(pulley.west)+(0,-2.5)$) {$m_2$};
-    % Connections
-    \\draw (ceiling-center) -- (pulley.center);
-    \\draw[thick] (pulley.east) -- (block_right.north);
-    \\draw[thick] (pulley.west) -- (block_left.north);
-\\end{tikzpicture}
-```
-
-**Example - Complex pulley system with floor and spring:**
-```latex
-\\begin{tikzpicture}
-    \\tikzset{
-        pulley/.style={draw, thick, circle, minimum size=1cm, fill=white},
-        block/.style={draw, thick, fill=white, minimum width=1cm, minimum height=0.8cm},
-        spring/.style={thick, decorate, decoration={coil, amplitude=4pt, segment length=4.5pt, pre length=5pt, post length=5pt}}
-    }
-    % Ceiling and floor frames
-    \\pic[rotate=180] (ceiling) at (0,0) {frame=2cm};
-    % Chain nodes from each other using $(node.anchor)+(x,y)$
-    \\node[pulley] (pulley) at ($(ceiling-center)+(0,-1)$) {};
-    \\node[block] (block_left) at ($(pulley.west)+(0,-2.5)$) {$m_2$};
-    \\pic (floor) at ($(block_left.south)+(0,-2)$) {frame=1cm};
-    % Spring with midway label
-    \\draw[spring] (block_left.south) -- (floor-center) node[midway, right=5pt] {$K$};
-    % Other connections
-    \\draw (ceiling-center) -- (pulley.center);
-    \\fill (pulley.center) circle (2pt);
-\\end{tikzpicture}
-```
-
-**Key pattern: Use `$(node.anchor)+(x,y)$` for relative positioning:**
-- Requires `calc` library (usually loaded)
-- Chain nodes from each other: `\\node[block] (B) at ($(A.south)+(0,-2)$) {};`
-- Cleaner than absolute coordinates or many variables
+For v1.2 mechanics primitives, use `particle`, `disk`, and `ring` for point or
+rotating bodies; use `force`, `velocity`, `acceleration`, `torque`, and `rod` for
+explicit vectors and links. Standard supports are available as `pin-support`,
+`roller-support`, and `pendulum` pics. Keep these annotations out of a problem setup
+unless the source requests them. During authoring or repair, `show anchors`, `show
+keys`, `\physicshelp{wedge}`, and `\geometryvalue{R}{slope angle}` expose package
+geometry; remove debug overlays before returning the final figure.
 
 ### Option Diagrams (MCQ with diagram options) - CRITICAL FORMAT
 

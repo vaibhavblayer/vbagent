@@ -50,8 +50,20 @@ def test_vbagent_config_creation():
     # Check smart defaults were applied
     assert "classifier" in config.agents
     assert config.agents["classifier"].model == "gpt-5.6-luna"
-    assert config.agents["classifier"].reasoning_effort == "low"
-    assert config.agents["scanner"].model == "gpt-5.6-luna"
+    classification_agents = [
+        "classifier",
+        "diagram_classifier",
+        "taxonomy_classifier",
+        "difficulty_assessor",
+        "latex_classifier",
+    ]
+    assert all(
+        config.agents[name].model == "gpt-5.6-luna"
+        and config.agents[name].reasoning_effort == "medium"
+        for name in classification_agents
+    )
+    assert config.agents["scanner"].model == "gpt-5.6-terra"
+    assert config.agents["scanner"].reasoning_effort == "medium"
     assert config.agents["converter"].model == "gpt-5.6-terra"
     assert config.agents["solution"].model == "gpt-5.6-sol"
     diagram_generators = [
@@ -67,6 +79,8 @@ def test_vbagent_config_creation():
 def test_model_groups_cover_every_registered_agent():
     for group in MODEL_GROUPS.values():
         assert set(AGENT_TYPES) <= set(group)
+
+    assert MODEL_GROUPS["openai"]["scanner"] == "gpt-5.6-terra"
 
 
 def test_gpt_5_6_supports_all_reasoning_levels():

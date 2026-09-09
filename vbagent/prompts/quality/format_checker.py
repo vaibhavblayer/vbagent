@@ -410,51 +410,21 @@ t &= \dfrac{1}{\sqrt{g}} \int_{0}^{l} x^{-1/2} \, dx \\
 4. Use `node[midway]` for labels on lines/springs - NO position calculations
 5. Use SCOPES for repeated structures
 
-**Good Variable Usage:**
+**Mechanics objects and relative positioning:**
 ```latex
-\pgfmathsetmacro{\containerWidth}{3.8}
-\pgfmathsetmacro{\containerHeight}{2.6}
-\pgfmathsetmacro{\waterLevel}{1.6}
-
-\tikzset{
-    block/.style={draw, thick, fill=white, minimum width=1.2cm, minimum height=0.8cm},
-    pulley/.style={draw, thick, circle, minimum size=1cm, fill=white}
-}
+\node[physicsceiling, minimum width=3cm] (C) at (0,0) {};
+\draw (C.surface) -- ++(0,-0.5) coordinate (mount);
+\node[physicspulley] (P) at (mount) {};
+\node[physicsblock] (R) at ($(P.east)+(0,-2)$) {$m_1$};
+\node[physicsblock] (L) at ($(P.west)+(0,-2.5)$) {$m_2$};
+\draw[rope] (L.north) to[over pulley=P] (R.north);
 ```
 
-**Calc-Based Positioning (PREFERRED):**
-```latex
-\pic[rotate=180] (ceiling) at (0,0) {frame=2cm};
-\node[pulley] (pulley) at ($(ceiling-center)+(0,-1)$) {};
-\node[block] (block_right) at ($(pulley.east)+(0,-2)$) {$m_1$};
-\node[block] (block_left) at ($(pulley.west)+(0,-2.5)$) {$m_2$};
-```
-
-**Labels on Lines/Springs (CRITICAL):**
-```latex
-% GOOD - use node[midway]:
-\draw[spring] (ceiling-center) -- (pulley.north) node[midway, right=2mm] {$k$};
-\draw[thick] (pulley.south) -- (box.north) node[midway, right] {$T$};
-\draw[dashed] (A) -- (B) node[midway, above] {$d$};
-
-% BAD - calculating positions:
-\pgfmathsetmacro{\labelX}{...}
-\node at (\labelX, \labelY) {$k$};
-```
-
-**Springs/Coils (EXACT settings):**
-```latex
-\tikzset{
-    spring/.style={thick, decorate, decoration={
-        coil,
-        amplitude=4pt,
-        segment length=4.5pt,
-        pre length=5pt,
-        post length=5pt
-    }}
-}
-\draw[spring] (0,0) -- (0,-2) node[midway, right=5pt] {$k$};
-```
+- Preserve tikzphysics v1.2 collision-safe styles, semantic anchors, and path APIs.
+- Do not recreate a block, spring, pulley, surface, wedge, or ramp with local styles.
+- Draw `physicsspring` as a path between its two attachment points; it is not a node
+  and has no `start`, `end`, or `coil-*` anchors.
+- Use calc-based node positioning; do not calculate separate label coordinates.
 
 **Repeated Structures (use scope):**
 ```latex
@@ -462,12 +432,12 @@ t &= \dfrac{1}{\sqrt{g}} \int_{0}^{l} x^{-1/2} \, dx \\
 
 \begin{scope}[xshift=0cm]
     \draw (0,0) rectangle (\containerWidth, \containerHeight);
-    \node[block] at (1, 1) {A};
+    \node[physicsblock] at (1, 1) {A};
 \end{scope}
 
 \begin{scope}[xshift=\scopeShift cm]  % Same code, just shifted
     \draw (0,0) rectangle (\containerWidth, \containerHeight);
-    \node[block] at (1, 1) {B};
+    \node[physicsblock] at (1, 1) {B};
 \end{scope}
 ```
 
@@ -480,12 +450,18 @@ t &= \dfrac{1}{\sqrt{g}} \int_{0}^{l} x^{-1/2} \, dx \\
 - Use `plot[domain=a:b, samples=N]` with actual functions
 - Axes: `thin`, data curves: `thick`
 
-**KinemaTikZ (mechanical diagrams):**
+**tikzphysics v1.2 (mechanical diagrams):**
 ```latex
-\pic (support) at (0,0) {frame=2.5cm};
-\pic[rotate=180] (ceiling) at (0,3) {frame=2.6cm};
-\draw (support-center) -- (mass.north);  % Anchors use hyphen: -center, -left, -right
+\node[physicsground, minimum width=5cm] (G) at (0,0) {};
+\node[physicsblock, anchor=south] (B) at (G.top-40) {$m$};
+\coordinate (wall) at ($(B.west)+(-2,0)$);
+\draw[physicsspring, pre length=3mm, post length=3mm]
+  (wall) -- node[midway, above=3pt] {$k$} (B.west);
 ```
+- Preserve tikzphysics shapes, semantic surface anchors, spring paths, and native
+  `\draw[rope] ... to[over pulley=P] ...` routes instead of replacing them with
+  approximate paths. Keep `\physicsstringoverpulley` only for compatibility.
+- Use `kinematikz` only for pivots and specialized support glyphs.
 
 **CircuiTikZ (circuits):**
 ```latex

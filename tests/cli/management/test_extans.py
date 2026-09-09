@@ -1,3 +1,5 @@
+import json
+
 from click.testing import CliRunner
 
 from vbagent.cli.management.extans import (
@@ -102,6 +104,54 @@ def _write_mcq_project(tmp_path):
         encoding="utf-8",
     )
     return main
+
+
+def _write_integer_problem(path, value):
+    path.write_text(
+        "\\item Evaluate the expression.\n"
+        f"\\ansint{{{value}}}\n",
+        encoding="utf-8",
+    )
+
+
+def test_extans_accepts_problem_directory_and_uses_natural_order(tmp_path):
+    scans = tmp_path / "agentic" / "scans"
+    scans.mkdir(parents=True)
+    _write_integer_problem(scans / "problem_10.tex", 10)
+    _write_integer_problem(scans / "problem_2.tex", 2)
+    output = tmp_path / "answers.json"
+
+    result = CliRunner().invoke(
+        extans,
+        ["--dir", str(scans), "--format", "json", "--output", str(output)],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(output.read_text(encoding="utf-8")) == {"1": "2", "2": "10"}
+    assert "Scanning" in result.output
+    assert "Found 2 problem files" in result.output
+
+
+def test_extans_accepts_problem_directory_positionally(tmp_path):
+    scans = tmp_path / "problems"
+    scans.mkdir()
+    _write_integer_problem(scans / "problem_1.tex", 7)
+
+    result = CliRunner().invoke(extans, [str(scans)])
+
+    assert result.exit_code == 0, result.output
+    assert "Problem 1: 7" in result.output
+
+
+def test_extans_directory_mode_rejects_add_without_main_file(tmp_path):
+    scans = tmp_path / "problems"
+    scans.mkdir()
+    _write_integer_problem(scans / "problem_1.tex", 7)
+
+    result = CliRunner().invoke(extans, ["--dir", str(scans), "--add"])
+
+    assert result.exit_code == 2
+    assert "--add requires a main TeX file" in result.output
 
 
 def test_extans_accepts_positional_main_file_and_prompts_to_add(tmp_path):

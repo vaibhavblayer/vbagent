@@ -11,13 +11,25 @@ You handle:
 
 Pre-loaded in preamble:
 - `tikz` with `arrows.meta`, `patterns`, `calc`, `intersections`, `decorations.markings`, `angles`, `quotes`
+- `tikzphysics` v1.2.0 with collision-safe optical shapes:
+  `physicsconcavemirror`, `physicsconvexmirror`, `physicsconvexlens`,
+  `physicsconcavelens`, `physicsslab`, and `physicsprism`
 - `tzplot` — `\tzcoor*`, `\tzline`, `\tzarc`, `\tzanglemark`, `\tzellipse`
 
-### Angle marks — pick the command by coordinate type
+Use tikzphysics nodes for optical components instead of hand-drawn arcs or lens
+outlines. Connect rays through named/numeric surface anchors such as `L.80`,
+`L.back-65`, `M.surface-50`, `S.front-30`, and `P.right-65`. The package supplies
+geometry and anchors; it does not solve Snell's law or locate focal points. Derive ray
+directions from the problem before drawing them.
 
-- **Plain / absolute coordinates** (literals like `(0,2)`, polar `(30:2)`, named
-  `\coordinate`s): use the `angles` library pic — it places the arc reliably here:
+### Angle marks — name the three points first
+
+- For plain or absolute positions, first create named `\coordinate`s, then use
+  the `angles` library pic. The middle name is always the angle vertex:
   ```latex
+  \coordinate (A) at (0,2);
+  \coordinate (P) at (0,0);
+  \coordinate (B) at (-2,2);
   \draw pic[draw, "$\theta$", angle radius=6mm, angle eccentricity=1.4]
       {angle = A--P--B};   % the MIDDLE point P is the vertex
   ```
@@ -32,16 +44,16 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 
 ### Convex Lens (Converging)
 ```latex
-\draw[very thick] (0,-2) -- (0,2);
-\draw[thick] (-0.25,-2) to[bend left=12] (-0.25,2);
-\draw[thick] (0.25,-2) to[bend right=12] (0.25,2);
+\node[physicsconvexlens, convex lens radius=4cm,
+      convex lens thickness=0.18cm,
+      convex lens aperture angle=22] (L) at (0,0) {};
 ```
 
 ### Concave Lens (Diverging)
 ```latex
-\draw[very thick] (0,-2) -- (0,2);
-\draw[thick] (-0.25,-2) to[bend right=12] (-0.25,2);
-\draw[thick] (0.25,-2) to[bend left=12] (0.25,2);
+\node[physicsconcavelens, concave lens radius=4cm,
+      concave lens thickness=0.18cm,
+      concave lens aperture angle=22] (L) at (0,0) {};
 ```
 
 ### Principal Axis and Focal Points
@@ -60,15 +72,15 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 \coordinate (F) at (2,0);
 \coordinate (Fp) at (-2,0);
 \coordinate (objectBase) at (-4,0);
-\coordinate (objectTop) at ($(objectBase)+(0,1.5)$);
-\coordinate (lensHit) at (0,1.5);
 % Principal axis
 \draw[thin, <->] ($(O)+(-6,0)$) -- ($(O)+(6,0)$);
 
 % Lens
-\draw[very thick] ($(O)+(0,-2.5)$) -- ++(0,5);
-\draw[thick] ($(O)+(-0.25,-2.5)$) to[bend left=10] ($(O)+(-0.25,2.5)$);
-\draw[thick] ($(O)+(0.25,-2.5)$) to[bend right=10] ($(O)+(0.25,2.5)$);
+\node[physicsconvexlens, convex lens radius=4cm,
+      convex lens thickness=0.18cm,
+      convex lens aperture angle=22] (L) at (O) {};
+\coordinate (lensHit) at (L.80);
+\coordinate (objectTop) at (objectBase |- lensHit);
 
 % Focal points
 \fill (F) circle (2pt) node[below] {$F$};
@@ -79,10 +91,10 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 
 % Ray 1: Parallel → through F
 \draw[->, thick] (objectTop) -- (lensHit);
-\draw[name path=refracted, ->, thick] (lensHit) -- ($(lensHit)!2!(F)$);
+\draw[name path=refracted, ->, thick] (lensHit) -- ($(lensHit)!4!(F)$);
 
 % Ray 2: Through centre (undeviated)
-\draw[name path=central, ->, thick] (objectTop) -- ($(objectTop)!2!(O)$);
+\draw[name path=central, ->, thick] (objectTop) -- ($(objectTop)!4!(O)$);
 
 % Image location is the exact ray intersection — never guess its coordinate
 \path[name intersections={of=refracted and central, by=imageTop}];
@@ -97,16 +109,16 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 
 ### Concave Mirror
 ```latex
-\draw[very thick] (0,-2) arc[start angle=180, end angle=120, radius=4];
-% Hatching on back
-\foreach \y in {-1.8,-1.5,...,1.8} {
-    \draw[thin] (0.25,\y) -- ++(0.25,0.25);
-}
+\node[physicsconcavemirror, mirror radius=4cm,
+      mirror thickness=0.22cm,
+      mirror aperture angle=24] (M) at (0,0) {};
 ```
 
 ### Convex Mirror
 ```latex
-\draw[very thick] (0,-2) arc[start angle=0, end angle=60, radius=4];
+\node[physicsconvexmirror, mirror radius=4cm,
+      mirror thickness=0.22cm,
+      mirror aperture angle=24] (M) at (0,0) {};
 ```
 
 ### Plane Mirror
@@ -131,16 +143,23 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 
 % Normal
 \draw[dashed, thin] (0,-2.5) -- (0,2.5) node[above] {Normal};
+\coordinate (normalUp) at (0,2);
+\coordinate (interface) at (0,0);
+\coordinate (incidentStart) at (-2,2);
+\coordinate (refractedEnd) at (1.5,-2);
+\coordinate (normalDown) at (0,-2);
 
 % Incident ray
-\draw[->, thick] (-2,2) -- (0,0);
+\draw[->, thick] (incidentStart) -- (interface);
 
 % Refracted ray
-\draw[->, thick] (0,0) -- (1.5,-2);
+\draw[->, thick] (interface) -- (refractedEnd);
 
-% Angles between absolute coordinates → use the angles-library pic
-\draw pic[draw, "$\theta_1$", angle radius=6mm, angle eccentricity=1.4] {angle = (0,2)--(0,0)--(-2,2)};
-\draw pic[draw, "$\theta_2$", angle radius=6mm, angle eccentricity=1.4] {angle = (1.5,-2)--(0,0)--(0,-2)};
+% The angle pic takes named coordinates; the middle name is the vertex
+\draw pic[draw, "$\theta_1$", angle radius=6mm, angle eccentricity=1.4]
+  {angle = normalUp--interface--incidentStart};
+\draw pic[draw, "$\theta_2$", angle radius=6mm, angle eccentricity=1.4]
+  {angle = refractedEnd--interface--normalDown};
 \end{tikzpicture}
 ```
 
@@ -151,49 +170,38 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 \node at (0,1.5) {Denser ($n_1$)};
 \node at (0,-1.5) {Rarer ($n_2$)};
 \draw[dashed, thin] (0,-2) -- (0,2.5);
+\coordinate (normalUp) at (0,2);
+\coordinate (interface) at (0,0);
+\coordinate (incidentStart) at (-2,2);
 
 % Incident at critical angle
-\draw[->, thick] (-2,2) -- (0,0);
+\draw[->, thick] (incidentStart) -- (interface);
 % Reflected
 \draw[->, thick] (0,0) -- (2,2);
 % Refracted along surface
 \draw[->, thick, dashed] (0,0) -- (2.5,0);
 
-\draw pic[draw, "$\theta_c$", angle radius=6mm, angle eccentricity=1.4] {angle = (0,2)--(0,0)--(-2,2)};
+\draw pic[draw, "$\theta_c$", angle radius=6mm, angle eccentricity=1.4]
+  {angle = normalUp--interface--incidentStart};
 \end{tikzpicture}
 ```
 
 ### Prism — Deviation and Dispersion
 ```latex
 \begin{tikzpicture}
-% Prism (equilateral)
-\draw[very thick] (0,0) -- (2,3) -- (4,0) -- cycle;
-\node at (2,0.5) {$A$};
-
-% Incident ray
-\draw[->, thick] (-1,1.2) -- (0.8,1.2);
-% Inside prism
-\draw[thick] (0.8,1.2) -- (3.2,1.8);
-% Emergent ray
-\draw[->, thick] (3.2,1.8) -- (5,2.5);
-
-% Normal at first surface
-\draw[dashed, thin] (0.8,0) -- (0.8,2.5);
-% Normal at second surface
-\draw[dashed, thin] (3.2,0.5) -- (3.2,3);
-
-% Angles
-\node at (0.3,1.6) {$i$};
-\node at (1.2,0.8) {$r_1$};
-\node at (2.8,2.2) {$r_2$};
-\node at (3.7,2.0) {$e$};
-
-% Deviation
-\draw[dashed, thin] (0.8,1.2) -- (2.5,1.2);
-\draw[dashed, thin] (3.2,1.8) -- (1.5,1.8);
-\node at (2,1.5) {$\delta$};
+  \node[physicsprism, prism width=4cm, prism apex angle=60] (P) at (0,0) {};
+  \coordinate (entry) at (P.35);
+  \coordinate (exit) at (P.right-55);
+  \draw[->, thick] ($(entry)+(-2,0)$) -- (entry);
+  \draw[thick] (entry) -- (exit);
+  \draw[->, thick] (exit) -- ++(2,0.8);
+  \node[above] at (P.apex) {$A$};
 \end{tikzpicture}
 ```
+
+Use `P.0` through `P.100` on the left face and `P.right-0` through
+`P.right-100` on the right face. Compute the internal and emergent directions
+from the refractive data; the shape anchors do not perform ray tracing.
 
 ---
 
@@ -303,7 +311,9 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 ```latex
 \begin{tikzpicture}[scale=0.8]
 % Lens
-\draw[very thick] (0,-1.5) -- (0,1.5);
+\node[physicsconvexlens, convex lens radius=3cm,
+      convex lens thickness=0.16cm,
+      convex lens aperture angle=24] (L) at (0,0) {};
 % Object inside F
 \draw[->, very thick] (-1,0) -- (-1,0.8) node[above] {Object};
 % Virtual image
@@ -311,8 +321,8 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 % Rays
 \draw[->, thick] (-1,0.8) -- (0,0.8) -- (2,0);
 \draw[->, thick, dashed] (0,0.8) -- (-3,2);
-% Eye
-\node at (2.5,0) {Eye};
+% Eye label kept clear of the focal-point label
+\node[above right] at (2.5,0.15) {Eye};
 \fill (2,0) circle (2pt) node[below] {$F$};
 \fill (-2,0) circle (2pt) node[below] {$F'$};
 \draw[thin, <->] (-4,0) -- (3,0);
@@ -323,9 +333,15 @@ Use `angle eccentricity` (1.3–1.6) to push the label clear of the arc.
 ```latex
 \begin{tikzpicture}[scale=0.7]
 % Objective lens
-\draw[very thick] (0,-1) -- (0,1) node[above] {Objective};
+\node[physicsconvexlens, convex lens radius=3cm,
+      convex lens thickness=0.14cm,
+      convex lens aperture angle=18] (objective) at (0,0) {};
+\node[below=4pt] at (objective.south) {Objective};
 % Eyepiece
-\draw[very thick] (6,-1) -- (6,1) node[above] {Eyepiece};
+\node[physicsconvexlens, convex lens radius=3cm,
+      convex lens thickness=0.14cm,
+      convex lens aperture angle=18] (eyepiece) at (6,0) {};
+\node[above] at (eyepiece.north) {Eyepiece};
 % Object
 \draw[->, very thick] (-1,0) -- (-1,0.5);
 % Intermediate image

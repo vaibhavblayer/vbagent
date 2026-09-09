@@ -50,13 +50,15 @@ PHYSICS_CONFIG = SubjectConfig(
     name="physics",
     display_name="Physics",
     expert_role="expert physicist and skilled LaTeX typesetter",
-    packages=["tikz", "pgfplots", "tzplot", "kinematikz"],
+    packages=["tikz", "tikzphysics", "pgfplots", "tzplot", "kinematikz"],
     package_instructions=r"""
 **Required LaTeX Packages:**
 - `tikz` with libraries: calc, decorations.pathmorphing, patterns, arrows.meta, positioning
+- `tikzphysics` v1.2 for mechanics objects, contact surfaces, exact pulley strings,
+  spring paths, native rope connections, particles, supports, and straight/curved ramps
 - `pgfplots` for graphs and data plots
 - `tzplot` for simplified TikZ plotting (coordinates, curves, angles)
-- `kinematikz` for mechanical diagrams (frames, supports, pivots)
+- `kinematikz` only for pivots and specialized supports not supplied by tikzphysics
 
 **TikZ Libraries to use:**
 ```latex
@@ -73,8 +75,13 @@ PHYSICS_CONFIG = SubjectConfig(
     diagram_types=["graph", "circuit", "free_body", "geometry", "ray_diagram", "wave"],
     diagram_instructions=r"""
 **TikZ for Physics Diagrams:**
-- Use `kinematikz` for frames, supports, pivots: `\pic (name) {frame=2cm};`
-- Springs: `spring/.style={decorate, decoration={coil, amplitude=4pt, segment length=4.5pt}}`
+- Use collision-safe tikzphysics styles such as `physicsblock`, `physicspulley`,
+  `physicsground`, `physicswedge`, and `physicscurvedramp`.
+- Draw springs as paths with `\draw[physicsspring] (A) -- (B);` and route ropes with
+  `\draw[rope] (A) to[over pulley=P] (B);` so endpoints and pulley tangency are exact.
+- Keep `\physicsstringoverpulley` only when compatibility syntax is required.
+- Use semantic surface/tangent/normal anchors instead of guessed coordinates.
+- Use `kinematikz` only for pivots or specialized support glyphs.
 - Circuits: Use `circuitikz` package for electrical components
 - Free body diagrams: Use arrows with `\draw[->, thick]` for force vectors
 - Use `tzplot` for quick coordinate plots: `\tzto(0,0)(3,2)`

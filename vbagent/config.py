@@ -163,7 +163,7 @@ MODEL_GROUPS: dict[str, dict[str, str]] = {
         "taxonomy_classifier": "gpt-5.6-luna",
         "difficulty_assessor": "gpt-5.6-luna",
         "latex_classifier": "gpt-5.6-luna",
-        "scanner": "gpt-5.6-luna",
+        "scanner": "gpt-5.6-terra",
         "converter": "gpt-5.6-terra",
         "tikz_checker": "gpt-5.6-terra",
         "tikz": "gpt-5.6-sol",
@@ -497,7 +497,7 @@ class VBAgentConfig:
             self._apply_reasoning_tiers(light=self.default_model, heavy=heavy)
             if self.default_model == "gpt-5.6-luna":
                 self.agents["scanner"] = AgentModelConfig(
-                    model="gpt-5.6-luna", reasoning_effort="medium"
+                    model="gpt-5.6-terra", reasoning_effort="medium"
                 )
                 self.agents["converter"] = AgentModelConfig(
                     model="gpt-5.6-terra", reasoning_effort="medium"
@@ -523,21 +523,21 @@ class VBAgentConfig:
         """Populate agent configs with per-category reasoning tiers.
 
         Args:
-            light: Model for classification / QA / scanner.
-            heavy: Model for diagrams / generation / solution.
+            light: Model for classification / QA.
+            heavy: Model for diagrams / generation / solution / scanner.
         """
-        # Classification agents: low reasoning
+        # Classification agents: medium reasoning
         for name in ["classifier", "diagram_classifier",
                      "taxonomy_classifier", "difficulty_assessor", "latex_classifier"]:
             if name not in self.agents:
                 self.agents[name] = AgentModelConfig(
-                    model=light, reasoning_effort="low"
+                    model=light, reasoning_effort="medium"
                 )
 
-        # Content extraction: medium reasoning
+        # Content extraction: Terra with medium reasoning
         if "scanner" not in self.agents:
             self.agents["scanner"] = AgentModelConfig(
-                model=light, reasoning_effort="medium"
+                model=heavy, reasoning_effort="medium"
             )
         if "converter" not in self.agents:
             self.agents["converter"] = AgentModelConfig(

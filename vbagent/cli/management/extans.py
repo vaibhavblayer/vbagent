@@ -9,16 +9,16 @@ from typing import Optional
 import click
 import yaml
 
-from ..common import _get_console
+from ..common import _get_console, natural_sort_key
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument(
-    "main_file_arg",
+    "source",
     required=False,
-    type=click.Path(exists=True, dir_okay=False),
+    type=click.Path(exists=True, file_okay=True, dir_okay=True),
 )
 @click.option(
     "-f",
@@ -27,6 +27,14 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     type=click.Path(exists=True, dir_okay=False),
     default=None,
     help="Path to main.tex file (default: main.tex)",
+)
+@click.option(
+    "-d",
+    "--dir",
+    "problems_dir_option",
+    type=click.Path(exists=True, file_okay=False),
+    default=None,
+    help="Directory containing problem .tex files",
 )
 @click.option("-o", "--output", type=click.Path(), help="Output file path (optional)")
 @click.option("--format", "output_format", type=click.Choice(["text", "json", "yaml", "latex"]),
@@ -37,16 +45,18 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
     help="Write a LaTeX answer key and add it to the main TeX file without prompting",
 )
 def extans(
-    main_file_arg: Optional[str],
+    source: Optional[str],
     main_file_option: Optional[str],
+    problems_dir_option: Optional[str],
     output: Optional[str],
     output_format: str,
     add: bool,
 ):
     """Extract answers from LaTeX problem files.
     
-    Parses main.tex to find all problem files (via \\foreach loops or direct \\input),
-    then extracts answers from each problem file.
+    SOURCE may be a main TeX file or a directory of problem files. A main file is
+    parsed for \\foreach loops and direct \\input commands. A directory is scanned
+    for top-level .tex files in natural filename order.
     
     Supports:
     - MCQ with \\ans marker in tasks environment
@@ -58,7 +68,9 @@ def extans(
     Examples:
         vbagent extans
         vbagent extans path/to/main.tex
+        vbagent extans agentic/scans
         vbagent extans -f main.tex --format json
+        vbagent extans -d agentic/scans --format json
         vbagent extans -o answers.yaml --format yaml
         vbagent extans --format latex -o answer_key.tex
         vbagent extans main.tex --add
@@ -66,28 +78,61 @@ def extans(
     from vbagent.tex import extract_answer_details_from_problem, parse_main_tex
     
     console = _get_console()
-    if main_file_arg and main_file_option:
-        raise click.UsageError("Pass the main TeX file either positionally or with --file, not both")
+    explicit_sources = [
+        source is not None,
+        main_file_option is not None,
+        problems_dir_option is not None,
+    ]
+    if sum(explicit_sources) > 1:
+        raise click.UsageError(
+            "Pass one source: a positional file/directory, --file, or --dir"
+        )
 
-    main_path = Path(main_file_arg or main_file_option or "main.tex")
-    if not main_path.exists():
-        raise click.UsageError(f"Main TeX file does not exist: {main_path}")
+    main_path: Optional[Path] = None
+    problems_dir: Optional[Path] = None
+    if problems_dir_option is not None:
+        problems_dir = Path(problems_dir_option)
+    elif source is not None and Path(source).is_dir():
+        problems_dir = Path(source)
+    else:
+        main_path = Path(source or main_file_option or "main.tex")
+        if not main_path.exists():
+            raise click.UsageError(f"Main TeX file does not exist: {main_path}")
+
+    if add and main_path is None:
+        raise click.UsageError(
+            "--add requires a main TeX file; use --format latex --output PATH "
+            "when extracting from a directory"
+        )
 
     if add:
         output_format = "latex"
         if output is None:
+            assert main_path is not None
             output = str(main_path.parent / "answer_key.tex")
-    
-    # Parse main.tex to get problem files
-    console.print(f"[cyan]Parsing {main_path}...[/cyan]")
-    try:
-        problem_files = parse_main_tex(main_path)
-    except Exception as e:
-        console.print(f"[red]Error parsing {main_path}: {e}[/red]")
-        raise click.Abort()
+
+    if problems_dir is not None:
+        console.print(f"[cyan]Scanning {problems_dir}...[/cyan]")
+        problem_files = sorted(problems_dir.glob("*.tex"), key=natural_sort_key)
+        if output is not None:
+            output_path = Path(output).resolve()
+            problem_files = [
+                problem_file
+                for problem_file in problem_files
+                if problem_file.resolve() != output_path
+            ]
+    else:
+        assert main_path is not None
+        console.print(f"[cyan]Parsing {main_path}...[/cyan]")
+        try:
+            problem_files = parse_main_tex(main_path)
+        except Exception as e:
+            console.print(f"[red]Error parsing {main_path}: {e}[/red]")
+            raise click.Abort()
     
     if not problem_files:
-        console.print("[yellow]No problem files found in main.tex[/yellow]")
+        source_label = problems_dir if problems_dir is not None else main_path
+        console.print(f"[yellow]No problem files found in {source_label}[/yellow]")
         return
     
     console.print(f"[green]Found {len(problem_files)} problem files[/green]")
@@ -135,7 +180,7 @@ def extans(
     else:
         console.print("\n" + output_content)
 
-    if output_format == "latex" and output:
+    if output_format == "latex" and output and main_path is not None:
         output_path = Path(output)
         should_add = add or click.confirm(
             f"Add the answer key to {main_path}?",

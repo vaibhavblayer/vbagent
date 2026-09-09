@@ -59,6 +59,9 @@ PREAMBLE_TEMPLATE = r"""\documentclass[preview, border=2mm]{{standalone}}
     quotes
 }}
 
+% --- TikZ-native physics objects and semantic anchors ---
+\usepackage{{tikzphysics}}
+
 % --- Circuits ---
 \usepackage[american]{{circuitikz}}
 

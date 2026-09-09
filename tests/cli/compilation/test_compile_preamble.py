@@ -11,6 +11,7 @@ def test_generate_preamble_defines_ansint():
     assert r"\DeclareMathOperator{\cosec}{cosec}" in preamble
     assert r"\usepackage{comment, multicol}" in preamble
     assert r"\usepackage{multirow}" in preamble
+    assert r"\usepackage{tikzphysics}" in preamble
     assert r"\usepgfplotslibrary{groupplots}" in preamble
     assert r"\geometry{a4paper, margin=0.65in}" in preamble
     assert r"\renewcommand{\ans}{}" in preamble
@@ -27,6 +28,7 @@ def test_build_document_defines_ansint():
     assert r"\DeclareMathOperator{\cosec}{cosec}" in document
     assert r"\usepackage{comment, multicol}" in document
     assert r"\usepackage{multirow}" in document
+    assert r"\usepackage{tikzphysics}" in document
     assert r"\usepgfplotslibrary{groupplots}" in document
     assert r"\renewcommand{\ans}{}" in document
     assert r"% \excludecomment{solution}" in document

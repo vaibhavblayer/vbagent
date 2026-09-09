@@ -131,6 +131,7 @@ the diagram is tailored exactly to the solution context.
 - Simple v-t, x-t, a-t graphs (3-5 lines of draw commands)
 - Quick number lines or inequalities
 - Simple force arrows or vector diagrams
+- Simple mechanics geometry using tikzphysics v1.2 semantic shapes, anchors, and paths
 - Basic geometric sketches (triangle, circle with labels)
 - Simple circuit with 2-3 components
 
@@ -170,6 +171,11 @@ the diagram is tailored exactly to the solution context.
 **TikZ style rules for inline diagrams:**
 - NO colors (no `blue`, `red`, etc.) — use solid/dashed/dotted
 - NO inline `>=latex` or `\tikzset` — already set globally
+- For mechanics, preserve collision-safe tikzphysics styles (`physicsblock`,
+  `physicspulley`, surfaces, wedges, and ramps). Draw springs as
+  `\draw[physicsspring] (A) -- (B);` and prefer
+  `\draw[rope] (A) to[over pulley=P] (B);` for pulley strings. Keep
+  `\physicsstringoverpulley` only for compatibility. Do not hand-build these objects.
 - Use `thin, ->` for axes, `thick` for main curves
 - Use `font=\tiny` or `font=\footnotesize` for labels
 - Wrap in `\begin{center}...\end{center}`
@@ -307,6 +313,7 @@ PHYSICS_PACKAGES = r"""
 \usepackage{amsmath}      % align*, equation*
 \usepackage{siunitx}      % \si{}, \unit{}
 \usepackage{tikz}         % diagrams
+\usepackage{tikzphysics}  % mechanics shapes and anchors
 \usepackage{circuitikz}   % circuit diagrams
 \usepackage{pgfplots}     % graphs
 """

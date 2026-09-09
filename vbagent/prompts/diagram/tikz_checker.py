@@ -25,7 +25,8 @@ _REVIEW_CHECKLIST = r"""## Review Checklist
 **3. Best Practices**
 - Use arrows.meta syntax: `->, >=latex` for physics diagrams (NOT Stealth)
 - Use `\node` for labels
-- Define reusable styles with `\tikzset`
+- Define reusable styles with `\tikzset` for custom objects, but preserve public
+  tikzphysics mechanics styles and anchors instead of redefining them
 
 **4. Variables and Scopes (CRITICAL - CLEAN, MINIMAL VARIABLES)**
 
@@ -66,35 +67,31 @@ BAD - variable bloat, absolute coordinates, separate label positions, decimals:
 \pgfmathsetmacro{\springLength}{2.3}  % Decimal when 2 would work
 \node[block] (box1) at (\boxOneX, \boxOneY) {$m$};
 \node[block] (box2) at (\boxTwoX, \boxTwoY) {$m$};
-\draw[spring] (0,0) -- (0,-2);
+\draw[physicsspring] (0,0) -- (0,-2);
 \node at (\labelX, \labelY) {$k$};  % BAD - separate label!
 ```
 
-GOOD - calc-based positioning, node[midway] for labels, integers (PREFERRED):
+GOOD - tikzphysics objects, calc-based positioning, and exact pulley routing:
 ```
-\tikzset{
-    pulley/.style={draw, thick, circle, minimum size=1cm, fill=white},
-    block/.style={draw, thick, fill=white, minimum width=1.5cm, minimum height=1cm}
-}
-
-% BEST - use calc/anchors and simple relative offsets
-\pic[rotate=180] (ceiling) at (0,0) {frame=2cm};
-\node[pulley] (pulley) at ($(ceiling-center)+(0,-1)$) {};
-\node[block] (block_right) at ($(pulley.east)+(0,-2)$) {$m_1$};
-\node[block] (block_left) at ($(pulley.west)+(0,-3)$) {$m_2$};
-\draw (pulley.east) -- ++(0,-2) coordinate (rightRopeEnd);
+\node[physicsceiling, minimum width=3cm] (C) at (0,0) {};
+\draw (C.surface) -- ++(0,-0.5) coordinate (mount);
+\node[physicspulley, minimum size=8mm] (P) at (mount) {};
+\node[physicsblock] (R) at ($(P.east)+(0,-2)$) {$m_1$};
+\node[physicsblock] (L) at ($(P.west)+(0,-3)$) {$m_2$};
+\draw[rope] (L.north) to[over pulley=P] (R.north);
 
 % Also OK - use below of=, xshift, yshift with simple spacing
-\node[block] (box1) [below of=pulley1, yshift=-2cm] {$m_1$};
+\node[physicsblock] (box1) [below of=P, yshift=-2cm] {$m_1$};
 
 % Exact derived geometry — do not guess the meeting point
 \coordinate (midpoint) at ($(A)!0.5!(B)$);
 \draw (O) -- ++(30:2);
 \path[name intersections={of=lineA and lineB, by=meeting}];
 
-% Use node[midway] for labels on lines/springs - MUCH cleaner!
-\draw[spring] (ceiling-center) -- (pulley.north) node[midway, right=2mm] {$k$};
-\draw[thick] (pulley.east) -- (block_right.north) node[midway, right] {$T$};
+% Use a path decoration and put the label on the path.
+\coordinate (wall) at (0,0);
+\draw[physicsspring, pre length=3mm, post length=3mm]
+    (wall) -- node[midway, above=2mm] {$k$} (box1.west);
 ```
 
 **When to create variable vs inline:**
@@ -127,31 +124,23 @@ GOOD - calc-based positioning, node[midway] for labels, integers (PREFERRED):
 **6. Physics Diagram Conventions**
 - Force vectors: proper arrow tips (`->, >=latex`), labels
 - Axes: use pgfplots `axis` environment for graphs
-- Springs/Coils: use `decoration={coil, ...}` NOT manual bezier curves
+- Mechanics: preserve tikzphysics v1.2 shapes, semantic anchors, spring paths, and
+  exact string routing. Do not downgrade them to hand-drawn approximations.
 
-**Springs - use EXACT decoration settings:**
+**Springs - use the tikzphysics v1.2 path decoration:**
 ```
 % BAD - manual bezier curves for springs:
 \draw (0,0) .. controls (0.18, -0.1) and (-0.18, -0.2) .. (0, -0.3) ...
 
-% GOOD - use coil decoration with EXACT settings:
-\tikzset{
-    spring/.style={thick, decorate, decoration={
-        coil,
-        amplitude=4pt,
-        segment length=4.5pt,
-        pre length=5pt,
-        post length=5pt
-    }}
-}
-\draw[spring] (0,0) -- (0,-2) node[midway, right=5pt] {$k$};
+% GOOD - endpoints are the attachments; label the path with node[midway]:
+\draw[physicsspring, pre length=3mm, post length=3mm]
+    (wall) -- node[midway, above=3pt] {$k$} (block.west);
 ```
 
-**STRICT SPRING SETTINGS (enforce these exact values):**
-- `amplitude=4pt`
-- `segment length=4.5pt`
-- `pre length=5pt`
-- `post length=5pt`
+`physicsspring` is a path decoration, not a node. The endpoints determine its length
+and direction. Preserve optional `pre length`, `post length`, `amplitude`, `segment
+length`, and `aspect` keys when supplied. Do not use `start`, `end`, or `coil-*`
+spring-node anchors.
 
 **7. Common Errors**
 - Missing `\end{tikzpicture}`
@@ -215,17 +204,19 @@ row diagram with `baseline=(current bounding box.center)`. Do not combine the
 rows into a montage, do not rename them to `\OptionA`, and do not draw (A),
 (B), ... inside the pictures because the table supplies those labels.
 
-**12. KinemaTikZ package - anchor syntax**
-When using `kinematikz` package for frames/supports:
+**12. Mechanics package boundaries**
+Use tikzphysics for blocks, springs, pulleys, exact strings, ground/ceiling/walls,
+wedges, platforms, and straight/curved ramps. Use `kinematikz` only for a pivot or
+specialized support glyph not supplied by tikzphysics. When it is used:
 - Anchors use HYPHEN `-` not DOT `.`
-- `\pic (name) at (...) {frame=2cm};` creates named pic
-- Access anchors: `name-left`, `name-center`, `name-right`, `name-north`, `name-out`
+- `\pic (name) at (...) {frame pivot flat=1cm};` creates a verified pivot support
+- Access its anchors with names such as `name-center`
 ```
 % BAD - using dot for kinematikz anchors:
-\draw (support.center) -- (mass.north);
+\draw (pivot.center) -- (rod.west);
 
 % GOOD - use hyphen for kinematikz pic anchors:
-\draw (support-center) -- (mass.north);  % support is \pic, mass is \node
+\draw (pivot-center) -- (rod.west);  % pivot is \pic, rod is \node
 ```
 """
 
@@ -382,17 +373,11 @@ For fixing a missing semicolon:
 +\draw (0,0) -- (1,1);
 ```
 
-For fixing spring decoration:
+For restoring exact tikzphysics pulley routing:
 ```
-@@ spring/.style={
--    spring/.style={decorate, decoration={coil}}
-+    spring/.style={thick, decorate, decoration={
-+        coil,
-+        amplitude=4pt,
-+        segment length=4.5pt,
-+        pre length=5pt,
-+        post length=5pt
-+    }}
+@@ pulley string
+-\draw (L.north) -- (P.west) arc (180:0:4mm) -- (R.north);
++\draw[rope] (L.north) to[over pulley=P] (R.north);
 ```
 """
 

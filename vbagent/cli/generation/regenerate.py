@@ -12,6 +12,7 @@ Works with both output layouts:
 from __future__ import annotations
 
 import json
+import re
 import time
 from pathlib import Path
 
@@ -21,6 +22,444 @@ from vbagent.cli.common import _get_console
 
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
+
+
+_SOLUTION_START_RE = re.compile(r"\\begin\s*\{solution\}", re.IGNORECASE)
+_DIAGRAM_ENV_RE = re.compile(
+    r"\\begin\{(?P<env>tikzpicture|circuitikz)\}"
+    r"(?:\[[^\]]*\])?.*?\\end\{(?P=env)\}",
+    re.DOTALL,
+)
+_CENTER_BEFORE_RE = re.compile(r"\\begin\{center\}\s*$", re.DOTALL)
+_CENTER_AFTER_RE = re.compile(r"^\s*\\end\{center\}", re.DOTALL)
+_DEFINITION_START_RE = re.compile(r"\\def\\(?:Option|Match)[A-Za-z]+\s*\{")
+
+
+def _scan_workspace_dir(target: Path) -> Path | None:
+    """Resolve a current scan project, scan directory, or individual TeX file."""
+    if target.is_file():
+        return target.parent if target.suffix.lower() == ".tex" else None
+
+    candidates = [
+        target / "agentic" / "scans",
+        target / "scans",
+        target,
+    ]
+    for candidate in candidates:
+        if candidate.is_dir() and any(candidate.glob("*.tex")):
+            return candidate
+    return None
+
+
+def _scan_workspace_files(target: Path) -> list[Path]:
+    """Return naturally ordered current-layout scan files for *target*."""
+    from vbagent.cli.generation.solve import sort_tex_files
+
+    if target.is_file():
+        return [target] if target.suffix.lower() == ".tex" else []
+    scans_dir = _scan_workspace_dir(target)
+    return sort_tex_files(scans_dir.glob("*.tex")) if scans_dir else []
+
+
+def _is_current_scan_target(target: Path) -> bool:
+    """Distinguish current scan workspaces from legacy single-problem folders."""
+    if target.is_file():
+        return target.suffix.lower() == ".tex"
+    if (target / "agentic" / "scans").is_dir():
+        return True
+    if target.name == "scans" and any(target.glob("*.tex")):
+        return True
+    top_level_tex = list(target.glob("*.tex")) if target.is_dir() else []
+    legacy_markers = (target / "meta.json", target / "concepts.json")
+    return bool(top_level_tex) and not any(path.exists() for path in legacy_markers)
+
+
+def _problem_number(path: Path, fallback: int) -> int:
+    """Use a trailing problem number when present, matching solve/run selection."""
+    match = re.search(r"(\d+)(?!.*\d)", path.stem)
+    return int(match.group(1)) if match else fallback
+
+
+def _selected_scan_files(
+    files: list[Path],
+    items: list[str],
+    from_index: int | None,
+    to_index: int | None,
+    excluded: set[int],
+) -> list[Path]:
+    """Select current-layout scan files by numeric suffix or explicit name."""
+    numbered = [
+        (_problem_number(path, index), path)
+        for index, path in enumerate(files, 1)
+    ]
+    if items:
+        if from_index is not None or to_index is not None:
+            raise click.UsageError("Use --item or --from/--to, not both")
+        if len(items) != 1 or not items[0].strip().isdigit():
+            raise click.BadParameter(
+                "Scoped scan regeneration accepts one positive problem number",
+                param_hint="--item",
+            )
+        requested_number = int(items[0])
+        if requested_number < 1:
+            raise click.BadParameter(
+                "must be positive (1-based)",
+                param_hint="--item",
+            )
+        return [
+            path
+            for number, path in numbered
+            if number == requested_number and number not in excluded
+        ]
+
+    start = 1 if from_index is None else from_index
+    end = (
+        max((number for number, _ in numbered), default=0)
+        if to_index is None
+        else to_index
+    )
+    if start > end:
+        raise click.BadParameter("--from must be <= --to")
+    return [
+        path
+        for number, path in numbered
+        if start <= number <= end and number not in excluded
+    ]
+
+
+def _parse_excluded(values: tuple[str, ...]) -> set[int]:
+    """Parse repeated comma-separated exclusions."""
+    from vbagent.cli.generation.solve import parse_excluded_indices
+
+    return parse_excluded_indices(values)
+
+
+def _definition_ranges(text: str) -> list[tuple[int, int]]:
+    """Return balanced ranges for Option/Match diagram macro definitions."""
+    ranges: list[tuple[int, int]] = []
+    for match in _DEFINITION_START_RE.finditer(text):
+        depth = 1
+        index = match.end()
+        while index < len(text) and depth:
+            if text[index] == "{" and (index == 0 or text[index - 1] != "\\"):
+                depth += 1
+            elif text[index] == "}" and (index == 0 or text[index - 1] != "\\"):
+                depth -= 1
+            index += 1
+        if depth == 0:
+            ranges.append((match.start(), index))
+    return ranges
+
+
+def _standalone_diagram_spans(text: str) -> list[tuple[int, int, str]]:
+    """Locate standalone diagrams, excluding Option/Match macro definitions."""
+    definition_ranges = _definition_ranges(text)
+    spans: list[tuple[int, int, str]] = []
+    for match in _DIAGRAM_ENV_RE.finditer(text):
+        if any(start <= match.start() < end for start, end in definition_ranges):
+            continue
+
+        start, end = match.span()
+        prefix = text[:start]
+        suffix = text[end:]
+        before = _CENTER_BEFORE_RE.search(prefix)
+        after = _CENTER_AFTER_RE.search(suffix)
+        if before and after:
+            start = before.start()
+            end += after.end()
+        spans.append((start, end, match.group(0)))
+    return spans
+
+
+def _split_problem_and_solution(content: str) -> tuple[str, str]:
+    """Split at the first solution environment without normalizing either side."""
+    match = _SOLUTION_START_RE.search(content)
+    if not match:
+        return content, ""
+    return content[:match.start()], content[match.start():]
+
+
+def _center_diagram(code: str) -> str:
+    """Return one consistently centered generated diagram."""
+    code = code.strip()
+    if code.startswith(r"\begin{center}") and code.endswith(r"\end{center}"):
+        return code
+    return "\\begin{center}\n" + code + "\n\\end{center}"
+
+
+def _replace_problem_diagrams(problem_latex: str, tikz_code: str) -> str:
+    """Replace only standalone problem-side diagrams, preserving macro diagrams."""
+    spans = _standalone_diagram_spans(problem_latex)
+    if not spans:
+        raise ValueError("no standalone problem diagram found")
+
+    replacement = _center_diagram(tikz_code)
+    result = problem_latex
+    for index, (start, end, _old_code) in enumerate(reversed(spans)):
+        # Keep one regenerated composite at the first original diagram location.
+        original_index = len(spans) - 1 - index
+        new_text = replacement if original_index == 0 else ""
+        result = result[:start] + new_text + result[end:]
+    return result
+
+
+def _replace_solution_diagrams(
+    solution_latex: str,
+    generator,
+) -> tuple[str, int]:
+    """Regenerate every standalone diagram inside the existing solution only."""
+    spans = _standalone_diagram_spans(solution_latex)
+    if not spans:
+        return solution_latex, 0
+
+    result = solution_latex
+    generated: list[tuple[int, int, str]] = []
+    for diagram_index, (start, end, old_code) in enumerate(spans, 1):
+        new_code = generator(old_code, diagram_index, len(spans))
+        generated.append((start, end, _center_diagram(new_code)))
+    for start, end, new_code in reversed(generated):
+        result = result[:start] + new_code + result[end:]
+    return result, len(generated)
+
+
+def _infer_diagram_type(subject: str, metadata: dict, content: str) -> str | None:
+    """Choose a specialist route when legacy classification lacks diagram fields."""
+    explicit = metadata.get("suggested_tikz_agent") or metadata.get("diagram_type")
+    if explicit:
+        return str(explicit)
+
+    lowered = content.lower()
+    if subject == "physics":
+        rules = (
+            ("circuit", ("circuit", "resistor", "capacitor", "battery")),
+            ("optics", ("lens", "mirror", "ray diagram", "refraction")),
+            ("wave", ("standing wave", "wavelength", "antinode")),
+            ("graph", ("plot", "graph of", "versus")),
+            ("mechanics", (
+                "rod", "disc", "disk", "rolling", "pulley", "spring", "block",
+                "projectile", "trajectory", "pivot", "rotation", "angular",
+            )),
+        )
+        for diagram_type, keywords in rules:
+            if any(keyword in lowered for keyword in keywords):
+                return diagram_type
+        return "setup"
+    if subject == "mathematics":
+        if any(word in lowered for word in ("graph", "function", "plot")):
+            return "function_graph"
+        return "geometric_figure"
+    return None
+
+
+def _generate_scoped_diagram(
+    *,
+    role: str,
+    existing_code: str,
+    problem_latex: str,
+    solution_latex: str,
+    metadata: dict,
+    subject: str,
+    question_type: str,
+    extra_prompt: str | None,
+    image_path: Path | None,
+    console,
+) -> str:
+    """Generate one diagram without invoking the scanner or solution writer."""
+    from vbagent.agents.diagram.tikz_router import generate_tikz_with_routing
+    from vbagent.models.classification import PrimaryClassification
+
+    diagram_type = _infer_diagram_type(
+        subject,
+        metadata,
+        problem_latex + "\n" + solution_latex + "\n" + existing_code,
+    )
+    primary = PrimaryClassification(
+        subject=subject,
+        question_type=question_type,
+        has_diagram=True,
+        chapter=metadata.get("chapter"),
+        topic=metadata.get("topic"),
+        confidence=1.0,
+        classified_from="latex",
+    )
+    role_instruction = (
+        "Reconstruct only the printed problem diagram from the source image. "
+        "Preserve its physical meaning, geometry, motion arrows, dimensions, and "
+        "indispensable labels. Do not reproduce passage text, questions, options, "
+        "answers, or solution annotations. Improve spacing and visual clarity."
+        if role == "problem"
+        else
+        "Recreate only this existing solution diagram. Preserve the scientific "
+        "meaning and every indispensable construction, vector, and label while "
+        "improving spacing and legibility. Do not rewrite or repeat solution prose."
+    )
+    description = (
+        f"{role_instruction}\n\nExisting diagram code for semantic reference:\n"
+        f"{existing_code.strip()}"
+    )
+    if extra_prompt:
+        description += f"\n\nAdditional user instruction:\n{extra_prompt.strip()}"
+
+    code, agent = generate_tikz_with_routing(
+        image_path=str(image_path) if role == "problem" and image_path else None,
+        description=description,
+        primary=primary,
+        subject=subject,
+        diagram_type=diagram_type,
+        problem_text=problem_latex,
+        solution_context=solution_latex if role == "solution" else None,
+        use_context=True,
+        show_spinner=True,
+        diagram_context=role,
+    )
+    console.print(f"  [green]OK[/green] {role} diagram [dim]{agent}[/dim]")
+    return code
+
+
+def _regenerate_current_scan_file(
+    tex_file: Path,
+    scope: str,
+    extra_prompt: str | None,
+    compile_result: bool,
+    console,
+    subject_override: str | None = None,
+) -> tuple[bool, int]:
+    """Regenerate selected diagram roles transactionally for one scan file."""
+    from vbagent.cli.common import find_image_for_problem
+    from vbagent.cli.generation.solve import _load_classification_metadata
+    from vbagent.config import get_config
+
+    original = tex_file.read_text(encoding="utf-8")
+    problem_latex, solution_latex = _split_problem_and_solution(original)
+    metadata = _load_classification_metadata(tex_file)
+    subject = str(subject_override or metadata.get("subject") or get_config().subject)
+    question_type = str(metadata.get("question_type") or "subjective")
+    image_path = find_image_for_problem(tex_file)
+    changed = False
+    diagram_count = 0
+
+    if scope in {"problem", "both"}:
+        problem_spans = _standalone_diagram_spans(problem_latex)
+        if problem_spans:
+            old_code = "\n\n".join(span[2] for span in problem_spans)
+            new_code = _generate_scoped_diagram(
+                role="problem",
+                existing_code=old_code,
+                problem_latex=problem_latex,
+                solution_latex=solution_latex,
+                metadata=metadata,
+                subject=subject,
+                question_type=question_type,
+                extra_prompt=extra_prompt,
+                image_path=image_path,
+                console=console,
+            )
+            problem_latex = _replace_problem_diagrams(problem_latex, new_code)
+            changed = True
+            diagram_count += len(problem_spans)
+        else:
+            console.print("  [dim]No standalone problem diagram; skipped[/dim]")
+
+    if scope in {"solution", "both"}:
+        if not solution_latex:
+            console.print("  [dim]No solution environment; skipped solution diagrams[/dim]")
+        else:
+            def generate_solution(old_code: str, index: int, total: int) -> str:
+                console.print(f"  Regenerating solution diagram {index}/{total}...")
+                return _generate_scoped_diagram(
+                    role="solution",
+                    existing_code=old_code,
+                    problem_latex=problem_latex,
+                    solution_latex=solution_latex,
+                    metadata=metadata,
+                    subject=subject,
+                    question_type=question_type,
+                    extra_prompt=extra_prompt,
+                    image_path=None,
+                    console=console,
+                )
+
+            solution_latex, solution_count = _replace_solution_diagrams(
+                solution_latex, generate_solution
+            )
+            if solution_count:
+                changed = True
+                diagram_count += solution_count
+            else:
+                console.print("  [dim]No standalone solution diagram; skipped[/dim]")
+
+    if not changed:
+        return False, 0
+
+    candidate = problem_latex + solution_latex
+    if compile_result:
+        from vbagent.compile import compile_latex
+
+        result = compile_latex(candidate, subject=subject)
+        if not result.success:
+            raise RuntimeError(
+                "generated diagram failed LaTeX validation: " + result.error_summary
+            )
+        console.print("  [green]OK[/green] LaTeX validation")
+
+    # Write only after every requested generation and validation step succeeds.
+    tex_file.write_text(candidate, encoding="utf-8")
+    return True, diagram_count
+
+
+def _regenerate_current_scans(
+    target: Path,
+    scope: str,
+    items: list[str],
+    from_index: int | None,
+    to_index: int | None,
+    exclude: tuple[str, ...],
+    extra_prompt: str | None,
+    compile_result: bool,
+    console,
+    subject_override: str | None = None,
+) -> int:
+    """Run scoped diagram regeneration on the current agentic/scans layout."""
+    files = _scan_workspace_files(target)
+    selected = _selected_scan_files(
+        files, items, from_index, to_index, _parse_excluded(exclude)
+    )
+    if not selected:
+        raise click.ClickException("No scan files matched the requested selection")
+
+    console.print(
+        f"[cyan]Regenerating {scope} diagram(s) for {len(selected)} problem(s)[/cyan]"
+    )
+    updated = 0
+    diagrams = 0
+    failures: list[tuple[str, str]] = []
+    for tex_file in selected:
+        console.print(f"\n[bold]{tex_file.name}[/bold]")
+        try:
+            changed, count = _regenerate_current_scan_file(
+                tex_file,
+                scope,
+                extra_prompt,
+                compile_result,
+                console,
+                subject_override=subject_override,
+            )
+            if changed:
+                updated += 1
+                diagrams += count
+                console.print(f"  [green]Saved[/green] {tex_file}")
+        except Exception as exc:
+            failures.append((tex_file.name, str(exc)))
+            console.print(f"  [red]ERROR[/red] {exc}")
+
+    console.print(
+        f"\n[cyan]Updated {updated}/{len(selected)} problem(s); "
+        f"regenerated {diagrams} diagram(s)[/cyan]"
+    )
+    if failures:
+        names = ", ".join(name for name, _ in failures)
+        raise click.ClickException(f"{len(failures)} problem(s) failed: {names}")
+    return updated
 
 
 def _find_problem_dirs(target: Path) -> list[Path]:
@@ -547,18 +986,67 @@ def _rebuild_concepts_tex(sheet, tikz_dir: Path, subject: str) -> str:
 # ------------------------------------------------------------------
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.argument("target", type=click.Path(exists=True))
+@click.argument(
+    "target",
+    required=False,
+    default="agentic/scans",
+    type=click.Path(exists=True, path_type=Path),
+)
 @click.option("--tikz-only", is_flag=True, help="Regenerate only the TikZ diagram")
 @click.option("--full", "full_regen", is_flag=True, help="Regenerate everything (problem + solution + diagram)")
 @click.option("--force", is_flag=True, help="Redo all, even if already generated (default: resume/skip done)")
-@click.option("--item", multiple=True, help="Filter by name (problem name for scans, entry name for concepts)")
-@click.option("--subject", default=None, help="Subject override")
+@click.option(
+    "--item",
+    multiple=True,
+    help="Single problem number (legacy layouts also accept repeatable name filters)",
+)
+@click.option("--from", "from_index", type=click.IntRange(min=1), help="Start problem number (inclusive)")
+@click.option("--to", "to_index", type=click.IntRange(min=1), help="End problem number (inclusive)")
+@click.option("--exclude", multiple=True, help="Problem numbers to skip (comma-separated)")
+@click.option("--problem-diagram", is_flag=True, help="Regenerate only problem-side diagrams")
+@click.option("--solution-diagram", is_flag=True, help="Regenerate only diagrams inside solutions")
+@click.option("--both-diagrams", is_flag=True, help="Regenerate problem and solution diagrams")
+@click.option("--prompt", "extra_prompt", help="Additional diagram instruction")
+@click.option("-c", "--compile", "compile_result", is_flag=True, help="Compile each candidate before saving")
+@click.option(
+    "--subject",
+    type=click.Choice(["physics", "chemistry", "mathematics", "biology"]),
+    default=None,
+    help="Subject override",
+)
 @click.option("-v", "--verbose", is_flag=True)
-def regenerate(target, tikz_only, full_regen, force, item, subject, verbose):
+def regenerate(
+    target: Path,
+    tikz_only: bool,
+    full_regen: bool,
+    force: bool,
+    item: tuple[str, ...],
+    from_index: int | None,
+    to_index: int | None,
+    exclude: tuple[str, ...],
+    problem_diagram: bool,
+    solution_diagram: bool,
+    both_diagrams: bool,
+    extra_prompt: str | None,
+    compile_result: bool,
+    subject: str | None,
+    verbose: bool,
+):
     """Regenerate diagrams or full content for existing problems.
 
     \b
-    TARGET is a path to:
+    TARGET may be a current project folder, its agentic/scans directory, a
+    single scan file, or one of the legacy generated/concepts layouts. It
+    defaults to agentic/scans.
+
+    \b
+    Current scan modes (problem and solution prose is preserved):
+      --problem-diagram   Replace only diagrams before the solution
+      --solution-diagram  Replace only diagrams inside the existing solution
+      --both-diagrams     Replace both diagram roles independently
+
+    \b
+    Legacy TARGET layouts:
       - A concepts dir         (has concepts.json — regenerates concept diagrams)
       - A single problem dir   (has meta.json or problem.tex)
       - A parent dir           (contains multiple problem dirs)
@@ -570,11 +1058,17 @@ def regenerate(target, tikz_only, full_regen, force, item, subject, verbose):
       --full         Re-generate everything from scratch using meta.json
 
     \b
-    Default (no flag) = --tikz-only
-    Resume: skips entries that already have a TikZ file. Use --force to redo all.
+    Legacy default (no flag) = --tikz-only. Current scan projects require one
+    of the three explicit diagram-scope flags above.
+    Legacy resume skips entries that already have a TikZ file. Use --force to
+    redo all.
 
     \b
     Examples:
+      vbagent regenerate --problem-diagram --item 2
+      vbagent regenerate --solution-diagram --from 1 --to 3
+      vbagent regenerate --both-diagrams --from 1 --to 3 --exclude 2 -c
+      vbagent regenerate /path/to/project --problem-diagram --from 1 --to 3
       vbagent regenerate agentic/concepts/                      # Regen concept diagrams (resumes)
       vbagent regenerate agentic/concepts/ --force              # Redo all concept diagrams
       vbagent regenerate agentic/concepts/ --item "Cyclotron frequency and resonance"
@@ -585,7 +1079,64 @@ def regenerate(target, tikz_only, full_regen, force, item, subject, verbose):
     from vbagent.config import get_config
 
     console = _get_console()
-    target_path = Path(target)
+    target_path = target
+    del verbose
+
+    selected_scopes = [
+        scope for enabled, scope in (
+            (problem_diagram, "problem"),
+            (solution_diagram, "solution"),
+            (both_diagrams, "both"),
+        )
+        if enabled
+    ]
+    if len(selected_scopes) > 1:
+        raise click.UsageError(
+            "Use only one of --problem-diagram, --solution-diagram, or --both-diagrams"
+        )
+
+    if selected_scopes:
+        if tikz_only or full_regen or force:
+            raise click.UsageError(
+                "Scoped diagram modes cannot be combined with legacy "
+                "--tikz-only, --full, or --force"
+            )
+        if not _scan_workspace_files(target_path):
+            raise click.ClickException(
+                "Scoped diagram regeneration requires a project containing "
+                "agentic/scans, a scans directory, or a .tex scan file"
+            )
+        _regenerate_current_scans(
+            target=target_path,
+            scope=selected_scopes[0],
+            items=list(item),
+            from_index=from_index,
+            to_index=to_index,
+            exclude=exclude,
+            extra_prompt=extra_prompt,
+            compile_result=compile_result,
+            console=console,
+            subject_override=subject,
+        )
+        return
+
+    if _is_current_scan_target(target_path):
+        raise click.UsageError(
+            "Choose --problem-diagram, --solution-diagram, or --both-diagrams "
+            "for current agentic/scans projects"
+        )
+
+    if (
+        from_index is not None
+        or to_index is not None
+        or exclude
+        or extra_prompt
+        or compile_result
+    ):
+        raise click.UsageError(
+            "--from, --to, --exclude, --prompt, and --compile apply to scoped "
+            "current scan regeneration"
+        )
 
     if subject is None:
         subject = get_config().subject
