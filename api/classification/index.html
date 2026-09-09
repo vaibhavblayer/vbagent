@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -687,7 +687,7 @@
   <span class="md-ellipsis">
     
   
-    Chat Interface
+    Natural-language CLI and MCP
   
 
     
@@ -1045,10 +1045,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pipeline-orchestrator" class="md-nav__link">
+  <a href="#question-classifier" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Pipeline Orchestrator
+        Question Classifier
       
     </span>
   </a>
@@ -1056,34 +1056,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline" class="md-nav__link">
+  <a href="#vbagent.agents.classification.question_classifier" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pipeline
+        question_classifier
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="pipeline">
+    <nav class="md-nav" aria-label="question_classifier">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.ClassificationPipeline" class="md-nav__link">
+  <a href="#vbagent.agents.classification.question_classifier.classify_question_image" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ClassificationPipeline
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="ClassificationPipeline">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.ClassificationPipeline.diagram_analyzer" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        diagram_analyzer
+        classify_question_image
       
     </span>
   </a>
@@ -1091,10 +1079,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.ClassificationPipeline.difficulty_assessor" class="md-nav__link">
+  <a href="#vbagent.agents.classification.question_classifier.classify_primary_image" class="md-nav__link">
     <span class="md-ellipsis">
       
-        difficulty_assessor
+        classify_primary_image
       
     </span>
   </a>
@@ -1102,136 +1090,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.ClassificationPipeline.idea_generator" class="md-nav__link">
+  <a href="#vbagent.agents.classification.question_classifier.create_question_classifier" class="md-nav__link">
     <span class="md-ellipsis">
       
-        idea_generator
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.ClassificationPipeline.image_classifier" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        image_classifier
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.ClassificationPipeline.latex_classifier" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        latex_classifier
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.ClassificationPipeline.problem_combiner" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        problem_combiner
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.ClassificationPipeline.tikz_checker" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        tikz_checker
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.ClassificationPipeline.analyze_diagram" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        analyze_diagram
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.ClassificationPipeline.assess_difficulty" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        assess_difficulty
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.ClassificationPipeline.classify_from_image" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        classify_from_image
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.ClassificationPipeline.classify_from_latex" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        classify_from_latex
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.ClassificationPipeline.process" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        process
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.ClassificationPipeline.validate_tikz_code" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        validate_tikz_code
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.pipeline.get_pipeline" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_pipeline
+        create_question_classifier
       
     </span>
   </a>
@@ -1244,10 +1106,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#agent-1-image-classifier" class="md-nav__link">
+  <a href="#diagram-classifier" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Agent 1: Image Classifier
+        Diagram Classifier
       
     </span>
   </a>
@@ -1255,22 +1117,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.image_classifier" class="md-nav__link">
+  <a href="#vbagent.agents.classification.diagram_classifier" class="md-nav__link">
     <span class="md-ellipsis">
       
-        image_classifier
+        diagram_classifier
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="image_classifier">
+    <nav class="md-nav" aria-label="diagram_classifier">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.image_classifier.classify_from_image" class="md-nav__link">
+  <a href="#vbagent.agents.classification.diagram_classifier.classify_diagram_image" class="md-nav__link">
     <span class="md-ellipsis">
       
-        classify_from_image
+        classify_diagram_image
       
     </span>
   </a>
@@ -1278,10 +1140,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.image_classifier.create_image_classifier_agent" class="md-nav__link">
+  <a href="#vbagent.agents.classification.diagram_classifier.classify_diagram_description" class="md-nav__link">
     <span class="md-ellipsis">
       
-        create_image_classifier_agent
+        classify_diagram_description
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vbagent.agents.classification.diagram_classifier.create_diagram_classifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        create_diagram_classifier
       
     </span>
   </a>
@@ -1294,71 +1167,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#agent-2-diagram-analyzer" class="md-nav__link">
+  <a href="#difficulty-assessor" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Agent 2: Diagram Analyzer
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.diagram_analyzer" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        diagram_analyzer
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="diagram_analyzer">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.diagram_analyzer.analyze_diagram" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        analyze_diagram
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.diagram_analyzer.analyze_diagram_from_description" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        analyze_diagram_from_description
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.diagram_analyzer.create_diagram_analyzer_agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        create_diagram_analyzer_agent
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#agent-3-difficulty-assessor" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Agent 3: Difficulty Assessor
+        Difficulty Assessor
       
     </span>
   </a>
@@ -1405,10 +1217,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#agent-4-latex-classifier" class="md-nav__link">
+  <a href="#latex-classifier" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Agent 4: LaTeX Classifier
+        LaTeX Classifier
       
     </span>
   </a>
@@ -1455,10 +1267,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#agent-5-idea-generator" class="md-nav__link">
+  <a href="#idea-generator" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Agent 5: Idea Generator
+        Idea Generator
       
     </span>
   </a>
@@ -1466,7 +1278,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.idea_generator" class="md-nav__link">
+  <a href="#vbagent.agents.content_generation.idea_generator" class="md-nav__link">
     <span class="md-ellipsis">
       
         idea_generator
@@ -1478,7 +1290,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.idea_generator.generate_from_idea" class="md-nav__link">
+  <a href="#vbagent.agents.content_generation.idea_generator.generate_from_idea" class="md-nav__link">
     <span class="md-ellipsis">
       
         generate_from_idea
@@ -1489,7 +1301,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.idea_generator.create_idea_generator_agent" class="md-nav__link">
+  <a href="#vbagent.agents.content_generation.idea_generator.create_idea_generator_agent" class="md-nav__link">
     <span class="md-ellipsis">
       
         create_idea_generator_agent
@@ -1505,10 +1317,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#agent-6-problem-combiner" class="md-nav__link">
+  <a href="#problem-combiner" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Agent 6: Problem Combiner
+        Problem Combiner
       
     </span>
   </a>
@@ -1516,7 +1328,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.problem_combiner" class="md-nav__link">
+  <a href="#vbagent.agents.content_generation.problem_combiner" class="md-nav__link">
     <span class="md-ellipsis">
       
         problem_combiner
@@ -1528,7 +1340,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.problem_combiner.combine_problems" class="md-nav__link">
+  <a href="#vbagent.agents.content_generation.problem_combiner.combine_problems" class="md-nav__link">
     <span class="md-ellipsis">
       
         combine_problems
@@ -1539,7 +1351,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.problem_combiner.create_problem_combiner_agent" class="md-nav__link">
+  <a href="#vbagent.agents.content_generation.problem_combiner.create_problem_combiner_agent" class="md-nav__link">
     <span class="md-ellipsis">
       
         create_problem_combiner_agent
@@ -1555,10 +1367,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#agent-7-tikz-checker" class="md-nav__link">
+  <a href="#tikz-checker" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Agent 7: TikZ Checker
+        TikZ Checker
       
     </span>
   </a>
@@ -1566,7 +1378,7 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.tikz_checker" class="md-nav__link">
+  <a href="#vbagent.agents.diagram.tikz_checker" class="md-nav__link">
     <span class="md-ellipsis">
       
         tikz_checker
@@ -1578,7 +1390,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.tikz_checker.validate_tikz" class="md-nav__link">
+  <a href="#vbagent.agents.diagram.tikz_checker.validate_tikz" class="md-nav__link">
     <span class="md-ellipsis">
       
         validate_tikz
@@ -1589,7 +1401,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#vbagent.agents.classification.tikz_checker.create_tikz_checker_agent" class="md-nav__link">
+  <a href="#vbagent.agents.diagram.tikz_checker.create_tikz_checker_agent" class="md-nav__link">
     <span class="md-ellipsis">
       
         create_tikz_checker_agent
@@ -1608,407 +1420,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../classification.md#agent-1-image-classifier" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Agent 1 - Image Classifier
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../classification.md#agent-2-diagram-analyzer" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Agent 2 - Diagram Analyzer
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../classification.md#agent-3-difficulty-assessor" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Agent 3 - Difficulty Assessor
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../classification.md#agent-4-latex-classifier" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Agent 4 - LaTeX Classifier
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../classification.md#agent-5-idea-generator" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Agent 5 - Idea Generator
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../classification.md#agent-6-problem-combiner" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Agent 6 - Problem Combiner
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../classification.md#agent-7-tikz-checker" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Agent 7 - TikZ Checker
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    
-    
-    
-    
-      
-      
-        
-          
-          
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_4_3" id="__nav_4_3_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Core Agents
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4_3">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    Core Agents
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../agents.md#scanner-agent" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Scanner
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../agents.md#tikz-agent" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    TikZ Generator
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../agents.md#variant-agent" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Variant Generator
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../agents.md#alternate-solution-agent" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Alternate Solutions
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../agents.md#idea-extraction-agent" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Idea Extraction
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -2424,19 +1835,17 @@
 
 
 <h1 id="classification-api-reference">Classification API Reference</h1>
-<p>The v2 multi-agent classification system provides comprehensive metadata extraction through 7 specialized agents.</p>
+<p>The classification system provides one canonical image classifier plus
+specialized LaTeX, diagram, taxonomy, and difficulty classifiers.</p>
 <h2 id="system-overview">System Overview</h2>
 <p>The classification pipeline supports multiple input modalities:</p>
 <ul>
-<li><strong>Image</strong> → Agent 1 (Image Classifier)</li>
-<li><strong>LaTeX</strong> → Agent 4 (LaTeX Classifier)</li>
-<li><strong>Idea/Concept</strong> → Agent 5 (Idea Generator)</li>
-<li><strong>Multiple Problems</strong> → Agent 6 (Problem Combiner)</li>
+<li><strong>Image</strong> → Question Classifier</li>
+<li><strong>LaTeX</strong> → LaTeX Classifier</li>
+<li><strong>Diagram descriptions</strong> → Diagram Classifier</li>
 </ul>
-<p>Additional agents provide:
-- <strong>Agent 2</strong> - Diagram analysis (hierarchical categorization)
-- <strong>Agent 3</strong> - Difficulty assessment (post-scan, detailed metadata)
-- <strong>Agent 7</strong> - TikZ validation (automatic fixing)</p>
+<p>Problem generation and combination live under <code>agents.content_generation</code>;
+they are not classification agents.</p>
 <h2 id="key-features">Key Features</h2>
 <ul>
 <li>✅ Multiple input modalities</li>
@@ -2449,44 +1858,43 @@
 </ul>
 <h2 id="usage-example">Usage Example</h2>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">vbagent.agents.classification</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">classify_from_image</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">analyze_diagram</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">classify_primary_image</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">classify_diagram_image</span><span class="p">,</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">assess_difficulty</span><span class="p">,</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">validate_tikz</span><span class="p">,</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">)</span>
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># Agent 1: Classify from image</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">classification</span> <span class="o">=</span> <span class="n">classify_from_image</span><span class="p">(</span><span class="s2">&quot;question.png&quot;</span><span class="p">)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># Classify from image</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">classification</span> <span class="o">=</span> <span class="n">classify_primary_image</span><span class="p">(</span><span class="s2">"question.png"</span><span class="p">)</span>
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># Agent 2: Analyze diagram (if has_diagram)</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># Classify the diagram separately when needed</span>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="k">if</span> <span class="n">classification</span><span class="o">.</span><span class="n">has_diagram</span><span class="p">:</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">diagram</span> <span class="o">=</span> <span class="n">analyze_diagram</span><span class="p">(</span><span class="s2">&quot;question.png&quot;</span><span class="p">,</span> <span class="n">classification</span><span class="p">)</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">diagram</span> <span class="o">=</span> <span class="n">classify_diagram_image</span><span class="p">(</span><span class="s2">"question.png"</span><span class="p">,</span> <span class="n">classification</span><span class="p">)</span>
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="c1"># Agent 3: Assess difficulty (after scanning)</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="c1"># Assess difficulty after scanning</span>
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">difficulty</span> <span class="o">=</span> <span class="n">assess_difficulty</span><span class="p">(</span><span class="n">latex_content</span><span class="p">,</span> <span class="n">classification</span><span class="p">,</span> <span class="n">diagram</span><span class="p">)</span>
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="c1"># Agent 7: Validate TikZ</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="c1"># Validate TikZ</span>
 </span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="n">validation</span> <span class="o">=</span> <span class="n">validate_tikz</span><span class="p">(</span><span class="n">tikz_code</span><span class="p">,</span> <span class="n">auto_fix</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
 <h2 id="auto-generated-api-documentation">Auto-Generated API Documentation</h2>
-<h2 id="pipeline-orchestrator">Pipeline Orchestrator</h2>
+<h2 id="question-classifier">Question Classifier</h2>
 
 
 <div class="doc doc-object doc-module">
 
 
 
-<h2 id="vbagent.agents.classification.pipeline" class="doc doc-heading">
-            <span class="doc doc-object-name doc-module-name">pipeline</span>
+<h2 id="vbagent.agents.classification.question_classifier" class="doc doc-heading">
+            <span class="doc doc-object-name doc-module-name">question_classifier</span>
 
 
 </h2>
 
     <div class="doc doc-contents first">
 
-        <p>Classification pipeline orchestrator.</p>
-<p>Coordinates multiple specialized agents for comprehensive classification.</p>
+        <p>Two-stage question routing and subject-specific image analysis.</p>
 
 
 
@@ -2507,546 +1915,21 @@
 
 
 
-<div class="doc doc-object doc-class">
+
+<div class="doc doc-object doc-function">
 
 
-
-<h3 id="vbagent.agents.classification.pipeline.ClassificationPipeline" class="doc doc-heading">
-            <span class="doc doc-object-name doc-class-name">ClassificationPipeline</span>
+<h3 id="vbagent.agents.classification.question_classifier.classify_question_image" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">classify_question_image</span>
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">ClassificationPipeline</span><span class="p">()</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">classify_question_image</span><span class="p">(</span><span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">show_spinner</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">routing</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">QuestionRoutingClassification</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuestionClassification</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
 
-
-
-        <p>Orchestrates multi-agent classification pipeline.</p>
-<p>Supports multiple input modalities:
-- image: Question images
-- latex: LaTeX text files
-- idea: Generate from concepts
-- multi_problem: Combine multiple problems</p>
-
-        <p>Initialize pipeline with lazy agent loading.</p>
-
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="vbagent.agents.classification.pipeline.ClassificationPipeline.diagram_analyzer" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">diagram_analyzer</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">diagram_analyzer</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Lazy load diagram analyzer</p>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="vbagent.agents.classification.pipeline.ClassificationPipeline.difficulty_assessor" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">difficulty_assessor</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">difficulty_assessor</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Lazy load difficulty assessor</p>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="vbagent.agents.classification.pipeline.ClassificationPipeline.idea_generator" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">idea_generator</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">idea_generator</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Lazy load idea generator</p>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="vbagent.agents.classification.pipeline.ClassificationPipeline.image_classifier" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">image_classifier</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">image_classifier</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Lazy load image classifier</p>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="vbagent.agents.classification.pipeline.ClassificationPipeline.latex_classifier" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">latex_classifier</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">latex_classifier</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Lazy load LaTeX classifier</p>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="vbagent.agents.classification.pipeline.ClassificationPipeline.problem_combiner" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">problem_combiner</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">problem_combiner</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Lazy load problem combiner</p>
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h4 id="vbagent.agents.classification.pipeline.ClassificationPipeline.tikz_checker" class="doc doc-heading">
-            <span class="doc doc-object-name doc-attribute-name">tikz_checker</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-property"><code>property</code></small>
-  </span>
-
-</h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">tikz_checker</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Lazy load TikZ checker</p>
-
-    </div>
-
-</div>
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="vbagent.agents.classification.pipeline.ClassificationPipeline.analyze_diagram" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">analyze_diagram</span>
-
-
-</h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">analyze_diagram</span><span class="p">(</span><span class="n">image_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">latex_content</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">primary</span><span class="p">:</span> <span class="n">PrimaryClassification</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DiagramAnalysis</span><span class="p">]</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Step 2: Analyze diagram (Agent 2) - Conditional</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="vbagent.agents.classification.pipeline.ClassificationPipeline.assess_difficulty" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">assess_difficulty</span>
-
-
-</h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">assess_difficulty</span><span class="p">(</span><span class="n">image_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">latex_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">primary</span><span class="p">:</span> <span class="n">PrimaryClassification</span><span class="p">,</span> <span class="n">diagram</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DiagramAnalysis</span><span class="p">],</span> <span class="n">tikz_code</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DifficultyAssessment</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Step 3: Assess difficulty (Agent 3) - After scan</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="vbagent.agents.classification.pipeline.ClassificationPipeline.classify_from_image" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">classify_from_image</span>
-
-
-</h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">classify_from_image</span><span class="p">(</span><span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PrimaryClassification</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Step 1: Classify from image (Agent 1)</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="vbagent.agents.classification.pipeline.ClassificationPipeline.classify_from_latex" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">classify_from_latex</span>
-
-
-</h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">classify_from_latex</span><span class="p">(</span><span class="n">latex_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PrimaryClassification</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Step 1: Classify from LaTeX (Agent 4)</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="vbagent.agents.classification.pipeline.ClassificationPipeline.process" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">process</span>
-
-
-</h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">process</span><span class="p">(</span><span class="n">input_data</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">input_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;image&#39;</span><span class="p">,</span> <span class="s1">&#39;latex&#39;</span><span class="p">,</span> <span class="s1">&#39;idea&#39;</span><span class="p">,</span> <span class="s1">&#39;multi_problem&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;image&#39;</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">latex_content</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tikz_code</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClassificationResult</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Complete classification pipeline.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>input_data</code>
-            </td>
-            <td>
-                  <code><span title="str">str</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Path to image/latex file, or data for generation</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>input_type</code>
-            </td>
-            <td>
-                  <code><span title="typing.Literal">Literal</span>[&#39;image&#39;, &#39;latex&#39;, &#39;idea&#39;, &#39;multi_problem&#39;]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Type of input</p>
-              </div>
-            </td>
-            <td>
-                  <code>&#39;image&#39;</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>subject</code>
-            </td>
-            <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Subject override</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>latex_content</code>
-            </td>
-            <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>LaTeX content (for difficulty assessment)</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>tikz_code</code>
-            </td>
-            <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>TikZ code (for difficulty assessment)</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="ClassificationResult (vbagent.models.classification_v2.ClassificationResult)" href="../models/#vbagent.models.classification_v2.ClassificationResult">ClassificationResult</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Complete ClassificationResult</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h4 id="vbagent.agents.classification.pipeline.ClassificationPipeline.validate_tikz_code" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">validate_tikz_code</span>
-
-
-</h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">validate_tikz_code</span><span class="p">(</span><span class="n">tikz_code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">auto_fix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Validate and fix TikZ code (Agent 7)</p>
-
-
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="vbagent.agents.classification.pipeline.get_pipeline" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">get_pipeline</span>
-
-
-</h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">get_pipeline</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">ClassificationPipeline</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Get global pipeline instance</p>
-
-
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div><h2 id="agent-1-image-classifier">Agent 1: Image Classifier</h2>
-
-
-<div class="doc doc-object doc-module">
-
-
-
-<h2 id="vbagent.agents.classification.image_classifier" class="doc doc-heading">
-            <span class="doc doc-object-name doc-module-name">image_classifier</span>
-
-
-</h2>
-
-    <div class="doc doc-contents first">
-
-        <p>Agent 1: Enhanced Image Classifier.</p>
-<p>Classifies question images without difficulty assessment.
-Difficulty is assessed later by Agent 3 after LaTeX extraction.</p>
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="vbagent.agents.classification.image_classifier.classify_from_image" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">classify_from_image</span>
-
-
-</h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">classify_from_image</span><span class="p">(</span><span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">show_spinner</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PrimaryClassification</span>
-</span></code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Classify question from image (Agent 1).</p>
+        <p>Route an image, then perform its subject-specific detailed analysis.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3085,7 +1968,7 @@ Difficulty is assessed later by Agent 3 after LaTeX extraction.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Subject override</p>
+                <p>Optional explicit subject override.</p>
               </div>
             </td>
             <td>
@@ -3101,11 +1984,27 @@ Difficulty is assessed later by Agent 3 after LaTeX extraction.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Whether to show animated spinner</p>
+                <p>Whether to show spinner</p>
               </div>
             </td>
             <td>
                   <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>routing</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="vbagent.agents.classification.question_classifier.QuestionRoutingClassification">QuestionRoutingClassification</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional cached first-pass result.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
@@ -3123,11 +2022,11 @@ Difficulty is assessed later by Agent 3 after LaTeX extraction.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="PrimaryClassification (vbagent.models.classification_v2.PrimaryClassification)" href="../models/#vbagent.models.classification_v2.PrimaryClassification">PrimaryClassification</a></code>
+                  <code><span title="vbagent.agents.classification.question_classifier.QuestionClassification">QuestionClassification</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>PrimaryClassification without difficulty</p>
+                <p>Complete question classification and diagram data</p>
               </div>
             </td>
           </tr>
@@ -3142,17 +2041,37 @@ Difficulty is assessed later by Agent 3 after LaTeX extraction.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="vbagent.agents.classification.image_classifier.create_image_classifier_agent" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">create_image_classifier_agent</span>
+<h3 id="vbagent.agents.classification.question_classifier.classify_primary_image" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">classify_primary_image</span>
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">create_image_classifier_agent</span><span class="p">(</span><span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">classify_primary_image</span><span class="p">(</span><span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">show_spinner</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PrimaryClassification</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Create enhanced image classifier agent.</p>
+        <p>Classify an image and return only the compact primary view.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="vbagent.agents.classification.question_classifier.create_question_classifier" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">create_question_classifier</span>
+
+
+</h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">create_question_classifier</span><span class="p">(</span><span class="n">subject</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'physics'</span><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Create the detailed subject-specific second-pass analyzer.</p>
 
 
     </div>
@@ -3165,22 +2084,22 @@ Difficulty is assessed later by Agent 3 after LaTeX extraction.</p>
 
     </div>
 
-</div><h2 id="agent-2-diagram-analyzer">Agent 2: Diagram Analyzer</h2>
+</div><h2 id="diagram-classifier">Diagram Classifier</h2>
 
 
 <div class="doc doc-object doc-module">
 
 
 
-<h2 id="vbagent.agents.classification.diagram_analyzer" class="doc doc-heading">
-            <span class="doc doc-object-name doc-module-name">diagram_analyzer</span>
+<h2 id="vbagent.agents.classification.diagram_classifier" class="doc doc-heading">
+            <span class="doc doc-object-name doc-module-name">diagram_classifier</span>
 
 
 </h2>
 
     <div class="doc doc-contents first">
 
-        <p>Agent 2: Diagram Analyzer.</p>
+        <p>Standalone diagram classifier.</p>
 <p>Analyzes diagrams in detail and determines TikZ requirements.
 Routes to specialized TikZ agents based on diagram type.</p>
 
@@ -3207,17 +2126,17 @@ Routes to specialized TikZ agents based on diagram type.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="vbagent.agents.classification.diagram_analyzer.analyze_diagram" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">analyze_diagram</span>
+<h3 id="vbagent.agents.classification.diagram_classifier.classify_diagram_image" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">classify_diagram_image</span>
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">analyze_diagram</span><span class="p">(</span><span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">primary</span><span class="p">:</span> <span class="n">PrimaryClassification</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">show_spinner</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiagramAnalysis</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">classify_diagram_image</span><span class="p">(</span><span class="n">image_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">primary</span><span class="p">:</span> <span class="n">PrimaryClassification</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">show_spinner</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiagramAnalysis</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Analyze diagram in detail (Agent 2).</p>
+        <p>Classify a diagram directly from a question image.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3252,7 +2171,7 @@ Routes to specialized TikZ agents based on diagram type.</p>
                 <code>primary</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="PrimaryClassification (vbagent.models.classification_v2.PrimaryClassification)" href="../models/#vbagent.models.classification_v2.PrimaryClassification">PrimaryClassification</a></code>
+                  <code><a class="autorefs autorefs-internal" title="PrimaryClassification (vbagent.models.classification.PrimaryClassification)" href="../models/#vbagent.models.classification.PrimaryClassification">PrimaryClassification</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3310,7 +2229,7 @@ Routes to specialized TikZ agents based on diagram type.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="DiagramAnalysis (vbagent.models.classification_v2.DiagramAnalysis)" href="../models/#vbagent.models.classification_v2.DiagramAnalysis">DiagramAnalysis</a></code>
+                  <code><a class="autorefs autorefs-internal" title="DiagramAnalysis (vbagent.models.classification.DiagramAnalysis)" href="../models/#vbagent.models.classification.DiagramAnalysis">DiagramAnalysis</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3329,12 +2248,12 @@ Routes to specialized TikZ agents based on diagram type.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="vbagent.agents.classification.diagram_analyzer.analyze_diagram_from_description" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">analyze_diagram_from_description</span>
+<h3 id="vbagent.agents.classification.diagram_classifier.classify_diagram_description" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">classify_diagram_description</span>
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">analyze_diagram_from_description</span><span class="p">(</span><span class="n">description</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">primary</span><span class="p">:</span> <span class="n">PrimaryClassification</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiagramAnalysis</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">classify_diagram_description</span><span class="p">(</span><span class="n">description</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">primary</span><span class="p">:</span> <span class="n">PrimaryClassification</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiagramAnalysis</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3374,7 +2293,7 @@ Routes to specialized TikZ agents based on diagram type.</p>
                 <code>primary</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="PrimaryClassification (vbagent.models.classification_v2.PrimaryClassification)" href="../models/#vbagent.models.classification_v2.PrimaryClassification">PrimaryClassification</a></code>
+                  <code><a class="autorefs autorefs-internal" title="PrimaryClassification (vbagent.models.classification.PrimaryClassification)" href="../models/#vbagent.models.classification.PrimaryClassification">PrimaryClassification</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3416,7 +2335,7 @@ Routes to specialized TikZ agents based on diagram type.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="DiagramAnalysis (vbagent.models.classification_v2.DiagramAnalysis)" href="../models/#vbagent.models.classification_v2.DiagramAnalysis">DiagramAnalysis</a></code>
+                  <code><a class="autorefs autorefs-internal" title="DiagramAnalysis (vbagent.models.classification.DiagramAnalysis)" href="../models/#vbagent.models.classification.DiagramAnalysis">DiagramAnalysis</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3435,17 +2354,17 @@ Routes to specialized TikZ agents based on diagram type.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="vbagent.agents.classification.diagram_analyzer.create_diagram_analyzer_agent" class="doc doc-heading">
-            <span class="doc doc-object-name doc-function-name">create_diagram_analyzer_agent</span>
+<h3 id="vbagent.agents.classification.diagram_classifier.create_diagram_classifier" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">create_diagram_classifier</span>
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">create_diagram_analyzer_agent</span><span class="p">(</span><span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">create_diagram_classifier</span><span class="p">(</span><span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Create diagram analyzer agent.</p>
+        <p>Create the standalone diagram classifier.</p>
 
 
     </div>
@@ -3458,7 +2377,7 @@ Routes to specialized TikZ agents based on diagram type.</p>
 
     </div>
 
-</div><h2 id="agent-3-difficulty-assessor">Agent 3: Difficulty Assessor</h2>
+</div><h2 id="difficulty-assessor">Difficulty Assessor</h2>
 
 
 <div class="doc doc-object doc-module">
@@ -3473,7 +2392,7 @@ Routes to specialized TikZ agents based on diagram type.</p>
 
     <div class="doc doc-contents first">
 
-        <p>Agent 3: Difficulty Assessor.</p>
+        <p>Post-solution difficulty assessor.</p>
 <p>Assesses difficulty AFTER LaTeX extraction and TikZ generation.
 Provides detailed reasoning and metadata.</p>
 
@@ -3505,12 +2424,12 @@ Provides detailed reasoning and metadata.</p>
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">assess_difficulty</span><span class="p">(</span><span class="n">latex_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">primary</span><span class="p">:</span> <span class="n">PrimaryClassification</span><span class="p">,</span> <span class="n">diagram</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DiagramAnalysis</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tikz_code</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">show_spinner</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DifficultyAssessment</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">assess_difficulty</span><span class="p">(</span><span class="n">latex_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">primary</span><span class="p">:</span> <span class="n">PrimaryClassification</span><span class="p">,</span> <span class="n">diagram</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DiagramAnalysis</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tikz_code</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">show_spinner</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">exam</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">exam_pattern_description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">target_difficulty_score</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DifficultyAssessment</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Assess difficulty after LaTeX extraction (Agent 3).</p>
+        <p>Assess difficulty after LaTeX extraction.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3545,7 +2464,7 @@ Provides detailed reasoning and metadata.</p>
                 <code>primary</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="PrimaryClassification (vbagent.models.classification_v2.PrimaryClassification)" href="../models/#vbagent.models.classification_v2.PrimaryClassification">PrimaryClassification</a></code>
+                  <code><a class="autorefs autorefs-internal" title="PrimaryClassification (vbagent.models.classification.PrimaryClassification)" href="../models/#vbagent.models.classification.PrimaryClassification">PrimaryClassification</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3561,7 +2480,7 @@ Provides detailed reasoning and metadata.</p>
                 <code>diagram</code>
             </td>
             <td>
-                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="DiagramAnalysis (vbagent.models.classification_v2.DiagramAnalysis)" href="../models/#vbagent.models.classification_v2.DiagramAnalysis">DiagramAnalysis</a>]</code>
+                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="DiagramAnalysis (vbagent.models.classification.DiagramAnalysis)" href="../models/#vbagent.models.classification.DiagramAnalysis">DiagramAnalysis</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3620,6 +2539,54 @@ Provides detailed reasoning and metadata.</p>
                   <code>True</code>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>exam</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Target exam used as the student-population calibration baseline</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>exam_pattern_description</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Versioned response-format rule for that exam</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>target_difficulty_score</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Requested score, supplied only as a comparison target</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -3635,7 +2602,7 @@ Provides detailed reasoning and metadata.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="DifficultyAssessment (vbagent.models.classification_v2.DifficultyAssessment)" href="../models/#vbagent.models.classification_v2.DifficultyAssessment">DifficultyAssessment</a></code>
+                  <code><a class="autorefs autorefs-internal" title="DifficultyAssessment (vbagent.models.classification.DifficultyAssessment)" href="../models/#vbagent.models.classification.DifficultyAssessment">DifficultyAssessment</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3677,7 +2644,7 @@ Provides detailed reasoning and metadata.</p>
 
     </div>
 
-</div><h2 id="agent-4-latex-classifier">Agent 4: LaTeX Classifier</h2>
+</div><h2 id="latex-classifier">LaTeX Classifier</h2>
 
 
 <div class="doc doc-object doc-module">
@@ -3692,7 +2659,7 @@ Provides detailed reasoning and metadata.</p>
 
     <div class="doc doc-contents first">
 
-        <p>Agent 4: LaTeX Classifier.</p>
+        <p>LaTeX question classifier.</p>
 <p>Classifies questions from LaTeX text for batch processing.</p>
 
 
@@ -3728,7 +2695,7 @@ Provides detailed reasoning and metadata.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Classify question from LaTeX (Agent 4).</p>
+        <p>Classify a question from LaTeX.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3789,7 +2756,7 @@ Provides detailed reasoning and metadata.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="PrimaryClassification (vbagent.models.classification_v2.PrimaryClassification)" href="../models/#vbagent.models.classification_v2.PrimaryClassification">PrimaryClassification</a></code>
+                  <code><a class="autorefs autorefs-internal" title="PrimaryClassification (vbagent.models.classification.PrimaryClassification)" href="../models/#vbagent.models.classification.PrimaryClassification">PrimaryClassification</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3831,14 +2798,14 @@ Provides detailed reasoning and metadata.</p>
 
     </div>
 
-</div><h2 id="agent-5-idea-generator">Agent 5: Idea Generator</h2>
+</div><h2 id="idea-generator">Idea Generator</h2>
 
 
 <div class="doc doc-object doc-module">
 
 
 
-<h2 id="vbagent.agents.classification.idea_generator" class="doc doc-heading">
+<h2 id="vbagent.agents.content_generation.idea_generator" class="doc doc-heading">
             <span class="doc doc-object-name doc-module-name">idea_generator</span>
 
 
@@ -3846,7 +2813,7 @@ Provides detailed reasoning and metadata.</p>
 
     <div class="doc doc-contents first">
 
-        <p>Agent 5: Idea-to-Problem Generator.</p>
+        <p>Idea-to-problem generator.</p>
 <p>Generates complete problems from physics/chemistry ideas and concepts.</p>
 
 
@@ -3872,17 +2839,17 @@ Provides detailed reasoning and metadata.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="vbagent.agents.classification.idea_generator.generate_from_idea" class="doc doc-heading">
+<h3 id="vbagent.agents.content_generation.idea_generator.generate_from_idea" class="doc doc-heading">
             <span class="doc doc-object-name doc-function-name">generate_from_idea</span>
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">generate_from_idea</span><span class="p">(</span><span class="n">ideas</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">concepts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">topic</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">difficulty</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;medium&#39;</span><span class="p">,</span> <span class="n">question_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;mcq_sc&#39;</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GeneratedProblem</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">generate_from_idea</span><span class="p">(</span><span class="n">ideas</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">concepts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">topic</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">difficulty</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'medium'</span><span class="p">,</span> <span class="n">question_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'mcq_sc'</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">exam</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">exam_pattern_description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">chapter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">chapter_description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">syllabus_topic</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">syllabus_topic_description</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">difficulty_score</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">cognitive_level</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">reasoning_lens</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">representation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">construction_family</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">diagram_policy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">forbidden_concepts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tone</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">random_seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">retry_feedback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">passage_question_count</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">include_solution</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">include_idea</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GeneratedProblem</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Generate problem from ideas (Agent 5).</p>
+        <p>Generate a problem from ideas.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -3992,6 +2959,310 @@ Provides detailed reasoning and metadata.</p>
                   <code>None</code>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>exam</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Exact target exam, when authoring from a syllabus</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>exam_pattern_description</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Versioned response-format rule for the target exam</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>chapter</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Exact target syllabus chapter</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>chapter_description</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Official/custom chapter scope statement</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>syllabus_topic</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Exact target syllabus topic statement</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>syllabus_topic_description</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Additional official/custom topic scope</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>difficulty_score</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Anchored 1-10 target difficulty</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>cognitive_level</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Requested cognitive operation</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>reasoning_lens</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Requested solution/construction lens</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>representation</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Requested problem representation</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>construction_family</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Requested construction family</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>diagram_policy</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>required, optional, or forbidden</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>forbidden_concepts</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="typing.List">List</span>[<span title="str">str</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Concepts that must not enter the problem</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>tone</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional authoring tone instruction</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>random_seed</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Stable creative seed from the immutable item specification</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>retry_feedback</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Evidence from a prior rejected attempt that must be corrected</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>passage_question_count</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Exact number of passage subquestions when applicable</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>include_solution</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to generate the solution component now</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>include_idea</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to generate an idea component</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -4007,7 +3278,7 @@ Provides detailed reasoning and metadata.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="GeneratedProblem (vbagent.models.classification_v2.GeneratedProblem)" href="../models/#vbagent.models.classification_v2.GeneratedProblem">GeneratedProblem</a></code>
+                  <code><a class="autorefs autorefs-internal" title="GeneratedProblem (vbagent.models.classification.GeneratedProblem)" href="../models/#vbagent.models.classification.GeneratedProblem">GeneratedProblem</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4026,7 +3297,7 @@ Provides detailed reasoning and metadata.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="vbagent.agents.classification.idea_generator.create_idea_generator_agent" class="doc doc-heading">
+<h3 id="vbagent.agents.content_generation.idea_generator.create_idea_generator_agent" class="doc doc-heading">
             <span class="doc doc-object-name doc-function-name">create_idea_generator_agent</span>
 
 
@@ -4049,14 +3320,14 @@ Provides detailed reasoning and metadata.</p>
 
     </div>
 
-</div><h2 id="agent-6-problem-combiner">Agent 6: Problem Combiner</h2>
+</div><h2 id="problem-combiner">Problem Combiner</h2>
 
 
 <div class="doc doc-object doc-module">
 
 
 
-<h2 id="vbagent.agents.classification.problem_combiner" class="doc doc-heading">
+<h2 id="vbagent.agents.content_generation.problem_combiner" class="doc doc-heading">
             <span class="doc doc-object-name doc-module-name">problem_combiner</span>
 
 
@@ -4064,9 +3335,8 @@ Provides detailed reasoning and metadata.</p>
 
     <div class="doc doc-contents first">
 
-        <p>Agent 6: Multi-Problem Combiner.</p>
-<p>Combines multiple problems into a single comprehensive problem.
-Supports cross-subject combinations (physics + chemistry).</p>
+        <p>Multi-problem combiner.</p>
+<p>Combines multiple problems into a single comprehensive problem.</p>
 
 
 
@@ -4091,17 +3361,17 @@ Supports cross-subject combinations (physics + chemistry).</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="vbagent.agents.classification.problem_combiner.combine_problems" class="doc doc-heading">
+<h3 id="vbagent.agents.content_generation.problem_combiner.combine_problems" class="doc doc-heading">
             <span class="doc doc-object-name doc-function-name">combine_problems</span>
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">combine_problems</span><span class="p">(</span><span class="n">problems</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;sequential&#39;</span><span class="p">,</span> <span class="n">target_difficulty</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;hard&#39;</span><span class="p">,</span> <span class="n">cross_subject</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CombinedProblem</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">combine_problems</span><span class="p">(</span><span class="n">problems</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'sequential'</span><span class="p">,</span> <span class="n">target_difficulty</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'hard'</span><span class="p">,</span> <span class="n">cross_subject</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CombinedProblem</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Combine multiple problems (Agent 6).</p>
+        <p>Combine multiple problems.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -4194,7 +3464,7 @@ Supports cross-subject combinations (physics + chemistry).</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="CombinedProblem (vbagent.models.classification_v2.CombinedProblem)" href="../models/#vbagent.models.classification_v2.CombinedProblem">CombinedProblem</a></code>
+                  <code><a class="autorefs autorefs-internal" title="CombinedProblem (vbagent.models.classification.CombinedProblem)" href="../models/#vbagent.models.classification.CombinedProblem">CombinedProblem</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4213,7 +3483,7 @@ Supports cross-subject combinations (physics + chemistry).</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="vbagent.agents.classification.problem_combiner.create_problem_combiner_agent" class="doc doc-heading">
+<h3 id="vbagent.agents.content_generation.problem_combiner.create_problem_combiner_agent" class="doc doc-heading">
             <span class="doc doc-object-name doc-function-name">create_problem_combiner_agent</span>
 
 
@@ -4236,14 +3506,14 @@ Supports cross-subject combinations (physics + chemistry).</p>
 
     </div>
 
-</div><h2 id="agent-7-tikz-checker">Agent 7: TikZ Checker</h2>
+</div><h2 id="tikz-checker">TikZ Checker</h2>
 
 
 <div class="doc doc-object doc-module">
 
 
 
-<h2 id="vbagent.agents.classification.tikz_checker" class="doc doc-heading">
+<h2 id="vbagent.agents.diagram.tikz_checker" class="doc doc-heading">
             <span class="doc doc-object-name doc-module-name">tikz_checker</span>
 
 
@@ -4251,9 +3521,12 @@ Supports cross-subject combinations (physics + chemistry).</p>
 
     <div class="doc doc-contents first">
 
-        <p>Agent 7: TikZ Checker/Validator.</p>
-<p>Validates and fixes TikZ code automatically.
-Ensures compilation success and best practices.</p>
+        <p>TikZ checker agent for LaTeX diagrams.</p>
+<p>Checks TikZ/PGF code for syntax errors, best practices,
+and physics diagram conventions.</p>
+<p>Supports two modes:
+1. Legacy mode: Returns full corrected content (check_tikz)
+2. Patch mode: Uses apply_patch tool for structured diffs (check_tikz_with_patch)</p>
 
 
 
@@ -4278,17 +3551,17 @@ Ensures compilation success and best practices.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="vbagent.agents.classification.tikz_checker.validate_tikz" class="doc doc-heading">
+<h3 id="vbagent.agents.diagram.tikz_checker.validate_tikz" class="doc doc-heading">
             <span class="doc doc-object-name doc-function-name">validate_tikz</span>
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">validate_tikz</span><span class="p">(</span><span class="n">tikz_code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">auto_fix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">compile_test</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TikZValidation</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">validate_tikz</span><span class="p">(</span><span class="n">tikz_code</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">auto_fix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">compile_test</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">cache_group_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TikZValidation</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Validate and fix TikZ code (Agent 7).</p>
+        <p>Validate and fix TikZ code, returning structured TikZValidation.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -4381,7 +3654,7 @@ Ensures compilation success and best practices.</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><a class="autorefs autorefs-internal" title="TikZValidation (vbagent.models.classification_v2.TikZValidation)" href="../models/#vbagent.models.classification_v2.TikZValidation">TikZValidation</a></code>
+                  <code><a class="autorefs autorefs-internal" title="TikZValidation (vbagent.models.diagram.TikZValidation)" href="../models/#vbagent.models.diagram.TikZValidation">TikZValidation</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4400,17 +3673,103 @@ Ensures compilation success and best practices.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="vbagent.agents.classification.tikz_checker.create_tikz_checker_agent" class="doc doc-heading">
+<h3 id="vbagent.agents.diagram.tikz_checker.create_tikz_checker_agent" class="doc doc-heading">
             <span class="doc doc-object-name doc-function-name">create_tikz_checker_agent</span>
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">create_tikz_checker_agent</span><span class="p">()</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">create_tikz_checker_agent</span><span class="p">(</span><span class="n">use_context</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">classification</span><span class="p">:</span> <span class="n">ClassificationResult</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">diagram_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Create TikZ checker agent.</p>
+        <p>Create a TikZ checker agent with optional reference context.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>use_context</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to include reference context</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>classification</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="ClassificationResult (vbagent.models.classification.ClassificationResult)" href="../models/#vbagent.models.classification.ClassificationResult">ClassificationResult</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional ClassificationResult for metadata matching</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>diagram_type</code>
+            </td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional filter by diagram type (e.g., 'circuit')</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Configured Agent instance</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
     </div>
@@ -4509,7 +3868,7 @@ Ensures compilation success and best practices.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "toc.integrate", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
